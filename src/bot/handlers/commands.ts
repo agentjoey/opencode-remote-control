@@ -6,6 +6,18 @@ import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('commands')
 
+/** Shorten a full file path to a project-relative or short form. */
+function shortPath(p: string): string {
+  // Try to extract project-relative path
+  const idx = p.indexOf('/opencode-remote-control/')
+  if (idx !== -1) return p.slice(idx + '/opencode-remote-control/'.length)
+  if (p.startsWith('/')) {
+    const parts = p.split('/')
+    if (parts.length > 3) return '…/' + parts.slice(-3).join('/')
+  }
+  return p
+}
+
 interface CommandsDeps {
   bot: Telegraf
   client: OpencodeClient
@@ -145,6 +157,72 @@ export function registerCommands(deps: CommandsDeps): void {
         ]),
       },
     )
+  })
+
+  deps.bot.command('files', async (ctx: Context) => {
+    const last = deps.getLastSessionId()
+    if (!last) {
+      await ctx.reply(
+        '<b>📁 Files</b>\n\nNo session yet. Send a message first.',
+        { parse_mode: 'HTML' },
+      )
+      return
+    }
+
+    try {
+      const result = await deps.client.session.messages({ path: { id: last } })
+      const msgs = (result.data ?? []) as Array<{
+        parts?: Array<{ type?: string; tool?: string; files?: string[]; state?: { input?: { filePath?: string } } }>
+      }>
+
+      interface FileOp { emoji: string; path: string }
+      const fileOps = new Map<string, string>()
+      const fileEmoji: Record<string, string> = {
+        read: '📖', write: '🆕', edit: '✏️',
+      }
+
+      for (const msg of msgs) {
+        for (const part of (msg.parts ?? [])) {
+          if (part.type === 'tool' && part.tool && fileEmoji[part.tool]) {
+            const fp = part.state?.input?.filePath
+            if (fp) fileOps.set(fp, fileEmoji[part.tool])
+          }
+          if (part.type === 'patch' && part.files) {
+            for (const f of part.files) {
+              // patch always means edit
+              if (!fileOps.has(f)) fileOps.set(f, '✏️')
+            }
+          }
+        }
+      }
+
+      const shortId = last.slice(-8)
+      if (fileOps.size === 0) {
+        await ctx.reply(
+          `<b>📁 Files — …${shortId}</b>\n\nNo file operations recorded.`,
+          { parse_mode: 'HTML' },
+        )
+        return
+      }
+
+      const MAX = 15
+      const entries = [...fileOps.entries()]
+      const shown = entries.slice(0, MAX)
+      const lines = [
+        `<b>📁 Files — …${shortId}</b>`,
+        '',
+        ...shown.map(([p, emoji]) => `${emoji}  <code>${shortPath(p)}</code>`),
+      ]
+      if (entries.length > MAX) {
+        lines.push(`\n…and ${entries.length - MAX} more`)
+      }
+      lines.push('', `<i>${entries.length} file operation${entries.length > 1 ? 's' : ''}</i>`)
+
+      await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
+    } catch (err) {
+      log.error('failed to fetch files', err as Error)
+      await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
+    }
   })
 
   deps.bot.command('current', async (ctx: Context) => {
