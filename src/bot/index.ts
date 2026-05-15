@@ -1,4 +1,4 @@
-import { Telegraf } from 'telegraf'
+import { Telegraf, Markup } from 'telegraf'
 import type { Context } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { Config } from '../config.js'
@@ -7,6 +7,7 @@ import { EventStream } from '../opencode/event-stream.js'
 import { createChatHandler } from './handlers/chat.js'
 import { setupApprovalHandler } from './handlers/approval.js'
 import { registerCommands } from './handlers/commands.js'
+import { registerCallbacks } from './handlers/callbacks.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('bot')
@@ -57,6 +58,21 @@ export function createBot(deps: BotDeps): Telegraf {
     client: deps.client,
     baseUrl: deps.config.opencodeBaseUrl,
     getLastSessionId: () => lastSessionId,
+    setLastSessionId: (id) => { lastSessionId = id },
+    abortGeneration: () => {
+      userAbortedGeneration = true
+      currentAbortController?.abort()
+    },
+    isGenerating: () => isGenerating,
+  })
+
+  // Callbacks
+  registerCallbacks({
+    bot,
+    baseUrl: deps.config.opencodeBaseUrl,
+    getLastSessionId: () => lastSessionId,
+    setLastSessionId: (id) => { lastSessionId = id },
+    isGenerating: () => isGenerating,
     abortGeneration: () => {
       userAbortedGeneration = true
       currentAbortController?.abort()
@@ -91,9 +107,6 @@ export function createBot(deps: BotDeps): Telegraf {
     isGenerating = true
     userAbortedGeneration = false
 
-    // Fire-and-forget: returning the Promise would make Telegraf wait up to
-    // handlerTimeout before polling again, so /abort would never be received.
-    // handleChat() has a comprehensive try/catch and never rejects.
     void handleChat(ctx, message.text).finally(() => {
       isGenerating = false
       currentAbortController = undefined

@@ -15,7 +15,7 @@ interface ChatDeps {
   editThrottleMs: number
   chatTimeoutMs: number
   getLastSessionId: () => string | undefined
-  setLastSessionId: (id: string) => void
+  setLastSessionId: (id: string | undefined) => void
   onAbortControllerCreated?: (ac: AbortController) => void
   isUserAborted?: () => boolean
 }
