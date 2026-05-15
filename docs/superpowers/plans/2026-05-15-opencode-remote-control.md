@@ -1,4 +1,4 @@
-# opencode-telegram-bot Implementation Plan
+# opencode-remote-control Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,9 +8,9 @@
 
 **Tech Stack:** TypeScript 5.4, Node 20, Telegraf v4, `@opencode-ai/sdk` v1.14, Zod, Vitest, launchd.
 
-**Repo:** `/Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot/`
+**Repo:** `/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control/`
 
-**Spec:** `docs/superpowers/specs/2026-05-15-opencode-telegram-bot-design.md`
+**Spec:** `docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md`
 
 ---
 
@@ -44,7 +44,7 @@ tests/
     └── live-opencode.test.ts   # exercises real :4096
 
 deploy/
-└── ai.opencode.telegram-bot.plist
+└── ai.opencode.remote-control.telegram.plist
 ```
 
 ---
@@ -58,7 +58,7 @@ deploy/
 
 ```json
 {
-  "name": "opencode-telegram-bot",
+  "name": "opencode-remote-control",
   "version": "0.1.0",
   "description": "Sidecar Telegram bot for remote-controlling a local opencode TUI session",
   "type": "module",
@@ -165,7 +165,7 @@ dist/
 - [ ] **Step 0.6: Create `README.md`**
 
 ```markdown
-# opencode-telegram-bot
+# opencode-remote-control
 
 Sidecar Telegram bot for remote-controlling a local opencode TUI session.
 
@@ -179,7 +179,7 @@ Sidecar Telegram bot for remote-controlling a local opencode TUI session.
 
 ## Architecture
 
-See `docs/superpowers/specs/2026-05-15-opencode-telegram-bot-design.md`.
+See `docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md`.
 
 ## Test
 
@@ -191,9 +191,9 @@ npm run test:integration  # contract tests against running opencode
 ## Deploy
 
 ```bash
-cp deploy/ai.opencode.telegram-bot.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/ai.opencode.telegram-bot.plist
-launchctl start ai.opencode.telegram-bot
+cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/ai.opencode.remote-control.telegram.plist
+launchctl start ai.opencode.remote-control.telegram
 ```
 ```
 
@@ -201,7 +201,7 @@ launchctl start ai.opencode.telegram-bot
 
 Run:
 ```bash
-cd /Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot
+cd /Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control
 npm install
 ```
 
@@ -1989,7 +1989,7 @@ git commit -m "test: add live opencode integration tests"
 ## Task 13: launchd Deployment
 
 **Files:**
-- Create: `deploy/ai.opencode.telegram-bot.plist`
+- Create: `deploy/ai.opencode.remote-control.telegram.plist`
 
 - [ ] **Step 13.1: Resolve absolute paths**
 
@@ -1999,7 +1999,7 @@ Expected: an absolute path, e.g. `/usr/local/bin/node` or `/opt/homebrew/bin/nod
 
 - [ ] **Step 13.2: Create plist (replace `__NODE_BIN__` with the path from 13.1)**
 
-Create `deploy/ai.opencode.telegram-bot.plist`:
+Create `deploy/ai.opencode.remote-control.telegram.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -2008,10 +2008,10 @@ Create `deploy/ai.opencode.telegram-bot.plist`:
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>ai.opencode.telegram-bot</string>
+  <string>ai.opencode.remote-control.telegram</string>
 
   <key>WorkingDirectory</key>
-  <string>/Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot</string>
+  <string>/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control</string>
 
   <key>ProgramArguments</key>
   <array>
@@ -2029,9 +2029,9 @@ Create `deploy/ai.opencode.telegram-bot.plist`:
   <key>KeepAlive</key><true/>
 
   <key>StandardOutPath</key>
-  <string>/tmp/opencode-telegram-bot.log</string>
+  <string>/tmp/opencode-remote-control-telegram.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/opencode-telegram-bot.err</string>
+  <string>/tmp/opencode-remote-control-telegram.err</string>
 
   <key>ThrottleInterval</key>
   <integer>10</integer>
@@ -2046,9 +2046,9 @@ Create `deploy/ai.opencode.telegram-bot.plist`:
 Run:
 
 ```bash
-cp deploy/ai.opencode.telegram-bot.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/ai.opencode.telegram-bot.plist
-launchctl start ai.opencode.telegram-bot
+cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/ai.opencode.remote-control.telegram.plist
+launchctl start ai.opencode.remote-control.telegram
 ```
 
 - [ ] **Step 13.4: Verify it's running**
@@ -2056,17 +2056,17 @@ launchctl start ai.opencode.telegram-bot
 Run:
 
 ```bash
-launchctl list | grep ai.opencode.telegram-bot
+launchctl list | grep ai.opencode.remote-control.telegram
 # Expected: a line showing PID > 0 and exit code 0 (or "-" if just started)
 
-tail -f /tmp/opencode-telegram-bot.log
+tail -f /tmp/opencode-remote-control-telegram.log
 # Expected: log lines showing "starting bot", "opencode healthy", "SSE connected"
 ```
 
 - [ ] **Step 13.5: Commit**
 
 ```bash
-git add deploy/ai.opencode.telegram-bot.plist
+git add deploy/ai.opencode.remote-control.telegram.plist
 git commit -m "deploy: add launchd plist with KeepAlive supervision"
 ```
 
@@ -2120,11 +2120,11 @@ Expected: opencode stops; Telegram replies "🛑 Aborted <id>".
 - [ ] **Step 14.10: KeepAlive verification — kill the bot PID**
 
 ```bash
-launchctl list | grep ai.opencode.telegram-bot
+launchctl list | grep ai.opencode.remote-control.telegram
 # note the PID
 kill -9 <PID>
 sleep 6
-launchctl list | grep ai.opencode.telegram-bot
+launchctl list | grep ai.opencode.remote-control.telegram
 # expect a NEW PID
 ```
 
@@ -2145,9 +2145,9 @@ Expected: bot replies `Unauthorized` and ignores otherwise.
 Leave it running. Check next day:
 
 ```bash
-launchctl list | grep ai.opencode.telegram-bot
+launchctl list | grep ai.opencode.remote-control.telegram
 # exit code column should show 0 (not non-zero); PID should be stable
-tail -100 /tmp/opencode-telegram-bot.err
+tail -100 /tmp/opencode-remote-control-telegram.err
 # expected: empty or only benign SSE reconnect warnings
 ```
 

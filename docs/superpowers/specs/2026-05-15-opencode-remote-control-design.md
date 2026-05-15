@@ -1,4 +1,4 @@
-# opencode-telegram-bot — 设计文档
+# opencode-remote-control — 设计文档
 
 | Field | Value |
 |-------|-------|
@@ -6,11 +6,13 @@
 | Date | 2026-05-15 |
 | Status | Approved for implementation |
 | Replaces | `telegram-opencode-bot/` (abandoned) |
-| Location | `/Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot/` |
+| Location | `/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control/` |
 
 ---
 
 ## 1. 项目目标与背景
+
+**项目命名**：`opencode-remote-control` 是 umbrella 项目，覆盖所有 opencode 远程控制场景（Telegram / 未来可能的 Discord / Web / 桌面 widget 等）。本 spec 仅规划 Phase 1 MVP — **Telegram 通道**。其余通道见 §8 Phase 2 候选。
 
 通过 Telegram Bot 远程控制本地 opencode 实例，实现外出/移动时继续与桌面 TUI 进行的开发对话。语义与 Claude Code CLI 的 Telegram 集成对齐：Bot 是一条 IO 通道，AI agent 自身（opencode）独立运行。
 
@@ -35,7 +37,7 @@
 
 ```
 ┌───────────────┐    ┌──────────────────┐    ┌───────────────────────────┐
-│   iPhone      │───▶│   Telegram       │───▶│  opencode-telegram-bot    │
+│   iPhone      │───▶│   Telegram       │───▶│  opencode-remote-control    │
 │   Telegram    │    │   Bot API        │    │  (Node 20, launchd)       │
 └───────────────┘    └──────────────────┘    └─────────────┬─────────────┘
                                                            │ HTTP/SSE
@@ -67,7 +69,7 @@
 
 ### 与原项目的差异
 
-| 项 | 原 telegram-opencode-bot | 新 opencode-telegram-bot |
+| 项 | 原 telegram-opencode-bot | 新 opencode-remote-control |
 |----|--------------------------|--------------------------|
 | 进程模型 | Embedded（spawn opencode 子进程） | Sidecar（连已运行的 opencode） |
 | 入口点 | 双入口 (index.ts + cli.ts) | 单入口 (src/index.ts) |
@@ -83,14 +85,14 @@
 ### 文件结构
 
 ```
-opencode-telegram-bot/
+opencode-remote-control/
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
 ├── .gitignore
 ├── README.md
 ├── docs/superpowers/specs/
-│   └── 2026-05-15-opencode-telegram-bot-design.md
+│   └── 2026-05-15-opencode-remote-control-design.md
 │
 ├── src/
 │   ├── index.ts                 # 唯一入口：load env → 校验 → 启动 bot
@@ -114,7 +116,7 @@ opencode-telegram-bot/
 │       └── markdown.ts          # MarkdownV2 转义（仅 approval 卡片用）
 │
 ├── deploy/
-│   └── ai.opencode.telegram-bot.plist   # launchd 模板
+│   └── ai.opencode.remote-control.telegram.plist   # launchd 模板
 │
 └── tests/
     ├── unit/
@@ -403,8 +405,8 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
 ### 5.4 日志
 
-- `console.log` → launchd `StandardOutPath` → `/tmp/opencode-telegram-bot.log`
-- `console.error` → `StandardErrorPath` → `/tmp/opencode-telegram-bot.err`
+- `console.log` → launchd `StandardOutPath` → `/tmp/opencode-remote-control-telegram.log`
+- `console.error` → `StandardErrorPath` → `/tmp/opencode-remote-control-telegram.err`
 - 格式：`[ISO timestamp] [module] message`
 - LOG_LEVEL: `debug | info | warn | error`（默认 `info`）
 
@@ -476,7 +478,7 @@ tests/unit/
 
 ### 7.1 launchd 模板
 
-`deploy/ai.opencode.telegram-bot.plist`：
+`deploy/ai.opencode.remote-control.telegram.plist`：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -485,9 +487,9 @@ tests/unit/
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>ai.opencode.telegram-bot</string>
+  <string>ai.opencode.remote-control.telegram</string>
   <key>WorkingDirectory</key>
-  <string>/Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot</string>
+  <string>/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control</string>
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/node</string>
@@ -499,8 +501,8 @@ tests/unit/
   </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
-  <key>StandardOutPath</key><string>/tmp/opencode-telegram-bot.log</string>
-  <key>StandardErrorPath</key><string>/tmp/opencode-telegram-bot.err</string>
+  <key>StandardOutPath</key><string>/tmp/opencode-remote-control-telegram.log</string>
+  <key>StandardErrorPath</key><string>/tmp/opencode-remote-control-telegram.err</string>
 </dict>
 </plist>
 ```
@@ -510,12 +512,12 @@ tests/unit/
 ### 7.2 安装
 
 ```bash
-cd /Users/xtation/AgentWorks/Code_Opencode/opencode-telegram-bot
+cd /Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control
 npm install
 npm run build
-cp deploy/ai.opencode.telegram-bot.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/ai.opencode.telegram-bot.plist
-launchctl start ai.opencode.telegram-bot
+cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/ai.opencode.remote-control.telegram.plist
+launchctl start ai.opencode.remote-control.telegram
 ```
 
 ### 7.3 升级
@@ -524,7 +526,7 @@ launchctl start ai.opencode.telegram-bot
 git pull
 npm install
 npm run build
-launchctl stop ai.opencode.telegram-bot   # KeepAlive 会自动重拉
+launchctl stop ai.opencode.remote-control.telegram   # KeepAlive 会自动重拉
 ```
 
 ---
