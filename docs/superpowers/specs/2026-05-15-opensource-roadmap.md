@@ -123,40 +123,9 @@ Exit criteria: external feedback loop established. ≥1 external bug report or P
 
 ---
 
-### M4 — Discord transport (4 weeks)
-**Goal:** validate transport abstraction by building Discord first-party.
-
-- `discord.js` v14 (mature, well-documented)
-- Map cards → Discord embeds; buttons → ActionRow components
-- Slash commands (`/abort`, `/status`, etc.) via Discord's slash command API
-- Add `transport/discord/` directory
-
-Document any **abstraction gaps** found during implementation; if `Transport`
-interface needs breaking changes, do them in v1.1 (one breaking-change window).
-
-Exit criteria:
-- Both transports run simultaneously (`TRANSPORT=telegram,discord` in env)
-- Feature parity for all v1.0 commands
-- Discord channel runs ≥ 2 weeks without channel-specific bugs
-
-Tag: `v1.1.0`.
-
----
-
-### M5 — Feishu transport (4 weeks)
-- Feishu (Lark) bot SDK: `@larksuiteoapi/node-sdk`
-- Interactive cards via Feishu Message Cards
-- Approval flow: Feishu has native approval components — leverage them
-- Chinese-language defaults (i18n preliminary: `LOCALE=zh-CN|en-US`)
-
-If implemented by a contributor: maintainer reviews architecture and security.
-
-Tag: `v1.2.0`.
-
----
-
-### M6 — Web transport (8 weeks, large)
-**Goal:** browser-based UI, mobile-friendly.
+### M4 — Web transport (8 weeks, large) ⬆️ prioritized
+**Goal:** browser-based UI, mobile-friendly. Prioritized over chat platforms because
+it has no external platform dependency and delivers the broadest reach.
 
 Distinct value: no platform lock-in, real-time streaming over WebSocket, runs on phone via PWA.
 
@@ -172,7 +141,42 @@ UX:
 - Streaming text bubble (matches Telegram's edit-in-place approach)
 - Approval UI: native HTML modal
 
-Tag: `v2.0.0`.
+Tag: `v1.1.0`.
+
+---
+
+### M5 — Discord transport (4 weeks) ↓ deferred
+**Goal:** validate transport abstraction by building Discord first-party.
+Deferred until after Web — Web is higher priority and more broadly useful.
+
+- `discord.js` v14 (mature, well-documented)
+- Map cards → Discord embeds; buttons → ActionRow components
+- Slash commands (`/abort`, `/status`, etc.) via Discord's slash command API
+- Add `transport/discord/` directory
+
+Document any **abstraction gaps** found during implementation; if `Transport`
+interface needs breaking changes, do them here before Feishu.
+
+Exit criteria:
+- Both transports run simultaneously (`TRANSPORT=telegram,discord` in env)
+- Feature parity for all v1.0 commands
+- Discord channel runs ≥ 2 weeks without channel-specific bugs
+
+Tag: `v1.2.0`.
+
+---
+
+### M6 — Feishu transport (4 weeks) ↓ deferred
+Deferred — implement after Discord validates the transport abstraction.
+
+- Feishu (Lark) bot SDK: `@larksuiteoapi/node-sdk`
+- Interactive cards via Feishu Message Cards
+- Approval flow: Feishu has native approval components — leverage them
+- Chinese-language defaults (i18n preliminary: `LOCALE=zh-CN|en-US`)
+
+If implemented by a contributor: maintainer reviews architecture and security.
+
+Tag: `v1.3.0`.
 
 ---
 
@@ -204,9 +208,9 @@ Possible directions:
 |----------|------|---------|
 | License | M2 | MIT |
 | Project name (rebrand?) | Before M3 | Keep `opencode-remote-control` |
-| Build M4 in-house vs wait for contributor | After M3 | Build it (validates abstraction) |
+| Build M4 (Web) in-house vs wait for contributor | After M3 | Build it (broadest reach, no platform dep) |
 | Public name / handle for project owner | Before M3 | (user to decide) |
-| Web transport BEFORE community Discord PR? | After M5 | No, wait until 2 chat channels stable |
+| Discord before or after Web? | Decided | Web first (M4), Discord second (M5) |
 | Plugin model | M7 | Only if triggers met |
 
 ---
@@ -243,9 +247,9 @@ Possible directions:
 2026-06  M1 Phase 2 ship
 2026-07  M2 OSS prep
 2026-08  M3 v1.0 public
-2026-09  M4 Discord
-2026-10  M5 Feishu
-2026-12+ M6 Web
+2026-09  M4 Web (⬆️ prioritized)
+2026-11  M5 Discord (↓ deferred)
+2026-12+ M6 Feishu (↓ deferred)
 ```
 
 Solo development assumption. Slip is expected; the milestone order matters
