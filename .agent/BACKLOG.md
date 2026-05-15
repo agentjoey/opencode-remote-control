@@ -6,13 +6,10 @@
 ## 🔴 HIGH
 *Sprint 1 完成 MVP 后再补充。*
 
-## 🟡 MED — Phase 2 候选
+## 🟡 MED — Phase 3 候选
 
-- [ ] **真流式回复（per-part type-filtered）** — 当前 MVP 等 session.idle 后一次性输出，导致回复慢（user feedback 2026-05-15）。优化：每见新 partID 并发 GET `/session/.../message/.../part/{partID}` 拿 type，type='text' 才推送 deltas 给 Telegram；reasoning 部分丢弃。期望感知延迟降到 1-2s。
 - [ ] **`/files [query]` 文件浏览** — opencode `/find/file?query=` 包装到 Bot 命令
 - [ ] **`/read <path>` 文件读取** — opencode `/file/content?path=` 包装
-- [ ] **`/agent` 卡片选择** — InlineKeyboard 4 张卡片切换 Chat/Plan/Build/Audit
-- [ ] **`/model list` + `/model set <provider/id>`** — 列出 + 切换当前 session 模型
 - [ ] **主动推送 opencode 事件** — 文件 edit / git commit / test result 推到 Telegram
 
 ## 🟢 LOW
@@ -26,5 +23,15 @@
 - [ ] **Discord / Slack 通道** — umbrella scope 兑现，是否需要抽象 transport 层
 - [ ] **Web 通道** — 浏览器扩展或 PWA 直连 opencode
 
-## ✅ 已完成（按 Sprint 归档）
-*Sprint 1 完成后归档。*
+## ✅ 已完成
+
+### Sprint 1 — Phase 1 MVP
+- Sidecar Telegram bot, TUI inject, SSE event stream, approval cards, launchd deploy
+
+### Sprint 2 — Phase 2: Command Cards + Streaming
+- F5: /session pin/unpin + registerCallbacks() architecture
+- 命令卡片化: /status, /start, /help, /current all HTML cards
+- F2: /files 命令（tool + patch part）
+- F3: /agent 命令（list + 创建 session 切换）
+- F4: /model 命令（list + PATCH /config 切换）
+- F1: 流式输出（message.part.delta 实时推送）
