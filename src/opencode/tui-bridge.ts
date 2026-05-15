@@ -137,12 +137,38 @@ export class TuiBridge {
         return false
       }
 
+      // Verify a TUI is actually consuming the queue. The /tui/* endpoints
+      // return true when the server queues the request, but if no TUI is
+      // attached (e.g. user runs `opencode serve` without an attached TUI)
+      // nothing dequeues it and the prompt never fires. Poll session status
+      // briefly — a real TUI submission flips the session to busy fast.
+      const consumed = await this.waitForBusy(sessionId, 1500)
+      if (!consumed) {
+        log.warn('TUI submitted but session did not go busy — no TUI attached, falling back')
+        await fetch(`${this.baseUrl}/tui/clear-prompt`, { method: 'POST' }).catch(() => {})
+        return false
+      }
+
       log.info(`TUI inject → ${sessionId}`)
       return true
     } catch (err) {
       log.warn('TUI inject error', (err as Error).message)
       return false
     }
+  }
+
+  private async waitForBusy(sessionId: string, timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      try {
+        const status = await this.getStatus()
+        if (status[sessionId]?.type === 'busy') return true
+      } catch {
+        // ignore transient errors during status polling
+      }
+      await new Promise((r) => setTimeout(r, 150))
+    }
+    return false
   }
 
   private async submitViaPromptAsync(text: string, sessionId: string): Promise<string> {
