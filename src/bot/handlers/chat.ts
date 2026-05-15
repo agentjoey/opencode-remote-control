@@ -42,7 +42,8 @@ export function createChatHandler(deps: ChatDeps) {
 
         if (e.type === 'session.idle') break
         if (e.type === 'session.error') {
-          const errMsg = e.properties?.error?.message ?? 'opencode reported a session error'
+          const err = e.properties?.error
+          const errMsg = err?.data?.message ?? err?.message ?? err?.name ?? 'opencode reported a session error'
           throw new Error(errMsg)
         }
         if (e.type === 'message.part.updated') {
