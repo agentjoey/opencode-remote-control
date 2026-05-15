@@ -1,8 +1,9 @@
+import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('tui-bridge')
 
-export type SubmitFailureReason = 'tui_not_running' | 'tui_busy' | 'submit_rejected'
+export type SubmitFailureReason = 'no_session' | 'session_busy' | 'submit_rejected'
 
 export class TuiSubmitError extends Error {
   constructor(public reason: SubmitFailureReason, message: string) {
@@ -11,88 +12,83 @@ export class TuiSubmitError extends Error {
   }
 }
 
-interface SubmitOptions {
-  deadlineMs?: number
-  intervalMs?: number
-}
-
 interface SessionStatus {
   [sessionId: string]: { type: string }
 }
 
-export class TuiBridge {
-  constructor(private baseUrl: string) {}
+interface SessionListItem {
+  id: string
+  title?: string
+  time?: { created?: number }
+}
 
-  private async getStatus(): Promise<SessionStatus> {
+export class TuiBridge {
+  constructor(
+    private baseUrl: string,
+    private client: OpencodeClient,
+  ) {}
+
+  /**
+   * Pick the session to submit to. If `forced` is provided, use it.
+   * Otherwise, fall back to the newest session in `/session` list
+   * (TUI auto-creates a session on open, so newest ≈ TUI's current).
+   */
+  async pickSession(forced?: string): Promise<string> {
+    if (forced) return forced
+    const result = await this.client.session.list()
+    const sessions = (result.data ?? []) as SessionListItem[]
+    if (sessions.length === 0) {
+      throw new TuiSubmitError(
+        'no_session',
+        'No opencode sessions found — open the TUI on your Mac first.',
+      )
+    }
+    const sorted = [...sessions].sort(
+      (a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0),
+    )
+    return sorted[0].id
+  }
+
+  async getStatus(): Promise<SessionStatus> {
     const res = await fetch(`${this.baseUrl}/session/status`)
     if (!res.ok) throw new Error(`/session/status HTTP ${res.status}`)
     return (await res.json()) as SessionStatus
   }
 
-  async submit(text: string, opts: SubmitOptions = {}): Promise<string> {
-    const deadlineMs = opts.deadlineMs ?? 5000
-    const intervalMs = opts.intervalMs ?? 100
+  /**
+   * Submit a text prompt to a session via `POST /session/{id}/prompt_async`.
+   * Returns the sessionID used. If `sessionIdOverride` is null/undefined,
+   * picks the newest available session.
+   * Throws TuiSubmitError with reason:
+   *   - 'no_session'      — no opencode sessions exist
+   *   - 'session_busy'    — target session is already generating
+   *   - 'submit_rejected' — HTTP error from opencode
+   */
+  async submit(text: string, sessionIdOverride?: string): Promise<string> {
+    const sessionId = await this.pickSession(sessionIdOverride)
 
-    // 1. Snapshot busy sessions BEFORE submit
-    const beforeStatus = await this.getStatus()
-    const before = new Set(
-      Object.entries(beforeStatus)
-        .filter(([, s]) => s.type === 'busy')
-        .map(([id]) => id),
-    )
-    log.debug(`busy before submit: ${[...before].join(',') || '(none)'}`)
-
-    // 2. POST /tui/append-prompt to type text into TUI buffer
-    const appendRes = await fetch(`${this.baseUrl}/tui/append-prompt`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (!appendRes.ok) {
-      throw new TuiSubmitError('submit_rejected', `/tui/append-prompt HTTP ${appendRes.status}`)
-    }
-    const appendBody = await appendRes.json()
-    if (appendBody !== true) {
-      throw new TuiSubmitError('submit_rejected', `/tui/append-prompt rejected: returned ${JSON.stringify(appendBody)}, expected true`)
-    }
-
-    // 3. POST /tui/submit-prompt to press Enter (no body)
-    const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
-    })
-    if (!submitRes.ok) {
-      throw new TuiSubmitError('submit_rejected', `/tui/submit-prompt HTTP ${submitRes.status}`)
-    }
-    const okBody = await submitRes.json()
-    if (okBody !== true) {
-      throw new TuiSubmitError('submit_rejected', `/tui/submit-prompt rejected: returned ${JSON.stringify(okBody)}, expected true`)
-    }
-
-    // 3. Poll /session/status for a NEWLY busy session
-    const deadline = Date.now() + deadlineMs
-    while (Date.now() < deadline) {
-      const status = await this.getStatus()
-      for (const [sid, s] of Object.entries(status)) {
-        if (s.type === 'busy' && !before.has(sid)) {
-          log.info(`captured session ${sid}`)
-          return sid
-        }
-      }
-      await new Promise((r) => setTimeout(r, intervalMs))
-    }
-
-    // 4. Differentiate: TUI not running vs TUI busy
-    if (before.size === 0) {
+    const status = await this.getStatus()
+    if (status[sessionId]?.type === 'busy') {
       throw new TuiSubmitError(
-        'tui_not_running',
-        `No session went busy within ${deadlineMs}ms — is the opencode TUI running?`,
+        'session_busy',
+        `Session ${sessionId} is already generating. Wait for it or /abort.`,
       )
     }
-    throw new TuiSubmitError(
-      'tui_busy',
-      `TUI was already busy on session(s) ${[...before].join(',')}; new prompt was queued or ignored.`,
-    )
+
+    log.info(`submitting to ${sessionId}`)
+    const res = await fetch(`${this.baseUrl}/session/${sessionId}/prompt_async`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parts: [{ type: 'text', text }] }),
+    })
+
+    if (!res.ok) {
+      throw new TuiSubmitError(
+        'submit_rejected',
+        `POST /session/${sessionId}/prompt_async returned HTTP ${res.status}`,
+      )
+    }
+
+    return sessionId
   }
 }
