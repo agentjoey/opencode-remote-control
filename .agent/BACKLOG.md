@@ -8,6 +8,7 @@
 
 ## 🟡 MED — Phase 2 候选
 
+- [ ] **真流式回复（per-part type-filtered）** — 当前 MVP 等 session.idle 后一次性输出，导致回复慢（user feedback 2026-05-15）。优化：每见新 partID 并发 GET `/session/.../message/.../part/{partID}` 拿 type，type='text' 才推送 deltas 给 Telegram；reasoning 部分丢弃。期望感知延迟降到 1-2s。
 - [ ] **`/files [query]` 文件浏览** — opencode `/find/file?query=` 包装到 Bot 命令
 - [ ] **`/read <path>` 文件读取** — opencode `/file/content?path=` 包装
 - [ ] **`/agent` 卡片选择** — InlineKeyboard 4 张卡片切换 Chat/Plan/Build/Audit
