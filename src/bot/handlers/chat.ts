@@ -16,6 +16,8 @@ interface ChatDeps {
   chatTimeoutMs: number
   getLastSessionId: () => string | undefined
   setLastSessionId: (id: string) => void
+  onAbortControllerCreated?: (ac: AbortController) => void
+  isUserAborted?: () => boolean
 }
 
 // Opencode 1.14.x event shapes (verified empirically):
@@ -41,6 +43,7 @@ export function createChatHandler(deps: ChatDeps) {
     }, 4000)
 
     const ac = new AbortController()
+    deps.onAbortControllerCreated?.(ac)
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
     let sessionId: string | undefined
@@ -75,6 +78,7 @@ export function createChatHandler(deps: ChatDeps) {
         }
       }
 
+      if (deps.isUserAborted?.()) throw new Error('user_abort')
       if (ac.signal.aborted) throw new Error('timeout')
 
       // Pull the final assistant message and emit only text parts
@@ -127,6 +131,9 @@ export function createChatHandler(deps: ChatDeps) {
             : `❌ ${errAny.message}`
         try { await ctx.deleteMessage(statusMsg.message_id) } catch {}
         await ctx.reply(msg)
+      } else if (errAny.message === 'user_abort') {
+        try { await ctx.deleteMessage(statusMsg.message_id) } catch {}
+        await ctx.reply('🛑 Generation stopped.')
       } else if (errAny.message === 'timeout') {
         try { await ctx.deleteMessage(statusMsg.message_id) } catch {}
         await ctx.reply(`⏱ Request timed out (${deps.chatTimeoutMs}ms). Try /abort then resend.`)
