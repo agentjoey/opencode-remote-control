@@ -4,3 +4,5 @@ dist/
 *.log
 .DS_Store
 .vitest-cache/
+# opencode workspace config (local model selection)
+config.json
