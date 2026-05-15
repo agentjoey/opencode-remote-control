@@ -61,6 +61,7 @@ export function createBot(deps: BotDeps): Telegraf {
   const handleChat = createChatHandler({
     tuiBridge,
     eventStream: deps.eventStream,
+    client: deps.client,
     editThrottleMs: deps.config.editThrottleMs,
     chatTimeoutMs: deps.config.chatTimeoutMs,
     getLastSessionId: () => lastSessionId,
