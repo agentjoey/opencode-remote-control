@@ -8,9 +8,8 @@ const log = createLogger('commands')
 
 /** Shorten a full file path to a project-relative or short form. */
 function shortPath(p: string): string {
-  // Try to extract project-relative path
-  const idx = p.indexOf('/opencode-remote-control/')
-  if (idx !== -1) return p.slice(idx + '/opencode-remote-control/'.length)
+  const cwd = process.cwd()
+  if (p.startsWith(cwd + '/')) return p.slice(cwd.length + 1)
   if (p.startsWith('/')) {
     const parts = p.split('/')
     if (parts.length > 3) return '…/' + parts.slice(-3).join('/')
@@ -35,7 +34,7 @@ export function registerCommands(deps: CommandsDeps): void {
     const lines = [
       `<b>👋 Hi ${username}!</b>`,
       '',
-      'opencode remote control ready.',
+      `opencode ${healthy ? '🟢 ready' : '🔴 unreachable'}.`,
       'Send any text to relay to the TUI.',
       '',
       '<b>Commands:</b>',
