@@ -25,7 +25,7 @@ describe('loadConfig', () => {
     expect(cfg.allowedUserId).toBe(12345)
     expect(cfg.opencodeBaseUrl).toBe('http://localhost:4096')
     expect(cfg.editThrottleMs).toBe(1000)
-    expect(cfg.chatTimeoutMs).toBe(300000)
+    expect(cfg.chatTimeoutMs).toBe(600000)
   })
 
   it('throws when TELEGRAM_BOT_TOKEN missing', () => {
