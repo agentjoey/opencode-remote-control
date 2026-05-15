@@ -8,9 +8,6 @@ const schema = z.object({
   CHAT_TIMEOUT_MS: z.string().regex(/^\d+$/).default('600000').transform(Number),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   STREAM_OUTPUT: z.string().optional().default('true').transform((v) => v === 'true'),
-  FAVOURITE_MODELS: z.string().optional().default('').transform((v) =>
-    v ? v.split(',').map((s) => s.trim()).filter(Boolean) : []
-  ),
 })
 
 export interface Config {
@@ -21,7 +18,6 @@ export interface Config {
   chatTimeoutMs: number
   logLevel: 'debug' | 'info' | 'warn' | 'error'
   streamOutput: boolean
-  favouriteModels: string[]
 }
 
 export function loadConfig(): Config {
@@ -34,6 +30,5 @@ export function loadConfig(): Config {
     chatTimeoutMs: parsed.CHAT_TIMEOUT_MS,
     logLevel: parsed.LOG_LEVEL,
     streamOutput: parsed.STREAM_OUTPUT,
-    favouriteModels: parsed.FAVOURITE_MODELS,
   }
 }
