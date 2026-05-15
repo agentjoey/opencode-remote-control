@@ -213,4 +213,27 @@ describe('TuiBridge.submit — error cases', () => {
     const b = new TuiBridge('http://localhost:4096', client)
     await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'no_session' })
   })
+
+  it('throws unreachable when prompt_async fallback network error occurs', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    const fetchMock = vi.fn(async (url: string) => {
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: false, status: 503 } as Response
+      if (/\/prompt_async$/.test(url)) throw new TypeError('fetch failed')
+      throw new Error(`unexpected fetch: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'unreachable' })
+  })
+
+  it('throws unreachable when getStatus network error occurs', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    const fetchMock = vi.fn(async () => { throw new TypeError('fetch failed') })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'unreachable' })
+  })
 })

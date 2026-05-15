@@ -65,6 +65,7 @@ export function createBot(deps: BotDeps): Telegraf {
 
   // Chat handler
   const tuiBridge = new TuiBridge(deps.config.opencodeBaseUrl, deps.client)
+  deps.eventStream.setStatusChecker(() => tuiBridge.getStatus())
   const handleChat = createChatHandler({
     tuiBridge,
     eventStream: deps.eventStream,
@@ -77,24 +78,26 @@ export function createBot(deps: BotDeps): Telegraf {
     isUserAborted: () => userAbortedGeneration,
   })
 
-  bot.on('text', async (ctx: Context) => {
+  bot.on('text', (ctx: Context) => {
     const message = ctx.message
     if (!message || !('text' in message)) return
     if (message.text.startsWith('/')) return
 
     if (isGenerating) {
-      await ctx.reply('⏳ Session is already generating. Wait for it or /abort.')
+      void ctx.reply('⏳ Session is already generating. Wait for it or /abort.')
       return
     }
 
     isGenerating = true
     userAbortedGeneration = false
-    try {
-      await handleChat(ctx, message.text)
-    } finally {
+
+    // Fire-and-forget: returning the Promise would make Telegraf wait up to
+    // handlerTimeout before polling again, so /abort would never be received.
+    // handleChat() has a comprehensive try/catch and never rejects.
+    void handleChat(ctx, message.text).finally(() => {
       isGenerating = false
       currentAbortController = undefined
-    }
+    })
   })
 
   // Approval handler
