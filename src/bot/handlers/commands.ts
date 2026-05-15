@@ -10,6 +10,7 @@ interface CommandsDeps {
   client: OpencodeClient
   baseUrl: string
   getLastSessionId: () => string | undefined
+  abortGeneration?: () => void
 }
 
 export function registerCommands(deps: CommandsDeps): void {
@@ -95,6 +96,8 @@ export function registerCommands(deps: CommandsDeps): void {
       await ctx.reply('No session to abort.')
       return
     }
+    // Signal active chat handler to stop immediately
+    deps.abortGeneration?.()
     try {
       const res = await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)

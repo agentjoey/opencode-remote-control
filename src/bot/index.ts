@@ -23,6 +23,9 @@ export function createBot(deps: BotDeps): Telegraf {
   })
 
   let lastSessionId: string | undefined
+  let isGenerating = false
+  let currentAbortController: AbortController | undefined
+  let userAbortedGeneration = false
 
   // Auto-track most recently active session from SSE events so the bot
   // naturally follows whatever session the TUI is using.
@@ -54,6 +57,10 @@ export function createBot(deps: BotDeps): Telegraf {
     client: deps.client,
     baseUrl: deps.config.opencodeBaseUrl,
     getLastSessionId: () => lastSessionId,
+    abortGeneration: () => {
+      userAbortedGeneration = true
+      currentAbortController?.abort()
+    },
   })
 
   // Chat handler
@@ -66,13 +73,28 @@ export function createBot(deps: BotDeps): Telegraf {
     chatTimeoutMs: deps.config.chatTimeoutMs,
     getLastSessionId: () => lastSessionId,
     setLastSessionId: (id) => { lastSessionId = id },
+    onAbortControllerCreated: (ac) => { currentAbortController = ac },
+    isUserAborted: () => userAbortedGeneration,
   })
 
   bot.on('text', async (ctx: Context) => {
     const message = ctx.message
     if (!message || !('text' in message)) return
     if (message.text.startsWith('/')) return
-    await handleChat(ctx, message.text)
+
+    if (isGenerating) {
+      await ctx.reply('⏳ Session is already generating. Wait for it or /abort.')
+      return
+    }
+
+    isGenerating = true
+    userAbortedGeneration = false
+    try {
+      await handleChat(ctx, message.text)
+    } finally {
+      isGenerating = false
+      currentAbortController = undefined
+    }
   })
 
   // Approval handler
