@@ -11,10 +11,18 @@ export class EventStream {
   private stopped = false
   private consecutiveFailures = 0
   private running = false
+  private activeListeners = new Set<string>()
+  private statusChecker?: () => Promise<Record<string, { type: string }>>
+  private reconnectMs: number
 
-  constructor() {
+  constructor(reconnectMs = RECONNECT_MS) {
+    this.reconnectMs = reconnectMs
     // Bot will subscribe many session iterators; raise the cap.
     this.emitter.setMaxListeners(50)
+  }
+
+  setStatusChecker(fn: () => Promise<Record<string, { type: string }>>): void {
+    this.statusChecker = fn
   }
 
   private extractSessionID(event: any): string | undefined {
@@ -36,6 +44,21 @@ export class EventStream {
           const { stream } = await client.event.subscribe()
           log.info('SSE connected')
           this.consecutiveFailures = 0
+
+          // After every (re)connect, check if any active session generators are
+          // waiting for an idle event that was fired while the SSE was down.
+          if (this.statusChecker && this.activeListeners.size > 0) {
+            try {
+              const status = await this.statusChecker()
+              for (const sid of this.activeListeners) {
+                if (status[sid]?.type !== 'busy') {
+                  log.info(`session ${sid} already idle after SSE reconnect, emitting synthetic idle`)
+                  this.emitter.emit(sid, { type: 'session.idle', properties: { sessionID: sid } })
+                }
+              }
+            } catch {}
+          }
+
           for await (const event of stream) {
             if (this.stopped) break
             const sid = this.extractSessionID(event)
@@ -53,7 +76,7 @@ export class EventStream {
           log.error(`SSE failed ${MAX_CONSECUTIVE_FAILURES} times in a row, exiting`)
           process.exit(1)
         }
-        await new Promise((r) => setTimeout(r, RECONNECT_MS))
+        await new Promise((r) => setTimeout(r, this.reconnectMs))
       }
 
       this.running = false
@@ -61,6 +84,7 @@ export class EventStream {
   }
 
   async *session(sessionId: string, signal: AbortSignal): AsyncGenerator<unknown> {
+    this.activeListeners.add(sessionId)
     const queue: unknown[] = []
     let wake: (() => void) | null = null
 
@@ -85,6 +109,7 @@ export class EventStream {
         await new Promise<void>((r) => { wake = r })
       }
     } finally {
+      this.activeListeners.delete(sessionId)
       this.emitter.off(sessionId, handler)
       signal.removeEventListener('abort', onAbort)
     }
