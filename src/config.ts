@@ -5,7 +5,7 @@ const schema = z.object({
   ALLOWED_USER_ID: z.string().regex(/^\d+$/, 'ALLOWED_USER_ID must be a numeric Telegram user ID').transform(Number),
   OPENCODE_BASE_URL: z.string().url().default('http://localhost:4096'),
   EDIT_THROTTLE_MS: z.string().regex(/^\d+$/).default('1000').transform(Number),
-  CHAT_TIMEOUT_MS: z.string().regex(/^\d+$/).default('300000').transform(Number),
+  CHAT_TIMEOUT_MS: z.string().regex(/^\d+$/).default('600000').transform(Number),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 })
 
