@@ -24,6 +24,19 @@ export function createBot(deps: BotDeps): Telegraf {
 
   let lastSessionId: string | undefined
 
+  // Auto-track most recently active session from SSE events so the bot
+  // naturally follows whatever session the TUI is using.
+  deps.eventStream.onAny((rawEvent) => {
+    const e = rawEvent as { properties?: any }
+    const p = e?.properties
+    const sid =
+      (typeof p?.sessionID === 'string' && p.sessionID) ||
+      (typeof p?.part?.sessionID === 'string' && p.part.sessionID) ||
+      (typeof p?.info?.sessionID === 'string' && p.info.sessionID) ||
+      undefined
+    if (sid) lastSessionId = sid
+  })
+
   // Whitelist middleware
   bot.use(async (ctx, next) => {
     const fromId = ctx.from?.id
@@ -44,12 +57,13 @@ export function createBot(deps: BotDeps): Telegraf {
   })
 
   // Chat handler
-  const tuiBridge = new TuiBridge(deps.config.opencodeBaseUrl)
+  const tuiBridge = new TuiBridge(deps.config.opencodeBaseUrl, deps.client)
   const handleChat = createChatHandler({
     tuiBridge,
     eventStream: deps.eventStream,
     editThrottleMs: deps.config.editThrottleMs,
     chatTimeoutMs: deps.config.chatTimeoutMs,
+    getLastSessionId: () => lastSessionId,
     setLastSessionId: (id) => { lastSessionId = id },
   })
 

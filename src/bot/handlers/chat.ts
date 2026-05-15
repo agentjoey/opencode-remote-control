@@ -12,6 +12,7 @@ interface ChatDeps {
   eventStream: EventStream
   editThrottleMs: number
   chatTimeoutMs: number
+  getLastSessionId: () => string | undefined
   setLastSessionId: (id: string) => void
 }
 
@@ -34,7 +35,7 @@ export function createChatHandler(deps: ChatDeps) {
     let fullText = ''
 
     try {
-      sessionId = await deps.tuiBridge.submit(text)
+      sessionId = await deps.tuiBridge.submit(text, deps.getLastSessionId())
       deps.setLastSessionId(sessionId)
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
@@ -68,10 +69,10 @@ export function createChatHandler(deps: ChatDeps) {
       const errAny = err as Error
       if (errAny instanceof TuiSubmitError) {
         const msg =
-          errAny.reason === 'tui_not_running'
-            ? '❌ TUI not running. Please start opencode TUI on your Mac.'
-            : errAny.reason === 'tui_busy'
-            ? '⏳ TUI is busy. Wait for the current response to finish or /abort it.'
+          errAny.reason === 'no_session'
+            ? '❌ No opencode session available. Open the TUI on your Mac first.'
+            : errAny.reason === 'session_busy'
+            ? '⏳ Session is already generating. Wait for it or /abort.'
             : `❌ ${errAny.message}`
         try { await ctx.deleteMessage(statusMsg.message_id) } catch {}
         await ctx.reply(msg)

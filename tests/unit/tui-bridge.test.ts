@@ -1,101 +1,118 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TuiBridge } from '../../src/opencode/tui-bridge'
 
+function fakeClient(sessions: Array<{ id: string; time?: { created?: number } }>) {
+  return {
+    session: {
+      list: async () => ({ data: sessions }),
+    },
+  } as any
+}
+
+describe('TuiBridge.pickSession', () => {
+  it('returns the newest session by time.created', async () => {
+    const client = fakeClient([
+      { id: 'a', time: { created: 100 } },
+      { id: 'b', time: { created: 300 } },
+      { id: 'c', time: { created: 200 } },
+    ])
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.pickSession()).toBe('b')
+  })
+
+  it('uses override when provided', async () => {
+    const b = new TuiBridge('http://localhost:4096', fakeClient([]))
+    expect(await b.pickSession('forced-id')).toBe('forced-id')
+  })
+
+  it('throws no_session when list is empty', async () => {
+    const b = new TuiBridge('http://localhost:4096', fakeClient([]))
+    await expect(b.pickSession()).rejects.toMatchObject({ reason: 'no_session' })
+  })
+
+  it('handles missing time.created as 0', async () => {
+    const client = fakeClient([
+      { id: 'a', time: { created: 100 } },
+      { id: 'b' }, // no time
+    ])
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.pickSession()).toBe('a')
+  })
+})
+
 describe('TuiBridge.submit', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  function mockFetch(responses: Array<{ url: RegExp; body: any }>) {
-    return vi.fn(async (url: string) => {
-      const match = responses.shift()
-      if (!match || !match.url.test(url)) {
-        throw new Error(`Unexpected fetch to ${url}; remaining=${JSON.stringify(responses)}`)
+  it('submits to the picked session and returns its id (HTTP 204)', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    const fetchMock = vi.fn(async (url: string) => {
+      if (/\/session\/status$/.test(url)) {
+        return { ok: true, json: async () => ({}) } as Response
       }
-      return { ok: true, json: async () => match.body } as Response
+      if (/\/session\/ses_target\/prompt_async$/.test(url)) {
+        return { ok: true, status: 204 } as Response
+      }
+      throw new Error(`unexpected fetch: ${url}`)
     })
-  }
-
-  it('returns sessionID of newly busy session', async () => {
-    const fetchMock = mockFetch([
-      { url: /\/session\/status$/, body: {} }, // before: empty
-      { url: /\/tui\/append-prompt$/, body: true },
-      { url: /\/tui\/submit-prompt$/, body: true },
-      { url: /\/session\/status$/, body: { ses_new: { type: 'busy' } } }, // after: new busy
-    ])
     vi.stubGlobal('fetch', fetchMock)
 
-    const bridge = new TuiBridge('http://localhost:4096')
-    const sid = await bridge.submit('hello', { deadlineMs: 1000, intervalMs: 10 })
-    expect(sid).toBe('ses_new')
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello')).toBe('ses_target')
   })
 
-  it('skips sessions that were already busy before submit', async () => {
-    const fetchMock = mockFetch([
-      { url: /\/session\/status$/, body: { ses_old: { type: 'busy' } } }, // before
-      { url: /\/tui\/append-prompt$/, body: true },
-      { url: /\/tui\/submit-prompt$/, body: true },
-      { url: /\/session\/status$/, body: { ses_old: { type: 'busy' }, ses_new: { type: 'busy' } } },
-    ])
-    vi.stubGlobal('fetch', fetchMock)
-
-    const bridge = new TuiBridge('http://localhost:4096')
-    const sid = await bridge.submit('hello', { deadlineMs: 1000, intervalMs: 10 })
-    expect(sid).toBe('ses_new')
-  })
-
-  it('throws TuiBusyError when before-set is non-empty and no new session appears', async () => {
+  it('uses sessionIdOverride when provided', async () => {
+    const client = fakeClient([{ id: 'newest', time: { created: 200 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({ ses_old: { type: 'busy' } }) } as Response
-      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
-      if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
-      throw new Error('unexpected')
+      if (/\/session\/status$/.test(url)) {
+        return { ok: true, json: async () => ({}) } as Response
+      }
+      if (/\/session\/forced\/prompt_async$/.test(url)) {
+        return { ok: true, status: 204 } as Response
+      }
+      throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const bridge = new TuiBridge('http://localhost:4096')
-    await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toMatchObject({
-      reason: 'tui_busy',
-    })
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello', 'forced')).toBe('forced')
   })
 
-  it('throws TuiNotRunningError when before-set is empty and no new session appears', async () => {
+  it('throws session_busy when target session is currently busy', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
-      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
-      if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
-      throw new Error('unexpected')
+      if (/\/session\/status$/.test(url)) {
+        return { ok: true, json: async () => ({ ses_target: { type: 'busy' } }) } as Response
+      }
+      throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const bridge = new TuiBridge('http://localhost:4096')
-    await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toMatchObject({
-      reason: 'tui_not_running',
-    })
+    const b = new TuiBridge('http://localhost:4096', client)
+    await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'session_busy' })
   })
 
-  it('throws when /tui/submit-prompt does not return true', async () => {
+  it('throws submit_rejected on HTTP error', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
-      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
-      if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => false } as Response
-      throw new Error('unexpected')
+      if (/\/session\/status$/.test(url)) {
+        return { ok: true, json: async () => ({}) } as Response
+      }
+      if (/\/prompt_async$/.test(url)) {
+        return { ok: false, status: 500 } as Response
+      }
+      throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const bridge = new TuiBridge('http://localhost:4096')
-    await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toThrow(/rejected/)
+    const b = new TuiBridge('http://localhost:4096', client)
+    await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'submit_rejected' })
   })
 
-  it('throws when /tui/append-prompt does not return true', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
-      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => false } as Response
-      throw new Error('unexpected')
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    const bridge = new TuiBridge('http://localhost:4096')
-    await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toThrow(/append-prompt/)
+  it('propagates no_session when no override and list is empty', async () => {
+    const client = fakeClient([])
+    const b = new TuiBridge('http://localhost:4096', client)
+    await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'no_session' })
   })
 })
