@@ -10,6 +10,7 @@ describe('loadConfig', () => {
     delete process.env.OPENCODE_BASE_URL
     delete process.env.EDIT_THROTTLE_MS
     delete process.env.CHAT_TIMEOUT_MS
+    delete process.env.STREAM_OUTPUT
   })
 
   afterEach(() => {
@@ -26,6 +27,7 @@ describe('loadConfig', () => {
     expect(cfg.opencodeBaseUrl).toBe('http://localhost:4096')
     expect(cfg.editThrottleMs).toBe(1000)
     expect(cfg.chatTimeoutMs).toBe(600000)
+    expect(cfg.streamOutput).toBe(true)
   })
 
   it('throws when TELEGRAM_BOT_TOKEN missing', () => {
@@ -50,5 +52,15 @@ describe('loadConfig', () => {
     expect(cfg.opencodeBaseUrl).toBe('http://example:9000')
     expect(cfg.editThrottleMs).toBe(500)
     expect(cfg.chatTimeoutMs).toBe(30000)
+    expect(cfg.streamOutput).toBe(true)
+  })
+
+  it('parses STREAM_OUTPUT=false', () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'tok'
+    process.env.ALLOWED_USER_ID = '1'
+    process.env.STREAM_OUTPUT = 'false'
+
+    const cfg = loadConfig()
+    expect(cfg.streamOutput).toBe(false)
   })
 })
