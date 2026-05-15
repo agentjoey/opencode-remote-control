@@ -56,13 +56,17 @@ export class TuiBridge {
   }
 
   /**
-   * Submit a text prompt to a session via `POST /session/{id}/prompt_async`.
-   * Returns the sessionID used. If `sessionIdOverride` is null/undefined,
-   * picks the newest available session.
-   * Throws TuiSubmitError with reason:
-   *   - 'no_session'      — no opencode sessions exist
-   *   - 'session_busy'    — target session is already generating
-   *   - 'submit_rejected' — HTTP error from opencode
+   * Submit a text prompt.
+   *
+   * Primary path: TUI inject (select-session → clear → append → submit).
+   * This routes through the opencode TUI so the conversation is visible in
+   * the terminal window, exactly as if the user typed it themselves.
+   *
+   * Fallback: POST /session/{id}/prompt_async when TUI is not available
+   * (e.g. TUI is not running). The bot still works, but the conversation
+   * won't appear in the TUI display.
+   *
+   * Returns the sessionID used.
    */
   async submit(text: string, sessionIdOverride?: string): Promise<string> {
     const sessionId = await this.pickSession(sessionIdOverride)
@@ -75,20 +79,84 @@ export class TuiBridge {
       )
     }
 
-    log.info(`submitting to ${sessionId}`)
+    const tuiOk = await this.tryTuiInject(sessionId, text)
+    if (tuiOk) return sessionId
+
+    // TUI not running — fall back to headless API submit
+    log.info(`prompt_async fallback to ${sessionId}`)
+    return this.submitViaPromptAsync(text, sessionId)
+  }
+
+  /**
+   * Inject a prompt through the TUI interface:
+   *   1. select-session — navigate TUI to the target session
+   *   2. clear-prompt   — discard any partial input in the compose box
+   *   3. append-prompt  — type the message
+   *   4. submit-prompt  — press Enter
+   *
+   * Returns true on success, false if any step fails (caller falls back).
+   */
+  private async tryTuiInject(sessionId: string, text: string): Promise<boolean> {
+    try {
+      // Navigate TUI to the target session so the conversation appears there
+      const selectRes = await fetch(`${this.baseUrl}/tui/select-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionID: sessionId }),
+      })
+      if (!selectRes.ok) {
+        log.warn(`tui/select-session HTTP ${selectRes.status}`)
+        return false
+      }
+
+      // Clear any partial text the user may have been typing
+      await fetch(`${this.baseUrl}/tui/clear-prompt`, { method: 'POST' })
+
+      // Type the message into the TUI compose box
+      const appendRes = await fetch(`${this.baseUrl}/tui/append-prompt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (!appendRes.ok) {
+        log.warn(`tui/append-prompt HTTP ${appendRes.status}`)
+        return false
+      }
+      const appended = (await appendRes.json()) as boolean
+      if (!appended) {
+        log.warn('tui/append-prompt returned false (TUI not ready)')
+        return false
+      }
+
+      // Submit — equivalent to pressing Enter in the TUI
+      const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, { method: 'POST' })
+      if (!submitRes.ok) {
+        log.warn(`tui/submit-prompt HTTP ${submitRes.status}`)
+        // Clean up the appended text so the TUI input box is not left dirty
+        await fetch(`${this.baseUrl}/tui/clear-prompt`, { method: 'POST' }).catch(() => {})
+        return false
+      }
+
+      log.info(`TUI inject → ${sessionId}`)
+      return true
+    } catch (err) {
+      log.warn('TUI inject error', (err as Error).message)
+      return false
+    }
+  }
+
+  private async submitViaPromptAsync(text: string, sessionId: string): Promise<string> {
     const res = await fetch(`${this.baseUrl}/session/${sessionId}/prompt_async`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ parts: [{ type: 'text', text }] }),
     })
-
     if (!res.ok) {
       throw new TuiSubmitError(
         'submit_rejected',
         `POST /session/${sessionId}/prompt_async returned HTTP ${res.status}`,
       )
     }
-
     return sessionId
   }
 }

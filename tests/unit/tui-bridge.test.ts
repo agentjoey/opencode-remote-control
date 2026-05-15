@@ -9,6 +9,28 @@ function fakeClient(sessions: Array<{ id: string; time?: { created?: number } }>
   } as any
 }
 
+/** Build a fetch mock that handles TUI inject endpoints (all succeeding). */
+function tuiSuccessFetch(sessionId: string) {
+  return vi.fn(async (url: string) => {
+    if (/\/session\/status$/.test(url)) {
+      return { ok: true, json: async () => ({}) } as Response
+    }
+    if (/\/tui\/select-session$/.test(url)) {
+      return { ok: true, json: async () => true } as Response
+    }
+    if (/\/tui\/clear-prompt$/.test(url)) {
+      return { ok: true, json: async () => true } as Response
+    }
+    if (/\/tui\/append-prompt$/.test(url)) {
+      return { ok: true, json: async () => true } as Response
+    }
+    if (/\/tui\/submit-prompt$/.test(url)) {
+      return { ok: true, json: async () => true } as Response
+    }
+    throw new Error(`unexpected fetch: ${url}`)
+  })
+}
+
 describe('TuiBridge.pickSession', () => {
   it('returns the newest session by time.created', async () => {
     const client = fakeClient([
@@ -40,46 +62,97 @@ describe('TuiBridge.pickSession', () => {
   })
 })
 
-describe('TuiBridge.submit', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks()
+describe('TuiBridge.submit — TUI inject path', () => {
+  beforeEach(() => vi.restoreAllMocks())
+
+  it('uses TUI inject (select→clear→append→submit) and returns session id', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    const fetchMock = tuiSuccessFetch('ses_target')
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello')).toBe('ses_target')
+
+    const urls = fetchMock.mock.calls.map((c) => c[0] as string)
+    expect(urls).toContain('http://localhost:4096/tui/select-session')
+    expect(urls).toContain('http://localhost:4096/tui/clear-prompt')
+    expect(urls).toContain('http://localhost:4096/tui/append-prompt')
+    expect(urls).toContain('http://localhost:4096/tui/submit-prompt')
+    // prompt_async should NOT be called on TUI inject success
+    expect(urls.some((u) => u.includes('prompt_async'))).toBe(false)
   })
 
-  it('submits to the picked session and returns its id (HTTP 204)', async () => {
+  it('uses sessionIdOverride with TUI inject', async () => {
+    const client = fakeClient([{ id: 'newest', time: { created: 200 } }])
+    const fetchMock = tuiSuccessFetch('forced')
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello', 'forced')).toBe('forced')
+
+    const body = JSON.parse(fetchMock.mock.calls.find((c) => /select-session/.test(c[0] as string))![1]!.body as string)
+    expect(body.sessionID).toBe('forced')
+  })
+
+  it('falls back to prompt_async when select-session returns non-ok', async () => {
     const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) {
-        return { ok: true, json: async () => ({}) } as Response
-      }
-      if (/\/session\/ses_target\/prompt_async$/.test(url)) {
-        return { ok: true, status: 204 } as Response
-      }
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: false, status: 503 } as Response
+      if (/\/prompt_async$/.test(url)) return { ok: true, status: 204 } as Response
       throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
 
     const b = new TuiBridge('http://localhost:4096', client)
     expect(await b.submit('hello')).toBe('ses_target')
+    const urls = fetchMock.mock.calls.map((c) => c[0] as string)
+    expect(urls.some((u) => u.includes('prompt_async'))).toBe(true)
   })
 
-  it('uses sessionIdOverride when provided', async () => {
-    const client = fakeClient([{ id: 'newest', time: { created: 200 } }])
+  it('falls back to prompt_async when append-prompt returns false', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) {
-        return { ok: true, json: async () => ({}) } as Response
-      }
-      if (/\/session\/forced\/prompt_async$/.test(url)) {
-        return { ok: true, status: 204 } as Response
-      }
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/clear-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => false } as Response
+      if (/\/prompt_async$/.test(url)) return { ok: true, status: 204 } as Response
       throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
 
     const b = new TuiBridge('http://localhost:4096', client)
-    expect(await b.submit('hello', 'forced')).toBe('forced')
+    expect(await b.submit('hello')).toBe('ses_target')
+    const urls = fetchMock.mock.calls.map((c) => c[0] as string)
+    expect(urls.some((u) => u.includes('prompt_async'))).toBe(true)
   })
 
-  it('throws session_busy when target session is currently busy', async () => {
+  it('clears prompt and falls back when submit-prompt returns non-ok', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    let clearCalls = 0
+    const fetchMock = vi.fn(async (url: string) => {
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/clear-prompt$/.test(url)) { clearCalls++; return { ok: true, json: async () => true } as Response }
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/submit-prompt$/.test(url)) return { ok: false, status: 503 } as Response
+      if (/\/prompt_async$/.test(url)) return { ok: true, status: 204 } as Response
+      throw new Error(`unexpected fetch: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello')).toBe('ses_target')
+    // clear-prompt called twice: once before append, once as cleanup after submit fail
+    expect(clearCalls).toBe(2)
+  })
+})
+
+describe('TuiBridge.submit — error cases', () => {
+  beforeEach(() => vi.restoreAllMocks())
+
+  it('throws session_busy before any TUI call', async () => {
     const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
       if (/\/session\/status$/.test(url)) {
@@ -93,15 +166,12 @@ describe('TuiBridge.submit', () => {
     await expect(b.submit('hello')).rejects.toMatchObject({ reason: 'session_busy' })
   })
 
-  it('throws submit_rejected on HTTP error', async () => {
+  it('throws submit_rejected when prompt_async fallback also fails', async () => {
     const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
     const fetchMock = vi.fn(async (url: string) => {
-      if (/\/session\/status$/.test(url)) {
-        return { ok: true, json: async () => ({}) } as Response
-      }
-      if (/\/prompt_async$/.test(url)) {
-        return { ok: false, status: 500 } as Response
-      }
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: false, status: 503 } as Response
+      if (/\/prompt_async$/.test(url)) return { ok: false, status: 500 } as Response
       throw new Error(`unexpected fetch: ${url}`)
     })
     vi.stubGlobal('fetch', fetchMock)
