@@ -75,4 +75,50 @@ export function registerCallbacks(deps: CallbacksDeps): void {
     await ctx.answerCbQuery('Aborting…')
     await ctx.editMessageText('🛑 Generation aborted.', { parse_mode: 'HTML' })
   })
+
+  deps.bot.action(/^agent:switch:(.+)$/, async (ctx) => {
+    const agentId = ctx.match[1]
+    try {
+      const res = await fetch(`${deps.baseUrl}/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent: agentId }),
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const session = (await res.json()) as { id: string }
+      deps.setLastSessionId(session.id)
+      await ctx.answerCbQuery(`Switched to ${agentId}`)
+      await ctx.editMessageText(
+        `<b>🤖 Agent switched</b>\n\nNow using: <code>${agentId}</code>\nSession: <code>…${session.id.slice(-8)}</code>`,
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      log.warn('agent switch failed', (err as Error).message)
+      await ctx.answerCbQuery('Switch failed')
+    }
+  })
+
+  deps.bot.action(/^model:switch:(.+):(.+)$/, async (ctx) => {
+    const providerId = ctx.match[1]
+    const modelId = ctx.match[2]
+    const modelFull = `${providerId}/${modelId}`
+    try {
+      const res = await fetch(`${deps.baseUrl}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: modelFull }),
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await ctx.answerCbQuery(`Model set to ${modelId}`)
+      await ctx.editMessageText(
+        `<b>⚙️ Model switched</b>\n\nNow using: <code>${modelFull}</code>`,
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      log.warn('model switch failed', (err as Error).message)
+      await ctx.answerCbQuery('Switch failed')
+    }
+  })
 }
