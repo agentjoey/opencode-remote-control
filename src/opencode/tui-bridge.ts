@@ -42,11 +42,25 @@ export class TuiBridge {
     )
     log.debug(`busy before submit: ${[...before].join(',') || '(none)'}`)
 
-    // 2. POST /tui/submit-prompt
-    const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, {
+    // 2. POST /tui/append-prompt to type text into TUI buffer
+    const appendRes = await fetch(`${this.baseUrl}/tui/append-prompt`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
+    })
+    if (!appendRes.ok) {
+      throw new TuiSubmitError('submit_rejected', `/tui/append-prompt HTTP ${appendRes.status}`)
+    }
+    const appendBody = await appendRes.json()
+    if (appendBody !== true) {
+      throw new TuiSubmitError('submit_rejected', `/tui/append-prompt rejected: returned ${JSON.stringify(appendBody)}, expected true`)
+    }
+
+    // 3. POST /tui/submit-prompt to press Enter (no body)
+    const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
     })
     if (!submitRes.ok) {
       throw new TuiSubmitError('submit_rejected', `/tui/submit-prompt HTTP ${submitRes.status}`)
