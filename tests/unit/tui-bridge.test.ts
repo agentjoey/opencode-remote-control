@@ -19,6 +19,7 @@ describe('TuiBridge.submit', () => {
   it('returns sessionID of newly busy session', async () => {
     const fetchMock = mockFetch([
       { url: /\/session\/status$/, body: {} }, // before: empty
+      { url: /\/tui\/append-prompt$/, body: true },
       { url: /\/tui\/submit-prompt$/, body: true },
       { url: /\/session\/status$/, body: { ses_new: { type: 'busy' } } }, // after: new busy
     ])
@@ -32,6 +33,7 @@ describe('TuiBridge.submit', () => {
   it('skips sessions that were already busy before submit', async () => {
     const fetchMock = mockFetch([
       { url: /\/session\/status$/, body: { ses_old: { type: 'busy' } } }, // before
+      { url: /\/tui\/append-prompt$/, body: true },
       { url: /\/tui\/submit-prompt$/, body: true },
       { url: /\/session\/status$/, body: { ses_old: { type: 'busy' }, ses_new: { type: 'busy' } } },
     ])
@@ -45,6 +47,7 @@ describe('TuiBridge.submit', () => {
   it('throws TuiBusyError when before-set is non-empty and no new session appears', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({ ses_old: { type: 'busy' } }) } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
       if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
       throw new Error('unexpected')
     })
@@ -59,6 +62,7 @@ describe('TuiBridge.submit', () => {
   it('throws TuiNotRunningError when before-set is empty and no new session appears', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
       if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
       throw new Error('unexpected')
     })
@@ -73,6 +77,7 @@ describe('TuiBridge.submit', () => {
   it('throws when /tui/submit-prompt does not return true', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
       if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => false } as Response
       throw new Error('unexpected')
     })
@@ -80,5 +85,17 @@ describe('TuiBridge.submit', () => {
 
     const bridge = new TuiBridge('http://localhost:4096')
     await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toThrow(/rejected/)
+  })
+
+  it('throws when /tui/append-prompt does not return true', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => false } as Response
+      throw new Error('unexpected')
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const bridge = new TuiBridge('http://localhost:4096')
+    await expect(bridge.submit('hello', { deadlineMs: 100, intervalMs: 10 })).rejects.toThrow(/append-prompt/)
   })
 })
