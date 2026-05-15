@@ -6,3 +6,4 @@ dist/
 .vitest-cache/
 # opencode workspace config (local model selection)
 config.json
+.opencode/
