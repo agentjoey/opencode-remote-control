@@ -25,6 +25,7 @@ interface CommandsDeps {
   setLastSessionId: (id: string | undefined) => void
   abortGeneration?: () => void
   isGenerating?: () => boolean
+  favouriteModels?: string[]
 }
 
 export function registerCommands(deps: CommandsDeps): void {
@@ -229,23 +230,24 @@ export function registerCommands(deps: CommandsDeps): void {
       const agentsRes = await fetch(`${deps.baseUrl}/agent`, { signal: AbortSignal.timeout(5000) })
       if (!agentsRes.ok) throw new Error(`HTTP ${agentsRes.status}`)
       const agents = (await agentsRes.json()) as Array<{
-        name: string; description?: string; mode?: string; hidden?: boolean
+        name: string; description?: string; hidden?: boolean
       }>
 
       const visible = agents.filter((a) => !a.hidden)
       if (visible.length === 0) {
-        await ctx.reply('<b>🤖 Agents</b>\n\nNo agents found.', { parse_mode: 'HTML' })
+        await ctx.reply('<b>🤖 Agent</b>\n\nNo agents found.', { parse_mode: 'HTML' })
         return
       }
 
-      const lines = ['<b>🤖 Agents</b>', '']
+      const lines = ['<b>🤖 Agent</b>', '']
       for (const a of visible) {
-        lines.push(`• <b>${a.name}</b>  <i>${a.description ?? ''}</i>`)
+        const desc = a.description ? `  <i>${a.description}</i>` : ''
+        lines.push(`${a.name}${desc}`)
       }
-      lines.push('', 'Tap a button to create a new session with that agent.')
-      const rows = visible.map((a) => [
-        Markup.button.callback(a.name, `agent:switch:${a.name}`),
-      ])
+      const rows: ReturnType<typeof Markup.button.callback>[][] = [
+        visible.map((a) => Markup.button.callback(a.name, `agent:switch:${a.name}`)),
+        [Markup.button.callback('✕ Cancel', 'card:dismiss')],
+      ]
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
@@ -261,61 +263,67 @@ export function registerCommands(deps: CommandsDeps): void {
       const providersRes = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
       if (!providersRes.ok) throw new Error(`HTTP ${providersRes.status}`)
       const data = (await providersRes.json()) as {
-        providers?: Array<{ id: string; name?: string; models?: Record<string, { id: string }> }>
+        providers?: Array<{ id: string; name?: string; models?: Record<string, { id: string; name?: string }> }>
         default?: Record<string, string>
       }
 
       const providers = data.providers ?? []
       const defaults = data.default ?? {}
-      if (providers.length === 0) {
-        await ctx.reply('<b>⚙️ Model</b>\n\nNo providers found.', { parse_mode: 'HTML' })
+      const favourites = deps.favouriteModels ?? []
+
+      // Build the list to display: favourites if configured, else default per provider
+      interface ModelEntry { providerId: string; providerName: string; modelId: string; modelName: string }
+      const entries: ModelEntry[] = []
+
+      if (favourites.length > 0) {
+        for (const fav of favourites) {
+          const slash = fav.indexOf('/')
+          if (slash === -1) continue
+          const pid = fav.slice(0, slash)
+          const mid = fav.slice(slash + 1)
+          const p = providers.find((x) => x.id === pid)
+          if (!p) continue
+          const m = p.models?.[mid]
+          entries.push({ providerId: pid, providerName: p.name ?? pid, modelId: mid, modelName: m?.name ?? mid })
+        }
+      } else {
+        for (const p of providers) {
+          const mid = defaults[p.id]
+          if (!mid) continue
+          const m = p.models?.[mid]
+          entries.push({ providerId: p.id, providerName: p.name ?? p.id, modelId: mid, modelName: m?.name ?? mid })
+        }
+      }
+
+      if (entries.length === 0) {
+        await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
         return
       }
 
-      const MAX_PROVIDERS = 4
-      const MAX_MODELS_PER = 4
+      const currentProvider = Object.keys(defaults)[0]
+      const currentModel = defaults[currentProvider ?? ''] ?? ''
       const lines = ['<b>⚙️ Model</b>', '']
-      const buttons: ReturnType<typeof Markup.button.callback>[] = []
-
-      let providerCount = 0
-      for (const p of providers) {
-        if (providerCount >= MAX_PROVIDERS) break
-        const models = p.models ?? {}
-        const modelIds = Object.keys(models)
-        if (modelIds.length === 0) continue
-
-        lines.push(`<b>${p.name ?? p.id}</b>`)
-        let modelCount = 0
-        for (const mid of modelIds) {
-          if (modelCount >= MAX_MODELS_PER) break
-          const isCurrent = defaults[p.id] === mid
-          const marker = isCurrent ? '●' : '○'
-          const suffix = isCurrent ? '  (current)' : ''
-          lines.push(`  ${marker} ${mid}${suffix}`)
-          buttons.push(Markup.button.callback(
-            `${isCurrent ? '✓' : ''}${mid.slice(0, 20)}`,
-            `model:switch:${p.id}:${mid}`,
-          ))
-          modelCount++
-        }
-        if (modelIds.length > MAX_MODELS_PER) {
-          lines.push(`  … and ${modelIds.length - MAX_MODELS_PER} more`)
-        }
-        lines.push('')
-        providerCount++
-      }
-      if (providers.length > MAX_PROVIDERS) {
-        lines.push(`<i>… and ${providers.length - MAX_PROVIDERS} more providers</i>`)
+      for (const e of entries) {
+        const isCurrent = defaults[e.providerId] === e.modelId
+        const marker = isCurrent ? '●' : '○'
+        lines.push(`${marker}  ${e.modelName}  <i>${e.providerName}</i>${isCurrent ? '  ✓' : ''}`)
       }
 
-      if (buttons.length > 12) buttons.length = 12
-      const rows: Array<ReturnType<typeof Markup.button.callback>[]> = []
-      for (let i = 0; i < buttons.length; i += 3) {
-        rows.push(buttons.slice(i, i + 3))
+      const modelButtons = entries.map((e) =>
+        Markup.button.callback(
+          (defaults[e.providerId] === e.modelId ? '✓ ' : '') + e.modelName.slice(0, 18),
+          `model:switch:${e.providerId}:${e.modelId}`,
+        )
+      )
+      const rows: ReturnType<typeof Markup.button.callback>[][] = []
+      for (let i = 0; i < modelButtons.length; i += 2) {
+        rows.push(modelButtons.slice(i, i + 2))
       }
+      rows.push([Markup.button.callback('✕ Cancel', 'card:dismiss')])
+
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
-        ...(rows.length > 0 ? Markup.inlineKeyboard(rows) : undefined),
+        ...Markup.inlineKeyboard(rows),
       })
     } catch (err) {
       log.error('failed to list models', err as Error)
