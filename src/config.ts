@@ -7,6 +7,7 @@ const schema = z.object({
   EDIT_THROTTLE_MS: z.string().regex(/^\d+$/).default('1000').transform(Number),
   CHAT_TIMEOUT_MS: z.string().regex(/^\d+$/).default('600000').transform(Number),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  STREAM_OUTPUT: z.string().optional().default('true').transform((v) => v === 'true'),
 })
 
 export interface Config {
@@ -16,6 +17,7 @@ export interface Config {
   editThrottleMs: number
   chatTimeoutMs: number
   logLevel: 'debug' | 'info' | 'warn' | 'error'
+  streamOutput: boolean
 }
 
 export function loadConfig(): Config {
@@ -27,5 +29,6 @@ export function loadConfig(): Config {
     editThrottleMs: parsed.EDIT_THROTTLE_MS,
     chatTimeoutMs: parsed.CHAT_TIMEOUT_MS,
     logLevel: parsed.LOG_LEVEL,
+    streamOutput: parsed.STREAM_OUTPUT,
   }
 }
