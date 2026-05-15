@@ -254,21 +254,31 @@ export function registerCommands(deps: CommandsDeps): void {
         await ctx.reply('<b>🤖 Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.', { parse_mode: 'HTML' })
         return
       }
+      // Read current session to highlight its agent
+      let currentAgent: string | undefined
+      const sid = deps.getLastSessionId()
+      if (sid) {
+        try {
+          const sRes = await fetch(`${deps.baseUrl}/session/${sid}`, { signal: AbortSignal.timeout(5000) })
+          if (sRes.ok) {
+            const s = (await sRes.json()) as { agent?: string }
+            currentAgent = s.agent
+          }
+        } catch {}
+      }
       const lines = ['<b>🤖 Agent</b>', '']
       for (const a of agents) {
+        const marker = a.name === currentAgent ? '●' : '○'
         const desc = a.description ? `  <i>${a.description}</i>` : ''
-        lines.push(`${a.name}  <code>${a.model}</code>${desc}`)
+        lines.push(`${marker}  ${a.name}  <code>${a.model}</code>${desc}`)
       }
-      const rows: ReturnType<typeof Markup.button.callback>[][] = []
-      for (let i = 0; i < agents.length; i += 2) {
-        rows.push(agents.slice(i, i + 2).map((a) =>
-          Markup.button.callback(a.name, `agent:switch:${a.name}`),
-        ))
-      }
-      rows.push([Markup.button.callback('✕ Cancel', 'card:dismiss')])
+      lines.push('', '<i>Opencode TUI only supports cycling — tap to advance.</i>')
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
-        ...Markup.inlineKeyboard(rows),
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('→ Next agent', 'agent:cycle')],
+          [Markup.button.callback('✕ Cancel', 'card:dismiss')],
+        ]),
       })
     } catch (err) {
       log.error('failed to list agents', err as Error)
@@ -279,29 +289,23 @@ export function registerCommands(deps: CommandsDeps): void {
   deps.bot.command('model', async (ctx: Context) => {
     try {
       const agents = await fetchUserAgents(deps.baseUrl)
-      if (agents.length === 0) {
-        await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
-        return
-      }
       const lines = ['<b>⚙️ Model</b>', '']
-      for (const a of agents) {
-        const slash = a.model.indexOf('/')
-        const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
-        lines.push(`${modelId}  <i>via ${a.name}</i>`)
+      if (agents.length === 0) {
+        lines.push('<i>No agent-pinned models configured.</i>')
+      } else {
+        for (const a of agents) {
+          const slash = a.model.indexOf('/')
+          const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
+          lines.push(`${modelId}  <i>via ${a.name}</i>`)
+        }
       }
-      const rows: ReturnType<typeof Markup.button.callback>[][] = []
-      const buttons = agents.map((a) => {
-        const slash = a.model.indexOf('/')
-        const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
-        return Markup.button.callback(modelId.slice(0, 20), `agent:switch:${a.name}`)
-      })
-      for (let i = 0; i < buttons.length; i += 2) {
-        rows.push(buttons.slice(i, i + 2))
-      }
-      rows.push([Markup.button.callback('✕ Cancel', 'card:dismiss')])
+      lines.push('', '<i>Opencode TUI has no scripted model switch — tap to open the picker on your Mac.</i>')
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
-        ...Markup.inlineKeyboard(rows),
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('🖥 Open model picker in TUI', 'model:picker')],
+          [Markup.button.callback('✕ Cancel', 'card:dismiss')],
+        ]),
       })
     } catch (err) {
       log.error('failed to list models', err as Error)
