@@ -76,56 +76,65 @@ export function registerCallbacks(deps: CallbacksDeps): void {
     await ctx.editMessageText('🛑 Generation aborted.', { parse_mode: 'HTML' })
   })
 
-  deps.bot.action(/^agent:switch:(.+)$/, async (ctx) => {
-    const agentName = ctx.match[1]
+  deps.bot.action('agent:cycle', async (ctx) => {
     try {
-      // 1) find the most recent existing session with this agent
-      const listRes = await fetch(`${deps.baseUrl}/session`, { signal: AbortSignal.timeout(5000) })
-      if (!listRes.ok) throw new Error(`/session HTTP ${listRes.status}`)
-      const sessions = (await listRes.json()) as Array<{
-        id: string; agent?: string; time?: { created?: number }
-      }>
-      const matching = sessions
-        .filter((s) => s.agent === agentName)
-        .sort((a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0))
-
-      let sessionId: string
-      if (matching.length > 0) {
-        sessionId = matching[0].id
-      } else {
-        // 2) no matching session — create one
-        const createRes = await fetch(`${deps.baseUrl}/session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ agent: agentName }),
-          signal: AbortSignal.timeout(5000),
-        })
-        if (!createRes.ok) throw new Error(`POST /session HTTP ${createRes.status}`)
-        const created = (await createRes.json()) as { id: string }
-        sessionId = created.id
-      }
-
-      // 3) make the TUI navigate to that session
-      const tuiRes = await fetch(`${deps.baseUrl}/tui/select-session`, {
+      const res = await fetch(`${deps.baseUrl}/tui/execute-command`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionID: sessionId }),
+        body: JSON.stringify({ command: 'agent.cycle' }),
         signal: AbortSignal.timeout(5000),
       })
-      if (!tuiRes.ok) log.warn(`/tui/select-session HTTP ${tuiRes.status} (TUI may not be running)`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-      deps.setLastSessionId(sessionId)
-      await ctx.answerCbQuery(`→ ${agentName}`)
+      // Re-read the current session to surface which agent we landed on
+      let landed: string | undefined
+      const sid = deps.getLastSessionId()
+      if (sid) {
+        try {
+          const sRes = await fetch(`${deps.baseUrl}/session/${sid}`, { signal: AbortSignal.timeout(5000) })
+          if (sRes.ok) {
+            const s = (await sRes.json()) as { agent?: string }
+            landed = s.agent
+          }
+        } catch {}
+      }
+      await ctx.answerCbQuery(landed ? `→ ${landed}` : 'Cycled')
       await ctx.editMessageText(
-        `<b>🤖 Agent</b>  ✓ ${agentName}\n<code>…${sessionId.slice(-8)}</code>`,
+        landed
+          ? `<b>🤖 Agent</b>  ✓ ${landed}`
+          : '<b>🤖 Agent</b>  ✓ Cycled (check TUI for current)',
         { parse_mode: 'HTML' },
       )
     } catch (err) {
-      log.warn('agent switch failed', (err as Error).message)
+      log.warn('agent cycle failed', (err as Error).message)
       await ctx.answerCbQuery('Failed')
       try {
         await ctx.editMessageText(
-          `<b>🤖 Agent</b>  ❌ Switch failed\n<i>${(err as Error).message}</i>`,
+          `<b>🤖 Agent</b>  ❌ ${(err as Error).message}\n<i>Is the TUI running?</i>`,
+          { parse_mode: 'HTML' },
+        )
+      } catch {}
+    }
+  })
+
+  deps.bot.action('model:picker', async (ctx) => {
+    try {
+      const res = await fetch(`${deps.baseUrl}/tui/open-models`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await ctx.answerCbQuery('Opened picker')
+      await ctx.editMessageText(
+        '<b>⚙️ Model</b>  🖥 Model picker open in TUI\n<i>Pick a model on your Mac.</i>',
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      log.warn('open-models failed', (err as Error).message)
+      await ctx.answerCbQuery('Failed')
+      try {
+        await ctx.editMessageText(
+          `<b>⚙️ Model</b>  ❌ ${(err as Error).message}\n<i>Is the TUI running?</i>`,
           { parse_mode: 'HTML' },
         )
       } catch {}
