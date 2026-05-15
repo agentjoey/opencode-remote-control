@@ -11,9 +11,14 @@ function fakeClient(sessions: Array<{ id: string; time?: { created?: number } }>
 
 /** Build a fetch mock that handles TUI inject endpoints (all succeeding). */
 function tuiSuccessFetch(sessionId: string) {
+  let statusCalls = 0
   return vi.fn(async (url: string) => {
     if (/\/session\/status$/.test(url)) {
-      return { ok: true, json: async () => ({}) } as Response
+      statusCalls++
+      // First call (pre-submit busy check): not busy
+      // Subsequent calls (post-submit waitForBusy poll): busy
+      const body = statusCalls === 1 ? {} : { [sessionId]: { type: 'busy' } }
+      return { ok: true, json: async () => body } as Response
     }
     if (/\/tui\/select-session$/.test(url)) {
       return { ok: true, json: async () => true } as Response
@@ -123,6 +128,29 @@ describe('TuiBridge.submit — TUI inject path', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const b = new TuiBridge('http://localhost:4096', client)
+    expect(await b.submit('hello')).toBe('ses_target')
+    const urls = fetchMock.mock.calls.map((c) => c[0] as string)
+    expect(urls.some((u) => u.includes('prompt_async'))).toBe(true)
+  })
+
+  it('falls back to prompt_async when no TUI is attached (session never goes busy)', async () => {
+    const client = fakeClient([{ id: 'ses_target', time: { created: 100 } }])
+    const fetchMock = vi.fn(async (url: string) => {
+      // session/status always returns empty — no TUI consuming the queue
+      if (/\/session\/status$/.test(url)) return { ok: true, json: async () => ({}) } as Response
+      if (/\/tui\/select-session$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/clear-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/append-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/tui\/submit-prompt$/.test(url)) return { ok: true, json: async () => true } as Response
+      if (/\/prompt_async$/.test(url)) return { ok: true, status: 204 } as Response
+      throw new Error(`unexpected fetch: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const b = new TuiBridge('http://localhost:4096', client)
+    // Override the wait window so the test stays fast
+    ;(b as unknown as { waitForBusy: (id: string, ms: number) => Promise<boolean> }).waitForBusy =
+      async () => false
     expect(await b.submit('hello')).toBe('ses_target')
     const urls = fetchMock.mock.calls.map((c) => c[0] as string)
     expect(urls.some((u) => u.includes('prompt_async'))).toBe(true)
