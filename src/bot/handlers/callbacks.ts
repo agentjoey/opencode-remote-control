@@ -77,47 +77,58 @@ export function registerCallbacks(deps: CallbacksDeps): void {
   })
 
   deps.bot.action(/^agent:switch:(.+)$/, async (ctx) => {
-    const agentId = ctx.match[1]
+    const agentName = ctx.match[1]
     try {
-      const res = await fetch(`${deps.baseUrl}/session`, {
+      // 1) find the most recent existing session with this agent
+      const listRes = await fetch(`${deps.baseUrl}/session`, { signal: AbortSignal.timeout(5000) })
+      if (!listRes.ok) throw new Error(`/session HTTP ${listRes.status}`)
+      const sessions = (await listRes.json()) as Array<{
+        id: string; agent?: string; time?: { created?: number }
+      }>
+      const matching = sessions
+        .filter((s) => s.agent === agentName)
+        .sort((a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0))
+
+      let sessionId: string
+      if (matching.length > 0) {
+        sessionId = matching[0].id
+      } else {
+        // 2) no matching session — create one
+        const createRes = await fetch(`${deps.baseUrl}/session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent: agentName }),
+          signal: AbortSignal.timeout(5000),
+        })
+        if (!createRes.ok) throw new Error(`POST /session HTTP ${createRes.status}`)
+        const created = (await createRes.json()) as { id: string }
+        sessionId = created.id
+      }
+
+      // 3) make the TUI navigate to that session
+      const tuiRes = await fetch(`${deps.baseUrl}/tui/select-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent: agentId }),
+        body: JSON.stringify({ sessionID: sessionId }),
         signal: AbortSignal.timeout(5000),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const session = (await res.json()) as { id: string }
-      deps.setLastSessionId(session.id)
-      await ctx.answerCbQuery(`→ ${agentId}`)
+      if (!tuiRes.ok) log.warn(`/tui/select-session HTTP ${tuiRes.status} (TUI may not be running)`)
+
+      deps.setLastSessionId(sessionId)
+      await ctx.answerCbQuery(`→ ${agentName}`)
       await ctx.editMessageText(
-        `<b>🤖 Agent</b>  ✓ ${agentId}\n\n<code>…${session.id.slice(-8)}</code>`,
+        `<b>🤖 Agent</b>  ✓ ${agentName}\n<code>…${sessionId.slice(-8)}</code>`,
         { parse_mode: 'HTML' },
       )
     } catch (err) {
       log.warn('agent switch failed', (err as Error).message)
       await ctx.answerCbQuery('Failed')
-    }
-  })
-
-  deps.bot.action(/^model:switch:(.+):(.+)$/, async (ctx) => {
-    const providerId = ctx.match[1]
-    const modelId = ctx.match[2]
-    try {
-      const res = await fetch(`${deps.baseUrl}/config`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: `${providerId}/${modelId}` }),
-        signal: AbortSignal.timeout(5000),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      await ctx.answerCbQuery(`→ ${modelId}`)
-      await ctx.editMessageText(
-        `<b>⚙️ Model</b>  ✓ ${modelId}`,
-        { parse_mode: 'HTML' },
-      )
-    } catch (err) {
-      log.warn('model switch failed', (err as Error).message)
-      await ctx.answerCbQuery('Failed')
+      try {
+        await ctx.editMessageText(
+          `<b>🤖 Agent</b>  ❌ Switch failed\n<i>${(err as Error).message}</i>`,
+          { parse_mode: 'HTML' },
+        )
+      } catch {}
     }
   })
 

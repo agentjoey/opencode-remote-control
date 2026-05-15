@@ -25,7 +25,29 @@ interface CommandsDeps {
   setLastSessionId: (id: string | undefined) => void
   abortGeneration?: () => void
   isGenerating?: () => boolean
-  favouriteModels?: string[]
+}
+
+interface AgentConfig {
+  name: string
+  model: string
+  description: string
+}
+
+/** Read the user-defined agents from /config.agent (plan/build/chat/audit etc). */
+async function fetchUserAgents(baseUrl: string): Promise<AgentConfig[]> {
+  const res = await fetch(`${baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
+  if (!res.ok) throw new Error(`/config HTTP ${res.status}`)
+  const data = (await res.json()) as {
+    agent?: Record<string, { model?: string; description?: string }>
+  }
+  const agents = data.agent ?? {}
+  return Object.entries(agents)
+    .filter(([, v]) => typeof v.model === 'string')
+    .map(([name, v]) => ({
+      name,
+      model: v.model as string,
+      description: v.description ?? '',
+    }))
 }
 
 export function registerCommands(deps: CommandsDeps): void {
@@ -227,27 +249,23 @@ export function registerCommands(deps: CommandsDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agentsRes = await fetch(`${deps.baseUrl}/agent`, { signal: AbortSignal.timeout(5000) })
-      if (!agentsRes.ok) throw new Error(`HTTP ${agentsRes.status}`)
-      const agents = (await agentsRes.json()) as Array<{
-        name: string; description?: string; hidden?: boolean
-      }>
-
-      const visible = agents.filter((a) => !a.hidden)
-      if (visible.length === 0) {
-        await ctx.reply('<b>🤖 Agent</b>\n\nNo agents found.', { parse_mode: 'HTML' })
+      const agents = await fetchUserAgents(deps.baseUrl)
+      if (agents.length === 0) {
+        await ctx.reply('<b>🤖 Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.', { parse_mode: 'HTML' })
         return
       }
-
       const lines = ['<b>🤖 Agent</b>', '']
-      for (const a of visible) {
+      for (const a of agents) {
         const desc = a.description ? `  <i>${a.description}</i>` : ''
-        lines.push(`${a.name}${desc}`)
+        lines.push(`${a.name}  <code>${a.model}</code>${desc}`)
       }
-      const rows: ReturnType<typeof Markup.button.callback>[][] = [
-        visible.map((a) => Markup.button.callback(a.name, `agent:switch:${a.name}`)),
-        [Markup.button.callback('✕ Cancel', 'card:dismiss')],
-      ]
+      const rows: ReturnType<typeof Markup.button.callback>[][] = []
+      for (let i = 0; i < agents.length; i += 2) {
+        rows.push(agents.slice(i, i + 2).map((a) =>
+          Markup.button.callback(a.name, `agent:switch:${a.name}`),
+        ))
+      }
+      rows.push([Markup.button.callback('✕ Cancel', 'card:dismiss')])
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
@@ -260,67 +278,27 @@ export function registerCommands(deps: CommandsDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      const providersRes = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
-      if (!providersRes.ok) throw new Error(`HTTP ${providersRes.status}`)
-      const data = (await providersRes.json()) as {
-        providers?: Array<{ id: string; name?: string; models?: Record<string, { id: string; name?: string }> }>
-        default?: Record<string, string>
-      }
-
-      const providers = data.providers ?? []
-      const defaults = data.default ?? {}
-      const favourites = deps.favouriteModels ?? []
-
-      // Build the list to display: favourites if configured, else default per provider
-      interface ModelEntry { providerId: string; providerName: string; modelId: string; modelName: string }
-      const entries: ModelEntry[] = []
-
-      if (favourites.length > 0) {
-        for (const fav of favourites) {
-          const slash = fav.indexOf('/')
-          if (slash === -1) continue
-          const pid = fav.slice(0, slash)
-          const mid = fav.slice(slash + 1)
-          const p = providers.find((x) => x.id === pid)
-          if (!p) continue
-          const m = p.models?.[mid]
-          entries.push({ providerId: pid, providerName: p.name ?? pid, modelId: mid, modelName: m?.name ?? mid })
-        }
-      } else {
-        for (const p of providers) {
-          const mid = defaults[p.id]
-          if (!mid) continue
-          const m = p.models?.[mid]
-          entries.push({ providerId: p.id, providerName: p.name ?? p.id, modelId: mid, modelName: m?.name ?? mid })
-        }
-      }
-
-      if (entries.length === 0) {
+      const agents = await fetchUserAgents(deps.baseUrl)
+      if (agents.length === 0) {
         await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
         return
       }
-
-      const currentProvider = Object.keys(defaults)[0]
-      const currentModel = defaults[currentProvider ?? ''] ?? ''
       const lines = ['<b>⚙️ Model</b>', '']
-      for (const e of entries) {
-        const isCurrent = defaults[e.providerId] === e.modelId
-        const marker = isCurrent ? '●' : '○'
-        lines.push(`${marker}  ${e.modelName}  <i>${e.providerName}</i>${isCurrent ? '  ✓' : ''}`)
+      for (const a of agents) {
+        const slash = a.model.indexOf('/')
+        const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
+        lines.push(`${modelId}  <i>via ${a.name}</i>`)
       }
-
-      const modelButtons = entries.map((e) =>
-        Markup.button.callback(
-          (defaults[e.providerId] === e.modelId ? '✓ ' : '') + e.modelName.slice(0, 18),
-          `model:switch:${e.providerId}:${e.modelId}`,
-        )
-      )
       const rows: ReturnType<typeof Markup.button.callback>[][] = []
-      for (let i = 0; i < modelButtons.length; i += 2) {
-        rows.push(modelButtons.slice(i, i + 2))
+      const buttons = agents.map((a) => {
+        const slash = a.model.indexOf('/')
+        const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
+        return Markup.button.callback(modelId.slice(0, 20), `agent:switch:${a.name}`)
+      })
+      for (let i = 0; i < buttons.length; i += 2) {
+        rows.push(buttons.slice(i, i + 2))
       }
       rows.push([Markup.button.callback('✕ Cancel', 'card:dismiss')])
-
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
