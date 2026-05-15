@@ -88,6 +88,7 @@ export function createBot(deps: BotDeps): Telegraf {
     client: deps.client,
     editThrottleMs: deps.config.editThrottleMs,
     chatTimeoutMs: deps.config.chatTimeoutMs,
+    streamOutput: deps.config.streamOutput,
     getLastSessionId: () => lastSessionId,
     setLastSessionId: (id) => { lastSessionId = id },
     onAbortControllerCreated: (ac) => { currentAbortController = ac },

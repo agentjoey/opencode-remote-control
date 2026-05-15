@@ -14,21 +14,12 @@ interface ChatDeps {
   client: OpencodeClient
   editThrottleMs: number
   chatTimeoutMs: number
+  streamOutput: boolean
   getLastSessionId: () => string | undefined
   setLastSessionId: (id: string | undefined) => void
   onAbortControllerCreated?: (ac: AbortController) => void
   isUserAborted?: () => boolean
 }
-
-// Opencode 1.14.x event shapes (verified empirically):
-//   - message.part.delta       { sessionID, messageID, partID, field, delta }
-//   - session.status           { sessionID, status: { type: 'busy'|'idle' } }
-//   - session.idle             { sessionID }
-//   - session.error            { sessionID?, error? }
-//
-// Parts come in mixed types (step-start / reasoning / text / step-finish),
-// but the delta events don't carry the part type. So we wait for idle, then
-// fetch the message and emit only the `type=text` part contents.
 
 export function createChatHandler(deps: ChatDeps) {
   return async function handleChat(ctx: Context, text: string): Promise<void> {
@@ -48,8 +39,8 @@ export function createChatHandler(deps: ChatDeps) {
 
     let sessionId: string | undefined
     let assistantMessageId: string | undefined
-    let deltaCount = 0
-    let fullText = ''
+    let streamedText = ''
+    const textPartIds = new Set<string>()
 
     try {
       sessionId = await deps.tuiBridge.submit(text, deps.getLastSessionId())
@@ -57,23 +48,43 @@ export function createChatHandler(deps: ChatDeps) {
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
         const e = ev as { type: string; properties: any }
+        const p = e.properties
 
         if (e.type === 'session.idle') break
-        if (e.type === 'session.status' && e.properties?.status?.type === 'idle') break
+        if (e.type === 'session.status' && p?.status?.type === 'idle') break
         if (e.type === 'session.error') {
-          const err = e.properties?.error
+          const err = p?.error
           const errMsg = err?.data?.message ?? err?.message ?? err?.name ?? 'opencode reported a session error'
           throw new Error(errMsg)
         }
-        if (e.type === 'message.part.delta') {
-          // Capture the assistant messageID from the first delta
-          if (!assistantMessageId && typeof e.properties?.messageID === 'string') {
-            assistantMessageId = e.properties.messageID
+
+        if (e.type === 'message.part.updated') {
+          if (!assistantMessageId && typeof p?.messageID === 'string') {
+            assistantMessageId = p.messageID
           }
-          // Progress indicator: every ~20 deltas, append a dot
-          deltaCount += 1
-          if (deltaCount % 20 === 0) {
-            await replyStream.update(`💭 generating${'.'.repeat(Math.min((deltaCount / 20) | 0, 6))}`)
+          if (p?.part?.type === 'text' && typeof p.part.id === 'string') {
+            textPartIds.add(p.part.id)
+          }
+        }
+
+        if (e.type === 'message.part.delta') {
+          if (!assistantMessageId && typeof p?.messageID === 'string') {
+            assistantMessageId = p.messageID
+          }
+          if (deps.streamOutput) {
+            const partId = p?.partID as string | undefined
+            const field = p?.field as string | undefined
+            const delta = p?.delta as string | undefined
+            if (partId && textPartIds.has(partId) && field === 'text' && delta) {
+              streamedText += delta
+              await replyStream.update(streamedText)
+            }
+          } else {
+            if (p && typeof p.partID === 'number') {
+              if (p.partID % 20 === 0) {
+                await replyStream.update(`💭 generating${'.'.repeat(Math.min((p.partID / 20) | 0, 6))}`)
+              }
+            }
           }
         }
       }
@@ -81,8 +92,11 @@ export function createChatHandler(deps: ChatDeps) {
       if (deps.isUserAborted?.()) throw new Error('user_abort')
       if (ac.signal.aborted) throw new Error('timeout')
 
-      // Pull the final assistant message and emit only text parts
-      if (assistantMessageId) {
+      let fullText = ''
+
+      if (streamedText) {
+        fullText = streamedText
+      } else if (assistantMessageId) {
         try {
           const msgResult = await deps.client.session.message({
             path: { id: sessionId, messageID: assistantMessageId },
@@ -98,7 +112,6 @@ export function createChatHandler(deps: ChatDeps) {
         }
       }
 
-      // Fallback: if no text captured, list session messages and grab last assistant
       if (!fullText) {
         try {
           const listResult = await deps.client.session.messages({ path: { id: sessionId } })
