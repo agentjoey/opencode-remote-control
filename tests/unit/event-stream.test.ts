@@ -96,4 +96,24 @@ describe('EventStream', () => {
     es.stop()
     expect((es as any).stopped).toBe(true)
   })
+
+  it('drains queued events before exiting on abort (race condition fix)', async () => {
+    const es = new EventStream()
+    es.start(fakeClient([
+      { type: 'session.idle', properties: { sessionID: 'ses_drain' } },
+      { type: 'session.idle', properties: { sessionID: 'ses_drain' } },
+    ]))
+
+    const ac = new AbortController()
+    const collected: unknown[] = []
+
+    setTimeout(() => ac.abort(), 10)
+
+    for await (const ev of es.session('ses_drain', ac.signal)) {
+      collected.push(ev)
+    }
+
+    expect(collected.length).toBe(2)
+    es.stop()
+  })
 })

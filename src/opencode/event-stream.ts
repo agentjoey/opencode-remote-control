@@ -79,7 +79,7 @@ export class EventStream {
     signal.addEventListener('abort', onAbort, { once: true })
 
     try {
-      while (!signal.aborted) {
+      while (true) {
         while (queue.length) yield queue.shift()
         if (signal.aborted) break
         await new Promise<void>((r) => { wake = r })
