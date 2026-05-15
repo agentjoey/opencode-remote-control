@@ -97,6 +97,43 @@ describe('EventStream', () => {
     expect((es as any).stopped).toBe(true)
   })
 
+  it('emits synthetic session.idle after reconnect when session already idle', async () => {
+    // Use 50ms reconnect to keep the test fast
+    const es = new EventStream(50)
+    es.setStatusChecker(async () => ({ ses_target: { type: 'idle' } }))
+
+    // First subscribe throws (simulates disconnect); second yields nothing (session already done)
+    let connectCount = 0
+    const client = {
+      event: {
+        subscribe: async () => {
+          connectCount++
+          if (connectCount === 1) throw new Error('connection dropped')
+          return { stream: (async function* () {})() }
+        },
+      },
+    } as any
+
+    es.start(client)
+
+    const ac = new AbortController()
+    const collected: any[] = []
+
+    const consumer = (async () => {
+      for await (const ev of es.session('ses_target', ac.signal)) {
+        collected.push(ev)
+        if ((ev as any).type === 'session.idle') ac.abort()
+      }
+    })()
+
+    await new Promise((r) => setTimeout(r, 300))
+    ac.abort()
+    await consumer
+
+    expect(collected.some((e: any) => e.type === 'session.idle')).toBe(true)
+    es.stop()
+  })
+
   it('drains queued events before exiting on abort (race condition fix)', async () => {
     const es = new EventStream()
     es.start(fakeClient([

@@ -128,6 +128,8 @@ export function createChatHandler(deps: ChatDeps) {
             ? '❌ No opencode session available. Open the TUI on your Mac first.'
             : errAny.reason === 'session_busy'
             ? '⏳ Session is already generating. Wait for it or /abort.'
+            : errAny.reason === 'unreachable'
+            ? '❌ opencode is unreachable — is `opencode serve --port 4096` running?'
             : `❌ ${errAny.message}`
         try { await ctx.deleteMessage(statusMsg.message_id) } catch {}
         await ctx.reply(msg)

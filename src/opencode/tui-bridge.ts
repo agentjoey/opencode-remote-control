@@ -3,7 +3,7 @@ import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('tui-bridge')
 
-export type SubmitFailureReason = 'no_session' | 'session_busy' | 'submit_rejected'
+export type SubmitFailureReason = 'no_session' | 'session_busy' | 'submit_rejected' | 'unreachable'
 
 export class TuiSubmitError extends Error {
   constructor(public reason: SubmitFailureReason, message: string) {
@@ -50,7 +50,9 @@ export class TuiBridge {
   }
 
   async getStatus(): Promise<SessionStatus> {
-    const res = await fetch(`${this.baseUrl}/session/status`)
+    const res = await fetch(`${this.baseUrl}/session/status`, {
+      signal: AbortSignal.timeout(5000),
+    })
     if (!res.ok) throw new Error(`/session/status HTTP ${res.status}`)
     return (await res.json()) as SessionStatus
   }
@@ -69,9 +71,21 @@ export class TuiBridge {
    * Returns the sessionID used.
    */
   async submit(text: string, sessionIdOverride?: string): Promise<string> {
-    const sessionId = await this.pickSession(sessionIdOverride)
+    let sessionId: string
+    try {
+      sessionId = await this.pickSession(sessionIdOverride)
+    } catch (err) {
+      if (err instanceof TuiSubmitError) throw err
+      throw new TuiSubmitError('unreachable', 'opencode is unreachable — is the server running?')
+    }
 
-    const status = await this.getStatus()
+    let status: SessionStatus
+    try {
+      status = await this.getStatus()
+    } catch {
+      throw new TuiSubmitError('unreachable', 'opencode is unreachable — is the server running?')
+    }
+
     if (status[sessionId]?.type === 'busy') {
       throw new TuiSubmitError(
         'session_busy',
@@ -103,6 +117,7 @@ export class TuiBridge {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionID: sessionId }),
+        signal: AbortSignal.timeout(5000),
       })
       if (!selectRes.ok) {
         log.warn(`tui/select-session HTTP ${selectRes.status}`)
@@ -110,13 +125,17 @@ export class TuiBridge {
       }
 
       // Clear any partial text the user may have been typing
-      await fetch(`${this.baseUrl}/tui/clear-prompt`, { method: 'POST' })
+      await fetch(`${this.baseUrl}/tui/clear-prompt`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      })
 
       // Type the message into the TUI compose box
       const appendRes = await fetch(`${this.baseUrl}/tui/append-prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
+        signal: AbortSignal.timeout(5000),
       })
       if (!appendRes.ok) {
         log.warn(`tui/append-prompt HTTP ${appendRes.status}`)
@@ -129,11 +148,17 @@ export class TuiBridge {
       }
 
       // Submit — equivalent to pressing Enter in the TUI
-      const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, { method: 'POST' })
+      const submitRes = await fetch(`${this.baseUrl}/tui/submit-prompt`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      })
       if (!submitRes.ok) {
         log.warn(`tui/submit-prompt HTTP ${submitRes.status}`)
         // Clean up the appended text so the TUI input box is not left dirty
-        await fetch(`${this.baseUrl}/tui/clear-prompt`, { method: 'POST' }).catch(() => {})
+        await fetch(`${this.baseUrl}/tui/clear-prompt`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(5000),
+        }).catch(() => {})
         return false
       }
 
@@ -172,11 +197,17 @@ export class TuiBridge {
   }
 
   private async submitViaPromptAsync(text: string, sessionId: string): Promise<string> {
-    const res = await fetch(`${this.baseUrl}/session/${sessionId}/prompt_async`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ parts: [{ type: 'text', text }] }),
-    })
+    let res: Response
+    try {
+      res = await fetch(`${this.baseUrl}/session/${sessionId}/prompt_async`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parts: [{ type: 'text', text }] }),
+        signal: AbortSignal.timeout(5000),
+      })
+    } catch {
+      throw new TuiSubmitError('unreachable', 'opencode is unreachable — is the server running?')
+    }
     if (!res.ok) {
       throw new TuiSubmitError(
         'submit_rejected',
