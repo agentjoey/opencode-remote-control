@@ -1,53 +1,52 @@
 # Current Status — opencode-remote-control
 
-Version:        v0.1.0-rc.1
-Sprint:         1
-Sprint Status:  🟢 Code complete, awaiting user MVP acceptance (Task 14)
+Version:        v0.1.0
+Sprint:         1 → CLOSED (Phase 1 MVP complete)
 Last Updated:   2026-05-15 by claude-sonnet-4-6
-Sprint File:    .agent/sprints/sprint-001.md
+Next Sprint:    2 (Phase 2 — see .agent/sprints/sprint-002.md)
 
-## Open Bugs（P0/P1 必须本 Sprint 修复）
-🟢 无（37 tests passing；最终 review 发现的 2 个真 bug 已修复 in ec43fef）
+## Phase 1 MVP 验收结果
 
-## Current Sprint Summary
-Sprint 1 实施完成：Tasks 0-13 全部交付，37 unit tests 全绿，typecheck 干净。剩 Task 14（MVP 手测验收）待用户执行。
+47 tests passing · typecheck clean · launchd deployed (commit b979954)
 
-### 已完成（14 commits + spec/plan）
-- Tasks 0-1: scaffold + markdown utils（TDD）
-- Tasks 2-3: logger + config（Zod）
-- Tasks 4-6: opencode/client + event-stream + tui-bridge（TDD，含 race condition fix）
-- Tasks 7-10: bot/reply + chat + approval + commands handlers
-- Task 11: bot/index + src/index 装配 + polling 重试
-- Task 12: tests/integration/live-opencode.test.ts（契约测试）
-- Task 13: deploy/ai.opencode.remote-control.telegram.plist（未安装）
+| 测试项 | 结果 |
+|--------|------|
+| 14.3 基础对话 + TUI 同步 | ✅ |
+| 14.5 opencode 宕机恢复 | ✅ |
+| 14.6/14.7 approval flow | ⏭ 跳过（opencode 环境无法触发权限请求） |
+| 14.9 /abort 中断 | ✅ |
+| 14.10 launchd KeepAlive | ✅ |
+| 14.2 并发 busy 拒绝 | 待测 |
+| 14.11 网络断连恢复 | 待测 |
+| 14.12 非授权用户 | 待测 |
+| 14.13 24h soak | 待测（最后） |
 
-### 待执行（用户）
-- Task 14: MVP 13 项手测验收清单（详见 plan §Task 14）
+## Sprint 1 期间修复的 Bug（验收过程中发现）
 
-## Next Sprint Candidates
-- [ ] [Phase 2] `/files [query]` / `/read <path>` 文件浏览命令
-- [ ] [Phase 2] `/agent` 卡片选择 4 个自定义 agent
-- [ ] [Phase 2] `/model list` / `/model set` 模型切换
-- [ ] [Phase 2] opencode 重要事件主动推送（编辑文件、提交、测试结果）
-- [ ] [Phase 2] Tailscale 远程模式（不在本机时也能用）
-- [ ] [Phase 3 候选] Discord / Web 通道（umbrella scope 兑现）
+1. **/abort 无响应** — Telegraf polling 等待 text handler；fix: fire-and-forget handleChat
+2. **SSE 断线后永久卡在 generating** — fix: EventStream.setStatusChecker + 重连后合成 session.idle
+3. **opencode 宕机后 bot hang** — fix: 所有 fetch 加 AbortSignal.timeout(5000) + TuiSubmitError('unreachable')
+4. **TUI inject 无消费者** — waitForBusy 正确检测并回落 prompt_async
+
+## 当前部署状态
+
+- launchd: `ai.opencode.remote-control.telegram` (KeepAlive=true)
+- logs: `/tmp/opencode-remote-control-telegram.{log,err}`
+- 操作: `launchctl [start|stop|list] ai.opencode.remote-control.telegram`
 
 ## 关键文档
-- **Spec（架构权威）**：`docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md`
-- **Plan（实施清单）**：`docs/superpowers/plans/2026-05-15-opencode-remote-control.md`
-- **Obsidian 高级别记录**：`P023-OpencodeRemoteControl/`
 
-## 用户 MVP 验收前置步骤
+- **Spec (Phase 1)**: `docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md`
+- **Plan (Phase 1)**: `docs/superpowers/plans/2026-05-15-opencode-remote-control.md`
+- **Spec (Phase 2)**: `docs/superpowers/specs/2026-05-15-phase2-design.md`
+- **运维手册**: `docs/OPS.md`
+- **Obsidian**: `P023-OpencodeRemoteControl/`
 
-1. **创建 Telegram Bot** — 在 Telegram 找 @BotFather，`/newbot`，获取 token
-2. **获取自己的 user ID** — 在 Telegram 找 @userinfobot，`/start`，记下 `Id:`
-3. **写 .env 文件** — 在项目根 `cp .env.example .env`，填 `TELEGRAM_BOT_TOKEN` + `ALLOWED_USER_ID`
-4. **构建** — `npm run build`
-5. **手动启动验证** — `npm start`（确认本机 opencode TUI 已在 :4096 运行）
-6. **安装 launchd**（验证通过后）：
-   ```bash
-   cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
-   launchctl load ~/Library/LaunchAgents/ai.opencode.remote-control.telegram.plist
-   launchctl start ai.opencode.remote-control.telegram
-   ```
-7. **跑 13 项验收清单** — 见 plan §Task 14
+## 续接指引
+
+```bash
+cd /Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control
+cat .agent/CURRENT.md               # 始终先看
+cat .agent/sprints/sprint-002.md    # Phase 2 任务清单
+npm test                             # 47 tests
+```
