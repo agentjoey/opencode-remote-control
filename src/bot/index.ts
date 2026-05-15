@@ -64,6 +64,7 @@ export function createBot(deps: BotDeps): Telegraf {
       currentAbortController?.abort()
     },
     isGenerating: () => isGenerating,
+    favouriteModels: deps.config.favouriteModels,
   })
 
   // Callbacks

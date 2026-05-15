@@ -88,37 +88,41 @@ export function registerCallbacks(deps: CallbacksDeps): void {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const session = (await res.json()) as { id: string }
       deps.setLastSessionId(session.id)
-      await ctx.answerCbQuery(`Switched to ${agentId}`)
+      await ctx.answerCbQuery(`→ ${agentId}`)
       await ctx.editMessageText(
-        `<b>🤖 Agent switched</b>\n\nNow using: <code>${agentId}</code>\nSession: <code>…${session.id.slice(-8)}</code>`,
+        `<b>🤖 Agent</b>  ✓ ${agentId}\n\n<code>…${session.id.slice(-8)}</code>`,
         { parse_mode: 'HTML' },
       )
     } catch (err) {
       log.warn('agent switch failed', (err as Error).message)
-      await ctx.answerCbQuery('Switch failed')
+      await ctx.answerCbQuery('Failed')
     }
   })
 
   deps.bot.action(/^model:switch:(.+):(.+)$/, async (ctx) => {
     const providerId = ctx.match[1]
     const modelId = ctx.match[2]
-    const modelFull = `${providerId}/${modelId}`
     try {
       const res = await fetch(`${deps.baseUrl}/config`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelFull }),
+        body: JSON.stringify({ model: `${providerId}/${modelId}` }),
         signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      await ctx.answerCbQuery(`Model set to ${modelId}`)
+      await ctx.answerCbQuery(`→ ${modelId}`)
       await ctx.editMessageText(
-        `<b>⚙️ Model switched</b>\n\nNow using: <code>${modelFull}</code>`,
+        `<b>⚙️ Model</b>  ✓ ${modelId}`,
         { parse_mode: 'HTML' },
       )
     } catch (err) {
       log.warn('model switch failed', (err as Error).message)
-      await ctx.answerCbQuery('Switch failed')
+      await ctx.answerCbQuery('Failed')
     }
+  })
+
+  deps.bot.action('card:dismiss', async (ctx) => {
+    await ctx.answerCbQuery()
+    await ctx.deleteMessage().catch(() => {})
   })
 }
