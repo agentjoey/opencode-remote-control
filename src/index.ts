@@ -4,6 +4,7 @@ import { getClient, checkHealth } from './opencode/client.js'
 import { EventStream } from './opencode/event-stream.js'
 import { createFileBackedState } from './core/state.js'
 import { createRelay } from './core/relay.js'
+import { startTuiSync } from './core/tui-sync.js'
 import { createTelegramTransport } from './transport/telegram/index.js'
 import { createLogger } from './utils/logger.js'
 
@@ -59,8 +60,10 @@ export async function runBot(): Promise<void> {
 
   transport.onMessage(relay)
 
-  process.once('SIGINT', () => { eventStream.stop(); void transport.stop() })
-  process.once('SIGTERM', () => { eventStream.stop(); void transport.stop() })
+  const stopSync = startTuiSync({ eventStream, state, client })
+
+  process.once('SIGINT', () => { eventStream.stop(); stopSync(); void transport.stop() })
+  process.once('SIGTERM', () => { eventStream.stop(); stopSync(); void transport.stop() })
 
   await transport.start()
 }
