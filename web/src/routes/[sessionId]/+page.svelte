@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from '$app/stores'
   import { tick } from 'svelte'
-  import { cardsBySession, activeSession } from '$lib/stores/sessions.js'
+  import { cardsBySession } from '$lib/stores/sessions.js'
+  import { activeSession } from '$lib/stores/activeSession.js'
   import Card from '$lib/components/Card.svelte'
   import Composer from '$lib/components/Composer.svelte'
 
