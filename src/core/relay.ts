@@ -115,15 +115,35 @@ export function createRelay(deps: RelayDeps) {
         }
 
         if (e.type === 'message.part.updated') {
-          if (!assistantMessageId && typeof p?.messageID === 'string') {
-            assistantMessageId = p.messageID
+          const part = p?.part
+          if (!part) continue
+
+          // Track assistant message ID
+          if (!assistantMessageId && typeof part.messageID === 'string') {
+            assistantMessageId = part.messageID
           }
-          if (p?.part?.type === 'text' && typeof p.part.id === 'string') {
-            textPartIds.add(p.part.id)
+
+          // Handle text parts with delta
+          if (part.type === 'text') {
+            // Track this text part ID
+            if (typeof part.id === 'string') {
+              textPartIds.add(part.id)
+            }
+            // Apply delta if present
+            if (typeof p.delta === 'string') {
+              streamedText += p.delta
+              const now = Date.now()
+              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
+                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                lastEdit = now
+              }
+            }
           }
-          if (showTools && p?.part?.type === 'tool' && typeof p.part.tool === 'string') {
-            const tool = p.part.tool
-            const input = p.part.state?.input ?? {}
+
+          // Handle tool parts
+          if (showTools && part.type === 'tool' && typeof part.tool === 'string') {
+            const tool = part.tool
+            const input = part.state?.input ?? {}
             const arg = summarizeToolArgs(tool, input)
             const line = `▸ ${tool}${arg ? ` · ${arg}` : ''}`
             if (toolEvents.length === MAX_TOOL_LINES + 1) {
@@ -139,24 +159,6 @@ export function createRelay(deps: RelayDeps) {
                 await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
                 lastEdit = now
               }
-            }
-          }
-        }
-
-        if (e.type === 'message.part.delta') {
-          if (!assistantMessageId && typeof p?.messageID === 'string') {
-            assistantMessageId = p.messageID
-          }
-          // Support both flat and nested property shapes
-          const partId = (p?.partID ?? p?.part?.id) as string | undefined
-          const field = (p?.field ?? p?.part?.field) as string | undefined
-          const delta = (p?.delta ?? p?.part?.delta) as string | undefined
-          if (partId && textPartIds.has(partId) && field === 'text' && delta) {
-            streamedText += delta
-            const now = Date.now()
-            if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-              await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
-              lastEdit = now
             }
           }
         }
