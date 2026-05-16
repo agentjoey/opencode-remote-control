@@ -38,6 +38,27 @@ function stopButton(sessionId: string) {
   return { inline_keyboard: [[{ text: '⏹ Stop', callback_data: `relay:abort:${sessionId}` }]] }
 }
 
+function findBoundary(md: string, near: number): number {
+  const para = md.lastIndexOf('\n\n', near)
+  if (para >= near - 500 && para > 0) return para + 2
+  const line = md.lastIndexOf('\n', near)
+  if (line >= near - 200 && line > 0) return line + 1
+  return near
+}
+
+function splitMarkdown(md: string, perChunk: number): string[] {
+  const out: string[] = []
+  let pos = 0
+  while (pos < md.length) {
+    const remaining = md.slice(pos)
+    if (remaining.length <= perChunk) { out.push(remaining); break }
+    const cut = findBoundary(remaining, perChunk)
+    out.push(remaining.slice(0, cut))
+    pos += cut
+  }
+  return out
+}
+
 function collapseTools(tools: ToolCall[]): ToolCall[] {
   if (tools.length <= 7) return tools
   const running = tools.filter((t) => t.status === 'running')
@@ -64,6 +85,8 @@ export class TelegramSessionRenderer {
   private activeMessageId?: string
   private lastEditAt = 0
   private editsInBurst = 0
+  private chunkIndex = 0
+  private streamingChunkBuffer = ''
 
   constructor(opts: RendererOpts) {
     this.chatId = opts.chatId
@@ -98,6 +121,27 @@ export class TelegramSessionRenderer {
 
   private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
     if (!this.activeMessageId) return
+    this.streamingChunkBuffer = md
+    const renderedLen = this.renderChunkBody(md, tools, { streaming: true }).length
+    const naturalBoundary = md.endsWith('\n\n') || tools.some((t) => t.status === 'done')
+
+    if (renderedLen >= CHUNK_HARD_LIMIT || (renderedLen >= CHUNK_SOFT_LIMIT && naturalBoundary)) {
+      const header = `<b>Part ${this.chunkIndex + 1} · done</b>\n`
+      try {
+        await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined,
+          header + this.renderChunkBody(md, tools, {}), { parse_mode: 'HTML' })
+      } catch {}
+      this.chunkIndex += 1
+      const newHeader = `<b>Part ${this.chunkIndex + 1} · streaming…</b>\n⏳`
+      const sent = await this.bot.sendMessage(this.chatId, newHeader, {
+        parse_mode: 'HTML', reply_markup: stopButton(this.sessionId),
+      })
+      this.activeMessageId = String(sent.message_id)
+      this.lastEditAt = 0
+      this.editsInBurst = 0
+      return
+    }
+
     const now = Date.now()
     const since = now - this.lastEditAt
     const toolStatusChange = tools.some((t) => t.status === 'done' || t.status === 'error')
@@ -118,16 +162,33 @@ export class TelegramSessionRenderer {
   }
 
   private async finalize(md: string, tools: ToolCall[], meta: AssistantMeta): Promise<void> {
-    if (!this.activeMessageId) {
-      // No thinking card was sent — send fresh
-      const sent = await this.bot.sendMessage(this.chatId, this.renderChunkBody(md, tools, { meta }), { parse_mode: 'HTML' })
-      this.activeMessageId = String(sent.message_id)
+    const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
+    const pieces = splitMarkdown(md, PER_CHUNK)
+    if (pieces.length === 1) {
+      const text = this.renderChunkBody(pieces[0], tools, { meta })
+      if (this.activeMessageId) {
+        try { await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) }
+        catch (err) { log.warn('finalize edit failed', (err as Error).message) }
+      } else {
+        const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+        this.activeMessageId = String(sent.message_id)
+      }
       return
     }
-    const text = this.renderChunkBody(md, tools, { meta })
-    try {
-      await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
-    } catch (err) { log.warn('finalize edit failed', (err as Error).message) }
+    for (let i = 0; i < pieces.length; i++) {
+      const isLast = i === pieces.length - 1
+      const header = `<b>Part ${i + 1}/${pieces.length}</b>\n`
+      const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
+      const text = header + body
+      if (i === 0 && this.activeMessageId) {
+        try {
+          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
+        } catch (err) { log.warn('paginate edit failed', (err as Error).message) }
+      } else {
+        const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+        this.activeMessageId = String(sent.message_id)
+      }
+    }
   }
 
   private async markError(message: string): Promise<void> {
