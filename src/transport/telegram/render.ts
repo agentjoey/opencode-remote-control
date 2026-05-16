@@ -1,5 +1,9 @@
 import type { Card } from '../../core/types.js'
 
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 export function cardToTelegram(card: Card): {
   text: string
   options: {
@@ -12,10 +16,10 @@ export function cardToTelegram(card: Card): {
     lines.push(`<b>${card.title}</b>`)
     lines.push('')
   }
-  lines.push(...card.lines)
+  lines.push(...card.lines.map(escapeHtml))
   if (card.footer) {
     lines.push('')
-    lines.push(`<i>${card.footer}</i>`)
+    lines.push(`<i>${escapeHtml(card.footer)}</i>`)
   }
   const options: any = { parse_mode: 'HTML' }
   if (card.buttons && card.buttons.length > 0) {
