@@ -6,7 +6,6 @@ const schema = z.object({
     if (!v) return undefined
     return v.split(',').map((s) => s.trim()).filter(Boolean).map(Number).filter((n) => Number.isFinite(n))
   }),
-  // Backcompat: accept legacy ALLOWED_USER_ID
   ALLOWED_USER_ID: z.string().regex(/^\d+$/).optional().transform((v) => v ? Number(v) : undefined),
   OPENCODE_BASE_URL: z.string().url().default('http://localhost:4096'),
   EDIT_THROTTLE_MS: z.string().regex(/^\d+$/).default('1000').transform(Number),
@@ -21,6 +20,17 @@ const schema = z.object({
   OPENCODE_PROJECT: z.string().optional().default(process.cwd()),
   LOG_DIR: z.string().optional().default('./data/logs'),
   TOOL_CALLS_INLINE: z.string().optional().default('true').transform((v) => v === 'true'),
+  WEB_ENABLED: z.string().optional().default('false').transform((v) => v === 'true'),
+  WEB_HOST: z.string().optional().default('127.0.0.1'),
+  WEB_PORT: z.string().regex(/^\d+$/).optional().default('7081').transform(Number),
+  WEB_STATIC_ROOT: z.string().optional().default('web/dist'),
+  WEB_SESSION_CACHE_SIZE: z.string().regex(/^\d+$/).optional().default('100').transform(Number),
+  WEB_CF_ACCESS_TEAM: z.string().optional().default(''),
+  WEB_CF_ACCESS_AUD: z.string().optional().default(''),
+  WEB_CF_ACCESS_DEV_BYPASS: z.string().optional().default('false').transform((v) => v === 'true'),
+  WEB_CF_ACCESS_DEV_EMAIL: z.string().optional().default('dev@localhost'),
+  TG_CHUNK_SOFT_LIMIT: z.string().regex(/^\d+$/).optional().default('3500').transform(Number),
+  TG_CHUNK_HARD_LIMIT: z.string().regex(/^\d+$/).optional().default('3900').transform(Number),
 })
 
 export interface Config {
@@ -39,6 +49,17 @@ export interface Config {
   opencodeProject: string
   logDir: string
   toolCallsInline: boolean
+  webEnabled: boolean
+  webHost: string
+  webPort: number
+  webStaticRoot: string
+  webCacheSize: number
+  webCfAccessTeam: string
+  webCfAccessAud: string
+  webCfAccessDevBypass: boolean
+  webCfAccessDevEmail: string
+  tgChunkSoftLimit: number
+  tgChunkHardLimit: number
 }
 
 export function loadConfig(): Config {
@@ -68,5 +89,16 @@ export function loadConfig(): Config {
     opencodeProject: parsed.OPENCODE_PROJECT,
     logDir: parsed.LOG_DIR,
     toolCallsInline: parsed.TOOL_CALLS_INLINE,
+    webEnabled: parsed.WEB_ENABLED,
+    webHost: parsed.WEB_HOST,
+    webPort: parsed.WEB_PORT,
+    webStaticRoot: parsed.WEB_STATIC_ROOT,
+    webCacheSize: parsed.WEB_SESSION_CACHE_SIZE,
+    webCfAccessTeam: parsed.WEB_CF_ACCESS_TEAM,
+    webCfAccessAud: parsed.WEB_CF_ACCESS_AUD,
+    webCfAccessDevBypass: parsed.WEB_CF_ACCESS_DEV_BYPASS,
+    webCfAccessDevEmail: parsed.WEB_CF_ACCESS_DEV_EMAIL,
+    tgChunkSoftLimit: parsed.TG_CHUNK_SOFT_LIMIT,
+    tgChunkHardLimit: parsed.TG_CHUNK_HARD_LIMIT,
   }
 }
