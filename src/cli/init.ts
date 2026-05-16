@@ -68,7 +68,7 @@ export async function runInitWizard(deps: InitDeps): Promise<void> {
   console.log('  bash scripts/install-launchd.sh')
 }
 
-async function defaultTestConnection(token: string): Promise<void> {
+export async function defaultTestConnection(token: string): Promise<void> {
   const res = await fetch(`https://api.telegram.org/bot${token}/getMe`)
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

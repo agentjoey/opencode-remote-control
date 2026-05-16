@@ -15,8 +15,8 @@
     "test:integration": "vitest run tests/integration"
   },
   "bin": {
-    "opencode-remote-control": "dist/launcher.js",
-    "oprc": "dist/launcher.js"
+    "opencode-remote-control": "dist/cli/index.js",
+    "oprc": "dist/cli/index.js"
   },
   "dependencies": {
     "@opencode-ai/sdk": "^1.14.0",
