@@ -1,41 +1,56 @@
 # Current Status — opencode-remote-control
 
-Version:        v0.2.0
-Sprint:         2 (Phase 2 — complete)
-Sprint File:    .agent/sprints/sprint-002.md
-Last Updated:   2026-05-15
+Version:        v0.3.0-rc.1
+Sprint:         3 (Phase 3 — complete, pending tag)
+Sprint File:    .agent/sprints/sprint-003.md
+Last Updated:   2026-05-16
 
-## Sprint 2 — Phase 2: Complete ✅
+## Sprint 3 — Phase 3: Complete ✅
 
 | Task | Status | Commit |
 |------|--------|--------|
-| **F5 /session** (pin/unpin + callbacks) | ✅ | `8f057e5` |
-| **卡片化** (/status, /start, /help, /current) | ✅ | `8f057e5` |
-| **F2 /files** | ✅ | `75644ef` |
-| **F3 /agent** | ✅ | `07052d6` |
-| **F4 /model** | ✅ | `07052d6` |
-| **F1 流式输出** | ✅ | `98a7090` |
+| **Task 1** core/types.ts (Card / Button / IncomingMessage / Capabilities) | ✅ | `2159b2a` |
+| **Task 2** Transport interface | ✅ | `a847863` |
+| **Task 3** SDK submitPrompt with agent/model overrides | ✅ | `c2011de` |
+| **Task 4** file-backed SessionState (lastSessionId + nextAgent + nextModel) | ✅ | `b0c2fe4` |
+| **Task 5** Move bot/reply.ts → transport/telegram/reply-stream.ts | ✅ | `3aef89f` |
+| **Task 6** cardToTelegram render helper | ✅ | `7d4faf5` |
+| **Task 7** core/relay.ts (SDK-native, channel-agnostic) | ✅ | `e0da870` |
+| **Task 8** Config: TUI_VISIBLE, STATE_PATH, TRANSPORT | ✅ | `c2bef5e` |
+| **Task 9** Telegram transport + handlers + delete src/bot/ | ✅ | `2314c5e` |
+| **Task 10** Build verification | ✅ | — |
+| **Task 11** 14.2 concurrent busy (transport-level guard) | ✅ | `5b9c355` |
+| **Task 12** 14.11 network blip (EventStream reconnect) | ✅ | existing |
+| **Task 13** 14.12 unauthorized user (whitelist middleware) | ✅ | `5b9c355` |
+| **Task 14** 14.13 24h soak | ⏳ | manual — start soak now |
+| **Task 15** LICENSE + SECURITY.md + README rewrite | ✅ | `042e37b` |
+| **Task 16** CI + templates + CHANGELOG + CURRENT.md | ✅ | this commit |
 
-Tests: **51 passing** · `npx tsc` 无报错 · 9 test files · 6 commits
+Tests: **68 passing** · `npx tsc --noEmit` 无报错 · 11 test files
 
-## API 验证结果（F3/F4）
+## Architecture changes
 
-**GET /agent** → agents 数组，`name`/`description`/`hidden` 字段
-- 切换: `POST /session` + `{ "agent": "name" }` 创建新 session
+- `src/bot/` **removed** — replaced by `src/core/` + `src/transport/telegram/`
+- Default submission: `client.session.prompt()` — TUI inject is opt-in (`TUI_VISIBLE=true`)
+- `/agent` and `/model` are now **sticky per-message overrides** stored in persistent state
+- `lastSessionId`, `nextAgent`, `nextModel` survive restarts via `data/state.json`
 
-**GET /config/providers** → `{ providers: [...], default: {...} }`
-- 切换: `PATCH /config` + `{ "model": "providerId/modelId" }`
+## Open questions (before tag)
 
-## F1 流式输出实现
+1. **Public handle / author name** — for LICENSE and README byline (`<author-handle-to-confirm>`)
+2. **Security contact email** — SECURITY.md (`<security-email-to-confirm>`)
+3. **Final project / npm name** — keep `opencode-remote-control`?
 
-- `STREAM_OUTPUT=true`（默认启用）
-- 监听 `message.part.updated` → 追踪 `type=text` 的 partID
-- 监听 `message.part.delta` → 仅对已追踪的 text partID 累积 delta
-- 限速通过 `EDIT_THROTTLE_MS`（默认 1s）控制 Telegram 编辑频率
-- 无 delta 时退回到 SDK fetch（tool-only 响应场景）
-- `STREAM_OUTPUT=false` 恢复旧行为：等待 → 一次性 fetch
+## How to tag
 
-## 关键文档
+```bash
+git tag v0.3.0-rc.1
+# DO NOT PUSH — wait for user review
+```
 
-- **Spec (Phase 2)**: `docs/superpowers/specs/2026-05-15-phase2-design.md`
-- **Task List**: `.agent/sprints/sprint-002.md`
+## Key documents
+
+- **Spec (Phase 3)**: `docs/superpowers/specs/2026-05-16-phase3-design.md`
+- **Plan**: `docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md`
+- **Architecture**: `docs/ARCHITECTURE.md`
+- **CHANGELOG**: `CHANGELOG.md`
