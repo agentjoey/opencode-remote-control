@@ -456,11 +456,21 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.action('status:refresh', async (ctx) => {
     const { lines, buttons } = await buildStatusCard(deps)
-    await ctx.editMessageText(lines.join('\n'), {
-      parse_mode: 'HTML',
-      ...Markup.inlineKeyboard([buttons]),
-    })
-    await ctx.answerCbQuery('Refreshed')
+    try {
+      await ctx.editMessageText(lines.join('\n'), {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([buttons]),
+      })
+      await ctx.answerCbQuery('Refreshed')
+    } catch (err) {
+      const msg = (err as Error).message
+      if (msg.includes('message is not modified')) {
+        await ctx.answerCbQuery('Status is unchanged')
+      } else {
+        log.warn('status:refresh edit failed', msg)
+        await ctx.answerCbQuery('Failed to refresh')
+      }
+    }
   })
 
   deps.bot.action('status:abort', async (ctx) => {
