@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>oprcode — Configure</title>
+  <style>
+    body { margin: 0; padding: 1rem; width: 280px; font-family: sans-serif; background: #0a0a0a; color: #fff; }
+    label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #aaa; }
+    input { width: 100%; padding: 0.5rem; border: 1px solid #333; background: #1a1a1a; color: #fff; border-radius: 4px; box-sizing: border-box; }
+    button { width: 100%; padding: 0.5rem; margin-top: 0.75rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    #status { margin-top: 0.5rem; font-size: 0.875rem; min-height: 1.2em; }
+    #status.ok { color: #22c55e; }
+    #status.err { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <label>Bot URL</label>
+  <input type="text" id="url" placeholder="https://oprc.example.com" />
+  <button id="save">Connect</button>
+  <div id="status"></div>
+  <script type="module" src="./popup.js"></script>
+</body>
+</html>
