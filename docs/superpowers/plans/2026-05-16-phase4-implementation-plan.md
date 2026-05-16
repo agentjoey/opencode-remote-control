@@ -2,15 +2,130 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Productize startup (single command launcher), close TUI/bot information gap (/diff, /todo, /context, inline tool calls, push), bidirectional state sync.
+**Goal:** Productize startup (single command launcher), close TUI/bot information gap (/diff, /todo, /context, inline tool calls, push), bidirectional state sync, plus competitor-borrowed UX (Stop button, cost footer, multi-user, npm wizard).
 
-**Architecture:** Add `src/launcher/` (subprocess management + lifecycle). Extend `src/core/state.ts` with TUI-observed fields. Add `src/core/push.ts` for selective notifications. Add `src/core/tool-render.ts` for tool-call summary lines. New Telegram handlers for /diff, /todo, /context.
+**Architecture:** Add `src/launcher/` (subprocess management + lifecycle). Extend `src/core/state.ts` with TUI-observed fields + abort controller registry. Add `src/core/push.ts` for selective notifications. New Telegram handlers for /diff, /todo, /context. Multi-user allowlist. npx setup wizard.
 
-**Tech Stack:** Same as Phase 3 + `node:child_process` for subprocess management.
+**Tech Stack:** Same as Phase 3 + `node:child_process` for subprocess management + `enquirer` (or similar) for init wizard prompts.
 
 **Reference:** `docs/superpowers/specs/2026-05-16-phase4-productization-design.md` for design rationale.
 
 **Prereqs:** Phase 3 complete. `src/core/` and `src/transport/telegram/` exist. `client.session.prompt()` is the primary submission path.
+
+**Task order**: D.3 (multi-user, do early to unblock public release) → Tasks 1–12 (Tracks A, C, B as before) → Tasks 13–15 (Track D.1, D.2, D.4) → 16 (smoke + tag).
+
+---
+
+## Task 0: Multi-user allowlist (Track D.3, do first)
+
+**Files:**
+- Modify: `src/config.ts`
+- Modify: `src/transport/telegram/index.ts`
+- Modify: `.env.example`
+- Modify: `tests/unit/config.test.ts`
+
+- [ ] **Step 1: Update config schema for ALLOWED_USER_IDS**
+
+In `src/config.ts`, replace the existing `ALLOWED_USER_ID` line with:
+
+```typescript
+ALLOWED_USER_IDS: z.string().optional().transform((v) => {
+  if (!v) return undefined
+  return v.split(',').map((s) => s.trim()).filter(Boolean).map(Number).filter((n) => Number.isFinite(n))
+}),
+// Backcompat: accept legacy ALLOWED_USER_ID
+ALLOWED_USER_ID: z.string().regex(/^\d+$/).optional().transform((v) => v ? Number(v) : undefined),
+```
+
+After `parsed`, validate at least one of them is set:
+
+```typescript
+const ids = parsed.ALLOWED_USER_IDS ?? (parsed.ALLOWED_USER_ID !== undefined ? [parsed.ALLOWED_USER_ID] : [])
+if (ids.length === 0) {
+  throw new Error('ALLOWED_USER_IDS or ALLOWED_USER_ID must be set')
+}
+if (parsed.ALLOWED_USER_ID !== undefined && !parsed.ALLOWED_USER_IDS) {
+  console.warn('[config] ALLOWED_USER_ID is deprecated; use ALLOWED_USER_IDS instead')
+}
+```
+
+Add to `Config` interface:
+
+```typescript
+allowedUserIds: number[]
+```
+
+And in `loadConfig()` return:
+
+```typescript
+allowedUserIds: ids,
+```
+
+Remove the old `allowedUserId: number` field (anything reading it must switch to `allowedUserIds`).
+
+- [ ] **Step 2: Update Telegram transport whitelist middleware**
+
+In `src/transport/telegram/index.ts`:
+
+```typescript
+// Old: if (ctx.from?.id !== cfg.allowedUserId)
+// New:
+if (!cfg.allowedUserIds.includes(ctx.from?.id ?? -1)) {
+  if (ctx.from) log.warn(`rejected from ${ctx.from.id}`)
+  await ctx.reply('Unauthorized').catch(() => {})
+  return
+}
+```
+
+Update `TelegramConfig` interface: `allowedUserIds: number[]` (was `allowedUserId: number`).
+
+Update `src/index.ts` `runBot()` to pass `allowedUserIds` from config.
+
+- [ ] **Step 3: Update .env.example**
+
+```
+# Comma-separated Telegram user IDs allowed to use the bot (required).
+ALLOWED_USER_IDS=12345678,87654321
+
+# Legacy single-user (deprecated; still works for backward compatibility).
+# ALLOWED_USER_ID=12345678
+```
+
+- [ ] **Step 4: Update test**
+
+```typescript
+// tests/unit/config.test.ts — add cases:
+it('parses ALLOWED_USER_IDS comma-separated', () => {
+  process.env.ALLOWED_USER_IDS = '1,2,3'
+  process.env.TELEGRAM_BOT_TOKEN = 't'
+  delete process.env.ALLOWED_USER_ID
+  const c = loadConfig()
+  expect(c.allowedUserIds).toEqual([1, 2, 3])
+})
+
+it('accepts legacy ALLOWED_USER_ID', () => {
+  delete process.env.ALLOWED_USER_IDS
+  process.env.ALLOWED_USER_ID = '42'
+  process.env.TELEGRAM_BOT_TOKEN = 't'
+  const c = loadConfig()
+  expect(c.allowedUserIds).toEqual([42])
+})
+
+it('throws when neither is set', () => {
+  delete process.env.ALLOWED_USER_IDS
+  delete process.env.ALLOWED_USER_ID
+  process.env.TELEGRAM_BOT_TOKEN = 't'
+  expect(() => loadConfig()).toThrow()
+})
+```
+
+- [ ] **Step 5: Verify + commit**
+
+```bash
+npx tsc --noEmit && npm test
+git add -A
+git commit -m "feat(config): ALLOWED_USER_IDS multi-user allowlist with backward compat"
+```
 
 ---
 
@@ -994,7 +1109,362 @@ git commit -m "feat(core): selective push notifications for long tasks and test 
 
 ---
 
-## Task 12: End-to-end smoke + tag
+## Task 12: Inline Stop button (Track D.1)
+
+**Files:**
+- Modify: `src/core/state.ts` — abort controller registry
+- Modify: `src/core/relay.ts` — include Stop button in cards, register abort
+- Modify: `src/transport/telegram/handlers.ts` — `relay:abort` callback
+
+- [ ] **Step 1: Register abort controller per session in state**
+
+Add to `SessionState` interface:
+
+```typescript
+getActiveAbort(sessionId: string): AbortController | undefined
+setActiveAbort(sessionId: string, ac: AbortController | undefined): void
+```
+
+Implementation in `createFileBackedState` (in-memory only, NOT persisted — abort controllers are runtime-only):
+
+```typescript
+const aborts = new Map<string, AbortController>()
+// ...
+getActiveAbort: (sid) => aborts.get(sid),
+setActiveAbort: (sid, ac) => {
+  if (ac === undefined) aborts.delete(sid)
+  else aborts.set(sid, ac)
+},
+```
+
+- [ ] **Step 2: In relay.ts, set abort on the active session + include Stop button**
+
+```typescript
+// In createRelay, after creating ac:
+deps.state.setActiveAbort(sessionId, ac)
+
+// Modify thinkingCard():
+function thinkingCard(): Card {
+  return {
+    lines: ['💭 thinking...'],
+    buttons: [[{ label: '🛑 Stop', data: 'relay:abort' }]],
+  }
+}
+
+// During streaming edits, include the button until idle:
+async function streamingCard(text: string): Card {
+  return {
+    lines: [text],
+    buttons: [[{ label: '🛑 Stop', data: 'relay:abort' }]],
+  }
+}
+
+// Final edit (after loop) drops the button:
+function finalCard(text: string): Card {
+  return { lines: [text] }
+}
+
+// In finally: clear abort
+deps.state.setActiveAbort(sessionId, undefined)
+```
+
+- [ ] **Step 3: Wire `relay:abort` callback in handlers.ts**
+
+```typescript
+deps.bot.action('relay:abort', async (ctx) => {
+  const sid = deps.state.getLastSessionId()
+  if (!sid) { await ctx.answerCbQuery('No session'); return }
+  const ac = deps.state.getActiveAbort(sid)
+  if (ac) {
+    ac.abort()
+    // Also abort on opencode side so TUI sees it
+    try {
+      await fetch(`${deps.baseUrl}/session/${sid}/abort`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      })
+    } catch {}
+  }
+  await ctx.answerCbQuery('Stopped')
+})
+```
+
+- [ ] **Step 4: Test**
+
+Send a long task; observe Stop button on the streaming card; tap → response stops within 2s; final card no longer has button.
+
+- [ ] **Step 5: Add unit test in relay.test.ts**
+
+```typescript
+it('registers abort controller per session and includes Stop button in cards', async () => {
+  const transport = fakeTransport()
+  const state = fakeState()
+  const relay = createRelay({
+    transport, /* ... */ state,
+    eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
+    /* ... */
+  })
+  await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'm' })
+  expect(transport.sent[0].buttons).toEqual([[{ label: '🛑 Stop', data: 'relay:abort' }]])
+  // After idle, the final edit should NOT have the button
+  expect(transport.edits[transport.edits.length - 1].buttons).toBeUndefined()
+})
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add -A
+git commit -m "feat(relay): inline Stop button to cancel streaming mid-response"
+```
+
+---
+
+## Task 13: Cost footer on responses + /status total (Track D.2)
+
+**Files:**
+- Modify: `src/core/relay.ts` — fetch session.get after final edit, append cost footer
+- Modify: `src/core/state.ts` — cache last-known session cost (in-memory)
+- Modify: `src/transport/telegram/handlers.ts` — /status aggregates costs
+
+- [ ] **Step 1: Fetch cost after final edit in relay**
+
+After the SSE loop and final text edit:
+
+```typescript
+let footer: string | undefined
+try {
+  const sRes = await deps.client.session.get({ path: { id: sessionId } } as any)
+  const s = sRes.data as {
+    agent?: string
+    cost?: number
+    tokens?: { input?: number; output?: number }
+  }
+  const cfgRes = await deps.client.config.get()
+  const cfg = cfgRes.data as { agent?: Record<string, { model?: string }> }
+  const model = s.agent && cfg.agent?.[s.agent]?.model
+  const cost = `$${(s.cost ?? 0).toFixed(2)}`
+  const tokens = `${formatK(s.tokens?.input ?? 0)} in / ${formatK(s.tokens?.output ?? 0)} out`
+  footer = `· ${cost} · ${tokens}${model ? ` · ${model.split('/').pop()}` : ''}`
+  // Cache for /status aggregation
+  deps.state.cacheSessionCost?.(sessionId, s.cost ?? 0)
+} catch {}
+
+await deps.transport.edit(msg.chatId, initial.messageId, {
+  lines: [final],
+  footer,
+})
+
+function formatK(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+}
+```
+
+- [ ] **Step 2: Add cacheSessionCost to SessionState (in-memory)**
+
+```typescript
+// Add to SessionState interface:
+cacheSessionCost(sessionId: string, cost: number): void
+getCachedCost(sessionId: string): number | undefined
+getCachedTotalCost(): number
+
+// In createFileBackedState:
+const costs = new Map<string, number>()
+return {
+  // ...
+  cacheSessionCost: (sid, cost) => { costs.set(sid, cost) },
+  getCachedCost: (sid) => costs.get(sid),
+  getCachedTotalCost: () => Array.from(costs.values()).reduce((a, b) => a + b, 0),
+}
+```
+
+- [ ] **Step 3: Update /status to show total cost**
+
+In `transport/telegram/handlers.ts`:
+
+```typescript
+const totalCost = deps.state.getCachedTotalCost()
+lines.push(`💰 Session cost today: $${totalCost.toFixed(2)}`)
+```
+
+(Note: totals reset on bot restart since costs are in-memory. Future: persist to state.json if needed.)
+
+- [ ] **Step 4: Test**
+
+Send a coding task; verify footer like `· $0.04 · 5.1k in / 1.2k out · k2p6`. Run `/status` and verify total cost line.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A
+git commit -m "feat(relay): cost + token footer on responses; /status total"
+```
+
+---
+
+## Task 14: npx init wizard + publish-readiness (Track D.4)
+
+**Files:**
+- Create: `src/launcher/wizard.ts`
+- Modify: `package.json` — verify publish-readiness, add `init` subcommand
+- Add deps: `enquirer` (or `prompts`)
+
+- [ ] **Step 1: Install prompt library**
+
+```bash
+npm install prompts
+npm install -D @types/prompts
+```
+
+- [ ] **Step 2: Implement wizard.ts**
+
+```typescript
+// src/launcher/wizard.ts
+import prompts from 'prompts'
+import { existsSync, writeFileSync, readFileSync } from 'node:fs'
+import { checkHealth } from '../opencode/client.js'
+
+export async function runWizard(): Promise<void> {
+  console.log('\nopencode-remote-control setup wizard\n')
+
+  const envPath = '.env'
+  if (existsSync(envPath)) {
+    const { overwrite } = await prompts({
+      type: 'confirm',
+      name: 'overwrite',
+      message: '.env already exists. Overwrite?',
+      initial: false,
+    })
+    if (!overwrite) { console.log('Aborted.'); process.exit(0) }
+  }
+
+  const answers = await prompts([
+    {
+      type: 'text',
+      name: 'token',
+      message: 'Telegram bot token (from @BotFather; https://t.me/BotFather):',
+      validate: (v: string) => v.includes(':') ? true : 'Token must be like 12345:ABC-...',
+    },
+    {
+      type: 'text',
+      name: 'userIds',
+      message: 'Allowed Telegram user IDs (comma-separated; get yours from @userinfobot):',
+      validate: (v: string) => /^\d+(,\d+)*$/.test(v.replace(/\s/g, '')) ? true : 'Numeric, comma-separated',
+    },
+    {
+      type: 'confirm',
+      name: 'spawnOpencode',
+      message: 'Should the bot spawn `opencode serve` for you?',
+      initial: true,
+    },
+    {
+      type: 'text',
+      name: 'baseUrl',
+      message: 'opencode server URL:',
+      initial: 'http://localhost:4096',
+    },
+  ])
+
+  if (!answers.token || !answers.userIds) { console.log('Aborted.'); process.exit(1) }
+
+  const env = [
+    `TELEGRAM_BOT_TOKEN=${answers.token}`,
+    `ALLOWED_USER_IDS=${answers.userIds.replace(/\s/g, '')}`,
+    `OPENCODE_BASE_URL=${answers.baseUrl}`,
+    `SPAWN_OPENCODE=${answers.spawnOpencode}`,
+    'LOG_LEVEL=info',
+  ].join('\n') + '\n'
+
+  writeFileSync(envPath, env)
+  console.log(`\n✓ Wrote ${envPath}`)
+
+  // Test connection if not spawning
+  if (!answers.spawnOpencode) {
+    const healthy = await checkHealth(answers.baseUrl)
+    if (!healthy) {
+      console.warn(`\n⚠ opencode at ${answers.baseUrl} is unreachable. Start it before running 'npm start'.`)
+    } else {
+      console.log(`\n✓ opencode reachable at ${answers.baseUrl}`)
+    }
+  }
+
+  console.log('\nNext steps:')
+  console.log('  npm run build && npm start          # foreground')
+  console.log('  ./scripts/install-launchd.sh        # background on macOS')
+  console.log('')
+}
+```
+
+- [ ] **Step 3: Add `init` subcommand to launcher**
+
+In `src/launcher/index.ts`:
+
+```typescript
+const cmd = process.argv[2]
+if (cmd === 'init') {
+  import('./wizard.js').then(({ runWizard }) => runWizard().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  }))
+} else {
+  main().catch(/* ... */)
+}
+```
+
+Update `package.json`:
+```json
+{
+  "bin": {
+    "opencode-remote-control": "dist/launcher.js",
+    "oprc": "dist/launcher.js"
+  }
+}
+```
+
+- [ ] **Step 4: Audit publish-readiness**
+
+```bash
+npm pack --dry-run
+```
+
+Verify:
+- All needed files included (`dist/`, `README.md`, `LICENSE`, `.env.example`, `deploy/`, `scripts/`)
+- Excludes: `tests/`, `src/`, `node_modules/`, `data/`, `.env`, `.opencode/`
+- `package.json` has `repository`, `bugs`, `homepage`, `keywords`, `license: "MIT"`, `files` allowlist
+
+Fix `package.json` as needed. Recommended `files`:
+
+```json
+"files": ["dist", "deploy", "scripts", ".env.example", "LICENSE", "README.md"]
+```
+
+- [ ] **Step 5: Test publish dry run**
+
+```bash
+npm publish --dry-run
+```
+
+Expected: clean. If errors, fix.
+
+- [ ] **Step 6: Test wizard locally**
+
+```bash
+npm run build
+node dist/launcher.js init
+```
+
+Walk through the prompts. Verify `.env` is created correctly.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "feat(launcher): npx init wizard + publish-readiness audit"
+```
+
+---
+
+## Task 15: End-to-end smoke + tag
 
 - [ ] **Step 1: Run full test suite**
 
@@ -1002,7 +1472,7 @@ git commit -m "feat(core): selective push notifications for long tasks and test 
 npm test && npx tsc --noEmit
 ```
 
-Expected: ≥ 60 tests, clean.
+Expected: ≥ 65 tests, clean.
 
 - [ ] **Step 2: 24h soak in background**
 
@@ -1015,7 +1485,8 @@ Start launcher, leave running. Check after 24h:
 
 In Telegram:
 - [ ] `/start` → card with healthy
-- [ ] Send "hello" → streamed response
+- [ ] Send "hello" → streamed response, **Stop button visible**, **cost footer shown**
+- [ ] Tap Stop mid-stream → response halts within 2s
 - [ ] Coding task: send "list files in src/" → response includes `▸ bash · ls -la` interleaved
 - [ ] After long task (>60s, engaged session): receive "✅ finished" push
 - [ ] `/diff`, `/todo`, `/context` all render
@@ -1023,20 +1494,29 @@ In Telegram:
 - [ ] `/model` → list → tap → next message uses that model
 - [ ] `/sessions` → list with pin buttons
 - [ ] `/session pin <id>` → TUI navigates
+- [ ] `/status` shows "💰 Session cost today: $X.XX"
+- [ ] **From a second whitelisted user ID, send a message → response received**
+- [ ] **From a non-whitelisted ID → "Unauthorized" rejection**
 - [ ] Restart bot → state persists
 - [ ] Kill opencode → launcher restarts; bot continues after recovery
 
-- [ ] **Step 4: Update CHANGELOG.md** with v0.4.0 entry
+- [ ] **Step 4: npm publish dry-run final check**
 
-- [ ] **Step 5: Update .agent/CURRENT.md and BACKLOG.md**
+```bash
+npm publish --dry-run
+```
 
-- [ ] **Step 6: Tag (do not push — user reviews)**
+- [ ] **Step 5: Update CHANGELOG.md** with v0.4.0 entry
+
+- [ ] **Step 6: Update .agent/CURRENT.md and BACKLOG.md**
+
+- [ ] **Step 7: Tag (do not push — user reviews)**
 
 ```bash
 git tag v0.4.0-rc.1
 ```
 
-- [ ] **Step 7: Report back to user with summary**
+- [ ] **Step 8: Report back to user with summary**
 
 ---
 
@@ -1048,10 +1528,15 @@ git tag v0.4.0-rc.1
 - [ ] Kill -9 launcher → no orphan `opencode serve`
 - [ ] `/diff`, `/todo`, `/context` render
 - [ ] Coding task shows `▸ tool · args` inline
+- [ ] **Stop button cancels mid-stream**
+- [ ] **Cost footer on every assistant response**
+- [ ] **ALLOWED_USER_IDS multi-user works; legacy ALLOWED_USER_ID warns**
+- [ ] **`npx -y opencode-remote-control init` wizard works end-to-end**
+- [ ] **`npm publish --dry-run` clean**
 - [ ] Push fires for long task (engaged-recently)
-- [ ] `/status` reflects TUI's current selection + agent within 2s
+- [ ] `/status` reflects TUI's current selection + agent within 2s; shows cost total
 - [ ] `/session pin <id>` syncs TUI
 - [ ] All tests pass; `npx tsc --noEmit` clean
-- [ ] `npm test` ≥ 60 tests
+- [ ] `npm test` ≥ 65 tests
 - [ ] CHANGELOG.md updated
 - [ ] `git tag v0.4.0-rc.1` ready
