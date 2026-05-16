@@ -44,6 +44,11 @@ function summarizeToolArgs(tool: string, input: any): string {
 
 const MAX_TOOL_LINES = 30
 
+function formatK(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(n)
+}
+
 async function pickSession(client: OpencodeClient, last: string | undefined): Promise<string> {
   if (last) return last
   const res = await client.session.list()
@@ -155,7 +160,35 @@ export function createRelay(deps: RelayDeps) {
       }
 
       const final = streamedText || '(empty response)'
-      await deps.transport.edit(msg.chatId, initial.messageId, textCard(final))
+
+      // Fetch cost/tokens for footer
+      let footer: string | undefined
+      try {
+        const sres = await deps.client.session.get({ path: { id: sessionId } })
+        const s = (sres.data ?? {}) as any
+        const cost = typeof s.cost === 'number' ? s.cost : undefined
+        const tok = s.tokens
+        const tin = typeof tok?.input === 'number' ? tok.input : undefined
+        const tout = typeof tok?.output === 'number' ? tok.output : undefined
+        const agentName = s.agent?.name ?? deps.state.getCurrentAgent() ?? ''
+        const modelId = typeof s.model === 'string' ? s.model : ''
+        if (cost !== undefined) {
+          const parts: string[] = [`· $${cost.toFixed(2)}`]
+          if (tin !== undefined && tout !== undefined) {
+            parts.push(`· ${formatK(tin)} in / ${formatK(tout)} out`)
+          }
+          if (agentName) parts.push(`· ${agentName}`)
+          if (modelId) parts.push(`· ${modelId}`)
+          footer = parts.join(' ')
+          deps.state.setSessionCost(sessionId, cost)
+        }
+      } catch {
+        // Silently skip footer if cost unavailable
+      }
+
+      const card: Card = textCard(final)
+      if (footer) card.footer = footer
+      await deps.transport.edit(msg.chatId, initial.messageId, card)
     } catch (err) {
       const e = err as Error
       log.warn('relay error', e.message)

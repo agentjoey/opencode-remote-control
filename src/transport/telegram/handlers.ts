@@ -69,11 +69,17 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
   const healthy = await checkHealth(deps.baseUrl)
   let busyCount = 0
   let totalSessions = 0
+  let totalCost = 0
   try {
     const res = await fetch(`${deps.baseUrl}/session/status`)
     const data = (await res.json()) as Record<string, { type: string }>
     totalSessions = Object.keys(data).length
     busyCount = Object.values(data).filter((s) => s.type === 'busy').length
+    // Accumulate cached costs for speed
+    for (const sid of Object.keys(data)) {
+      const c = deps.state.getSessionCost(sid)
+      if (c !== undefined) totalCost += c
+    }
   } catch {}
   const tuiSession = deps.state.getTuiSelectedSession()
   const currentAgent = deps.state.getCurrentAgent()
@@ -83,6 +89,7 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
     `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
     '',
     `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
+    ...(totalCost > 0 ? [`💰 Today: $${totalCost.toFixed(2)}`] : []),
     ...(tuiSession ? [`📌 <code>…${tuiSession.slice(-8)}</code>${currentAgent ? ` (${currentAgent})` : ''}`] : []),
     ...(nextAgent ? [`🤖 Next-agent override: <b>${nextAgent}</b>`] : []),
     ...(nextModel ? [`⚙️ Next-model override: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),

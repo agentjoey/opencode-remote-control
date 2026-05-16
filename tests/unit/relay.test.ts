@@ -37,6 +37,7 @@ function fakeClient() {
     session: {
       prompt: vi.fn().mockResolvedValue({ data: {} }),
       list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_test', time: { created: 1 } }] }),
+      get: vi.fn().mockResolvedValue({ data: { cost: 0.04, tokens: { input: 5100, output: 1200 }, agent: { name: 'build' }, model: 'k2p6' } }),
       message: vi.fn().mockResolvedValue({ data: { parts: [] } }),
       messages: vi.fn().mockResolvedValue({ data: [] }),
     },
@@ -69,6 +70,8 @@ function fakeState() {
       if (ac === undefined) aborts.delete(id)
       else aborts.set(id, ac)
     },
+    getSessionCost: () => undefined,
+    setSessionCost: vi.fn(),
     flush: async () => {},
   } as any
 }
