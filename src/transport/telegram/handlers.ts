@@ -664,13 +664,19 @@ function setupApproval(deps: HandlersDeps): void {
 
   const offUpdated = deps.eventStream.onAny(async (rawEvent: unknown) => {
     const ev = rawEvent as { type: string; properties: any }
-    if (ev.type !== 'permission.updated') return
+    if (ev.type?.startsWith('permission.')) {
+      log.info(`permission event: type=${ev.type} id=${ev.properties?.id} sessionID=${ev.properties?.sessionID}`)
+    }
+    // Support both v1 (permission.updated) and v2 (permission.asked) event types
+    if (ev.type !== 'permission.updated' && ev.type !== 'permission.asked') return
 
     const permId = ev.properties?.id as string | undefined
-    const title = (ev.properties?.title as string | undefined) ?? 'Unknown operation'
+    const title = (ev.properties?.title as string | undefined)
+      ?? (ev.properties?.permission as string | undefined)
+      ?? 'Unknown operation'
     const sessionId = ev.properties?.sessionID as string | undefined
     if (!permId || !sessionId) {
-      log.warn('permission.updated missing id or sessionID', ev.properties)
+      log.warn(`${ev.type} missing id or sessionID`, ev.properties)
       return
     }
 
@@ -741,8 +747,11 @@ function setupApproval(deps: HandlersDeps): void {
     const ev = rawEvent as { type: string; properties: any }
     if (ev.type !== 'permission.replied') return
 
-    const permId = ev.properties?.permissionID as string | undefined
+    // v1 uses permissionID, v2 uses requestID
+    const permId = (ev.properties?.permissionID as string | undefined)
+      ?? (ev.properties?.requestID as string | undefined)
     const response = ev.properties?.response as string | undefined
+      ?? ev.properties?.reply as string | undefined
     if (!permId) return
 
     const p = pending.get(permId)
