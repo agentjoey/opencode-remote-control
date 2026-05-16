@@ -1,46 +1,21 @@
 import type { OpencodeClient } from '@opencode-ai/sdk'
-import type { Transport } from '../transport/interface.js'
-import type { Card, IncomingMessage } from './types.js'
+import type { CardBus } from './card-bus.js'
+import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import type { EventStream } from '../opencode/event-stream.js'
+import type { StructuredCard, ToolCall } from './structured-card.js'
 import { submitPrompt } from '../opencode/submit.js'
-import { markdownToTelegramHtml } from '../utils/markdown.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
 
 export interface RelayDeps {
-  transport: Transport
+  cardBus: CardBus
   client: OpencodeClient
   eventStream: EventStream
   state: SessionState
-  editThrottleMs: number
   chatTimeoutMs: number
   tuiVisible: boolean
-  toolCallsInline?: boolean
-}
-
-function thinkingCard(sessionId: string, showStop: boolean): Card {
-  const card: Card = { lines: ['⏳  Working…'] }
-  if (showStop) {
-    card.buttons = [[{ label: '⏹ Stop', data: `relay:abort:${sessionId}` }]]
-  }
-  return card
-}
-
-function errorCard(msg: string): Card {
-  const escaped = msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  return { lines: [`❌  <b>Error</b>\n\n<code>${escaped}</code>`], rawHtml: true }
-}
-
-/** Plain text card used during streaming (no markdown conversion). */
-function streamCard(text: string): Card {
-  return { lines: [text] }
-}
-
-/** Final card: convert markdown to Telegram HTML. */
-function finalCard(text: string): Card {
-  return { lines: [markdownToTelegramHtml(text)], rawHtml: true }
 }
 
 function summarizeToolArgs(tool: string, input: any): string {
@@ -50,7 +25,6 @@ function summarizeToolArgs(tool: string, input: any): string {
   return ''
 }
 
-const MAX_TOOL_LINES = 30
 const SUBMIT_MAX_RETRIES = 5
 const SUBMIT_RETRY_BASE_MS = 2000
 
@@ -114,7 +88,6 @@ async function pickSessionFallback(client: OpencodeClient): Promise<string> {
 
 export function createRelay(deps: RelayDeps) {
   return async function handleIncoming(msg: IncomingMessage): Promise<void> {
-    // Prefer TUI-selected session so bot messages go into the active TUI thread.
     const tuiSession = deps.state.getTuiSelectedSession()
     const lastSession = deps.state.getLastSessionId()
     const sessionId = tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
@@ -124,14 +97,10 @@ export function createRelay(deps: RelayDeps) {
     deps.state.setActiveAbort(sessionId, ac)
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
-    const initial = await deps.transport.send(
-      msg.chatId,
-      thinkingCard(sessionId, deps.transport.capabilities.buttons)
-    )
+    deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
+    deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
 
     try {
-
-      // Optional TUI mirror (display only)
       if (deps.tuiVisible) {
         try {
           await deps.client.tui.appendPrompt({ body: { text: msg.text } } as any)
@@ -144,7 +113,6 @@ export function createRelay(deps: RelayDeps) {
       const nextModel = deps.state.getNextModel()
       log.info(`submitting to session=${sessionId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
 
-      // SDK-native submission with overrides (with retry for network errors)
       await submitWithRetry(deps.client, {
         text: msg.text,
         sessionId,
@@ -153,19 +121,15 @@ export function createRelay(deps: RelayDeps) {
         signal: ac.signal,
       })
 
-      // Iterate SSE for streaming output
       let assistantMessageId: string | undefined
       let streamedText = ''
       const textPartIds = new Set<string>()
-      let lastEdit = 0
-      const toolEvents: string[] = []
-      const showTools = deps.toolCallsInline !== false
+      const tools: ToolCall[] = []
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
         const e = ev as { type: string; properties: any }
         const p = e.properties
 
-        // Debug: log all event types
         log.debug(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
 
         if (e.type === 'session.idle') {
@@ -189,66 +153,41 @@ export function createRelay(deps: RelayDeps) {
             continue
           }
 
-          // Track assistant message ID
           if (!assistantMessageId && typeof part.messageID === 'string') {
             assistantMessageId = part.messageID
             log.info(`assistantMessageId set: ${assistantMessageId}`)
           }
 
-          // Handle text parts
           if (part.type === 'text') {
             const partId = typeof part.id === 'string' ? part.id : undefined
             const isNewPart = partId && !textPartIds.has(partId)
-            
-            // Apply delta if present
+
             if (typeof p.delta === 'string') {
               streamedText += p.delta
               log.info(`delta received (${p.delta.length} chars): "${p.delta.slice(0, 50)}..."`)
               if (partId) textPartIds.add(partId)
-              const now = Date.now()
-              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
-                lastEdit = now
-              }
+              deps.cardBus.publish({ kind: 'streaming', sessionId, markdownSrc: streamedText, tools: [...tools] })
             } else if (typeof part.text === 'string' && isNewPart) {
-              // Fallback: if no delta but text is present for a new part, use the full text
               streamedText = part.text
               textPartIds.add(partId)
               log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
-              const now = Date.now()
-              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
-                lastEdit = now
-              }
+              deps.cardBus.publish({ kind: 'streaming', sessionId, markdownSrc: streamedText, tools: [...tools] })
             } else {
               log.info(`text part ignored - delta: ${typeof p.delta}, text: ${typeof part.text}, isNew: ${isNewPart}`)
             }
           }
 
-          // Handle tool parts
-          if (showTools && part.type === 'tool' && typeof part.tool === 'string') {
-            const tool = part.tool
-            const input = part.state?.input ?? {}
-            const arg = summarizeToolArgs(tool, input)
-            const line = `▸ ${tool}${arg ? ` · ${arg}` : ''}`
-            if (toolEvents.length === MAX_TOOL_LINES + 1) {
-              // suppress further lines
-            } else if (toolEvents.length === MAX_TOOL_LINES) {
-              toolEvents.push('…more tool calls suppressed')
-              streamedText += '\n…more tool calls suppressed'
-            } else {
-              toolEvents.push(line)
-              streamedText += (streamedText ? '\n' : '') + line
-              const now = Date.now()
-              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
-                lastEdit = now
-              }
-            }
+          if (part.type === 'tool' && typeof part.tool === 'string') {
+            const status = part.state?.status ?? 'running'
+            tools.push({
+              tool: part.tool,
+              args: summarizeToolArgs(part.tool, part.state?.input ?? {}),
+              status: status === 'error' ? 'error' : status === 'done' ? 'done' : 'running',
+            })
+            deps.cardBus.publish({ kind: 'streaming', sessionId, markdownSrc: streamedText, tools: [...tools] })
           }
         }
 
-        // Handle text streaming deltas (flat properties: partID, field, delta)
         if (e.type === 'message.part.delta') {
           if (!assistantMessageId && typeof p?.messageID === 'string') {
             assistantMessageId = p.messageID
@@ -258,18 +197,13 @@ export function createRelay(deps: RelayDeps) {
           const delta = p?.delta as string | undefined
           if (partId && field === 'text' && typeof delta === 'string') {
             streamedText += delta
-            const now = Date.now()
-            if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-              await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
-              lastEdit = now
-            }
+            deps.cardBus.publish({ kind: 'streaming', sessionId, markdownSrc: streamedText, tools: [...tools] })
           }
         }
       }
 
       log.info(`SSE stream ended. streamedText length: ${streamedText.length}, assistantMessageId: ${assistantMessageId ?? 'none'}`)
 
-      // Fallback: if SSE yielded no text, fetch the latest assistant message directly
       let final = streamedText
       if (!final && assistantMessageId) {
         try {
@@ -289,8 +223,7 @@ export function createRelay(deps: RelayDeps) {
       }
       if (!final) final = '(empty response)'
 
-      // Fetch cost/tokens for footer
-      let footer: string | undefined
+      const meta: { agent?: string; model?: string; cost?: number; tokens?: { input: number; output: number } } = {}
       try {
         const sres = await deps.client.session.get({ path: { id: sessionId } })
         const s = (sres.data ?? {}) as any
@@ -298,33 +231,24 @@ export function createRelay(deps: RelayDeps) {
         const tok = s.tokens
         const tin = typeof tok?.input === 'number' ? tok.input : undefined
         const tout = typeof tok?.output === 'number' ? tok.output : undefined
-        const agentName = s.agent?.name ?? deps.state.getCurrentAgent() ?? ''
-        const modelId = typeof s.model === 'string'
-          ? s.model.split('/').pop() ?? s.model
-          : ''
         if (cost !== undefined) {
           deps.state.setSessionCost(sessionId, cost)
-          const parts: string[] = [`💰 $${cost.toFixed(3)}`]
-          if (tin !== undefined && tout !== undefined) {
-            parts.push(`↑${formatK(tin)} ↓${formatK(tout)}`)
-          }
-          if (agentName) parts.push(agentName)
-          if (modelId) parts.push(modelId)
-          footer = parts.join('  ·  ')
+          meta.cost = cost
         }
+        if (tin !== undefined && tout !== undefined) {
+          meta.tokens = { input: tin, output: tout }
+        }
+        if (s.agent?.name) meta.agent = s.agent.name
+        if (typeof s.model === 'string') meta.model = s.model.split('/').pop() ?? s.model
       } catch {
-        // footer is optional — silently skip
+        // meta is optional
       }
 
-      const card: Card = finalCard(final)
-      if (footer) card.footer = footer
-      await deps.transport.edit(msg.chatId, initial.messageId, card)
+      deps.cardBus.publish({ kind: 'assistant', sessionId, markdownSrc: final, tools: [...tools], meta })
     } catch (err) {
       const e = err as Error
       log.warn('relay error', e.message)
-      try {
-        await deps.transport.edit(msg.chatId, initial.messageId, errorCard(e.message))
-      } catch {}
+      deps.cardBus.publish({ kind: 'error', sessionId, message: e.message })
     } finally {
       clearTimeout(timer)
       deps.state.setActiveAbort(sessionId, undefined)
