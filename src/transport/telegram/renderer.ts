@@ -43,11 +43,19 @@ export class TelegramSessionRenderer {
   private sessionId: string
   private bot: Telegram
   private activeMessageId?: string
+  private lastEditAt = 0
+  private editsInBurst = 0
 
   constructor(opts: RendererOpts) {
     this.chatId = opts.chatId
     this.sessionId = opts.sessionId
     this.bot = opts.bot
+  }
+
+  private currentThrottleMs(): number {
+    if (this.editsInBurst === 0) return 0
+    if (this.editsInBurst < 5) return 250
+    return 1000
   }
 
   async onCard(card: StructuredCard): Promise<void> {
@@ -71,6 +79,13 @@ export class TelegramSessionRenderer {
 
   private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
     if (!this.activeMessageId) return
+    const now = Date.now()
+    const since = now - this.lastEditAt
+    const toolStatusChange = tools.some((t) => t.status === 'done' || t.status === 'error')
+    if (!toolStatusChange && since < this.currentThrottleMs()) return
+
+    this.lastEditAt = now
+    this.editsInBurst += 1
     const text = this.renderChunkBody(md, tools, { streaming: true })
     try {
       await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, {
