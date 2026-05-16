@@ -1,16 +1,45 @@
 # Phase 3 Design Spec — opencode-remote-control
 
+> **Revised 2026-05-16** after research into the opencode SDK, plugins doc,
+> and the GitHub ecosystem (grinev, OpenChamber, cc-connect, kortix-channels,
+> opencode-chat-bridge, kcrommett/opencode-web, background-agents,
+> vibe-coding-slack-notifier). See `2026-05-16-architecture-comparison.md`
+> for the Plan A vs Plan B decision rationale.
+
 ## Goal
 
-Take the project from "private personal tool" to "publishable v0.3.0-rc on GitHub":
+Take the project from "private Telegram-only bot" to "publishable v0.3.0-rc on
+GitHub, SDK-native, transport-aware":
 
-1. **Stability** — close remaining MVP acceptance items (14.2/14.11/14.12/14.13), persist `lastSessionId` across restarts, fix any bugs the soak surfaces.
-2. **Architecture** — introduce a minimal `Transport` abstraction so Telegram is one of many channels (Web is the next consumer). No behavior change on the Telegram side.
-3. **OSS prep** — LICENSE (MIT), SECURITY.md, public-grade README, GitHub Actions CI, `.env.example` review.
+1. **Migrate to SDK-native message submission** — replace TUI-inject as the
+   primary submission path with `client.session.prompt()`, the official SDK
+   pattern. This unblocks per-message `agent`/`model` override and removes
+   the cycle/picker workarounds.
+2. **Transport abstraction** — introduce a minimal `Transport` interface with
+   `Card`/`Button`/`Capabilities`, shaped so Web (Phase 5) is the next real
+   consumer.
+3. **Stability** — finish remaining MVP acceptance (14.2/14.11/14.12/14.13),
+   persist `lastSessionId` across restarts.
+4. **OSS prep** — LICENSE (MIT), SECURITY.md, public-grade README,
+   `ARCHITECTURE.md`, GitHub Actions CI.
 
-Sprint duration target: ~2 weeks. Exit: `git tag v0.3.0-rc.1` ready for review, repo is publishable.
+Sprint duration target: **~2 weeks**. Exit: `git tag v0.3.0-rc.1` ready for
+review; repo is publishable.
 
-Web UI itself (full M4) is **out of scope** here — a separate spec brainstormed after Phase 3 ships. A short high-level outline is included as Appendix A so the Transport interface is shaped with Web in mind, not Discord/Feishu speculation.
+Out of scope: productization (single-command launcher) → Phase 4. Web UI →
+Phase 5. Discord/Feishu/Slack → cut from v1.0 roadmap.
+
+---
+
+## What the research changed
+
+| Original assumption | Reality | Spec change |
+|---|---|---|
+| TUI inject is a reasonable primary submission path | SDK pushes `session.prompt({ parts, agent, model, noReply, format })` — TUI inject is a TUI control API, not a message API | Migrate to `session.prompt()`; keep TUI inject as `TUI_VISIBLE=true` opt-in |
+| `/agent` and `/model` need workarounds because opencode has no targeted switch | Targeted switch happens **per-message** via `session.prompt({ body: { agent, model } })` — stored in bot memory, applied to every submission until changed | `/agent` lists & sets next-agent; `/model` lists & sets next-model; both effective immediately on next message, no TUI cycle, no picker |
+| FAVOURITE_MODELS env var defines the list | Models are pinned per-agent in `config.agent.<name>.model` (already discovered) | `/model` lists agent-pinned models; selecting a model implicitly selects its agent for the next prompt |
+| Transport is theoretical until Discord/Feishu | Web (Phase 5) is the next real consumer | Shape interface for Web specifically; drop Discord/Feishu speculation |
+| OSS will draw users away from grinev | grinev has 642 stars and feature lead | Differentiate as **SDK-native reference impl + Telegram+Web from one codebase**; don't chase feature parity |
 
 ---
 
@@ -18,29 +47,25 @@ Web UI itself (full M4) is **out of scope** here — a separate spec brainstorme
 
 ```
 src/
-  bot/                            ← Telegram-specific (telegraf)
-    index.ts                      wires deps, isGenerating, abort, text handler
+  bot/                      ← Telegram-specific
+    index.ts                wires deps, isGenerating, abort, text handler
     handlers/
-      chat.ts                     handleChat: TUI submit → SSE loop → replyStream
-      commands.ts                 all slash commands (/status /agent /model /files ...)
-      callbacks.ts                inline-button callbacks (card:dismiss, agent:cycle, model:picker, status:refresh, session:pin/unpin)
-      approval.ts                 approval event → buttons
-    reply.ts                      createReplyStream (throttled edit)
-  opencode/                       ← server-facing, channel-agnostic
-    client.ts                     SDK getClient/checkHealth
-    event-stream.ts               persistent SSE, .session(id) async generator
-    tui-bridge.ts                 TUI inject path + prompt_async fallback
-  utils/                          markdown, logger
-  config.ts                       zod env schema
-  index.ts                        main loop (waitForHealth, bot.launch retry)
+      chat.ts               handleChat: TUI submit → SSE loop → replyStream
+      commands.ts           slash commands (HTML cards, callbacks)
+      callbacks.ts          inline-button callbacks
+      approval.ts           approval event → buttons
+    reply.ts                createReplyStream (throttled edit)
+  opencode/
+    client.ts               getClient/checkHealth (uses @opencode-ai/sdk)
+    event-stream.ts         persistent SSE, .session(id) generator
+    tui-bridge.ts           TUI inject + prompt_async fallback
+  utils/                    markdown, logger
+  config.ts                 zod env schema
+  index.ts                  main loop (waitForHealth, bot.launch retry)
 ```
 
-Tests: 9 files, 51 passing. Stack: TS 5.4, Node 20, Telegraf v4, `@opencode-ai/sdk` 1.14+, Vitest, launchd.
-
-**Constraints that informed the design:**
-- `src/opencode/*` is already transport-agnostic — keep it.
-- `src/bot/handlers/chat.ts` mixes Telegram-specific calls (`ctx.reply`, `ctx.deleteMessage`, `replyStream.update`) with the core relay loop (SSE iteration, abort, message reconstruction). The relay logic should move to `core/`.
-- `commands.ts` and `callbacks.ts` are Telegram-shaped (Markup.button.callback, parse_mode HTML). Keep them in `transport/telegram/`. The `Card` data structure lets cards be defined in a channel-agnostic way *if* a future transport (Web) wants to render them differently — but the Telegram code keeps writing Telegram cards directly until there's a reason to share.
+Stack: TS 5.4, Node 20, Telegraf v4, `@opencode-ai/sdk` 1.14+, Vitest, launchd.
+Tests: 9 files, 51 passing.
 
 ---
 
@@ -49,43 +74,135 @@ Tests: 9 files, 51 passing. Stack: TS 5.4, Node 20, Telegraf v4, `@opencode-ai/s
 ```
 src/
   core/
-    types.ts                ← Card, Button, IncomingMessage, OutgoingMessage, ChannelCapabilities
-    relay.ts                ← Channel-agnostic chat relay loop (extracted from chat.ts)
-    state.ts                ← Persistent lastSessionId store (file-backed)
+    types.ts                 ← Card, Button, IncomingMessage, ChannelCapabilities
+    relay.ts                 ← Channel-agnostic chat loop (SDK-native)
+    state.ts                 ← Persistent SessionState (file-backed)
+    agent-context.ts         ← Tracks selected agent/model for next prompt
+  opencode/                  ← unchanged except tui-bridge.ts (see below)
+    client.ts                unchanged
+    event-stream.ts          unchanged
+    tui-bridge.ts            DEMOTED: now only used when TUI_VISIBLE=true
+    submit.ts                ← NEW: SDK submitPrompt wrapper (default path)
   transport/
-    interface.ts            ← Transport interface
+    interface.ts             ← Transport contract
     telegram/
-      index.ts              ← Telegram transport (createTelegramTransport)
-      handlers.ts           ← Slash commands + callback handlers (merged from commands.ts + callbacks.ts)
-      reply-stream.ts       ← Throttled edit (moved from bot/reply.ts)
-      render.ts             ← HTML card rendering helpers
-  opencode/                 ← unchanged
-  utils/                    ← unchanged
-  config.ts                 ← add TRANSPORT (default 'telegram'), STATE_PATH (default './data/state.json')
-  index.ts                  ← loader: import transport by TRANSPORT env
+      index.ts               ← createTelegramTransport(config): Transport
+      handlers.ts            ← commands + callbacks (Telegram-shaped)
+      render.ts              ← Card → Telegraf message+inline keyboard
+      reply-stream.ts        ← Throttled edit helper (moved from bot/reply.ts)
+  utils/                     unchanged
+  config.ts                  ← TUI_VISIBLE (default false), STATE_PATH
+  index.ts                   ← loader; reads TRANSPORT (default 'telegram')
 docs/
-  ARCHITECTURE.md           ← transport abstraction explanation
+  ARCHITECTURE.md            ← Plain-language architecture explanation
   transports/
-    telegram.md             ← Telegram-specific setup, env vars, troubleshooting
-    CONTRIBUTING-NEW-TRANSPORT.md ← how to implement Transport for a new channel
-LICENSE                     ← MIT
-SECURITY.md                 ← report vulns via email
-README.md                   ← rewritten for public consumption
+    telegram.md              ← per-transport setup
+    CONTRIBUTING-NEW-TRANSPORT.md
+LICENSE                      ← MIT
+SECURITY.md
+README.md                    ← public-facing
 .github/
-  workflows/ci.yml          ← npm ci && npx tsc && npm test on PR + main
-  ISSUE_TEMPLATE/
-    bug.md
-    feature.md
+  workflows/ci.yml
+  ISSUE_TEMPLATE/{bug,feature}.md
   PULL_REQUEST_TEMPLATE.md
 ```
 
-Files removed: `src/bot/index.ts`, `src/bot/handlers/chat.ts`, `src/bot/handlers/commands.ts`, `src/bot/handlers/callbacks.ts`, `src/bot/handlers/approval.ts`, `src/bot/reply.ts`. Their logic moves into `core/relay.ts` and `transport/telegram/*`.
+Files removed: `src/bot/index.ts`, `src/bot/handlers/{chat,commands,callbacks,approval}.ts`, `src/bot/reply.ts`. Their logic moves into `core/` and `transport/telegram/`.
 
 ---
 
-## Section 2 — Transport interface
+## Section 2 — SDK-native message submission (central change)
 
-### Minimal contract
+### Current path (deprecated)
+
+```typescript
+// src/opencode/tui-bridge.ts (today)
+async submit(text, sessionId?) {
+  // 1. POST /tui/select-session
+  // 2. POST /tui/clear-prompt
+  // 3. POST /tui/append-prompt { text }
+  // 4. POST /tui/submit-prompt
+  // 5. waitForBusy() — TUI may not consume; fall back to prompt_async
+}
+```
+
+Problems: can't override agent/model per message, requires TUI to be running
+to be useful, multiple HTTP calls per message, custom retry/fallback logic.
+
+### New path
+
+```typescript
+// src/opencode/submit.ts (new)
+import type { OpencodeClient } from '@opencode-ai/sdk'
+
+export interface SubmitOptions {
+  text: string
+  sessionId: string          // explicit; relay decides which session
+  agent?: string             // optional override (e.g. 'build')
+  model?: { providerID: string; modelID: string }
+  signal?: AbortSignal
+}
+
+export async function submitPrompt(
+  client: OpencodeClient,
+  opts: SubmitOptions,
+): Promise<void> {
+  await client.session.prompt({
+    path: { id: opts.sessionId },
+    body: {
+      parts: [{ type: 'text', text: opts.text }],
+      ...(opts.agent ? { agent: opts.agent } : {}),
+      ...(opts.model ? { model: opts.model } : {}),
+    },
+    signal: opts.signal,
+  })
+  // Streaming output still comes via SSE — same loop as today.
+}
+```
+
+### TUI visibility option
+
+If user sets `TUI_VISIBLE=true`, the relay runs **both** paths:
+1. `client.tui.appendPrompt({ body: { text } })` — pastes the prompt into
+   the TUI's prompt buffer for visual continuity
+2. `submitPrompt()` — actually executes via SDK
+
+The TUI displays the message as if the user typed it; the agent runs in the
+same session via SDK. **`/agent` and `/model` overrides work in both modes**
+because they ride on the SDK call, not the TUI inject.
+
+If user has `TUI_VISIBLE=false` (default), only the SDK call runs. The TUI on
+the user's Mac will eventually show the response via its own SSE subscription
+to the same opencode server. This is the recommended default.
+
+### Why this fixes /agent and /model
+
+- `/agent` button stores `agentContext.nextAgent = 'build'` in bot memory.
+- Next user message: relay reads `nextAgent`, passes it to `submitPrompt`.
+- The override applies to that one message *and persists* until reset
+  (matches user mental model: "set the agent, then have a conversation in it")
+- `/model` same pattern with `nextModel`.
+- Pin/unpin commands set/clear these overrides.
+- TUI cycle is no longer involved.
+
+### Migration steps
+
+1. Implement `src/opencode/submit.ts` with `submitPrompt()`.
+2. Add `agentContext` (next agent/model state) into `core/state.ts`.
+3. Rewrite `core/relay.ts` to call `submitPrompt()` instead of
+   `tuiBridge.submit()`.
+4. If `TUI_VISIBLE=true`, also call `client.tui.appendPrompt()` before
+   `submitPrompt()` for visual continuity.
+5. Update `/agent` to set `agentContext.nextAgent` instead of calling
+   `tui.executeCommand('agent.cycle')`.
+6. Update `/model` to set `agentContext.nextModel` instead of opening the
+   TUI picker.
+7. Delete `tui-bridge.ts`'s TUI inject submit path; keep `pickSession` and
+   `getStatus` helpers (still useful).
+
+---
+
+## Section 3 — Transport interface
 
 ```typescript
 // src/transport/interface.ts
@@ -93,283 +210,224 @@ Files removed: `src/bot/index.ts`, `src/bot/handlers/chat.ts`, `src/bot/handlers
 import type { Card, IncomingMessage } from '../core/types.js'
 
 export interface Transport {
-  /** Human-readable name, e.g. "telegram" — used in logs. */
-  readonly name: string
-
-  /** Capabilities the transport actually supports (relay reads this to decide what to do). */
+  readonly name: string                // "telegram", "web", etc.
   readonly capabilities: ChannelCapabilities
 
-  /** Start listening for incoming messages and commands. */
   start(): Promise<void>
-
-  /** Stop, drain in-flight handlers. */
   stop(): Promise<void>
 
-  /**
-   * Send a new card to a channel.
-   * Returns the transport's message handle (a string id; opaque to relay).
-   */
   send(chatId: string, card: Card): Promise<{ messageId: string }>
-
-  /**
-   * Edit an existing card in place. Used for streaming output and refresh-style updates.
-   * If the transport doesn't support edit (capabilities.edit === false), the relay
-   * falls back to send() + delete previous.
-   */
   edit(chatId: string, messageId: string, card: Card): Promise<void>
-
-  /** Delete a card by messageId. No-op if delete unsupported or already gone. */
   delete(chatId: string, messageId: string): Promise<void>
 
-  /** Subscribe to text messages from the user. */
   onMessage(handler: (msg: IncomingMessage) => Promise<void>): void
-
-  /** Subscribe to slash commands (or transport-native equivalent). */
   onCommand(name: string, handler: (msg: IncomingMessage) => Promise<void>): void
-
-  /** Subscribe to button clicks. data is the callback payload, e.g. "agent:cycle". */
   onButtonClick(handler: (data: string, msg: IncomingMessage) => Promise<void>): void
 }
 
 export interface ChannelCapabilities {
-  /** Can edit a previously sent message in place. Telegram: true. Email: false. */
   readonly edit: boolean
-  /** Max characters per message. Telegram: 4096. */
   readonly maxMessageLength: number
-  /** Inline buttons supported. Telegram: true. */
   readonly buttons: boolean
-  /** Rich text (HTML or markdown). Telegram: true (HTML). */
   readonly richText: boolean
-  /** Native streaming (server-push). Web/WebSocket: true. Telegram: false (uses edit). */
-  readonly streaming: boolean
+  readonly streaming: boolean   // native push (WebSocket) vs poll/edit
 }
 ```
-
-### Card data structure
 
 ```typescript
 // src/core/types.ts
 
-/** A renderable card. Channel-agnostic. */
 export interface Card {
-  /** Optional emoji+text title rendered prominently. */
   title?: string
-  /** Body lines. Each transport decides how to render. Strings may contain
-   * basic HTML-ish tags <b>, <i>, <code>; transports map them to their dialect. */
-  lines: string[]
-  /** Inline buttons. Rendered as keyboard on Telegram, as <button> on Web. */
+  lines: string[]               // HTML-ish: <b>, <i>, <code>
   buttons?: Button[][]
-  /** Footer/note. Rendered in italic / muted style. */
   footer?: string
 }
 
 export interface Button {
-  /** Display label. */
   label: string
-  /** Callback payload sent back via onButtonClick. */
-  data: string
+  data: string                  // callback payload
 }
 
 export interface IncomingMessage {
-  /** Stable channel-side user id (Telegram user id, Web pairing id, etc). */
   userId: string
-  /** Conversation id where the message was sent. For Telegram: chat_id. */
   chatId: string
-  /** Raw text content. */
   text: string
-  /** Channel-native message id (so the transport can reply/edit). */
   messageId: string
-}
-
-export interface OutgoingMessage {
-  chatId: string
-  text: string
 }
 ```
 
-### Decisions and tradeoffs
-
-- **HTML-ish tags in Card.lines** instead of a structured rich-text AST. We already have HTML; Telegram uses HTML parse mode; Web can render `<b>/<i>/<code>` directly. An AST would be over-engineering for v0.3.
-- **Buttons are 2D `Button[][]`** to preserve row layout intent. Transports without grids flatten to a vertical list.
-- **No file/image attachment in v0.3** — defer until a transport actually needs it (Telegram doesn't for our cards; Web won't initially).
-- **`edit()` is required but capability-gated.** Transports that can't edit (capability `edit: false`) implement it as `delete + send` and report a new messageId via `send`. Streaming code in `relay.ts` checks `capabilities.edit` to decide between in-place updates vs. periodic resends.
+Shape decisions:
+- HTML-ish tags in `Card.lines` (not a structured AST) — Telegram already
+  consumes HTML; Web reads them as HTML; AST is overkill for v0.3.
+- Buttons 2D `Button[][]` for grid layouts; non-grid transports flatten.
+- No attachments in v0.3 (deferred).
+- `edit()` is required; transports without true edit do `delete + send`
+  internally and re-emit a new messageId via `send`.
 
 ---
 
-## Section 3 — Core relay
-
-`core/relay.ts` extracts the channel-agnostic chat loop from `src/bot/handlers/chat.ts`. Skeleton:
+## Section 4 — Core relay
 
 ```typescript
-// src/core/relay.ts
-
-import type { OpencodeClient } from '@opencode-ai/sdk'
-import type { Transport } from '../transport/interface.js'
-import type { Card } from './types.js'
-import type { TuiBridge } from '../opencode/tui-bridge.js'
-import type { EventStream } from '../opencode/event-stream.js'
+// src/core/relay.ts (skeleton)
 
 interface RelayDeps {
   transport: Transport
-  tuiBridge: TuiBridge
-  eventStream: EventStream
   client: OpencodeClient
+  eventStream: EventStream
+  state: SessionState
+  agentContext: AgentContext   // tracks nextAgent / nextModel
   editThrottleMs: number
   chatTimeoutMs: number
-  streamOutput: boolean
-  state: SessionState  // persistent lastSessionId store
+  tuiVisible: boolean
 }
 
 export function createRelay(deps: RelayDeps) {
-  return async function handleIncomingMessage(msg: IncomingMessage): Promise<void> {
-    // 1. Send initial "thinking..." card
+  return async function onIncoming(msg: IncomingMessage): Promise<void> {
     const initial = await deps.transport.send(msg.chatId, thinkingCard())
-
-    // 2. Set up timeout + abort
     const ac = new AbortController()
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
-    // 3. Submit prompt via TuiBridge
-    const sessionId = await deps.tuiBridge.submit(msg.text, deps.state.getLastSessionId())
+    const sessionId = await pickSession(deps.client, deps.state.getLastSessionId())
     deps.state.setLastSessionId(sessionId)
 
-    // 4. Iterate SSE events, accumulate streamed text, edit the card
-    let streamedText = ''
-    const textPartIds = new Set<string>()
-    let lastEdit = 0
-    for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
-      // ... same logic as current chat.ts but calling deps.transport.edit() ...
-      if (deps.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-        await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
-        lastEdit = now
-      }
+    // Optional TUI mirror
+    if (deps.tuiVisible) {
+      try { await deps.client.tui.appendPrompt({ body: { text: msg.text } }) }
+      catch {}  // TUI not running: silently skip
     }
 
-    // 5. Finalize
-    await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText || fallback))
+    // SDK submission
+    await submitPrompt(deps.client, {
+      text: msg.text,
+      sessionId,
+      agent: deps.agentContext.consume(),    // takes next-agent + clears
+      model: deps.agentContext.consumeModel(),
+      signal: ac.signal,
+    })
+
+    // Iterate SSE, accumulate streamed text + tool events, edit card
+    // (Same iteration logic as today, but writes to transport.edit, not ctx.editMessageText)
+    // ... existing loop body, refactored to use deps.transport ...
   }
 }
 ```
 
-Error handling: same as today (`TuiSubmitError`, abort, timeout). The relay calls `transport.send(errorCard(reason))` instead of `ctx.reply(msg)`.
-
-Tests: `tests/unit/relay.test.ts` with a `FakeTransport` that records calls. No telegraf imports in relay tests.
+Tests live in `tests/unit/relay.test.ts` with a `FakeTransport` and a
+mock client. No `telegraf` imports in core tests.
 
 ---
 
-## Section 4 — Persistent state
+## Section 5 — Persistent state
 
-`src/core/state.ts` — file-backed JSON store for `lastSessionId` (and future state like selected agent).
+`src/core/state.ts` — file-backed JSON store.
 
 ```typescript
 export interface SessionState {
   getLastSessionId(): string | undefined
   setLastSessionId(id: string | undefined): void
+  // Phase 4 will add: getTuiSelectedSession(), getCurrentAgent()
 }
 
-export function createFileBackedState(path: string): SessionState { ... }
+export interface AgentContext {
+  /** Returns next-agent and clears it (one-shot semantics removed — see note). */
+  consume(): string | undefined
+  consumeModel(): { providerID: string; modelID: string } | undefined
+  setNextAgent(name: string | undefined): void
+  setNextModel(m: { providerID: string; modelID: string } | undefined): void
+  // Persisted across restarts via SessionState
+}
 ```
 
-Implementation:
-- Read `state.json` at startup, cache in memory.
-- Writes are debounced (1s) — write to `state.json.tmp` then `rename` for atomicity.
-- Missing file = empty state.
-- Malformed file = log warning, treat as empty.
+**Persistence semantics:** `nextAgent` and `nextModel` are *sticky*: once set,
+they apply to every subsequent message until the user changes or clears them.
+This matches the user's mental model from `/agent` ("now use the build agent")
+better than a one-shot override.
 
-Storage path: `STATE_PATH` env, default `./data/state.json`. `.gitignore` adds `data/`.
+Storage: `STATE_PATH` env, default `./data/state.json`. Atomic write via
+`*.tmp` + rename. Recover from malformed JSON by logging warning + treating
+as empty.
 
-Tests: `tests/unit/state.test.ts` — round-trip, atomicity (tmp file rename), malformed file recovery.
+Tests cover: round-trip, atomic rename, malformed recovery, concurrent debounced writes.
 
 ---
 
-## Section 5 — Telegram transport
+## Section 6 — Telegram transport implementation
 
 `src/transport/telegram/index.ts` exports `createTelegramTransport(config): Transport`.
 
 Internal modules:
-- `handlers.ts` — registers all `bot.command()` and `bot.action()` handlers. Logic ports 1:1 from current `commands.ts` + `callbacks.ts`. Slash commands forward to the relay via `transport.onCommand`. Card builders move here.
-- `reply-stream.ts` — same throttled-edit helper as today's `bot/reply.ts`. Used by the relay when transport.capabilities.edit is true.
-- `render.ts` — `cardToTelegram(card): { text, options }` — converts a `Card` to `{ text: string, options: { parse_mode: 'HTML', reply_markup: ... } }`. Used by `transport.send/edit`.
+- `handlers.ts` — slash commands + callback handlers (logic ports 1:1 from
+  current `commands.ts`+`callbacks.ts`). After refactor, all command logic
+  speaks `Transport` API; no direct `ctx.reply()` calls except in render layer.
+- `render.ts` — `cardToTelegram(card): { text, options }`. Translates the
+  channel-agnostic `Card` to Telegraf `parse_mode: 'HTML'` + inline keyboard.
+- `reply-stream.ts` — throttled-edit helper (moved from `bot/reply.ts`).
+  Used by relay when `capabilities.edit` is true.
 
-The Telegram-specific quirks (whitelist middleware, 409 retry, fire-and-forget text handler, isGenerating guard) stay inside `transport/telegram/` — they're not part of the channel-agnostic contract.
-
-`createBot()` becomes `createTelegramTransport()` returning an object that satisfies `Transport`.
+Telegram-specific quirks stay inside `transport/telegram/`:
+- Whitelist middleware (single-user auth)
+- 409 retry on `bot.launch()`
+- Fire-and-forget text handler (so /abort can interrupt)
+- `isGenerating` guard
 
 ---
 
-## Section 6 — Stability work
+## Section 7 — Stability work
 
-**Acceptance tests** to run/fix:
-- **14.2 — concurrent busy**: two messages in flight, second should get "⏳ Session is busy" not crash. Verify isGenerating guard still works after refactor.
-- **14.11 — network blip**: kill+restart opencode mid-stream, verify EventStream reconnect handles it (synthetic idle fix already in).
-- **14.12 — unauthorized user**: send from non-allowlisted account, verify whitelist middleware rejects with "Unauthorized" + logs warning.
-- **14.13 — 24h soak**: bot running unattended for 24h, no memory leak, no crash-restart loop. Watch `/tmp/opencode-remote-control-telegram.log`. Acceptance: launchd exit count 0 over 24h.
-
-**New: persistent lastSessionId** — see Section 4.
+**Acceptance tests** (still pending from Phase 1/2):
+- **14.2 — concurrent busy**: two messages, second gets "⏳ session busy" not crash.
+- **14.11 — network blip**: kill+restart opencode mid-stream; EventStream
+  reconnect handles it cleanly (synthetic idle fix already in).
+- **14.12 — unauthorized user**: non-allowlisted user gets "Unauthorized" + log.
+- **14.13 — 24h soak**: launchd exit count = 0 over 24h, no memory leak.
 
 **Bug fixes** discovered during soak go here. Allocate ~1 day buffer.
 
 ---
 
-## Section 7 — OSS prep
+## Section 8 — OSS prep
 
-### LICENSE — MIT
-
-Standard MIT text, year 2026, copyright holder = the user (handle to be confirmed before publishing — see Appendix B).
+### LICENSE — MIT (year 2026)
 
 ### SECURITY.md
 
 ```markdown
 # Security Policy
 
-Report security issues privately to <email-to-confirm>.
-Please do not open public issues for security vulnerabilities.
-
-Response target: acknowledge within 48h, fix within 14 days for high-severity issues.
+Report privately to <email-to-confirm>.
+Acknowledge within 48h, fix within 14 days for high-severity issues.
 ```
 
 ### README.md (rewrite)
 
-Target: a developer who has never seen the repo can have a working Telegram bot in ≤ 15 min.
+Target: developer goes from clone → working bot in ≤ 15 min.
 
 Sections:
-1. **What it is** — 1 paragraph, 30-second pitch
-2. **Architecture diagram** — 3-process model (your laptop, opencode TUI, opencode server, Telegram cloud, bot)
-3. **Quick Start (Telegram)**
-   - Prereqs: Node 20, opencode CLI installed
-   - Clone, `npm install`
-   - Create bot via @BotFather, get token
-   - Get your Telegram user id
-   - `cp .env.example .env`, fill `TELEGRAM_BOT_TOKEN` + `ALLOWED_USER_ID`
-   - `npm run build && npm start`
-   - Open Telegram → say hi → see opencode reply
-4. **Running as a service (macOS launchd)** — link to OPS.md
-5. **Command reference** — table of /status, /agent, /model, /files, /session, etc.
-6. **Multi-channel future** — link to ARCHITECTURE.md and CONTRIBUTING-NEW-TRANSPORT.md
-7. **Security model** — single-user-per-bot, allowlist by user id, no multi-tenant
-8. **License**: MIT
+1. **What it is** — 1 paragraph
+2. **How we differ from grinev/opencode-telegram-bot, OpenChamber, cc-connect** —
+   honest positioning: SDK-native reference impl + Telegram+Web from one codebase.
+3. **Architecture diagram** — 2-process model (your laptop runs opencode + this bot)
+4. **Quick Start (Telegram)** — copy-paste steps
+5. **Running as a service (macOS launchd)** — link to OPS.md
+6. **Command reference** — table
+7. **Multi-transport future** — link to ARCHITECTURE.md and CONTRIBUTING-NEW-TRANSPORT.md
+8. **Security model** — single-user, allowlist by user id
+9. **License**: MIT
 
 ### docs/ARCHITECTURE.md
 
-Explains:
-- The 3-process model
-- Why `opencode serve` + TUI inject + bot
-- How SSE event stream maps to message edits
-- Transport interface and Card abstraction
-- Where to extend for a new channel
+Plain-language deep dive (see standalone document).
 
 ### docs/transports/telegram.md
 
-Telegram-specific deep dive moved here: bot creation, BotFather steps, common errors (409 Conflict, "thinking..." stuck), troubleshooting.
+Telegram setup deep dive: BotFather steps, common errors, troubleshooting.
 
 ### docs/transports/CONTRIBUTING-NEW-TRANSPORT.md
 
-A "how to build the next transport" guide:
-- Implement the `Transport` interface
-- Declare capabilities accurately
-- Register in `src/index.ts` loader (TRANSPORT env switch)
-- Write `tests/unit/transport-<name>.test.ts`
-- Write `docs/transports/<name>.md`
+How to add a new transport: implement the interface, declare capabilities,
+register in loader, write tests, write docs.
 
 ### CI — `.github/workflows/ci.yml`
 
@@ -388,152 +446,70 @@ jobs:
       - run: npm test
 ```
 
-### Issue / PR templates
-
-- `bug.md` — repro steps, expected/actual, env (node, opencode version), logs
-- `feature.md` — what + why + scope
-- `PULL_REQUEST_TEMPLATE.md` — what changed, how tested, related issue
-
-### `.env.example` audit
-
-Confirm no secrets are in `.env.example`, every var has a comment, defaults are documented. Already mostly done — final pass.
+### Issue + PR templates — standard
 
 ---
 
-## Section 8 — Implementation order
+## Section 9 — Implementation order
 
-| Order | Task | Files | Risk | Estimate |
-|-------|------|-------|------|----------|
-| 1 | Create core/types.ts + transport/interface.ts (no behavior change) | core/types.ts, transport/interface.ts | low | 2h |
-| 2 | Move bot/reply.ts → transport/telegram/reply-stream.ts | rename + import fix | low | 0.5h |
-| 3 | Create transport/telegram/render.ts (Card → telegram format) | new | low | 2h |
-| 4 | Create transport/telegram/index.ts implementing Transport (wraps current createBot) | new + delete old | medium | 4h |
-| 5 | Port handlers/commands.ts + callbacks.ts → transport/telegram/handlers.ts | move + adjust imports | medium | 4h |
-| 6 | Extract handleChat → core/relay.ts using Transport | core/relay.ts | medium | 4h |
-| 7 | Persistent state (core/state.ts + wire to relay) | new | low | 3h |
-| 8 | Update src/index.ts loader for TRANSPORT env | one file | low | 1h |
-| 9 | Run 14.2/14.11/14.12 acceptance tests + fix bugs | varies | medium | 1 day |
-| 10 | Start 14.13 24h soak (background, in parallel with OSS prep) | n/a | low | n/a |
-| 11 | LICENSE + SECURITY.md + README.md rewrite | docs | low | 1 day |
-| 12 | docs/ARCHITECTURE.md + transports/telegram.md + CONTRIBUTING-NEW-TRANSPORT.md | docs | low | 1 day |
-| 13 | .github/workflows/ci.yml + issue/PR templates | docs | low | 2h |
-| 14 | Final 24h soak completes, audit, tag v0.3.0-rc.1 | n/a | low | n/a |
+| # | Track | Task | Files | Risk | Est |
+|---|---|---|---|---|---|
+| 1 | SDK | Write submit.ts wrapping `client.session.prompt()` | new | low | 2h |
+| 2 | SDK | Unit test: submit with/without agent/model overrides; SSE iteration unchanged | new | low | 2h |
+| 3 | Arch | Create core/types.ts, transport/interface.ts (no behavior change) | new | low | 2h |
+| 4 | Arch | Move bot/reply.ts → transport/telegram/reply-stream.ts | rename + imports | low | 0.5h |
+| 5 | Arch | Create transport/telegram/render.ts (Card → telegram) | new | low | 2h |
+| 6 | Arch | Create core/state.ts + AgentContext + tests | new | low | 4h |
+| 7 | Arch | Extract handleChat → core/relay.ts, calling submitPrompt | new + delete | medium | 6h |
+| 8 | Arch | Port commands.ts + callbacks.ts → transport/telegram/handlers.ts; update /agent and /model to set agentContext | move + adjust | medium | 4h |
+| 9 | Arch | createTelegramTransport implements Transport interface | new + delete bot/index.ts | medium | 4h |
+| 10 | Arch | Update src/index.ts loader for TRANSPORT env | one file | low | 1h |
+| 11 | Stability | Run 14.2/14.11/14.12 + fix bugs | varies | medium | 1 day |
+| 12 | Stability | Start 14.13 24h soak in background | n/a | low | n/a |
+| 13 | OSS | LICENSE + SECURITY.md + README rewrite | docs | low | 1 day |
+| 14 | OSS | docs/ARCHITECTURE.md + transports/telegram.md + CONTRIBUTING-NEW-TRANSPORT.md | docs | low | 1 day |
+| 15 | OSS | .github/workflows/ci.yml + issue/PR templates | docs | low | 2h |
+| 16 | Tag | 14.13 completes, final audit, tag v0.3.0-rc.1 | n/a | low | n/a |
 
 Total: ~10 working days.
 
 ---
 
-## Section 9 — Definition of done
+## Section 10 — Definition of done
 
-- [ ] `npm test` passes — at least 51 tests still passing (existing) + new tests for relay, state, transport interface
+- [ ] `npm test` passes — all existing tests + new tests for submit, relay, state, AgentContext
 - [ ] `npx tsc --noEmit` clean
-- [ ] `src/bot/` directory no longer exists; replaced by `src/core/` and `src/transport/telegram/`
-- [ ] Telegram bot behavior unchanged (smoke test: send text, /status, /agent, /model, /sessions, /files all work)
-- [ ] `lastSessionId` survives `launchctl kickstart -k …` restart
-- [ ] 14.2 / 14.11 / 14.12 acceptance pass
-- [ ] 14.13 — bot runs 24h without crash-restart
-- [ ] LICENSE, SECURITY.md, README.md, docs/ARCHITECTURE.md, docs/transports/telegram.md, docs/transports/CONTRIBUTING-NEW-TRANSPORT.md all present
-- [ ] GitHub Actions CI green on this branch
+- [ ] `src/bot/` no longer exists; replaced by `src/core/` + `src/transport/telegram/`
+- [ ] Default submission path is `client.session.prompt()`; TUI inject only when `TUI_VISIBLE=true`
+- [ ] `/agent <name>` sets next-agent override, applied on subsequent prompts (verified by sending a message and seeing it run under that agent)
+- [ ] `/model <provider/id>` sets next-model override
+- [ ] `lastSessionId`, `nextAgent`, `nextModel` survive restart
+- [ ] Acceptance: 14.2 / 14.11 / 14.12 pass; 14.13 — 24h without crash-restart
+- [ ] LICENSE, SECURITY.md, README, docs/ARCHITECTURE.md, docs/transports/telegram.md present
+- [ ] GitHub Actions CI green
 - [ ] `.env.example` audited
-- [ ] `git tag v0.3.0-rc.1` ready (do not tag/push until user reviews)
-
----
-
-## Appendix A — Web UI high-level outline (Phase 4 preview)
-
-> Goal of this appendix: shape the Transport interface so Web is a real consumer, not speculation. **Not** the full Web UI design — that gets its own brainstorm + spec after Phase 3 ships.
-
-### Picture (text wireframe)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  opencode-remote-control            🟢 connected   ⚙        │
-├──────────┬──────────────────────────────────────────────────┤
-│ SESSIONS │  ┌────────────────────────────────────────────┐  │
-│          │  │ User                                       │  │
-│ • ses_…3 │  │ implement F1 streaming                     │  │
-│   build  │  └────────────────────────────────────────────┘  │
-│   2m ago │                                                  │
-│          │  ┌────────────────────────────────────────────┐  │
-│ • ses_…1 │  │ Assistant • build · gemini-3-pro           │  │
-│   plan   │  │ Working through the design... ▌            │  │
-│   1h ago │  └────────────────────────────────────────────┘  │
-│          │                                                  │
-│ + New    │  [ Send a message ]               🎙 📎 ➤      │
-├──────────┴──────────────────────────────────────────────────┤
-│  Approval needed: bash `rm -rf tmp/`        [Allow] [Deny] │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Mobile: sidebar collapses to a top hamburger; same chat area; bottom command bar.
-
-### Interactions
-
-- Stream text into the assistant bubble character-by-character (uses WebSocket push — `capabilities.streaming: true`, no edit-throttle hack needed)
-- Tap session in sidebar → switches active session, sends `select-session` to TUI, loads message history
-- `/agent` `/model` `/files` `/abort` rendered as buttons in a "command bar" (not slash text)
-- Approval card slides up from bottom on mobile, modal on desktop
-- Tool calls collapsed by default with `▸ ran bash` summary; tap to expand to full output
-
-### Routing & deployment
-
-- Bot process serves three things from same port:
-  - `/api/*` — REST endpoints (start session, get history, etc.)
-  - `/ws` — WebSocket transport
-  - `/` — static SvelteKit build
-- No separate frontend deployment; `npm start` runs everything
-
-### Auth flow
-
-1. User opens `https://<bot-host>/` on phone — first-visit shows "Pair this device" with a 6-digit code
-2. On the desktop running the bot, the code is auto-printed to stdout and logged
-3. User types the code on phone → bot validates → stores phone's device token in `state.json`
-4. Future visits auto-authenticated via cookie
-
-### Capabilities relevant to Transport interface
-
-| Capability | Web value | Why it matters |
-|------------|-----------|----------------|
-| edit | true | Updates streamed text bubbles |
-| maxMessageLength | unlimited (sentinel: `Number.POSITIVE_INFINITY`) | No chunking needed |
-| buttons | true | Native HTML buttons |
-| richText | true | Full HTML/markdown |
-| streaming | true | WebSocket push, no edit-throttle |
-
-When `capabilities.streaming` is true, the relay can push every delta immediately instead of batching via `editThrottleMs`. Telegram has `streaming: false` and continues to use throttled edits.
-
-### What this teaches the Phase 3 Transport interface
-
-- The `Card` model needs to accommodate "growing bubbles" — i.e., edits that append, not replace. Phase 3 keeps `edit` as full-replace (Telegram needs that anyway), and Web can implement a fast-path that diffs locally. No interface change needed.
-- `capabilities.streaming` exists so transports can opt out of edit-throttling.
-- Sessions sidebar needs a "list sessions" RPC — Phase 3 already has `/sessions` command that uses `client.session.list()`. No transport surface needed.
-- Approval cards are buttons + payload — already in `Button` type.
-
-### Out of scope for Phase 3
-
-- Anything Web-specific (SvelteKit setup, WebSocket server, pairing flow, static serving)
-- Anything Discord/Feishu/Slack-specific
-- A `Card.rich` AST (HTML-in-strings is fine for v0.3)
-- File / image attachment in Cards
-
----
-
-## Appendix B — Open questions to resolve before tagging v0.3.0-rc.1
-
-These are tracked so they get answered, not designed-around:
-
-1. **Repo owner public handle / display name** — appears in LICENSE, SECURITY.md contact, README author line
-2. **Security contact email** — for SECURITY.md
-3. **Final project name** — keep `opencode-remote-control` or shorten (`oprc`)? Per roadmap, default is keep
-4. **Public license year** — 2026 (Phase 3 ships in 2026-05)
+- [ ] `git tag v0.3.0-rc.1` ready for review
 
 ---
 
 ## Risks
 
 | Risk | Mitigation |
-|------|------------|
-| Refactor breaks Telegram behavior subtly | Add a smoke-test script `npm run smoke` that exercises send/edit/delete + command/callback paths against a test bot (out of scope to automate; manual checklist OK) |
-| 14.13 soak surfaces a memory leak | Add heap snapshot at start + end, compare; if growing, that's its own bug ticket — don't block tag on it, document as known issue |
-| Persistent state corrupts on crash | Atomic rename (.tmp → real) + recover-from-empty on parse error |
-| OSS prep takes longer than estimated | Tag rc.1 with whatever docs exist; iterate to rc.2 before public — user controls timing |
+|---|---|
+| `client.session.prompt()` semantic differences vs TUI inject (e.g., timing of SSE start) | Validate empirically in step 2 with unit + integration smoke test; document any drift |
+| Removing TUI inject silently breaks existing TUI-watching users | `TUI_VISIBLE=true` opt-in preserves the visual experience for those users |
+| Refactor introduces regression | Smoke checklist + 14.x acceptance suite + `npm test` ≥ 55 |
+| AgentContext persistence breaks if user manually edits state.json | Treat malformed → empty; log warning. Document path in README |
+| 24h soak surfaces memory leak | Heap snapshot at start + end; if growing, file bug for v0.3.1, don't block tag |
+
+---
+
+## Open questions (carry to user before tag)
+
+1. **Public handle / author name** — for LICENSE and README byline
+2. **Security contact email** — SECURITY.md
+3. **Final project / npm name** — keep `opencode-remote-control`? Consider
+   `opencode-rc` for the binary; full name as repo
+4. **Telegraf vs grammy** — grinev uses grammy (more active in 2026); should
+   we migrate? Recommendation: defer to Phase 4 if any pain shows up;
+   telegraf still works
