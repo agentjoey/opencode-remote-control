@@ -1,6 +1,10 @@
 import type { StructuredCard, SessionSummary } from './types.js'
 
-const base = ''
+let base = ''
+
+export function setBaseUrl(url: string) {
+  base = url.replace(/\/$/, '')
+}
 
 async function jsonGet<T>(path: string): Promise<T> {
   const res = await fetch(`${base}${path}`, { credentials: 'include' })
