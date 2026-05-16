@@ -23,7 +23,11 @@ export function startTuiSync(deps: SyncDeps): () => void {
       (typeof p?.part?.sessionID === 'string' && p.part.sessionID) ||
       (typeof p?.info?.sessionID === 'string' && p.info.sessionID) ||
       undefined
-    if (sid) deps.state.setTuiSelectedSession(sid)
+    if (sid) {
+      deps.state.setTuiSelectedSession(sid)
+      // Also sync to lastSessionId so /current reflects TUI state
+      deps.state.setLastSessionId(sid)
+    }
   })
 
   // Poll the selected session to refresh current agent

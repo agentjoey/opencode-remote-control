@@ -49,8 +49,7 @@ function formatK(n: number): string {
   return String(n)
 }
 
-async function pickSession(client: OpencodeClient, last: string | undefined): Promise<string> {
-  if (last) return last
+async function pickSessionFallback(client: OpencodeClient): Promise<string> {
   const res = await client.session.list()
   const sessions = (res.data ?? []) as Array<{ id: string; time?: { created?: number } }>
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
@@ -60,7 +59,10 @@ async function pickSession(client: OpencodeClient, last: string | undefined): Pr
 
 export function createRelay(deps: RelayDeps) {
   return async function handleIncoming(msg: IncomingMessage): Promise<void> {
-    const sessionId = await pickSession(deps.client, deps.state.getLastSessionId())
+    // Prefer TUI-selected session so bot messages go into the active TUI thread.
+    const tuiSession = deps.state.getTuiSelectedSession()
+    const lastSession = deps.state.getLastSessionId()
+    const sessionId = tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
     deps.state.setLastSessionId(sessionId)
 
     const ac = new AbortController()
@@ -145,9 +147,10 @@ export function createRelay(deps: RelayDeps) {
           if (!assistantMessageId && typeof p?.messageID === 'string') {
             assistantMessageId = p.messageID
           }
-          const partId = p?.partID as string | undefined
-          const field = p?.field as string | undefined
-          const delta = p?.delta as string | undefined
+          // Support both flat and nested property shapes
+          const partId = (p?.partID ?? p?.part?.id) as string | undefined
+          const field = (p?.field ?? p?.part?.field) as string | undefined
+          const delta = (p?.delta ?? p?.part?.delta) as string | undefined
           if (partId && textPartIds.has(partId) && field === 'text' && delta) {
             streamedText += delta
             const now = Date.now()
@@ -159,7 +162,25 @@ export function createRelay(deps: RelayDeps) {
         }
       }
 
-      const final = streamedText || '(empty response)'
+      // Fallback: if SSE yielded no text, fetch the latest assistant message directly
+      let final = streamedText
+      if (!final && assistantMessageId) {
+        try {
+          const mres = await deps.client.session.message({ path: { id: sessionId, messageId: assistantMessageId } })
+          const m = (mres.data ?? {}) as any
+          const parts = m.parts ?? []
+          const texts: string[] = []
+          for (const part of parts) {
+            if (part.type === 'text' && typeof part.text === 'string') {
+              texts.push(part.text)
+            }
+          }
+          if (texts.length > 0) final = texts.join('')
+        } catch (err) {
+          log.debug('fallback fetch message failed', (err as Error).message)
+        }
+      }
+      if (!final) final = '(empty response)'
 
       // Fetch cost/tokens for footer
       let footer: string | undefined
