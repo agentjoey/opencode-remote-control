@@ -477,6 +477,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.action(/^agent:set:(.+)$/, async (ctx) => {
     const name = ctx.match[1]
+    log.info(`agent:set callback: ${name}`)
     deps.state.setNextAgent(name)
     await ctx.answerCbQuery(`Agent → ${name}`)
     await ctx.editMessageText(
@@ -494,9 +495,10 @@ export function registerHandlers(deps: HandlersDeps): void {
     )
   })
 
-  deps.bot.action(/^model:set:(.+):(.+)$/, async (ctx) => {
+  deps.bot.action(/^model:set:([^:]+):(.+)$/, async (ctx) => {
     const agentName = ctx.match[1]
     const modelStr = ctx.match[2]
+    log.info(`model:set callback: agent=${agentName} model=${modelStr}`)
     const parsed = parseModel(modelStr)
     deps.state.setNextAgent(agentName)
     deps.state.setNextModel(parsed)
