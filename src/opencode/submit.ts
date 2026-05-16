@@ -1,5 +1,11 @@
 import type { OpencodeClient } from '@opencode-ai/sdk'
 
+// Extract the body type from session.prompt parameter using TypeScript inference.
+// This avoids coupling to SDK internal paths that may change between versions.
+type PromptBody = Parameters<OpencodeClient['session']['prompt']>[0] extends { body?: infer B }
+  ? B
+  : never
+
 export interface SubmitOptions {
   text: string
   sessionId: string
@@ -12,14 +18,15 @@ export async function submitPrompt(
   client: OpencodeClient,
   opts: SubmitOptions,
 ): Promise<void> {
-  const body: Record<string, unknown> = {
-    parts: [{ type: 'text', text: opts.text }],
-  }
-  if (opts.agent) body.agent = opts.agent
-  if (opts.model) body.model = opts.model
+  const body = {
+    parts: [{ type: 'text' as const, text: opts.text }],
+    ...(opts.agent ? { agent: opts.agent } : {}),
+    ...(opts.model ? { model: opts.model } : {}),
+  } as PromptBody
+
   await client.session.prompt({
     path: { id: opts.sessionId },
     body,
     signal: opts.signal,
-  } as any)
+  })
 }
