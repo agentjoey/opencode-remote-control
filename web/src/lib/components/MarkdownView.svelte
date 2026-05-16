@@ -21,6 +21,10 @@
     font-size: 0.9em;
   }
   .md :global(p) { margin: 0.5em 0; }
-  .md :global(h1, h2, h3, h4) { margin: 0.8em 0 0.4em; }
-  .md :global(ul, ol) { padding-left: 1.5em; }
+  .md :global(h1) { margin: 0.8em 0 0.4em; }
+  .md :global(h2) { margin: 0.8em 0 0.4em; }
+  .md :global(h3) { margin: 0.8em 0 0.4em; }
+  .md :global(h4) { margin: 0.8em 0 0.4em; }
+  .md :global(ul) { padding-left: 1.5em; }
+  .md :global(ol) { padding-left: 1.5em; }
 </style>

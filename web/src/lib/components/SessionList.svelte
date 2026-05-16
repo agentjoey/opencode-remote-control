@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { sessionList, activeSession } from '../stores/sessions.js'
+  import { sessionList } from '../stores/sessions.js'
+  import { activeSession } from '../stores/activeSession.js'
   import type { SessionSummary } from '../api/types.js'
 
   function formatTime(ts: number): string {
