@@ -58,71 +58,89 @@ full decision record.
 
 ---
 
-## File tree (Phase 3+ target)
+## File tree (Phase 5 / v0.5.0)
 
 ```
 src/
   core/                          ← channel-agnostic
-    types.ts                     Card, Button, IncomingMessage, Capabilities
-    relay.ts                     handleIncoming: SDK submit → SSE iterate → transport.edit
+    structured-card.ts           8-variant discriminated union (thinking/streaming/assistant/…)
+    card-bus.ts                  per-session + wildcard subscribers, ring buffer
+    relay.ts                     SDK submit → SSE iterate → CardBus.publish
+    history.ts                   messageToCards, reconstructHistory
     state.ts                     SessionState + AgentContext (persistent)
 
   opencode/                      ← opencode-facing
     client.ts                    SDK client factory + health check
-    event-stream.ts              persistent SSE subscriber; .session(id) async generator
-    submit.ts                    client.session.prompt wrapper (default submit path)
-    tui-bridge.ts                tui.appendPrompt mirror (only when TUI_VISIBLE=true)
+    event-stream.ts              persistent SSE subscriber
+    submit.ts                    client.session.prompt wrapper
+    tui-bridge.ts                tui.appendPrompt mirror
 
   transport/                     ← user-facing
-    interface.ts                 Transport contract
+    interface.ts                 Transport contract (revised: start({cardBus,state}))
     telegram/
-      index.ts                   createTelegramTransport(): Transport
+      index.ts                   createTelegramTransport()
       handlers.ts                slash commands + button callbacks
-      render.ts                  Card → telegraf HTML message + inline keyboard
-      reply-stream.ts            throttled-edit helper
-    web/                         (Phase 5)
-      …
+      renderer.ts                TelegramSessionRenderer: per-session pagination + collapse
+    web/
+      index.ts                   createWebTransport()
+      server.ts                  Hono HTTP + static
+      ws-hub.ts                  per-client WS subscription + broadcast
+      middleware/cf-access.ts    Cloudflare Access JWT verification
+      routes/*.ts                /api/* REST endpoints
 
-  utils/                         markdown helpers, structured logger
-  config.ts                      zod env schema
-  index.ts                       loader: reads TRANSPORT, wires deps
+  utils/
+  config.ts                      zod env schema (WEB_* variables)
+  index.ts                       starts all enabled transports
+
+web/                             ← SvelteKit PWA + Chrome Extension
+  src/
+    routes/                      SvelteKit pages (+layout, +page, [sessionId])
+    lib/
+      ws/client.ts               auto-reconnect WebSocket client
+      api/client.ts              fetch wrapper
+      stores/                    sessions, activeSession, connection
+      components/                Card, Composer, SessionList, …
+  extension/                     Chrome MV3 manifest + background + sidepanel
+  static/                        manifest.webmanifest, icons, service-worker
 ```
 
 ---
 
 ## How a message flows
 
-You send "implement F1 streaming" from Telegram.
+You send "implement F1 streaming" from Telegram (or Web).
 
-1. **Telegraf** receives the text update → `transport/telegram/index.ts`
-   dispatches to its registered `onMessage` handler.
+1. **Transport** receives the text update:
+   - Telegram: Telegraf dispatches to `onMessage` handler.
+   - Web: Hono `/api/message` route receives POST.
 2. The handler builds an `IncomingMessage` and calls `core/relay.ts`'s
    `onIncoming`.
 3. The relay:
-   - Sends an initial "💭 thinking…" card via `transport.send()`.
-   - Picks the session: from `state.getLastSessionId()` or newest from
+   - Publishes `kind: 'thinking'` to `CardBus`.
+   - Picks the session from `state.getLastSessionId()` or newest from
      `client.session.list()`.
-   - Reads `agentContext.consume()` and `consumeModel()` to get any active
-     overrides (set by /agent or /model).
-   - If `TUI_VISIBLE=true`, mirrors prompt into the TUI via
+   - Reads `agentContext.consume()` and `consumeModel()` for overrides.
+   - If `TUI_VISIBLE=true`, mirrors prompt into TUI via
      `client.tui.appendPrompt({ body: { text } })`.
-   - Calls `client.session.prompt({ path, body: { parts, agent, model } })`
-     — the SDK-native submission.
+   - Calls `client.session.prompt({ path, body: { parts, agent, model } })`.
 4. The relay enters its SSE loop: iterates events from
    `eventStream.session(sessionId, signal)`.
-   - On `message.part.updated` → tracks text part IDs.
-   - On `message.part.delta` → accumulates delta into a streaming string;
-     periodically calls `transport.edit(chatId, messageId, textCard(streamed))`
-     subject to `editThrottleMs`.
-   - On `session.idle` or `session.status: idle` → breaks the loop.
-   - On `session.error` → renders error card.
-5. Final edit shows the complete assistant response; loop exits.
+   - On `message.part.delta` → accumulates delta; publishes
+     `kind: 'streaming'` to `CardBus` (throttled).
+   - On `tool.*` events → updates tool calls; publishes updated
+     `kind: 'streaming'`.
+   - On `session.idle` → publishes final `kind: 'assistant'` with `meta`.
+   - On `session.error` → publishes `kind: 'error'`.
+5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
+   - Telegram: `TelegramSessionRenderer` paginates long outputs into multiple
+     messages with progressive tool-call collapse.
+   - Web: `WsHub` sends JSON frame to all subscribed WebSocket clients;
+     SvelteKit frontend updates stores and re-renders components.
 
 When you send `/agent build` instead:
 - Handler updates `agentContext.setNextAgent('build')`.
-- Confirmation card sent.
-- Next text message uses `agent: 'build'` in `session.prompt`. **No TUI
-  cycling.**
+- Confirmation card sent via CardBus.
+- Next text message uses `agent: 'build'` in `session.prompt`.
 
 ---
 
@@ -171,11 +189,9 @@ Every transport satisfies:
 interface Transport {
   readonly name: string
   readonly capabilities: ChannelCapabilities
-  start(): Promise<void>
+  start(deps: { cardBus: CardBus; state: SessionState }): Promise<void>
   stop(): Promise<void>
-  send(chatId, card): Promise<{ messageId }>
-  edit(chatId, messageId, card): Promise<void>
-  delete(chatId, messageId): Promise<void>
+  send(chatId: string, card: StructuredCard): Promise<{ messageId: string }>
   onMessage(handler): void
   onCommand(name, handler): void
   onButtonClick(handler): void
@@ -186,29 +202,30 @@ interface ChannelCapabilities {
   readonly maxMessageLength: number
   readonly buttons: boolean
   readonly richText: boolean
-  readonly streaming: boolean   // native push (true) vs. periodic edit (false)
+  readonly streaming: boolean   // true: push every delta; false: throttle+paginate
 }
 ```
 
-`Card` is channel-agnostic:
+The relay emits `StructuredCard` to a shared `CardBus`. Each transport
+subscribes to the bus and renders independently:
 
 ```typescript
-interface Card {
-  title?: string
-  lines: string[]               // HTML-ish: <b>, <i>, <code>
-  buttons?: Button[][]
-  footer?: string
-}
+type StructuredCard =
+  | { kind: 'thinking';  sessionId: string; showStop: boolean }
+  | { kind: 'streaming'; sessionId: string; markdownSrc: string; tools: ToolCall[] }
+  | { kind: 'assistant'; sessionId: string; markdownSrc: string; tools: ToolCall[]; meta: AssistantMeta }
+  | { kind: 'user';      sessionId: string; text: string; ts: number }
+  | { kind: 'error';     sessionId: string; message: string }
+  | { kind: 'status';    sessionId: string; fields: Record<string, string>; buttons?: Button[][] }
+  | { kind: 'info';      title: string; sections: InfoSection[] }
+  | { kind: 'approval';  sessionId: string; title: string; args: unknown; requestId: string }
 ```
 
-Transports translate `Card` to their native dialect:
-- Telegram: HTML parse_mode + inline keyboard markup
-- Web (Phase 5): React/Svelte component rendering
-
-Capabilities let the relay adapt:
-- `streaming: false` → relay uses `editThrottleMs` periodic edits
-- `streaming: true` → relay pushes every delta immediately
-- `edit: false` → relay falls back to `delete + send` for updates
+Transports translate `StructuredCard` to their native dialect:
+- **Telegram**: `TelegramSessionRenderer` handles per-session pagination,
+  progressive tool-call collapse, and adaptive throttling.
+- **Web**: `WsHub` broadcasts JSON frames; SvelteKit frontend renders
+  components for each card kind.
 
 ---
 
@@ -259,7 +276,7 @@ The relay code in `src/core/relay.ts` doesn't change.
 
 | Project | Pattern | Submission | Multi-channel | Web UI |
 |---|---|---|---|---|
-| **us** (Phase 3+) | external SDK consumer | `session.prompt()` | yes (Phase 3 abstraction, Phase 5 Web) | Phase 5 |
+| **us** (v0.5.0) | external SDK consumer | `session.prompt()` | ✅ Telegram + Web | ✅ PWA + Chrome Ext |
 | grinev/opencode-telegram-bot | external HTTP | TUI inject hybrid | no | no |
 | cc-connect | external bridge | varies | yes (11+ platforms) | no |
 | opencode-chat-bridge | external bridge | SDK | yes (Matrix/Slack/WhatsApp/…) | no |
