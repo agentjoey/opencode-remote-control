@@ -85,12 +85,16 @@ export function createRelay(deps: RelayDeps) {
         }
       }
 
+      const nextAgent = deps.state.getNextAgent()
+      const nextModel = deps.state.getNextModel()
+      log.info(`submitting to session=${sessionId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+
       // SDK-native submission with overrides
       await submitPrompt(deps.client, {
         text: msg.text,
         sessionId,
-        agent: deps.state.getNextAgent(),
-        model: deps.state.getNextModel(),
+        agent: nextAgent,
+        model: nextModel,
         signal: ac.signal,
       })
 
