@@ -18,9 +18,14 @@ export function cardToTelegram(card: Card): {
     lines.push(`<b>${card.title}</b>`)
     lines.push('')
   }
-  lines.push(...card.lines.map(escapeHtml))
+  if (card.rawHtml) {
+    lines.push(...card.lines)
+  } else {
+    lines.push(...card.lines.map(escapeHtml))
+  }
   if (card.footer) {
     lines.push('')
+    lines.push('──────────')
     lines.push(`<i>${escapeHtml(card.footer)}</i>`)
   }
   let text = lines.join('\n')
