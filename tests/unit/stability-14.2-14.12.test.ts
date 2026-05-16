@@ -1,35 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRelay } from '../../src/core/relay'
-import type { Transport } from '../../src/transport/interface'
-import type { Card } from '../../src/core/types'
-
-function fakeTransport(): Transport & { sent: Card[]; edits: Card[] } {
-  const sent: Card[] = []
-  const edits: Card[] = []
-  return {
-    name: 'fake',
-    capabilities: {
-      edit: true,
-      maxMessageLength: 4000,
-      buttons: true,
-      richText: true,
-      streaming: false,
-    },
-    start: vi.fn(),
-    stop: vi.fn(),
-    send: vi.fn(async (_c: string, card: Card) => {
-      sent.push(card)
-      return { messageId: `m${sent.length}` }
-    }),
-    edit: vi.fn(async (_c: string, _m: string, card: Card) => { edits.push(card) }),
-    delete: vi.fn(),
-    onMessage: vi.fn(),
-    onCommand: vi.fn(),
-    onButtonClick: vi.fn(),
-    sent,
-    edits,
-  } as any
-}
+import { createCardBus } from '../../src/core/card-bus'
+import type { StructuredCard } from '../../src/core/structured-card'
 
 function fakeClient() {
   return {
@@ -81,21 +53,22 @@ describe('14.2 concurrent busy', () => {
     // The actual "busy" guard lives in the Telegram transport (isGenerating
     // flag) which rejects subsequent messages while one is in flight.
     // See src/transport/telegram/index.ts bot.on('text') handler.
-    const transport = fakeTransport()
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
     const relay = createRelay({
-      transport,
+      cardBus,
       client: fakeClient(),
       eventStream: fakeEventStream([
         { type: 'session.idle', properties: {} },
       ]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
 
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(transport.sent.length).toBeGreaterThan(0)
+    expect(cards.some(c => c.kind === 'thinking')).toBe(true)
   })
 })
 

@@ -4,6 +4,7 @@ import { getClient, checkHealth } from './opencode/client.js'
 import { EventStream } from './opencode/event-stream.js'
 import { createFileBackedState } from './core/state.js'
 import { createRelay } from './core/relay.js'
+import { createCardBus } from './core/card-bus.js'
 import { startTuiSync } from './core/tui-sync.js'
 import { createTelegramTransport } from './transport/telegram/index.js'
 import { startPushNotifications } from './core/push.js'
@@ -35,6 +36,7 @@ export async function runBot(): Promise<void> {
   eventStream.start(client)
 
   const state = createFileBackedState(config.statePath)
+  const cardBus = createCardBus()
 
   if (config.transport !== 'telegram') {
     throw new Error(`unsupported TRANSPORT: ${config.transport}`)
@@ -50,14 +52,12 @@ export async function runBot(): Promise<void> {
   })
 
   const relay = createRelay({
-    transport,
+    cardBus,
     client,
     eventStream,
     state,
-    editThrottleMs: config.editThrottleMs,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: config.tuiVisible,
-    toolCallsInline: config.toolCallsInline,
   })
 
   transport.onMessage(relay)
@@ -73,7 +73,7 @@ export async function runBot(): Promise<void> {
   process.once('SIGINT', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
   process.once('SIGTERM', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
 
-  await transport.start()
+  await transport.start({ cardBus, state })
 }
 
 if (process.argv[1]?.endsWith('dist/index.js')) {
