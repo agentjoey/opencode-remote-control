@@ -1,5 +1,5 @@
 import type { Context } from 'telegraf'
-import { chunkMessage } from '../utils/markdown.js'
+import { chunkMessage } from '../../utils/markdown.js'
 
 interface ReplyStreamOpts {
   throttleMs: number
