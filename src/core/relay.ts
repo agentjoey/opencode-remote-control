@@ -51,6 +51,53 @@ function summarizeToolArgs(tool: string, input: any): string {
 }
 
 const MAX_TOOL_LINES = 30
+const SUBMIT_MAX_RETRIES = 5
+const SUBMIT_RETRY_BASE_MS = 2000
+
+function isNetworkError(err: Error): boolean {
+  const msg = err.message.toLowerCase()
+  return msg.includes('fetch failed') ||
+    msg.includes('econnrefused') ||
+    msg.includes('econnreset') ||
+    msg.includes('enotfound') ||
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('socket hang up')
+}
+
+async function submitWithRetry(
+  client: OpencodeClient,
+  opts: { text: string; sessionId: string; agent?: string; model?: { providerID: string; modelID: string }; signal?: AbortSignal },
+): Promise<void> {
+  for (let i = 0; i < SUBMIT_MAX_RETRIES; i++) {
+    try {
+      await submitPrompt(client, opts)
+      return
+    } catch (err) {
+      const e = err as Error
+      if (opts.signal?.aborted) throw e
+      if (i < SUBMIT_MAX_RETRIES - 1 && isNetworkError(e)) {
+        const delay = SUBMIT_RETRY_BASE_MS * Math.pow(2, i)
+        log.warn(`submit failed (attempt ${i + 1}/${SUBMIT_MAX_RETRIES}), retry in ${delay}ms: ${e.message}`)
+        await delayOrAbort(delay, opts.signal)
+      } else {
+        throw e
+      }
+    }
+  }
+}
+
+function delayOrAbort(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal || signal.aborted) return Promise.resolve()
+  return new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => { clearTimeout(t); reject(new Error('aborted')) }
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
 
 function formatK(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
@@ -97,8 +144,8 @@ export function createRelay(deps: RelayDeps) {
       const nextModel = deps.state.getNextModel()
       log.info(`submitting to session=${sessionId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
 
-      // SDK-native submission with overrides
-      await submitPrompt(deps.client, {
+      // SDK-native submission with overrides (with retry for network errors)
+      await submitWithRetry(deps.client, {
         text: msg.text,
         sessionId,
         agent: nextAgent,
