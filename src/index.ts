@@ -2,81 +2,72 @@ import 'dotenv/config'
 import { loadConfig } from './config.js'
 import { getClient, checkHealth } from './opencode/client.js'
 import { EventStream } from './opencode/event-stream.js'
-import { createBot } from './bot/index.js'
+import { createFileBackedState } from './core/state.js'
+import { createRelay } from './core/relay.js'
+import { createTelegramTransport } from './transport/telegram/index.js'
 import { createLogger } from './utils/logger.js'
 
 const log = createLogger('main')
 
-const HEALTH_RETRIES = 3
-const HEALTH_BACKOFF_MS = [2000, 4000, 8000]
-
 async function waitForHealth(baseUrl: string): Promise<void> {
-  for (let i = 0; i < HEALTH_RETRIES; i++) {
+  const RETRIES = 3
+  const BACKOFF = [2000, 4000, 8000]
+  for (let i = 0; i < RETRIES; i++) {
     if (await checkHealth(baseUrl)) {
       log.info(`opencode healthy at ${baseUrl}`)
       return
     }
-    log.warn(`opencode unhealthy (attempt ${i + 1}/${HEALTH_RETRIES}), retry in ${HEALTH_BACKOFF_MS[i]}ms`)
-    await new Promise((r) => setTimeout(r, HEALTH_BACKOFF_MS[i]))
+    log.warn(`opencode unhealthy (${i+1}/${RETRIES}), retry in ${BACKOFF[i]}ms`)
+    await new Promise((r) => setTimeout(r, BACKOFF[i]))
   }
-  throw new Error(`opencode failed health check at ${baseUrl} after ${HEALTH_RETRIES} attempts`)
+  throw new Error('opencode failed health check')
 }
 
-async function main() {
+export async function runBot(): Promise<void> {
   const config = loadConfig()
-  log.info(`starting bot, opencode=${config.opencodeBaseUrl}, allowedUser=${config.allowedUserId}`)
-
+  log.info(`starting, transport=${config.transport}, opencode=${config.opencodeBaseUrl}`)
   await waitForHealth(config.opencodeBaseUrl)
 
   const client = getClient(config.opencodeBaseUrl)
   const eventStream = new EventStream()
-  eventStream.start(client) // fire-and-forget; loop runs in background
+  eventStream.start(client)
 
-  const bot = createBot({ config, client, eventStream })
+  const state = createFileBackedState(config.statePath)
 
-  process.once('SIGINT', () => {
-    log.info('SIGINT received')
-    eventStream.stop()
-    bot.stop('SIGINT')
-  })
-  process.once('SIGTERM', () => {
-    log.info('SIGTERM received')
-    eventStream.stop()
-    bot.stop('SIGTERM')
-  })
-
-  // Polling with retry — keep alive on network blips
-  let attempt = 0
-  let conflictCount = 0
-  const MAX_CONFLICT = 8
-  for (;;) {
-    try {
-      await bot.launch()
-      // bot.launch() resolves when polling stops (e.g. on bot.stop())
-      log.info('bot polling ended cleanly')
-      return
-    } catch (err) {
-      const e = err as { response?: { error_code?: number }; message?: string }
-      const code = e?.response?.error_code
-      if (code === 409) {
-        conflictCount += 1
-        if (conflictCount >= MAX_CONFLICT) {
-          log.error('Telegram 409 Conflict persisted — exiting')
-          process.exit(1)
-        }
-        log.warn(`Telegram 409 #${conflictCount}, retry in 5s`)
-        await new Promise((r) => setTimeout(r, 5000))
-      } else {
-        attempt += 1
-        const delay = Math.min(1000 * 2 ** attempt, 30000)
-        log.error(`bot.launch failed (attempt ${attempt}), retry in ${delay}ms`, e?.message ?? err)
-        await new Promise((r) => setTimeout(r, delay))
-      }
-    }
+  if (config.transport !== 'telegram') {
+    throw new Error(`unsupported TRANSPORT: ${config.transport}`)
   }
+
+  const transport = createTelegramTransport({
+    token: config.telegramBotToken,
+    allowedUserId: config.allowedUserId,
+    baseUrl: config.opencodeBaseUrl,
+    client,
+    eventStream,
+    state,
+  })
+
+  const relay = createRelay({
+    transport,
+    client,
+    eventStream,
+    state,
+    editThrottleMs: config.editThrottleMs,
+    chatTimeoutMs: config.chatTimeoutMs,
+    tuiVisible: config.tuiVisible,
+  })
+
+  transport.onMessage(relay)
+
+  process.once('SIGINT', () => { eventStream.stop(); void transport.stop() })
+  process.once('SIGTERM', () => { eventStream.stop(); void transport.stop() })
+
+  await transport.start()
 }
 
-main().catch((err) => {
-  log.error('fatal', err as Error)
-  process.exit(1)
-})
+if (process.argv[1]?.endsWith('index.js')) {
+  runBot().catch((err) => {
+    log.error('fatal', err as Error)
+    process.exit(1)
+  })
+}
