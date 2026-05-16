@@ -106,8 +106,17 @@ export function createRelay(deps: RelayDeps) {
         const e = ev as { type: string; properties: any }
         const p = e.properties
 
-        if (e.type === 'session.idle') break
-        if (e.type === 'session.status' && p?.status?.type === 'idle') break
+        // Debug: log all event types
+        log.info(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
+
+        if (e.type === 'session.idle') {
+          log.info('session idle, breaking')
+          break
+        }
+        if (e.type === 'session.status' && p?.status?.type === 'idle') {
+          log.info('session status idle, breaking')
+          break
+        }
         if (e.type === 'session.error') {
           const err = p?.error
           const msg = err?.data?.message ?? err?.message ?? err?.name ?? 'session error'
@@ -116,27 +125,44 @@ export function createRelay(deps: RelayDeps) {
 
         if (e.type === 'message.part.updated') {
           const part = p?.part
-          if (!part) continue
+          if (!part) {
+            log.info('message.part.updated with no part')
+            continue
+          }
 
           // Track assistant message ID
           if (!assistantMessageId && typeof part.messageID === 'string') {
             assistantMessageId = part.messageID
+            log.info(`assistantMessageId set: ${assistantMessageId}`)
           }
 
-          // Handle text parts with delta
+          // Handle text parts
           if (part.type === 'text') {
-            // Track this text part ID
-            if (typeof part.id === 'string') {
-              textPartIds.add(part.id)
-            }
+            const partId = typeof part.id === 'string' ? part.id : undefined
+            const isNewPart = partId && !textPartIds.has(partId)
+            
             // Apply delta if present
             if (typeof p.delta === 'string') {
               streamedText += p.delta
+              log.info(`delta received (${p.delta.length} chars): "${p.delta.slice(0, 50)}..."`)
+              if (partId) textPartIds.add(partId)
               const now = Date.now()
               if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
                 await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
                 lastEdit = now
               }
+            } else if (typeof part.text === 'string' && isNewPart) {
+              // Fallback: if no delta but text is present for a new part, use the full text
+              streamedText = part.text
+              textPartIds.add(partId)
+              log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
+              const now = Date.now()
+              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
+                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                lastEdit = now
+              }
+            } else {
+              log.info(`text part ignored - delta: ${typeof p.delta}, text: ${typeof part.text}, isNew: ${isNewPart}`)
             }
           }
 
@@ -164,6 +190,8 @@ export function createRelay(deps: RelayDeps) {
         }
       }
 
+      log.info(`SSE stream ended. streamedText length: ${streamedText.length}, assistantMessageId: ${assistantMessageId ?? 'none'}`)
+
       // Fallback: if SSE yielded no text, fetch the latest assistant message directly
       let final = streamedText
       if (!final && assistantMessageId) {
@@ -179,7 +207,7 @@ export function createRelay(deps: RelayDeps) {
           }
           if (texts.length > 0) final = texts.join('')
         } catch (err) {
-          log.debug('fallback fetch message failed', (err as Error).message)
+          log.info('fallback fetch message failed', (err as Error).message)
         }
       }
       if (!final) final = '(empty response)'
