@@ -7,6 +7,7 @@ import { createRelay } from './core/relay.js'
 import { createCardBus } from './core/card-bus.js'
 import { startTuiSync } from './core/tui-sync.js'
 import { createTelegramTransport } from './transport/telegram/index.js'
+import { createWebTransport } from './transport/web/index.js'
 import { startPushNotifications } from './core/push.js'
 import { createLogger } from './utils/logger.js'
 
@@ -51,6 +52,26 @@ export async function runBot(): Promise<void> {
     state,
   })
 
+  const transports = [transport]
+
+  if (config.webEnabled) {
+    const webT = createWebTransport({
+      host: config.webHost,
+      port: config.webPort,
+      client,
+      eventStream,
+      cfAccess: {
+        team: config.webCfAccessTeam,
+        aud: config.webCfAccessAud,
+        devBypass: config.webCfAccessDevBypass,
+        devEmail: config.webCfAccessDevEmail,
+      },
+      staticRoot: config.webStaticRoot,
+      cacheSize: config.webCacheSize,
+    })
+    transports.push(webT)
+  }
+
   const relay = createRelay({
     cardBus,
     client,
@@ -60,7 +81,9 @@ export async function runBot(): Promise<void> {
     tuiVisible: config.tuiVisible,
   })
 
-  transport.onMessage(relay)
+  for (const t of transports) {
+    t.onMessage(relay)
+  }
 
   const stopSync = startTuiSync({ eventStream, state, client })
 
@@ -70,10 +93,16 @@ export async function runBot(): Promise<void> {
     chatId: String(config.allowedUserIds[0]),
   })
 
-  process.once('SIGINT', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
-  process.once('SIGTERM', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
+  process.once('SIGINT', async () => {
+    eventStream.stop(); stopSync(); stopPush()
+    for (const t of transports) await t.stop().catch(() => {})
+  })
+  process.once('SIGTERM', async () => {
+    eventStream.stop(); stopSync(); stopPush()
+    for (const t of transports) await t.stop().catch(() => {})
+  })
 
-  await transport.start({ cardBus, state })
+  await Promise.all(transports.map((t) => t.start({ cardBus, state })))
 }
 
 if (process.argv[1]?.endsWith('dist/index.js')) {

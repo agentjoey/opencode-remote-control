@@ -4,6 +4,12 @@ import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
 import { cfAccessMiddleware, type CfAccessOpts } from './middleware/cf-access.js'
+
+declare module 'hono' {
+  interface ContextVariableMap {
+    user: { email: string; sub: string }
+  }
+}
 import { registerSessions } from './routes/sessions.js'
 import { registerSession } from './routes/session.js'
 import { registerMessage } from './routes/message.js'
@@ -14,9 +20,10 @@ import { registerContext } from './routes/context.js'
 import { registerApproval } from './routes/approval.js'
 
 export interface WsHub {
-  subscribe(fn: (msg: any) => void): () => void
+  attach(ws: any, user: { email: string }): void
+  handleClientMessage(ws: any, msg: any): void
+  detach(ws: any): void
   broadcast(msg: any): void
-  attach?(server: any): void
 }
 
 export interface BuildServerOpts {
