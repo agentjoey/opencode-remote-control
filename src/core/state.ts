@@ -25,6 +25,8 @@ export interface SessionState {
   setCurrentAgent(name: string | undefined): void
   getActiveAbort(sessionId: string): AbortController | undefined
   setActiveAbort(sessionId: string, ac: AbortController | undefined): void
+  getSessionCost(sessionId: string): number | undefined
+  setSessionCost(sessionId: string, cost: number | undefined): void
   flush(): Promise<void>
 }
 
@@ -32,6 +34,7 @@ export function createFileBackedState(path: string): SessionState {
   let cache: PersistedState = load(path)
   let writeQueued: NodeJS.Timeout | undefined
   const aborts = new Map<string, AbortController>()
+  const sessionCosts = new Map<string, number>()
 
   function persist(): Promise<void> {
     return new Promise((resolve) => {
@@ -86,6 +89,11 @@ export function createFileBackedState(path: string): SessionState {
     setActiveAbort: (sid, ac) => {
       if (ac === undefined) aborts.delete(sid)
       else aborts.set(sid, ac)
+    },
+    getSessionCost: (sid) => sessionCosts.get(sid),
+    setSessionCost: (sid, cost) => {
+      if (cost === undefined) sessionCosts.delete(sid)
+      else sessionCosts.set(sid, cost)
     },
     flush: async () => persist(),
   }
