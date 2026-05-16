@@ -1,5 +1,6 @@
 import type { EventStream } from '../opencode/event-stream.js'
 import type { Transport } from '../transport/interface.js'
+import type { StructuredCard } from '../core/structured-card.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('push')
@@ -61,9 +62,12 @@ export function startPushNotifications(deps: PushDeps): () => void {
       const engagedRecently = Date.now() - lastEngaged < 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
-        await deps.transport.send(deps.chatId, {
-          lines: [`✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)`],
-        }).catch(() => {})
+        const card: StructuredCard = {
+          kind: 'info',
+          title: 'Session finished',
+          sections: [{ body: `✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)` }],
+        }
+        await deps.transport.send(deps.chatId, card).catch(() => {})
       }
     }
 
@@ -73,9 +77,15 @@ export function startPushNotifications(deps: PushDeps): () => void {
         const tail = (part.state.output as string).slice(-200)
         if (/\b(FAIL|FAILED|error:|✗)\b/.test(tail) && canPush(sid)) {
           recordPush(sid)
-          await deps.transport.send(deps.chatId, {
-            lines: [`⚠️ Possible test failure in <code>…${sid.slice(-8)}</code>`, '<pre>' + tail.replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>'],
-          }).catch(() => {})
+          const card: StructuredCard = {
+            kind: 'info',
+            title: 'Test failure detected',
+            sections: [
+              { body: `⚠️ Possible test failure in <code>…${sid.slice(-8)}</code>` },
+              { body: '<pre>' + tail.replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' },
+            ],
+          }
+          await deps.transport.send(deps.chatId, card).catch(() => {})
         }
       }
     }
