@@ -13,7 +13,7 @@ const log = createLogger('telegram')
 
 export interface TelegramConfig {
   token: string
-  allowedUserId: number
+  allowedUserIds: number[]
   baseUrl: string
   client: OpencodeClient
   eventStream: EventStream
@@ -33,7 +33,7 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
 
   // Whitelist middleware
   bot.use(async (ctx, next) => {
-    if (ctx.from?.id !== cfg.allowedUserId) {
+    if (!cfg.allowedUserIds.includes(ctx.from?.id ?? -1)) {
       if (ctx.from) log.warn(`rejected from ${ctx.from.id}`)
       await ctx.reply('Unauthorized').catch(() => {})
       return

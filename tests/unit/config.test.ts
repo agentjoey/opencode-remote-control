@@ -23,7 +23,7 @@ describe('loadConfig', () => {
 
     const cfg = loadConfig()
     expect(cfg.telegramBotToken).toBe('tok')
-    expect(cfg.allowedUserId).toBe(12345)
+    expect(cfg.allowedUserIds).toEqual([12345])
     expect(cfg.opencodeBaseUrl).toBe('http://localhost:4096')
     expect(cfg.editThrottleMs).toBe(1000)
     expect(cfg.chatTimeoutMs).toBe(600000)
@@ -62,5 +62,28 @@ describe('loadConfig', () => {
 
     const cfg = loadConfig()
     expect(cfg.streamOutput).toBe(false)
+  })
+
+  it('parses ALLOWED_USER_IDS comma-separated', () => {
+    process.env.ALLOWED_USER_IDS = '1,2,3'
+    process.env.TELEGRAM_BOT_TOKEN = 't'
+    delete process.env.ALLOWED_USER_ID
+    const c = loadConfig()
+    expect(c.allowedUserIds).toEqual([1, 2, 3])
+  })
+
+  it('accepts legacy ALLOWED_USER_ID', () => {
+    delete process.env.ALLOWED_USER_IDS
+    process.env.ALLOWED_USER_ID = '42'
+    process.env.TELEGRAM_BOT_TOKEN = 't'
+    const c = loadConfig()
+    expect(c.allowedUserIds).toEqual([42])
+  })
+
+  it('throws when neither is set', () => {
+    delete process.env.ALLOWED_USER_IDS
+    delete process.env.ALLOWED_USER_ID
+    process.env.TELEGRAM_BOT_TOKEN = 't'
+    expect(() => loadConfig()).toThrow()
   })
 })
