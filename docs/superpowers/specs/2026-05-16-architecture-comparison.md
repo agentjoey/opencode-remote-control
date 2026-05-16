@@ -9,9 +9,10 @@ Direct competitors we are entering against:
 
 | Category | Top project | Stars | Pattern |
 |---|---|---|---|
-| Telegram bot | **grinev/opencode-telegram-bot** | 642 | External bot, HTTP+SSE consumer, `npx` install |
+| Multi-agent × multi-channel bridge | **chenhg5/cc-connect** | **9,400** | Go binary, ACP subprocess, embedded admin UI; 5+ agents × 7+ channels |
 | Web UI / multi-surface | **btriapitsyn/openchamber** | **4,300** | Web + Desktop (Tauri) + VS Code + Terminal |
-| Multi-channel bridge | chenhg5/cc-connect | small | 10+ agents × 11 chat platforms |
+| Claude Code Telegram bot | **RichardAtCT/claude-code-telegram** | **2,600** | Python daemon, `claude-agent-sdk` primary + CLI fallback |
+| Opencode Telegram bot | grinev/opencode-telegram-bot | 643 | TS daemon, grammy, HTTP→opencode :4096, `npx` install |
 | Web alt | kcrommett/opencode-web | 65 | TanStack Start + React, hand-rolled HTTP |
 | Slack-focused | Wangmerlyn/vibe-coding-slack-notifier | small | External CLI + plugin hook wrapper |
 | Slack/Discord template | kortix-ai/opencode-channels | 14 | Vercel Chat SDK + Hono webhooks |
