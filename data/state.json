@@ -1,5 +1,10 @@
 {
   "tuiSelectedSession": "ses_1d4b7f76bffexG6NPg8vAliMaQ",
-  "currentAgent": "audit",
-  "lastSessionId": "ses_1d4b7f76bffexG6NPg8vAliMaQ"
+  "currentAgent": "build",
+  "lastSessionId": "ses_1d4b7f76bffexG6NPg8vAliMaQ",
+  "nextAgent": "build",
+  "nextModel": {
+    "providerID": "google",
+    "modelID": "gemini-3.1-pro-preview"
+  }
 }
