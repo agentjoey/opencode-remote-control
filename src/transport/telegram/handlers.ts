@@ -645,22 +645,25 @@ export function registerHandlers(deps: HandlersDeps): void {
   registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl, state: deps.state })
 
   // ── Approval handler ──
-  setupApproval(deps)
+  const pendingApprovals = new Map<string, PendingApproval>()
+  setupApproval(deps, pendingApprovals)
 }
 
 // ── Approval sub-module ──
 
-interface PendingApproval {
+export interface PendingApproval {
   sessionId: string
   permissionId: string
   messageId: number
   title: string
 }
 
-type ApprovalResponse = 'once' | 'always' | 'reject'
+export type ApprovalResponse = 'once' | 'always' | 'reject'
 
-function setupApproval(deps: HandlersDeps): void {
-  const pending = new Map<string, PendingApproval>()
+export function setupApproval(
+  deps: HandlersDeps,
+  pending: Map<string, PendingApproval>,
+): void {
 
   const offUpdated = deps.eventStream.onAny(async (rawEvent: unknown) => {
     const ev = rawEvent as { type: string; properties: any }
