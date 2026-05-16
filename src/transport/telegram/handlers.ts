@@ -59,6 +59,41 @@ function shortPath(p: string): string {
   return p
 }
 
+interface StatusCard {
+  lines: string[]
+  buttons: ReturnType<typeof Markup.button.callback>[]
+}
+
+async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
+  const healthy = await checkHealth(deps.baseUrl)
+  let busyCount = 0
+  let totalSessions = 0
+  try {
+    const res = await fetch(`${deps.baseUrl}/session/status`)
+    const data = (await res.json()) as Record<string, { type: string }>
+    totalSessions = Object.keys(data).length
+    busyCount = Object.values(data).filter((s) => s.type === 'busy').length
+  } catch {}
+  const last = deps.state.getLastSessionId()
+  const nextAgent = deps.state.getNextAgent()
+  const nextModel = deps.state.getNextModel()
+  const lines = [
+    `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
+    '',
+    `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
+    ...(last ? [`📌 <code>…${last.slice(-8)}</code>`] : []),
+    ...(nextAgent ? [`🤖 Next agent: <b>${nextAgent}</b>`] : []),
+    ...(nextModel ? [`⚙️ Next model: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
+  ]
+  const buttons: ReturnType<typeof Markup.button.callback>[] = [
+    Markup.button.callback('🔄 Refresh', 'status:refresh'),
+  ]
+  if (deps.isGenerating()) {
+    buttons.push(Markup.button.callback('🛑 Abort', 'status:abort'))
+  }
+  return { lines, buttons }
+}
+
 export function registerHandlers(deps: HandlersDeps): void {
   // ── Commands ──
 
@@ -95,32 +130,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   deps.bot.command('status', async (ctx: Context) => {
-    const healthy = await checkHealth(deps.baseUrl)
-    let busyCount = 0
-    let totalSessions = 0
-    try {
-      const res = await fetch(`${deps.baseUrl}/session/status`)
-      const data = (await res.json()) as Record<string, { type: string }>
-      totalSessions = Object.keys(data).length
-      busyCount = Object.values(data).filter((s) => s.type === 'busy').length
-    } catch {}
-    const last = deps.state.getLastSessionId()
-    const nextAgent = deps.state.getNextAgent()
-    const nextModel = deps.state.getNextModel()
-    const lines = [
-      `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
-      '',
-      `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
-      ...(last ? [`📌 <code>…${last.slice(-8)}</code>`] : []),
-      ...(nextAgent ? [`🤖 Next agent: <b>${nextAgent}</b>`] : []),
-      ...(nextModel ? [`⚙️ Next model: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
-    ]
-    const buttons: ReturnType<typeof Markup.button.callback>[] = [
-      Markup.button.callback('🔄 Refresh', 'status:refresh'),
-    ]
-    if (deps.isGenerating()) {
-      buttons.push(Markup.button.callback('🛑 Abort', 'status:abort'))
-    }
+    const { lines, buttons } = await buildStatusCard(deps)
     await ctx.reply(lines.join('\n'), {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([buttons]),
@@ -436,32 +446,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   deps.bot.action('status:refresh', async (ctx) => {
-    const healthy = await checkHealth(deps.baseUrl)
-    let busyCount = 0
-    let totalSessions = 0
-    try {
-      const res = await fetch(`${deps.baseUrl}/session/status`)
-      const data = (await res.json()) as Record<string, { type: string }>
-      totalSessions = Object.keys(data).length
-      busyCount = Object.values(data).filter((s) => s.type === 'busy').length
-    } catch {}
-    const last = deps.state.getLastSessionId()
-    const nextAgent = deps.state.getNextAgent()
-    const nextModel = deps.state.getNextModel()
-    const lines = [
-      `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
-      '',
-      `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
-      ...(last ? [`📌 <code>…${last.slice(-8)}</code>`] : []),
-      ...(nextAgent ? [`🤖 Next agent: <b>${nextAgent}</b>`] : []),
-      ...(nextModel ? [`⚙️ Next model: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
-    ]
-    const buttons: ReturnType<typeof Markup.button.callback>[] = [
-      Markup.button.callback('🔄 Refresh', 'status:refresh'),
-    ]
-    if (deps.isGenerating()) {
-      buttons.push(Markup.button.callback('🛑 Abort', 'status:abort'))
-    }
+    const { lines, buttons } = await buildStatusCard(deps)
     await ctx.editMessageText(lines.join('\n'), {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([buttons]),
