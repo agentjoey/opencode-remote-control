@@ -132,9 +132,19 @@ npm test             # 44 unit tests
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `TELEGRAM_BOT_TOKEN` | 必填 | @BotFather 获取 |
-| `ALLOWED_USER_ID` | 必填 | @userinfobot 获取 |
+| `TELEGRAM_BOT_TOKEN` | — | @BotFather 获取 |
+| `ALLOWED_USER_ID` | — | @userinfobot 获取 |
 | `OPENCODE_BASE_URL` | `http://localhost:4096` | opencode serve 地址 |
-| `EDIT_THROTTLE_MS` | `1000` | Telegram 消息更新节流 |
-| `CHAT_TIMEOUT_MS` | `600000` (10 min) | 单次对话最长等待 |
 | `LOG_LEVEL` | `info` | debug / info / warn / error |
+| **Web** |||
+| `WEB_ENABLED` | `false` | 启用 Web 服务 |
+| `WEB_HOST` | `127.0.0.1` | Web 绑定地址 |
+| `WEB_PORT` | `7081` | Web 端口 |
+| `WEB_STATIC_ROOT` | `web/dist` | PWA 静态文件路径 |
+| `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team 名 |
+| `WEB_CF_ACCESS_AUD` | — | Cloudflare Access AUD tag |
+| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | 本地开发跳过 JWT |
+| `WEB_CF_ACCESS_DEV_EMAIL` | `dev@localhost` | 开发 bypass 邮箱 |
+| **Telegram** |||
+| `TG_CHUNK_SOFT_LIMIT` | `3500` | 分页软限制 |
+| `TG_CHUNK_HARD_LIMIT` | `3900` | 分页硬限制 |
