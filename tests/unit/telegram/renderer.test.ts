@@ -44,4 +44,18 @@ describe('TelegramSessionRenderer', () => {
     expect(last.text).toMatch(/\$0\.040/)
     expect(last.text).toMatch(/build/)
   })
+
+  it('throttles consecutive streaming edits', async () => {
+    vi.useFakeTimers()
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    // 6 rapid deltas — first immediate, next 5 throttled
+    for (let i = 0; i < 6; i++) {
+      await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: 'x'.repeat(i + 1), tools: [] })
+    }
+    expect(bot.edits.length).toBeLessThanOrEqual(2)  // first edit + maybe one throttled
+    vi.advanceTimersByTime(2000)
+    vi.useRealTimers()
+  })
 })
