@@ -58,4 +58,36 @@ describe('TelegramSessionRenderer', () => {
     vi.advanceTimersByTime(2000)
     vi.useRealTimers()
   })
+
+  it('collapses tools list: first 2 + last 5 with … N more when count is 8-15', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    const tools = Array.from({ length: 12 }, (_, i) => ({
+      tool: 'bash', args: `cmd${i}`, status: 'done' as const,
+    }))
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools, meta: {} })
+    const last = bot.edits.at(-1)!
+    expect(last.text).toMatch(/cmd0/)
+    expect(last.text).toMatch(/cmd1/)
+    expect(last.text).toMatch(/cmd7/)        // last 5 → cmd7..cmd11
+    expect(last.text).toMatch(/cmd11/)
+    expect(last.text).toMatch(/… 5 more tool calls/)
+    expect(last.text).not.toMatch(/cmd5/)    // collapsed
+  })
+
+  it('collapses tools list: first 1 + last 4 when count > 15', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    const tools = Array.from({ length: 20 }, (_, i) => ({
+      tool: 'bash', args: `cmd${i}`, status: 'done' as const,
+    }))
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools, meta: {} })
+    const last = bot.edits.at(-1)!
+    expect(last.text).toMatch(/cmd0/)
+    expect(last.text).toMatch(/cmd16/)
+    expect(last.text).toMatch(/cmd19/)
+    expect(last.text).toMatch(/… 15 more tool calls/)
+  })
 })
