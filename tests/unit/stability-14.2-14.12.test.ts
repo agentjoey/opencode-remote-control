@@ -60,6 +60,10 @@ function fakeState() {
     setNextAgent: vi.fn(),
     getNextModel: () => undefined,
     setNextModel: vi.fn(),
+    getTuiSelectedSession: () => undefined,
+    setTuiSelectedSession: vi.fn(),
+    getCurrentAgent: () => undefined,
+    setCurrentAgent: vi.fn(),
     getActiveAbort: (id: string) => aborts.get(id),
     setActiveAbort: (id: string, ac: AbortController | undefined) => {
       if (ac === undefined) aborts.delete(id)
