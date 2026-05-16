@@ -78,7 +78,7 @@ describe('inline stop button', () => {
 
     expect(sentCards).toHaveLength(1)
     const card = sentCards[0].card
-    expect(card.lines).toEqual(['💭 thinking...'])
+    expect(card.lines).toEqual(['⏳  Working…'])
     expect(card.buttons).toBeDefined()
     expect(card.buttons[0][0].label).toBe('⏹ Stop')
     expect(card.buttons[0][0].data).toMatch(/^relay:abort:ses_123/)
@@ -90,7 +90,7 @@ describe('inline stop button', () => {
 
     expect(sentCards).toHaveLength(1)
     const card = sentCards[0].card
-    expect(card.lines).toEqual(['💭 thinking...'])
+    expect(card.lines).toEqual(['⏳  Working…'])
     expect(card.buttons).toBeUndefined()
   })
 

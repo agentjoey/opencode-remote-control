@@ -58,9 +58,12 @@ export function registerInfoCommands(deps: InfoDeps): void {
         await ctx.reply(`<b>✅ Todos — …${last.slice(-8)}</b>\n\nNo todos.`, { parse_mode: 'HTML' })
         return
       }
-      const mark = (s: string) => s === 'completed' ? '✓' : s === 'in_progress' ? '▶' : '▢'
-      const lines = [`<b>✅ Todos — …${last.slice(-8)}</b>`, '']
-      for (const t of todos) lines.push(`${mark(t.status)}  ${t.content}`)
+      const mark = (s: string) => s === 'completed' ? '✓' : s === 'in_progress' ? '▶' : '○'
+      const lines = [`✅  <b>Todos</b>  ·  <code>…${last.slice(-8)}</code>`, '']
+      for (const t of todos) {
+        const label = t.status === 'completed' ? `<s>${t.content}</s>` : t.content
+        lines.push(`${mark(t.status)}  ${label}`)
+      }
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -80,13 +83,15 @@ export function registerInfoCommands(deps: InfoDeps): void {
       const cRes = await fetch(`${deps.baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
       const c = (await cRes.json()) as { agent?: Record<string, { model?: string }> }
       const model = s.agent && c.agent?.[s.agent]?.model
+      const fmt = (n: number) => n >= 1000 ? `${(n/1000).toFixed(1)}k` : String(n)
+      const row = (label: string, value: string) => `  <b>${label}</b>   ${value}`
       const lines = [
-        `<b>📊 Context — …${last.slice(-8)}</b>`,
+        `📊  <b>Context</b>  ·  <code>…${last.slice(-8)}</code>`,
         '',
-        `Agent:    ${s.agent ?? '?'}`,
-        `Model:    <code>${model ?? '?'}</code>`,
-        `Tokens:   ${s.tokens?.input ?? 0} in · ${s.tokens?.output ?? 0} out · ${s.tokens?.cache ?? 0} cache`,
-        `Cost:     $${(s.cost ?? 0).toFixed(2)}`,
+        row('Agent',  s.agent ?? '—'),
+        row('Model',  model ? `<code>${model}</code>` : '—'),
+        row('Tokens', `↑${fmt(s.tokens?.input ?? 0)}  ↓${fmt(s.tokens?.output ?? 0)}  cached ${fmt(s.tokens?.cache ?? 0)}`),
+        row('Cost',   `$${(s.cost ?? 0).toFixed(3)}`),
       ]
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
