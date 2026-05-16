@@ -23,12 +23,15 @@ export interface SessionState {
   setTuiSelectedSession(id: string | undefined): void
   getCurrentAgent(): string | undefined
   setCurrentAgent(name: string | undefined): void
+  getActiveAbort(sessionId: string): AbortController | undefined
+  setActiveAbort(sessionId: string, ac: AbortController | undefined): void
   flush(): Promise<void>
 }
 
 export function createFileBackedState(path: string): SessionState {
   let cache: PersistedState = load(path)
   let writeQueued: NodeJS.Timeout | undefined
+  const aborts = new Map<string, AbortController>()
 
   function persist(): Promise<void> {
     return new Promise((resolve) => {
@@ -78,6 +81,11 @@ export function createFileBackedState(path: string): SessionState {
       if (name === undefined) delete cache.currentAgent
       else cache.currentAgent = name
       void persist()
+    },
+    getActiveAbort: (sid) => aborts.get(sid),
+    setActiveAbort: (sid, ac) => {
+      if (ac === undefined) aborts.delete(sid)
+      else aborts.set(sid, ac)
     },
     flush: async () => persist(),
   }

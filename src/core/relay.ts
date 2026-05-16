@@ -19,8 +19,12 @@ export interface RelayDeps {
   toolCallsInline?: boolean
 }
 
-function thinkingCard(): Card {
-  return { lines: ['💭 thinking...'] }
+function thinkingCard(sessionId: string, showStop: boolean): Card {
+  const card: Card = { lines: ['💭 thinking...'] }
+  if (showStop) {
+    card.buttons = [[{ label: '⏹ Stop', data: `relay:abort:${sessionId}` }]]
+  }
+  return card
 }
 
 function errorCard(msg: string): Card {
@@ -51,13 +55,19 @@ async function pickSession(client: OpencodeClient, last: string | undefined): Pr
 
 export function createRelay(deps: RelayDeps) {
   return async function handleIncoming(msg: IncomingMessage): Promise<void> {
-    const initial = await deps.transport.send(msg.chatId, thinkingCard())
+    const sessionId = await pickSession(deps.client, deps.state.getLastSessionId())
+    deps.state.setLastSessionId(sessionId)
+
     const ac = new AbortController()
+    deps.state.setActiveAbort(sessionId, ac)
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
+    const initial = await deps.transport.send(
+      msg.chatId,
+      thinkingCard(sessionId, deps.transport.capabilities.buttons)
+    )
+
     try {
-      const sessionId = await pickSession(deps.client, deps.state.getLastSessionId())
-      deps.state.setLastSessionId(sessionId)
 
       // Optional TUI mirror (display only)
       if (deps.tuiVisible) {
@@ -154,6 +164,7 @@ export function createRelay(deps: RelayDeps) {
       } catch {}
     } finally {
       clearTimeout(timer)
+      deps.state.setActiveAbort(sessionId, undefined)
     }
   }
 }

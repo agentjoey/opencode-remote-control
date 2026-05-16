@@ -52,6 +52,7 @@ function fakeEventStream(events: any[] = []) {
 }
 
 function fakeState() {
+  const aborts = new Map<string, AbortController>()
   return {
     getLastSessionId: () => 'ses_test',
     setLastSessionId: vi.fn(),
@@ -59,6 +60,11 @@ function fakeState() {
     setNextAgent: vi.fn(),
     getNextModel: () => undefined,
     setNextModel: vi.fn(),
+    getActiveAbort: (id: string) => aborts.get(id),
+    setActiveAbort: (id: string, ac: AbortController | undefined) => {
+      if (ac === undefined) aborts.delete(id)
+      else aborts.set(id, ac)
+    },
     flush: async () => {},
   } as any
 }

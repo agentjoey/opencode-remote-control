@@ -510,6 +510,20 @@ export function registerHandlers(deps: HandlersDeps): void {
     )
   })
 
+  deps.bot.action(/^relay:abort:(.+)$/, async (ctx) => {
+    const sessionId = ctx.match[1]
+    const ac = deps.state.getActiveAbort(sessionId)
+    if (ac) {
+      ac.abort()
+      await ctx.answerCbQuery('Aborting…')
+      try {
+        await ctx.editMessageText('🛑 Generation aborted.', { parse_mode: 'HTML' })
+      } catch {}
+    } else {
+      await ctx.answerCbQuery('No active generation for this session.')
+    }
+  })
+
   deps.bot.action('card:dismiss', async (ctx) => {
     await ctx.answerCbQuery()
     await ctx.deleteMessage().catch(() => {})
