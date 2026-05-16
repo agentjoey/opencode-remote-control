@@ -3,7 +3,7 @@ import type { Message } from '@telegraf/types'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { TuiBridge, TuiSubmitError } from '../../opencode/tui-bridge.js'
 import { EventStream } from '../../opencode/event-stream.js'
-import { createReplyStream } from '../reply.js'
+import { createReplyStream } from '../../transport/telegram/reply-stream.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('chat')
