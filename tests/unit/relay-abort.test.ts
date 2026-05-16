@@ -46,7 +46,10 @@ describe('inline stop button', () => {
     }
 
     const client = {
-      session: { list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_123', time: { created: Date.now() } }] }) },
+      session: {
+        list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_123', time: { created: Date.now() } }] }),
+        promptAsync: vi.fn().mockResolvedValue({ data: {} }),
+      },
       tui: { appendPrompt: vi.fn().mockResolvedValue(undefined) },
     } as any
 
