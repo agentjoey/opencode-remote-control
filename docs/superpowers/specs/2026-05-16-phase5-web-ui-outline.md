@@ -7,11 +7,16 @@
 
 ## Goal
 
-Add a browser-based PWA transport to `opencode-remote-control`, served from
-the same Node process as the Telegram transport. Mobile-first, with optional
-desktop layout. Streams via WebSocket.
+Add a browser-based transport to `opencode-remote-control`, served from
+the same Node process as the Telegram transport. Two form factors share
+one codebase:
 
-Tag: **v0.5.0**.
+1. **PWA** — mobile-first, installable to home screen, online via
+   localhost / Tailscale / Cloudflare Tunnel
+2. **Chrome Extension** — side panel + context menu integration; runs in
+   the user's browser, talks to the same WebSocket endpoint as the PWA
+
+Streams via WebSocket. Tag: **v0.5.0**.
 
 ## Why a Web transport (positioning)
 
@@ -70,6 +75,51 @@ Tag: **v0.5.0**.
 
 Sidebar collapses to a hamburger; same chat area; bottom command bar.
 
+### Chrome Extension (side panel)
+
+```
+┌────────────────────┐  ← Chrome side panel (open via toolbar icon)
+│ ⚙  ses…3 (build)   │
+├────────────────────┤
+│ ┌──────────────┐   │
+│ │ Assistant... │   │
+│ └──────────────┘   │
+├────────────────────┤
+│ Send to opencode:  │
+│ [ message ]    ➤  │
+│ ⊕ include current  │
+│   page selection   │
+└────────────────────┘
+```
+
+Plus right-click "Send selection to opencode" context menu on any web
+page. Selection text + page URL pass as a structured prompt: e.g.
+
+```
+[Page: https://opencode.ai/docs/sdk/]
+[Selection]
+const result = await client.session.prompt({...})
+[Question] write a typed wrapper around this
+```
+
+## Form-factor matrix
+
+| Form factor | Where | When the user opens it | What it knows about |
+|---|---|---|---|
+| Mobile PWA | Phone home screen | Away from desk | Bot's session state |
+| Desktop browser | Any laptop's browser | Cross-device usage | Bot's session state |
+| Chrome side panel | Always-on while browsing | Working in browser, debugging docs | Bot's session state + current tab URL + selection |
+
+All three share **one SvelteKit codebase** built into different bundles:
+- PWA: `dist/web/` served by Hono at `/`
+- Chrome Extension: `dist/extension/` with `manifest.json`, packaged as a
+  Chrome Web Store submission (or sideloaded zip)
+
+The extension's side panel page is the same Svelte app as the PWA, with a
+small additional file (`extension/background.ts`) that handles the
+context-menu integration. Everything else (auth flow, WebSocket
+client, card rendering) is shared.
+
 ## Stack (preliminary, finalize in Phase 5 brainstorm)
 
 | Concern | Choice | Why |
@@ -80,6 +130,8 @@ Sidebar collapses to a hamburger; same chat area; bottom command bar.
 | Auth | **Device pairing via QR + token cookie** | Desktop running the bot displays/logs a 6-digit code. User enters it on first phone visit. Cookie persists. |
 | Build & bundling | **Vite** (SvelteKit default) | Industry standard. |
 | Static serving | Bot process serves built files | Single deployment artifact. |
+| Chrome Extension | **Manifest V3** with side panel API | Side panel API (Chrome 114+) gives native sidebar UX; manifest v3 is the only forward-compatible option. |
+| Extension distribution | Chrome Web Store + sideload zip | Store reach + dev-mode sideload for power users. |
 
 ## Auth flow (concrete)
 
@@ -111,18 +163,31 @@ edits. Same code path; behavior diverges based on the flag.
 
 ## What Phase 5 implementation involves (not detailed here)
 
+### Shared Web codebase
 - `src/transport/web/` directory with `createWebTransport(): Transport`
 - WebSocket server in same Node process
 - SvelteKit app at `src/web-ui/` (or separate `web/` workspace package)
-- Build step: `npm run build` produces both bot + frontend bundles
+  with `app.svelte` (shared root) + two adapter entry points:
+  - `entries/pwa.ts` — PWA service worker + manifest
+  - `entries/extension.ts` — extension side panel adapter
+- Build step: `npm run build` produces three bundles: bot JS, web/ static,
+  extension/ packaged zip
 - New env: `WEB_HOST`, `WEB_PORT`, `WEB_SESSION_SECRET`, `WEB_PAIRING_CODE_TTL`
 - New routes: `/api/sessions`, `/api/messages`, `/ws`, `/`, `/pair`
-- E2E tests with Playwright
+- E2E tests with Playwright (PWA + extension)
+
+### Chrome Extension specifics
+- `extension/manifest.json` — Manifest V3, declares `sidePanel` + `contextMenus` + `host_permissions`
+- `extension/background.ts` — service worker handling context menu clicks
+- `extension/sidepanel.html` — loads the shared Svelte app pointed at the configured WebSocket
+- Extension-only env in side panel local storage: `OPRC_BOT_URL` (where to connect; defaults to `http://localhost:<WEB_PORT>` with override for Tailscale users)
+- Distribution: Chrome Web Store listing (~1 week review) + sideload zip published as GitHub release asset
 
 ## Out of scope for Phase 5
 
 - Mobile native app (PWA covers iOS/Android)
 - Desktop wrap (Tauri) — defer to Phase 6 if demand
+- Firefox / Safari / Edge extensions — Chrome-first; Firefox port is mostly mechanical (manifest tweaks) if requested later
 - VS Code extension — never in our roadmap; refer users to OpenChamber
 - Voice input / image attachments
 - Multi-user (still single user per install; pairing is per-device not
