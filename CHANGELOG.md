@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.4.0-rc.1 — 2026-05-16
+
+### Added
+- **Single-command launcher** — `oprc` (or `opencode-remote-control`) spawns
+  opencode if needed, waits for health, then starts the bot. Handles
+  SIGINT/SIGTERM clean shutdown of both processes.
+- **Subprocess management** — `SPAWN_OPENCODE=true` auto-starts `opencode serve`
+  with exponential backoff on crashes (2s→4s→8s→16s→30s), SIGTERM→SIGKILL
+  fallback, and log capture to `LOG_DIR`.
+- **Multi-user allowlist** — `ALLOWED_USER_IDS=a,b,c` accepts comma-separated
+  Telegram user IDs. Backward-compatible with legacy `ALLOWED_USER_ID`.
+- **TUI ↔ Bot state sync** — bot tracks the TUI's selected session and current
+  agent in realtime via SSE events, with 5s polling fallback.
+- **Info commands** — `/diff` (per-file patch preview), `/todo` (status markers ✓/▶/○),
+  `/context` (agent, model, tokens, cost with next-override display).
+- **Inline tool calls** — streaming cards show `▸ bash · cmd`, `▸ read · path`,
+  `▸ grep · pattern` lines (configurable via `TOOL_CALLS_INLINE`).
+- **Push notifications** — pushes to Telegram when: (a) a task runs >60s then
+  finishes, (b) a test failure is detected in bash output. Rate-limited to
+  10/hour with per-session 5min cooldown.
+- **Inline Stop button** — all streaming/thinking cards include a ⏹ Stop button
+  that immediately aborts the current generation.
+- **Cost footer** — every assistant response shows `💰 $X.XX · ↑in ↓out · agent · model`.
+  `/status` aggregates daily session costs.
+- **Init wizard** — `npx -y opencode-remote-control init` interactively
+  prompts for bot token, user IDs, and spawn preference, tests Telegram
+  connectivity, writes `.env`.
+- **CLI binary** — `oprc` (shortcut for `opencode-remote-control`).
+- **Two-step `/model` picker** — select provider, then model; avoids
+  Telegram's 4000-char message limit.
+- **launchd plist + install/uninstall scripts** for macOS background service.
+
+### Changed
+- `/context` now shows pending next-agent and next-model overrides.
+- `/help` and `setMyCommands` now include `/diff`, `/todo`, `/context`.
+- Approval handler supports both v1 (`permission.updated`) and v2
+  (`permission.asked`) event types with compatible field mapping
+  (`title`↔`permission`, `permissionID`↔`requestID`, `response`↔`reply`).
+- `.env.example` now documents `TOOL_CALLS_INLINE` and `PUSH_TEST_FAILURES`.
+
+### Fixed
+- Approve requests correctly push to Telegram bot regardless of opencode
+  server version (v1 or v2 event schema).
+
 ## v0.3.0-rc.1 — 2026-05-16
 
 ### Added
