@@ -56,6 +56,7 @@ function fakeState() {
   let sid: string | undefined = 'ses_test'
   let agent: string | undefined
   let model: any
+  const aborts = new Map<string, AbortController>()
   return {
     getLastSessionId: () => sid,
     setLastSessionId: (id: string | undefined) => { sid = id },
@@ -63,6 +64,11 @@ function fakeState() {
     setNextAgent: (n: string | undefined) => { agent = n },
     getNextModel: () => model,
     setNextModel: (m: any) => { model = m },
+    getActiveAbort: (id: string) => aborts.get(id),
+    setActiveAbort: (id: string, ac: AbortController | undefined) => {
+      if (ac === undefined) aborts.delete(id)
+      else aborts.set(id, ac)
+    },
     flush: async () => {},
   } as any
 }
