@@ -40,7 +40,7 @@ export async function runBot(): Promise<void> {
 
   const transport = createTelegramTransport({
     token: config.telegramBotToken,
-    allowedUserId: config.allowedUserId,
+    allowedUserIds: config.allowedUserIds,
     baseUrl: config.opencodeBaseUrl,
     client,
     eventStream,
