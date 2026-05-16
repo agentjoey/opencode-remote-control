@@ -1,5 +1,9 @@
 {
   "tuiSelectedSession": "ses_1d4b7f76bffexG6NPg8vAliMaQ",
-  "currentAgent": "audit",
-  "lastSessionId": "ses_1d4b7f76bffexG6NPg8vAliMaQ"
+  "currentAgent": "build",
+  "lastSessionId": "ses_1d4b7f76bffexG6NPg8vAliMaQ",
+  "nextModel": {
+    "providerID": "opencode",
+    "modelID": "qwen3.6-plus-free"
+  }
 }
