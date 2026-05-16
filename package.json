@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "start": "node dist/launcher.js",
+    "start": "node dist/cli/index.js",
     "start:dev": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
