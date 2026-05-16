@@ -34,7 +34,7 @@ function fakeTransport(): Transport & { sent: Card[]; edits: Card[] } {
 function fakeClient() {
   return {
     session: {
-      prompt: vi.fn().mockResolvedValue({ data: {} }),
+      promptAsync: vi.fn().mockResolvedValue({ data: {} }),
       list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_test', time: { created: 1 } }] }),
       message: vi.fn().mockResolvedValue({ data: { parts: [{ type: 'text', text: 'done' }] } }),
       messages: vi.fn().mockResolvedValue({ data: [] }),

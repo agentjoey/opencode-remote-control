@@ -4,16 +4,16 @@ import { submitPrompt } from '../../src/opencode/submit'
 function fakeClient() {
   return {
     session: {
-      prompt: vi.fn().mockResolvedValue({ data: {} }),
+      promptAsync: vi.fn().mockResolvedValue({ data: {} }),
     },
   } as any
 }
 
 describe('submitPrompt', () => {
-  it('passes text and sessionId to client.session.prompt', async () => {
+  it('passes text and sessionId to client.session.promptAsync', async () => {
     const client = fakeClient()
     await submitPrompt(client, { text: 'hello', sessionId: 'ses_1' })
-    expect(client.session.prompt).toHaveBeenCalledWith({
+    expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: 'ses_1' },
       body: { parts: [{ type: 'text', text: 'hello' }] },
       signal: undefined,
@@ -23,7 +23,7 @@ describe('submitPrompt', () => {
   it('includes agent override when provided', async () => {
     const client = fakeClient()
     await submitPrompt(client, { text: 'x', sessionId: 'ses_1', agent: 'build' })
-    expect(client.session.prompt).toHaveBeenCalledWith({
+    expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: 'ses_1' },
       body: { parts: [{ type: 'text', text: 'x' }], agent: 'build' },
       signal: undefined,
@@ -37,7 +37,7 @@ describe('submitPrompt', () => {
       sessionId: 'ses_1',
       model: { providerID: 'kimi-for-coding', modelID: 'k2p6' },
     })
-    expect(client.session.prompt).toHaveBeenCalledWith({
+    expect(client.session.promptAsync).toHaveBeenCalledWith({
       path: { id: 'ses_1' },
       body: {
         parts: [{ type: 'text', text: 'x' }],
@@ -51,6 +51,6 @@ describe('submitPrompt', () => {
     const client = fakeClient()
     const ac = new AbortController()
     await submitPrompt(client, { text: 'x', sessionId: 'ses_1', signal: ac.signal })
-    expect(client.session.prompt).toHaveBeenCalledWith(expect.objectContaining({ signal: ac.signal }))
+    expect(client.session.promptAsync).toHaveBeenCalledWith(expect.objectContaining({ signal: ac.signal }))
   })
 })
