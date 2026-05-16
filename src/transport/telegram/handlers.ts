@@ -337,35 +337,29 @@ export function registerHandlers(deps: HandlersDeps): void {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
       }
 
-      const nextModel = deps.state.getNextModel()
-      const lines = ['<b>⚙️ Model</b>', '']
-      const buttons: Array<ReturnType<typeof Markup.button.callback>> = []
-
       const providers = data.providers ?? []
       if (providers.length === 0) {
-        lines.push('<i>No models configured.</i>')
-      } else {
-        for (const p of providers) {
-          const modelEntries = Object.entries(p.models ?? {})
-          if (modelEntries.length === 0) continue
-          lines.push(`<b>${p.name}</b>`)
-          for (const [id, m] of modelEntries) {
-            const marker = nextModel?.providerID === p.id && nextModel?.modelID === id ? '●' : '○'
-            lines.push(`${marker}  ${m.name ?? id}  <code>${p.id}/${id}</code>`)
-            buttons.push(
-              Markup.button.callback(`${m.name ?? id}`, `model:set:${p.id}:${id}`)
-            )
-          }
-          lines.push('')
-        }
+        await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
+        return
       }
-      lines.push('<i>Tap a model to use it for the next message.</i>')
-      buttons.push(Markup.button.callback('✕ Clear', 'model:clear'))
-      // Chunk into rows of 2
-      const rows: ReturnType<typeof Markup.button.callback>[][] = []
-      for (let i = 0; i < buttons.length; i += 2) {
-        rows.push(buttons.slice(i, i + 2))
+
+      const nextModel = deps.state.getNextModel()
+      const lines = ['<b>⚙️ Model — Select provider</b>', '']
+      const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
+
+      for (const p of providers) {
+        const count = Object.keys(p.models ?? {}).length
+        const hasSelected = nextModel?.providerID === p.id
+        const marker = hasSelected ? '●' : '▸'
+        lines.push(`${marker} <b>${p.name}</b>  ·  ${count} model${count !== 1 ? 's' : ''}`)
+        rows.push([Markup.button.callback(p.name, `model:pick:${p.id}`)])
       }
+
+      if (nextModel) {
+        lines.push('', `<i>Current override: ${nextModel.providerID}/${nextModel.modelID}</i>`)
+      }
+      rows.push([Markup.button.callback('✕ Clear', 'model:clear')])
+
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
@@ -547,6 +541,85 @@ export function registerHandlers(deps: HandlersDeps): void {
       '<b>⚙️ Model cleared</b>\n\nNext message will use the default model.',
       { parse_mode: 'HTML' },
     )
+  })
+
+  // Step 2: pick a specific model after selecting a provider
+  deps.bot.action(/^model:pick:(.+)$/, async (ctx) => {
+    const providerID = ctx.match[1]
+    try {
+      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = (await res.json()) as {
+        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
+      }
+      const provider = data.providers?.find(p => p.id === providerID)
+      if (!provider || Object.keys(provider.models ?? {}).length === 0) {
+        await ctx.answerCbQuery('No models for this provider')
+        return
+      }
+
+      const nextModel = deps.state.getNextModel()
+      const lines = [
+        `<b>⚙️ Model — ${provider.name}</b>`,
+        '',
+      ]
+      const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
+
+      for (const [id, m] of Object.entries(provider.models ?? {})) {
+        const sel = nextModel?.providerID === providerID && nextModel?.modelID === id ? '●' : '○'
+        lines.push(`${sel} ${m.name ?? id}`)
+        rows.push([Markup.button.callback(m.name ?? id, `model:set:${providerID}:${id}`)])
+      }
+
+      rows.push([Markup.button.callback('◀ Back', 'model:back')])
+
+      await ctx.editMessageText(lines.join('\n'), {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard(rows),
+      })
+      await ctx.answerCbQuery()
+    } catch (err) {
+      log.error('model:pick failed', err as Error)
+      await ctx.answerCbQuery('Failed to load models')
+    }
+  })
+
+  // Back to provider list
+  deps.bot.action('model:back', async (ctx) => {
+    try {
+      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = (await res.json()) as {
+        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
+      }
+
+      const providers = data.providers ?? []
+      const nextModel = deps.state.getNextModel()
+      const lines = ['<b>⚙️ Model — Select provider</b>', '']
+      const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
+
+      for (const p of providers) {
+        const count = Object.keys(p.models ?? {}).length
+        const hasSelected = nextModel?.providerID === p.id
+        const marker = hasSelected ? '●' : '▸'
+        lines.push(`${marker} <b>${p.name}</b>  ·  ${count} model${count !== 1 ? 's' : ''}`)
+        rows.push([Markup.button.callback(p.name, `model:pick:${p.id}`)])
+      }
+
+      if (nextModel) {
+        lines.push('', `<i>Current override: ${nextModel.providerID}/${nextModel.modelID}</i>`)
+      }
+      rows.push([Markup.button.callback('✕ Clear', 'model:clear')])
+
+      await ctx.editMessageText(lines.join('\n'), {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard(rows),
+      })
+      await ctx.answerCbQuery()
+    } catch (err) {
+      log.error('model:back failed', err as Error)
+      await ctx.answerCbQuery('Failed')
+    }
   })
 
   deps.bot.action(/^relay:abort:(.+)$/, async (ctx) => {
