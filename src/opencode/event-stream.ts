@@ -3,8 +3,9 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('event-stream')
-const RECONNECT_MS = 3000
-const MAX_CONSECUTIVE_FAILURES = 10
+const RECONNECT_BASE_MS = 3000
+const RECONNECT_MAX_MS = 30000
+const MAX_CONSECUTIVE_FAILURES = 15
 
 export class EventStream {
   private emitter = new EventEmitter()
@@ -15,7 +16,7 @@ export class EventStream {
   private statusChecker?: () => Promise<Record<string, { type: string }>>
   private reconnectMs: number
 
-  constructor(reconnectMs = RECONNECT_MS) {
+  constructor(reconnectMs = RECONNECT_BASE_MS) {
     this.reconnectMs = reconnectMs
     // Bot will subscribe many session iterators; raise the cap.
     this.emitter.setMaxListeners(50)
@@ -23,6 +24,13 @@ export class EventStream {
 
   setStatusChecker(fn: () => Promise<Record<string, { type: string }>>): void {
     this.statusChecker = fn
+  }
+
+  reconnectDelay(): number {
+    return Math.min(
+      this.reconnectMs * Math.pow(2, Math.max(0, this.consecutiveFailures - 1)),
+      RECONNECT_MAX_MS,
+    )
   }
 
   private extractSessionID(event: any): string | undefined {
@@ -76,7 +84,9 @@ export class EventStream {
           log.error(`SSE failed ${MAX_CONSECUTIVE_FAILURES} times in a row, exiting`)
           process.exit(1)
         }
-        await new Promise((r) => setTimeout(r, this.reconnectMs))
+        const delay = this.reconnectDelay()
+        log.info(`SSE reconnect in ${delay}ms (attempt ${this.consecutiveFailures})`)
+        await new Promise((r) => setTimeout(r, delay))
       }
 
       this.running = false

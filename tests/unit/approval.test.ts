@@ -206,7 +206,7 @@ describe('approval flow', () => {
         body: JSON.stringify({ response: 'once' }),
       }),
     )
-    expect(ctx.editMessageText).toHaveBeenCalledWith('✅ Allowed (once)\n\nedit')
+    expect(ctx.editMessageText).toHaveBeenCalledWith('✅ Allowed (once)\n\nedit', { parse_mode: 'HTML' })
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('✅ Allowed (once)')
   })
 
