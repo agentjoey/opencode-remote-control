@@ -5,6 +5,7 @@ import type { SessionState } from '../../core/state.js'
 import type { EventStream } from '../../opencode/event-stream.js'
 import { checkHealth } from '../../opencode/client.js'
 import { createLogger } from '../../utils/logger.js'
+import { registerInfoCommands } from './handlers/info-commands.js'
 
 const log = createLogger('handlers')
 
@@ -513,6 +514,9 @@ export function registerHandlers(deps: HandlersDeps): void {
     await ctx.answerCbQuery()
     await ctx.deleteMessage().catch(() => {})
   })
+
+  // ── Info commands (split to separate file) ──
+  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl, state: deps.state })
 
   // ── Approval handler ──
   setupApproval(deps)
