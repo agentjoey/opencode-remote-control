@@ -168,7 +168,7 @@ export function createRelay(deps: RelayDeps) {
       let final = streamedText
       if (!final && assistantMessageId) {
         try {
-          const mres = await deps.client.session.message({ path: { id: sessionId, messageId: assistantMessageId } })
+          const mres = await deps.client.session.message({ path: { id: sessionId, messageID: assistantMessageId } })
           const m = (mres.data ?? {}) as any
           const parts = m.parts ?? []
           const texts: string[] = []
