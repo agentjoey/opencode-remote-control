@@ -1,11 +1,12 @@
-import { Telegraf, Markup } from 'telegraf'
+import { Telegraf } from 'telegraf'
 import type { Context } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
-import type { Card, IncomingMessage, ChannelCapabilities } from '../../core/types.js'
-import type { Transport } from '../interface.js'
+import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
+import type { Transport, TransportStartDeps } from '../interface.js'
 import type { SessionState } from '../../core/state.js'
 import type { EventStream } from '../../opencode/event-stream.js'
-import { cardToTelegram } from './render.js'
+import type { CardBus } from '../../core/card-bus.js'
+import { TelegramSessionRenderer } from './renderer.js'
 import { registerHandlers } from './handlers.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -52,13 +53,12 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     currentAbortController?.abort()
   }
 
-  // Wire text handler (use a general middleware so commands pass through)
+  // Wire text handler
   bot.use(async (ctx: Context, next) => {
-    // Callback queries are handled by bot.action() handlers
     if (ctx.callbackQuery) return next()
     const m = ctx.message
     if (!m || !('text' in m)) return next()
-    if (m.text.startsWith('/')) return next()  // let command handlers run
+    if (m.text.startsWith('/')) return next()
     if (!messageHandler) return next()
 
     if (isGenerating) {
@@ -100,10 +100,35 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     ctx.reply(`Internal error: ${(err as Error).message}`).catch(() => {})
   })
 
+  // Per-session renderers
+  const renderers = new Map<string, TelegramSessionRenderer>()
+
+  function getRenderer(sessionId: string, chatId: string): TelegramSessionRenderer {
+    let r = renderers.get(sessionId)
+    if (!r) {
+      r = new TelegramSessionRenderer({ chatId, sessionId, bot: bot.telegram })
+      renderers.set(sessionId, r)
+    }
+    return r
+  }
+
   return {
     name: 'telegram',
     capabilities: CAPS,
-    async start() {
+    async start(deps: TransportStartDeps) {
+      const { cardBus } = deps
+      const chatId = String(cfg.allowedUserIds[0])
+
+      cardBus.subscribeAll((card) => {
+        if ('sessionId' in card) {
+          const r = getRenderer(card.sessionId, chatId)
+          void r.onCard(card)
+          if (card.kind === 'assistant' || card.kind === 'error') {
+            renderers.delete(card.sessionId)
+          }
+        }
+      })
+
       let attempt = 0
       let conflictCount = 0
       const MAX_CONFLICT = 8
@@ -132,26 +157,11 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
       const cleanup = (bot as any)._approvalCleanup
       if (typeof cleanup === 'function') cleanup()
     },
-    async send(chatId, card) {
-      const { text, options } = cardToTelegram(card)
-      const sent = await bot.telegram.sendMessage(chatId, text, options as any)
-      return { messageId: String(sent.message_id) }
-    },
-    async edit(chatId, messageId, card) {
-      const { text, options } = cardToTelegram(card)
-      try {
-        await bot.telegram.editMessageText(chatId, Number(messageId), undefined, text, options as any)
-      } catch (err) {
-        const msg = (err as Error).message
-        if (msg.includes('message is not modified')) return
-        log.warn('edit failed', msg)
-      }
-    },
-    async delete(chatId, messageId) {
-      try { await bot.telegram.deleteMessage(chatId, Number(messageId)) } catch {}
+    async send(_chatId, _card) {
+      throw new Error('Transport.send not implemented for Telegram in v0.5.0')
     },
     onMessage(h) { messageHandler = h },
-    onCommand(name, h) { commandHandlers.set(name, h) },
-    onButtonClick(h) { buttonHandler = h },
+    onCommand(_name, _h) { /* commands registered via registerHandlers */ },
+    onButtonClick(_h) { /* callbacks registered via registerHandlers */ },
   }
 }
