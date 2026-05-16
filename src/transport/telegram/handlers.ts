@@ -74,16 +74,17 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
     totalSessions = Object.keys(data).length
     busyCount = Object.values(data).filter((s) => s.type === 'busy').length
   } catch {}
-  const last = deps.state.getLastSessionId()
+  const tuiSession = deps.state.getTuiSelectedSession()
+  const currentAgent = deps.state.getCurrentAgent()
   const nextAgent = deps.state.getNextAgent()
   const nextModel = deps.state.getNextModel()
   const lines = [
     `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
     '',
     `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
-    ...(last ? [`📌 <code>…${last.slice(-8)}</code>`] : []),
-    ...(nextAgent ? [`🤖 Next agent: <b>${nextAgent}</b>`] : []),
-    ...(nextModel ? [`⚙️ Next model: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
+    ...(tuiSession ? [`📌 <code>…${tuiSession.slice(-8)}</code>${currentAgent ? ` (${currentAgent})` : ''}`] : []),
+    ...(nextAgent ? [`🤖 Next-agent override: <b>${nextAgent}</b>`] : []),
+    ...(nextModel ? [`⚙️ Next-model override: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
   ]
   const buttons: ReturnType<typeof Markup.button.callback>[] = [
     Markup.button.callback('🔄 Refresh', 'status:refresh'),
