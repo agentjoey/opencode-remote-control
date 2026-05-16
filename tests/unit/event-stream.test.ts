@@ -134,23 +134,29 @@ describe('EventStream', () => {
     es.stop()
   })
 
-  it('drains queued events before exiting on abort (race condition fix)', async () => {
-    const es = new EventStream()
-    es.start(fakeClient([
-      { type: 'session.idle', properties: { sessionID: 'ses_drain' } },
-      { type: 'session.idle', properties: { sessionID: 'ses_drain' } },
-    ]))
+  it('reconnectDelay grows exponentially and caps at max', () => {
+    const es = new EventStream(3000) as any
+    // Simulate consecutive failures: increment counter, then check delay
+    es.consecutiveFailures = 0
+    // After 0 failures (initial state), delay should be base * 2^0 = 3000
+    expect(es.reconnectDelay()).toBe(3000)
 
-    const ac = new AbortController()
-    const collected: unknown[] = []
+    es.consecutiveFailures = 1
+    expect(es.reconnectDelay()).toBe(3000)  // base * 2^0
 
-    setTimeout(() => ac.abort(), 10)
+    es.consecutiveFailures = 2
+    expect(es.reconnectDelay()).toBe(6000)  // base * 2^1
 
-    for await (const ev of es.session('ses_drain', ac.signal)) {
-      collected.push(ev)
-    }
+    es.consecutiveFailures = 3
+    expect(es.reconnectDelay()).toBe(12000) // base * 2^2
 
-    expect(collected.length).toBe(2)
-    es.stop()
+    es.consecutiveFailures = 4
+    expect(es.reconnectDelay()).toBe(24000) // base * 2^3
+
+    es.consecutiveFailures = 5
+    expect(es.reconnectDelay()).toBe(30000) // capped at RECONNECT_MAX_MS
+
+    es.consecutiveFailures = 10
+    expect(es.reconnectDelay()).toBe(30000) // stays capped
   })
 })

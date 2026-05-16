@@ -191,4 +191,94 @@ describe('createRelay', () => {
     const last = transport.edits[transport.edits.length - 1]
     expect(last.lines.join('\n')).toMatch(/▸ bash · ls/)
   })
+
+  it('retries submitPrompt on network error then succeeds', async () => {
+    const client = fakeClient()
+    let calls = 0
+    client.session.promptAsync = vi.fn().mockImplementation(async () => {
+      calls++
+      if (calls <= 2) throw new Error('fetch failed')
+      return { data: {} }
+    })
+    const relay = createRelay({
+      transport: fakeTransport(),
+      client,
+      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
+      state: fakeState(),
+      editThrottleMs: 1000,
+      chatTimeoutMs: 120000,
+      tuiVisible: false,
+    })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
+    expect(calls).toBe(3)
+    expect(client.session.promptAsync).toHaveBeenCalledTimes(3)
+  })
+
+  it('gives up after max retries on network error', async () => {
+    const client = fakeClient()
+    client.session.promptAsync = vi.fn().mockRejectedValue(new Error('fetch failed'))
+    const transport = fakeTransport()
+    const relay = createRelay({
+      transport,
+      client,
+      eventStream: fakeEventStream([]),
+      state: fakeState(),
+      editThrottleMs: 1000,
+      chatTimeoutMs: 120000,
+      tuiVisible: false,
+    })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
+    expect(client.session.promptAsync).toHaveBeenCalledTimes(5)
+    // Should show error card
+    const lastEdit = transport.edits[transport.edits.length - 1]
+    expect(lastEdit.lines[0]).toMatch(/Error/)
+    expect(lastEdit.lines[0]).toMatch(/fetch failed/)
+  }, 60000)
+
+  it('does NOT retry on non-network errors', async () => {
+    const client = fakeClient()
+    client.session.promptAsync = vi.fn().mockRejectedValue(new Error('no session found'))
+    const transport = fakeTransport()
+    const relay = createRelay({
+      transport,
+      client,
+      eventStream: fakeEventStream([]),
+      state: fakeState(),
+      editThrottleMs: 1000,
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+    })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
+    expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
+    const lastEdit = transport.edits[transport.edits.length - 1]
+    expect(lastEdit.lines[0]).toMatch(/Error/)
+    expect(lastEdit.lines[0]).toMatch(/no session found/)
+  })
+
+  it('stops retrying when aborted', async () => {
+    const client = fakeClient()
+    const state = fakeState()
+    client.session.promptAsync = vi.fn().mockImplementation(async (opts: any) => {
+      if (opts.signal?.aborted) throw new Error('aborted')
+      throw new Error('fetch failed')
+    })
+    const transport = fakeTransport()
+    const relay = createRelay({
+      transport,
+      client,
+      eventStream: fakeEventStream([]),
+      state,
+      editThrottleMs: 1000,
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+    })
+    // Abort after a tick
+    setTimeout(() => {
+      const ac = state.getActiveAbort('ses_test')
+      ac?.abort()
+    }, 10)
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
+    // Abort fires during first retry wait → 1 call (abort interrupts the delay)
+    expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
+  })
 })

@@ -748,7 +748,7 @@ export function setupApproval(
       reject: '❌ Rejected',
     }
     const display = labels[response]
-    await ctx.editMessageText(`${display}\n\n${p.title}`).catch(() => {})
+    await ctx.editMessageText(`${display}\n\n${p.title}`, { parse_mode: 'HTML' }).catch(() => {})
     await ctx.answerCbQuery(display)
   })
 
@@ -768,12 +768,14 @@ export function setupApproval(
 
     pending.delete(permId)
     try {
-      await deps.bot.telegram.editMessageText(
-        deps.chatId,
-        p.messageId,
-        undefined,
-        `${labelFor(response)} (from TUI)\n\n${p.title}`,
-      )
+        const display = labelFor(response)
+        await deps.bot.telegram.editMessageText(
+          deps.chatId,
+          p.messageId,
+          undefined,
+          `${display} (from TUI)\n\n${p.title}`,
+          { parse_mode: 'HTML' },
+        )
     } catch (err) {
       log.warn(`couldn't update card after TUI reply: ${(err as Error).message}`)
     }

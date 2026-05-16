@@ -54,6 +54,8 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
 
   // Wire text handler (use a general middleware so commands pass through)
   bot.use(async (ctx: Context, next) => {
+    // Callback queries are handled by bot.action() handlers
+    if (ctx.callbackQuery) return next()
     const m = ctx.message
     if (!m || !('text' in m)) return next()
     if (m.text.startsWith('/')) return next()  // let command handlers run

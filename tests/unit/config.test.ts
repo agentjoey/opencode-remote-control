@@ -7,6 +7,7 @@ describe('loadConfig', () => {
   beforeEach(() => {
     delete process.env.TELEGRAM_BOT_TOKEN
     delete process.env.ALLOWED_USER_ID
+    delete process.env.ALLOWED_USER_IDS
     delete process.env.OPENCODE_BASE_URL
     delete process.env.EDIT_THROTTLE_MS
     delete process.env.CHAT_TIMEOUT_MS
