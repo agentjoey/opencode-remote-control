@@ -159,4 +159,23 @@ describe('createRelay', () => {
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.tui.appendPrompt).not.toHaveBeenCalled()
   })
+
+  it('emits ▸ tool · args line on tool part', async () => {
+    const transport = fakeTransport()
+    const relay = createRelay({
+      transport,
+      client: fakeClient(),
+      eventStream: fakeEventStream([
+        { type: 'message.part.updated', properties: { messageID: 'm1', part: { type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
+        { type: 'session.idle', properties: {} },
+      ]),
+      state: fakeState(),
+      editThrottleMs: 0,
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+    })
+    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
+    const last = transport.edits[transport.edits.length - 1]
+    expect(last.lines.join('\n')).toMatch(/▸ bash · ls/)
+  })
 })

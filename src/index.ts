@@ -56,6 +56,7 @@ export async function runBot(): Promise<void> {
     editThrottleMs: config.editThrottleMs,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: config.tuiVisible,
+    toolCallsInline: config.toolCallsInline,
   })
 
   transport.onMessage(relay)
