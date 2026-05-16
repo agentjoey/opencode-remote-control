@@ -22,6 +22,8 @@ export interface Button {
   data: string
 }
 
+export type ExtractStructuredCard<K extends StructuredCard['kind']> = Extract<StructuredCard, { kind: K }>
+
 export type StructuredCard =
   | { kind: 'thinking'; sessionId: string; showStop: boolean }
   | { kind: 'streaming'; sessionId: string; markdownSrc: string; tools: ToolCall[] }
