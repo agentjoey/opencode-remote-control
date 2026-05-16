@@ -1,0 +1,55 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createFileBackedState } from '../../src/core/state'
+
+let dir: string
+beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'state-test-')) })
+afterEach(() => { rmSync(dir, { recursive: true, force: true }) })
+
+describe('SessionState', () => {
+  it('returns undefined when no file exists', () => {
+    const state = createFileBackedState(join(dir, 'state.json'))
+    expect(state.getLastSessionId()).toBeUndefined()
+    expect(state.getNextAgent()).toBeUndefined()
+    expect(state.getNextModel()).toBeUndefined()
+  })
+
+  it('round-trips lastSessionId', async () => {
+    const path = join(dir, 'state.json')
+    const a = createFileBackedState(path)
+    a.setLastSessionId('ses_1')
+    await a.flush()
+    const b = createFileBackedState(path)
+    expect(b.getLastSessionId()).toBe('ses_1')
+  })
+
+  it('round-trips nextAgent + nextModel', async () => {
+    const path = join(dir, 'state.json')
+    const a = createFileBackedState(path)
+    a.setNextAgent('build')
+    a.setNextModel({ providerID: 'kimi-for-coding', modelID: 'k2p6' })
+    await a.flush()
+    const b = createFileBackedState(path)
+    expect(b.getNextAgent()).toBe('build')
+    expect(b.getNextModel()).toEqual({ providerID: 'kimi-for-coding', modelID: 'k2p6' })
+  })
+
+  it('recovers from malformed JSON by treating as empty', () => {
+    const path = join(dir, 'state.json')
+    writeFileSync(path, 'not json {{{')
+    const state = createFileBackedState(path)
+    expect(state.getLastSessionId()).toBeUndefined()
+  })
+
+  it('clears nextAgent when set to undefined', async () => {
+    const path = join(dir, 'state.json')
+    const a = createFileBackedState(path)
+    a.setNextAgent('build')
+    a.setNextAgent(undefined)
+    await a.flush()
+    const b = createFileBackedState(path)
+    expect(b.getNextAgent()).toBeUndefined()
+  })
+})
