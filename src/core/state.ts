@@ -8,6 +8,8 @@ interface PersistedState {
   lastSessionId?: string
   nextAgent?: string
   nextModel?: { providerID: string; modelID: string }
+  tuiSelectedSession?: string
+  currentAgent?: string
 }
 
 export interface SessionState {
@@ -17,6 +19,10 @@ export interface SessionState {
   setNextAgent(name: string | undefined): void
   getNextModel(): { providerID: string; modelID: string } | undefined
   setNextModel(m: { providerID: string; modelID: string } | undefined): void
+  getTuiSelectedSession(): string | undefined
+  setTuiSelectedSession(id: string | undefined): void
+  getCurrentAgent(): string | undefined
+  setCurrentAgent(name: string | undefined): void
   flush(): Promise<void>
 }
 
@@ -59,6 +65,18 @@ export function createFileBackedState(path: string): SessionState {
     setNextModel: (m) => {
       if (m === undefined) delete cache.nextModel
       else cache.nextModel = m
+      void persist()
+    },
+    getTuiSelectedSession: () => cache.tuiSelectedSession,
+    setTuiSelectedSession: (id) => {
+      if (id === undefined) delete cache.tuiSelectedSession
+      else cache.tuiSelectedSession = id
+      void persist()
+    },
+    getCurrentAgent: () => cache.currentAgent,
+    setCurrentAgent: (name) => {
+      if (name === undefined) delete cache.currentAgent
+      else cache.currentAgent = name
       void persist()
     },
     flush: async () => persist(),
