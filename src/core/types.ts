@@ -3,6 +3,8 @@ export interface Card {
   lines: string[]
   buttons?: Button[][]
   footer?: string
+  /** When true, lines/footer are already valid Telegram HTML — skip escaping in renderer */
+  rawHtml?: boolean
 }
 
 export interface Button {

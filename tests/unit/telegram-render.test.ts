@@ -10,7 +10,7 @@ describe('cardToTelegram', () => {
 
   it('renders footer in italic', () => {
     const out = cardToTelegram({ title: 'T', lines: ['x'], footer: 'note' })
-    expect(out.text).toBe('<b>T</b>\n\nx\n\n<i>note</i>')
+    expect(out.text).toBe('<b>T</b>\n\nx\n\n──────────\n<i>note</i>')
   })
 
   it('renders 2D buttons as inline keyboard rows', () => {

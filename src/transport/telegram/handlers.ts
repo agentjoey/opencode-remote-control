@@ -42,13 +42,6 @@ async function fetchUserAgents(baseUrl: string): Promise<AgentConfig[]> {
     }))
 }
 
-function parseModel(modelStr: string): { providerID: string; modelID: string } {
-  const slash = modelStr.indexOf('/')
-  if (slash !== -1) {
-    return { providerID: modelStr.slice(0, slash), modelID: modelStr.slice(slash + 1) }
-  }
-  return { providerID: 'opencode', modelID: modelStr }
-}
 
 function shortPath(p: string): string {
   const cwd = process.cwd()
@@ -75,7 +68,6 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
     const data = (await res.json()) as Record<string, { type: string }>
     totalSessions = Object.keys(data).length
     busyCount = Object.values(data).filter((s) => s.type === 'busy').length
-    // Accumulate cached costs for speed
     for (const sid of Object.keys(data)) {
       const c = deps.state.getSessionCost(sid)
       if (c !== undefined) totalCost += c
@@ -85,20 +77,28 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
   const currentAgent = deps.state.getCurrentAgent()
   const nextAgent = deps.state.getNextAgent()
   const nextModel = deps.state.getNextModel()
+
+  const row = (label: string, value: string) =>
+    `  <b>${label}</b>   ${value}`
+
   const lines = [
-    `<b>${healthy ? '🟢' : '🔴'} opencode ${healthy ? 'healthy' : 'unreachable'}</b>`,
+    `${healthy ? '🟢' : '🔴'}  <b>opencode</b>  ·  ${healthy ? 'healthy' : 'unreachable'}`,
     '',
-    `📊 ${totalSessions} session${totalSessions !== 1 ? 's' : ''}  ·  ${busyCount} busy`,
-    ...(totalCost > 0 ? [`💰 Today: $${totalCost.toFixed(2)}`] : []),
-    ...(tuiSession ? [`📌 <code>…${tuiSession.slice(-8)}</code>${currentAgent ? ` (${currentAgent})` : ''}`] : []),
-    ...(nextAgent ? [`🤖 Next-agent override: <b>${nextAgent}</b>`] : []),
-    ...(nextModel ? [`⚙️ Next-model override: <code>${nextModel.providerID}/${nextModel.modelID}</code>`] : []),
+    row('Sessions', `${totalSessions}  ·  ${busyCount} busy`),
+    ...(totalCost > 0 ? [row('Cost', `$${totalCost.toFixed(2)} today`)] : []),
+    ...(tuiSession
+      ? [row('Session', `<code>…${tuiSession.slice(-8)}</code>${currentAgent ? `  ·  ${currentAgent}` : ''}`)]
+      : []),
+    ...((nextAgent || nextModel)
+      ? ['',
+         `  Next ›  ${nextAgent ? `<b>${nextAgent}</b>` : '—'}  ·  ${nextModel ? `<code>${nextModel.modelID}</code>` : '—'}`]
+      : []),
   ]
   const buttons: ReturnType<typeof Markup.button.callback>[] = [
     Markup.button.callback('🔄 Refresh', 'status:refresh'),
   ]
   if (deps.isGenerating()) {
-    buttons.push(Markup.button.callback('🛑 Abort', 'status:abort'))
+    buttons.push(Markup.button.callback('⏹ Stop', 'status:abort'))
   }
   return { lines, buttons }
 }
@@ -112,28 +112,31 @@ export function registerHandlers(deps: HandlersDeps): void {
     const nextAgent = deps.state.getNextAgent()
     const nextModel = deps.state.getNextModel()
     const lines = [
-      `<b>👋 Hi ${username}!</b>`,
+      `👋  <b>Hi ${username}</b>`,
       '',
-      `opencode ${healthy ? '🟢 ready' : '🔴 unreachable'}.`,
-      'Send any text to relay to opencode.',
+      `opencode  ${healthy ? '🟢 ready' : '🔴 unreachable'}`,
+      'Send any message to relay it into opencode.',
       '',
-      '<b>Commands:</b>',
-      '  /status   Server health + session',
-      '  /sessions List all sessions',
-      '  /session  Pin a session',
-      '  /files    Files touched in last session',
-      '  /agent    Set next agent',
-      '  /model    Set next model',
-      '  /current  Last session used',
-      '  /abort    Stop generation',
-      '  /help     This message',
+      '<b>Commands</b>',
+      '  /status    Health + current session',
+      '  /sessions  List all sessions',
+      '  /agent     Set next-message agent',
+      '  /model     Set next-message model',
+      '  /files     Files touched this session',
+      '  /diff      Pending git diff',
+      '  /todo      Session todo list',
+      '  /context   Tokens + cost + model',
+      '  /abort     Stop generation',
     ]
-    if (nextAgent) lines.push('', `<i>Next agent: ${nextAgent}</i>`)
-    if (nextModel) lines.push(`<i>Next model: ${nextModel.providerID}/${nextModel.modelID}</i>`)
+    if (nextAgent || nextModel) {
+      lines.push('')
+      if (nextAgent) lines.push(`<i>Next agent: ${nextAgent}</i>`)
+      if (nextModel) lines.push(`<i>Next model: ${nextModel.modelID}</i>`)
+    }
     await ctx.reply(lines.join('\n'), {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([
-        [Markup.button.callback('🔄 Check status', 'status:refresh')],
+        [Markup.button.callback('🔄 Status', 'status:refresh')],
       ]),
     })
   })
@@ -297,21 +300,25 @@ export function registerHandlers(deps: HandlersDeps): void {
     try {
       const agents = await fetchUserAgents(deps.baseUrl)
       if (agents.length === 0) {
-        await ctx.reply('<b>🤖 Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.', { parse_mode: 'HTML' })
+        await ctx.reply(
+          '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
+          { parse_mode: 'HTML' },
+        )
         return
       }
       const nextAgent = deps.state.getNextAgent()
-      const lines = ['<b>🤖 Agent</b>', '']
+      const lines = ['🤖  <b>Agent</b>', '']
       for (const a of agents) {
-        const marker = a.name === nextAgent ? '●' : '○'
+        const active = a.name === nextAgent
+        const modelShort = a.model.split('/').pop() ?? a.model
+        const marker = active ? '✓' : '  '
+        const name = active ? `<b>${a.name}</b>` : a.name
         const desc = a.description ? `  <i>${a.description}</i>` : ''
-        lines.push(`${marker}  ${a.name}  <code>${a.model}</code>${desc}`)
+        lines.push(`${marker}  ${name}  <code>${modelShort}</code>${desc}`)
       }
-      lines.push('', '<i>Tap an agent to use it for the next message.</i>')
-      const rows = agents.map(a => [
-        Markup.button.callback(a.name, `agent:set:${a.name}`),
-      ])
-      rows.push([Markup.button.callback('✕ Clear', 'agent:clear')])
+      if (nextAgent) lines.push('', `<i>Active override: ${nextAgent}</i>`)
+      const rows = agents.map(a => [Markup.button.callback(a.name, `agent:set:${a.name}`)])
+      rows.push([Markup.button.callback('✕ Clear override', 'agent:clear')])
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
@@ -324,26 +331,41 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!res.ok) throw new Error(`/config/providers HTTP ${res.status}`)
+      const data = (await res.json()) as {
+        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
+      }
+
       const nextModel = deps.state.getNextModel()
       const lines = ['<b>⚙️ Model</b>', '']
-      if (agents.length === 0) {
-        lines.push('<i>No agent-pinned models configured.</i>')
+      const buttons: Array<ReturnType<typeof Markup.button.callback>> = []
+
+      const providers = data.providers ?? []
+      if (providers.length === 0) {
+        lines.push('<i>No models configured.</i>')
       } else {
-        for (const a of agents) {
-          const marker = nextModel && a.model === `${nextModel.providerID}/${nextModel.modelID}` ? '●' : '○'
-          const slash = a.model.indexOf('/')
-          const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
-          lines.push(`${marker}  ${modelId}  <i>via ${a.name}</i>`)
+        for (const p of providers) {
+          const modelEntries = Object.entries(p.models ?? {})
+          if (modelEntries.length === 0) continue
+          lines.push(`<b>${p.name}</b>`)
+          for (const [id, m] of modelEntries) {
+            const marker = nextModel?.providerID === p.id && nextModel?.modelID === id ? '●' : '○'
+            lines.push(`${marker}  ${m.name ?? id}  <code>${p.id}/${id}</code>`)
+            buttons.push(
+              Markup.button.callback(`${m.name ?? id}`, `model:set:${p.id}:${id}`)
+            )
+          }
+          lines.push('')
         }
       }
-      lines.push('', '<i>Tap a model to use it (and its agent) for the next message.</i>')
-      const rows = agents.map(a => {
-        const slash = a.model.indexOf('/')
-        const modelId = slash !== -1 ? a.model.slice(slash + 1) : a.model
-        return [Markup.button.callback(`${modelId} (${a.name})`, `model:set:${a.name}:${a.model}`)]
-      })
-      rows.push([Markup.button.callback('✕ Clear', 'model:clear')])
+      lines.push('<i>Tap a model to use it for the next message.</i>')
+      buttons.push(Markup.button.callback('✕ Clear', 'model:clear'))
+      // Chunk into rows of 2
+      const rows: ReturnType<typeof Markup.button.callback>[][] = []
+      for (let i = 0; i < buttons.length; i += 2) {
+        rows.push(buttons.slice(i, i + 2))
+      }
       await ctx.reply(lines.join('\n'), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard(rows),
@@ -506,21 +528,19 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   deps.bot.action(/^model:set:([^:]+):(.+)$/, async (ctx) => {
-    const agentName = ctx.match[1]
-    const modelStr = ctx.match[2]
-    log.info(`model:set callback: agent=${agentName} model=${modelStr}`)
-    const parsed = parseModel(modelStr)
-    deps.state.setNextAgent(agentName)
+    const providerID = ctx.match[1]
+    const modelID = ctx.match[2]
+    log.info(`model:set callback: provider=${providerID} model=${modelID}`)
+    const parsed = { providerID, modelID }
     deps.state.setNextModel(parsed)
-    await ctx.answerCbQuery(`Model → ${parsed.modelID}`)
+    await ctx.answerCbQuery(`Model → ${modelID}`)
     await ctx.editMessageText(
-      `<b>⚙️ Model set</b>\n\nNext message will use <code>${parsed.providerID}/${parsed.modelID}</code> via <b>${agentName}</b>.`,
+      `<b>⚙️ Model set</b>\n\nNext message will use <code>${providerID}/${modelID}</code>.`,
       { parse_mode: 'HTML' },
     )
   })
 
   deps.bot.action('model:clear', async (ctx) => {
-    deps.state.setNextAgent(undefined)
     deps.state.setNextModel(undefined)
     await ctx.answerCbQuery('Model cleared')
     await ctx.editMessageText(
@@ -581,14 +601,18 @@ function setupApproval(deps: HandlersDeps): void {
       return
     }
 
-    const text = `🔐 Approval Required\n\n${title}`
-    const keyboard = Markup.inlineKeyboard([
-      [
-        Markup.button.callback('✅ Allow Once', `approve:once:${permId}`),
-        Markup.button.callback('🔓 Always', `approve:always:${permId}`),
-      ],
-      [Markup.button.callback('❌ Reject', `approve:reject:${permId}`)],
-    ])
+    const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const text = `⚠️  <b>Permission Required</b>\n\n<code>${escaped}</code>`
+    const keyboard = {
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback('✅ Once', `approve:once:${permId}`),
+          Markup.button.callback('🔓 Always', `approve:always:${permId}`),
+          Markup.button.callback('❌ Reject', `approve:reject:${permId}`),
+        ],
+      ]),
+      parse_mode: 'HTML' as const,
+    }
 
     try {
       const msg = await deps.bot.telegram.sendMessage(deps.chatId, text, keyboard)

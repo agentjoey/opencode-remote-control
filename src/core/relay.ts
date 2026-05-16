@@ -4,6 +4,7 @@ import type { Card, IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import type { EventStream } from '../opencode/event-stream.js'
 import { submitPrompt } from '../opencode/submit.js'
+import { markdownToTelegramHtml } from '../utils/markdown.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
@@ -20,7 +21,7 @@ export interface RelayDeps {
 }
 
 function thinkingCard(sessionId: string, showStop: boolean): Card {
-  const card: Card = { lines: ['💭 thinking...'] }
+  const card: Card = { lines: ['⏳  Working…'] }
   if (showStop) {
     card.buttons = [[{ label: '⏹ Stop', data: `relay:abort:${sessionId}` }]]
   }
@@ -28,11 +29,18 @@ function thinkingCard(sessionId: string, showStop: boolean): Card {
 }
 
 function errorCard(msg: string): Card {
-  return { lines: [`❌ ${msg}`] }
+  const escaped = msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return { lines: [`❌  <b>Error</b>\n\n<code>${escaped}</code>`], rawHtml: true }
 }
 
-function textCard(text: string): Card {
+/** Plain text card used during streaming (no markdown conversion). */
+function streamCard(text: string): Card {
   return { lines: [text] }
+}
+
+/** Final card: convert markdown to Telegram HTML. */
+function finalCard(text: string): Card {
+  return { lines: [markdownToTelegramHtml(text)], rawHtml: true }
 }
 
 function summarizeToolArgs(tool: string, input: any): string {
@@ -152,7 +160,7 @@ export function createRelay(deps: RelayDeps) {
               if (partId) textPartIds.add(partId)
               const now = Date.now()
               if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
                 lastEdit = now
               }
             } else if (typeof part.text === 'string' && isNewPart) {
@@ -162,7 +170,7 @@ export function createRelay(deps: RelayDeps) {
               log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
               const now = Date.now()
               if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
                 lastEdit = now
               }
             } else {
@@ -186,7 +194,7 @@ export function createRelay(deps: RelayDeps) {
               streamedText += (streamedText ? '\n' : '') + line
               const now = Date.now()
               if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
                 lastEdit = now
               }
             }
@@ -205,7 +213,7 @@ export function createRelay(deps: RelayDeps) {
             streamedText += delta
             const now = Date.now()
             if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
-              await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+              await deps.transport.edit(msg.chatId, initial.messageId, streamCard(streamedText))
               lastEdit = now
             }
           }
@@ -244,22 +252,24 @@ export function createRelay(deps: RelayDeps) {
         const tin = typeof tok?.input === 'number' ? tok.input : undefined
         const tout = typeof tok?.output === 'number' ? tok.output : undefined
         const agentName = s.agent?.name ?? deps.state.getCurrentAgent() ?? ''
-        const modelId = typeof s.model === 'string' ? s.model : ''
+        const modelId = typeof s.model === 'string'
+          ? s.model.split('/').pop() ?? s.model
+          : ''
         if (cost !== undefined) {
-          const parts: string[] = [`· $${cost.toFixed(2)}`]
-          if (tin !== undefined && tout !== undefined) {
-            parts.push(`· ${formatK(tin)} in / ${formatK(tout)} out`)
-          }
-          if (agentName) parts.push(`· ${agentName}`)
-          if (modelId) parts.push(`· ${modelId}`)
-          footer = parts.join(' ')
           deps.state.setSessionCost(sessionId, cost)
+          const parts: string[] = [`💰 $${cost.toFixed(3)}`]
+          if (tin !== undefined && tout !== undefined) {
+            parts.push(`↑${formatK(tin)} ↓${formatK(tout)}`)
+          }
+          if (agentName) parts.push(agentName)
+          if (modelId) parts.push(modelId)
+          footer = parts.join('  ·  ')
         }
       } catch {
-        // Silently skip footer if cost unavailable
+        // footer is optional — silently skip
       }
 
-      const card: Card = textCard(final)
+      const card: Card = finalCard(final)
       if (footer) card.footer = footer
       await deps.transport.edit(msg.chatId, initial.messageId, card)
     } catch (err) {

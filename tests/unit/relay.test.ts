@@ -94,7 +94,7 @@ describe('createRelay', () => {
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(transport.sent.length).toBeGreaterThan(0)
-    expect(transport.sent[0].lines[0]).toMatch(/thinking/i)
+    expect(transport.sent[0].lines[0]).toMatch(/Working/i)
   })
 
   it('calls session.promptAsync with the session id', async () => {
