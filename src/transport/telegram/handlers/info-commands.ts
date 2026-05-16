@@ -83,6 +83,8 @@ export function registerInfoCommands(deps: InfoDeps): void {
       const cRes = await fetch(`${deps.baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
       const c = (await cRes.json()) as { agent?: Record<string, { model?: string }> }
       const model = s.agent && c.agent?.[s.agent]?.model
+      const nextAgent = deps.state.getNextAgent()
+      const nextModel = deps.state.getNextModel()
       const fmt = (n: number) => n >= 1000 ? `${(n/1000).toFixed(1)}k` : String(n)
       const row = (label: string, value: string) => `  <b>${label}</b>   ${value}`
       const lines = [
@@ -93,6 +95,11 @@ export function registerInfoCommands(deps: InfoDeps): void {
         row('Tokens', `↑${fmt(s.tokens?.input ?? 0)}  ↓${fmt(s.tokens?.output ?? 0)}  cached ${fmt(s.tokens?.cache ?? 0)}`),
         row('Cost',   `$${(s.cost ?? 0).toFixed(3)}`),
       ]
+      if (nextAgent || nextModel) {
+        lines.push('', '  <b>Next override ›</b>')
+        if (nextAgent) lines.push(`    Agent: <b>${nextAgent}</b>`)
+        if (nextModel) lines.push(`    Model: <code>${nextModel.providerID}/${nextModel.modelID}</code>`)
+      }
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
