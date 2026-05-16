@@ -52,12 +52,12 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     currentAbortController?.abort()
   }
 
-  // Wire text handler
-  bot.on('text', (ctx: Context) => {
+  // Wire text handler (use a general middleware so commands pass through)
+  bot.use(async (ctx: Context, next) => {
     const m = ctx.message
-    if (!m || !('text' in m)) return
-    if (m.text.startsWith('/')) return  // commands handled separately
-    if (!messageHandler) return
+    if (!m || !('text' in m)) return next()
+    if (m.text.startsWith('/')) return next()  // let command handlers run
+    if (!messageHandler) return next()
 
     if (isGenerating) {
       void ctx.reply('⏳ Session is already generating. Wait for it or /abort.')
