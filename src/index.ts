@@ -6,6 +6,7 @@ import { createFileBackedState } from './core/state.js'
 import { createRelay } from './core/relay.js'
 import { startTuiSync } from './core/tui-sync.js'
 import { createTelegramTransport } from './transport/telegram/index.js'
+import { startPushNotifications } from './core/push.js'
 import { createLogger } from './utils/logger.js'
 
 const log = createLogger('main')
@@ -63,8 +64,14 @@ export async function runBot(): Promise<void> {
 
   const stopSync = startTuiSync({ eventStream, state, client })
 
-  process.once('SIGINT', () => { eventStream.stop(); stopSync(); void transport.stop() })
-  process.once('SIGTERM', () => { eventStream.stop(); stopSync(); void transport.stop() })
+  const stopPush = startPushNotifications({
+    eventStream,
+    transport,
+    chatId: String(config.allowedUserIds[0]),
+  })
+
+  process.once('SIGINT', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
+  process.once('SIGTERM', () => { eventStream.stop(); stopSync(); stopPush(); void transport.stop() })
 
   await transport.start()
 }
