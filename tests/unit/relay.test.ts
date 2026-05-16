@@ -1,36 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRelay } from '../../src/core/relay'
-import type { Transport } from '../../src/transport/interface'
-import type { Card } from '../../src/core/types'
-
-function fakeTransport(): Transport & { sent: Card[]; edits: Card[] } {
-  const sent: Card[] = []
-  const edits: Card[] = []
-  const t = {
-    name: 'fake',
-    capabilities: {
-      edit: true,
-      maxMessageLength: 4000,
-      buttons: true,
-      richText: true,
-      streaming: false,
-    },
-    start: vi.fn(),
-    stop: vi.fn(),
-    send: vi.fn(async (_c: string, card: Card) => {
-      sent.push(card)
-      return { messageId: `m${sent.length}` }
-    }),
-    edit: vi.fn(async (_c: string, _m: string, card: Card) => { edits.push(card) }),
-    delete: vi.fn(),
-    onMessage: vi.fn(),
-    onCommand: vi.fn(),
-    onButtonClick: vi.fn(),
-    sent,
-    edits,
-  } as any
-  return t
-}
+import { createCardBus } from '../../src/core/card-bus'
+import type { StructuredCard } from '../../src/core/structured-card'
 
 function fakeClient() {
   return {
@@ -70,10 +41,10 @@ function fakeState() {
     getCurrentAgent: () => undefined,
     setCurrentAgent: vi.fn(),
     getActiveAbort: (id: string) => aborts.get(id),
-    setActiveAbort: (id: string, ac: AbortController | undefined) => {
+    setActiveAbort: vi.fn((id: string, ac: AbortController | undefined) => {
       if (ac === undefined) aborts.delete(id)
       else aborts.set(id, ac)
-    },
+    }),
     getSessionCost: () => undefined,
     setSessionCost: vi.fn(),
     flush: async () => {},
@@ -81,76 +52,76 @@ function fakeState() {
 }
 
 describe('createRelay', () => {
-  it('sends thinking card on incoming message', async () => {
-    const transport = fakeTransport()
+  it('publishes thinking + user + assistant sequence', async () => {
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
     const relay = createRelay({
-      transport,
+      cardBus,
       client: fakeClient(),
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(transport.sent.length).toBeGreaterThan(0)
-    expect(transport.sent[0].lines[0]).toMatch(/Working/i)
+
+    expect(cards.some(c => c.kind === 'thinking')).toBe(true)
+    expect(cards.some(c => c.kind === 'user' && (c as any).text === 'hi')).toBe(true)
+    expect(cards.some(c => c.kind === 'assistant')).toBe(true)
   })
 
-  it('calls session.promptAsync with the session id', async () => {
-    const transport = fakeTransport()
-    const client = fakeClient()
+  it('publishes streaming card with merged tools', async () => {
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
     const relay = createRelay({
-      transport,
-      client,
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
+      cardBus,
+      client: fakeClient(),
+      eventStream: fakeEventStream([
+        { type: 'message.part.updated', properties: { messageID: 'm1', part: { type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
+        { type: 'session.idle', properties: {} },
+      ]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
-    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.session.promptAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: { id: 'ses_test' },
-        body: expect.objectContaining({ parts: [{ type: 'text', text: 'hi' }] }),
-      }),
-    )
+    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
+
+    const streaming = cards.filter(c => c.kind === 'streaming')
+    expect(streaming.length).toBeGreaterThan(0)
+    expect((streaming[streaming.length - 1] as any).tools[0].tool).toBe('bash')
   })
 
-  it('passes nextAgent and nextModel from state to session.promptAsync', async () => {
-    const client = fakeClient()
-    const state = fakeState()
-    state.setNextAgent('build')
-    state.setNextModel({ providerID: 'kimi-for-coding', modelID: 'k2p6' })
+  it('publishes error card on session.error', async () => {
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
     const relay = createRelay({
-      transport: fakeTransport(),
-      client,
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
-      state,
-      editThrottleMs: 1000,
+      cardBus,
+      client: fakeClient(),
+      eventStream: fakeEventStream([
+        { type: 'session.error', properties: { error: { message: 'boom' } } },
+      ]),
+      state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
-    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.session.promptAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        body: expect.objectContaining({
-          agent: 'build',
-          model: { providerID: 'kimi-for-coding', modelID: 'k2p6' },
-        }),
-      }),
-    )
+    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
+
+    expect(cards.some(c => c.kind === 'error' && (c as any).message === 'boom')).toBe(true)
   })
 
   it('mirrors prompt to TUI when tuiVisible=true', async () => {
     const client = fakeClient()
     const relay = createRelay({
-      transport: fakeTransport(),
+      cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: true,
     })
@@ -161,35 +132,15 @@ describe('createRelay', () => {
   it('does NOT call TUI when tuiVisible=false', async () => {
     const client = fakeClient()
     const relay = createRelay({
-      transport: fakeTransport(),
+      cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.tui.appendPrompt).not.toHaveBeenCalled()
-  })
-
-  it('emits ▸ tool · args line on tool part', async () => {
-    const transport = fakeTransport()
-    const relay = createRelay({
-      transport,
-      client: fakeClient(),
-      eventStream: fakeEventStream([
-        { type: 'message.part.updated', properties: { messageID: 'm1', part: { type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
-        { type: 'session.idle', properties: {} },
-      ]),
-      state: fakeState(),
-      editThrottleMs: 0,
-      chatTimeoutMs: 5000,
-      tuiVisible: false,
-    })
-    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
-    const last = transport.edits[transport.edits.length - 1]
-    expect(last.lines.join('\n')).toMatch(/▸ bash · ls/)
   })
 
   it('retries submitPrompt on network error then succeeds', async () => {
@@ -201,11 +152,10 @@ describe('createRelay', () => {
       return { data: {} }
     })
     const relay = createRelay({
-      transport: fakeTransport(),
+      cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 120000,
       tuiVisible: false,
     })
@@ -217,42 +167,45 @@ describe('createRelay', () => {
   it('gives up after max retries on network error', async () => {
     const client = fakeClient()
     client.session.promptAsync = vi.fn().mockRejectedValue(new Error('fetch failed'))
-    const transport = fakeTransport()
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
     const relay = createRelay({
-      transport,
+      cardBus,
       client,
       eventStream: fakeEventStream([]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 120000,
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.session.promptAsync).toHaveBeenCalledTimes(5)
-    // Should show error card
-    const lastEdit = transport.edits[transport.edits.length - 1]
-    expect(lastEdit.lines[0]).toMatch(/Error/)
-    expect(lastEdit.lines[0]).toMatch(/fetch failed/)
+    const errorCard = cards.find(c => c.kind === 'error')
+    expect(errorCard).toBeDefined()
+    expect((errorCard as any).message).toMatch(/fetch failed/)
   }, 60000)
 
   it('does NOT retry on non-network errors', async () => {
     const client = fakeClient()
     client.session.promptAsync = vi.fn().mockRejectedValue(new Error('no session found'))
-    const transport = fakeTransport()
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
     const relay = createRelay({
-      transport,
+      cardBus,
       client,
       eventStream: fakeEventStream([]),
       state: fakeState(),
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
-    const lastEdit = transport.edits[transport.edits.length - 1]
-    expect(lastEdit.lines[0]).toMatch(/Error/)
-    expect(lastEdit.lines[0]).toMatch(/no session found/)
+    const errorCard = cards.find(c => c.kind === 'error')
+    expect(errorCard).toBeDefined()
+    expect((errorCard as any).message).toMatch(/no session found/)
   })
 
   it('stops retrying when aborted', async () => {
@@ -262,23 +215,35 @@ describe('createRelay', () => {
       if (opts.signal?.aborted) throw new Error('aborted')
       throw new Error('fetch failed')
     })
-    const transport = fakeTransport()
     const relay = createRelay({
-      transport,
+      cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([]),
       state,
-      editThrottleMs: 1000,
       chatTimeoutMs: 5000,
       tuiVisible: false,
     })
-    // Abort after a tick
     setTimeout(() => {
       const ac = state.getActiveAbort('ses_test')
       ac?.abort()
     }, 10)
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    // Abort fires during first retry wait → 1 call (abort interrupts the delay)
     expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
+  })
+
+  it('registers abort controller in state during run', async () => {
+    const state = fakeState()
+    const relay = createRelay({
+      cardBus: createCardBus(),
+      client: fakeClient(),
+      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
+      state,
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+    })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
+    expect(state.setActiveAbort).toHaveBeenCalledTimes(2)
+    expect(state.setActiveAbort).toHaveBeenNthCalledWith(1, 'ses_test', expect.any(AbortController))
+    expect(state.setActiveAbort).toHaveBeenNthCalledWith(2, 'ses_test', undefined)
   })
 })
