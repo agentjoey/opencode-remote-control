@@ -87,7 +87,7 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     baseUrl: cfg.baseUrl,
     state: cfg.state,
     eventStream: cfg.eventStream,
-    chatId: cfg.allowedUserId,
+    chatId: cfg.allowedUserIds[0],
     isGenerating: () => isGenerating,
     abortGeneration,
   })

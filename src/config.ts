@@ -16,6 +16,10 @@ const schema = z.object({
   TUI_VISIBLE: z.string().optional().default('false').transform((v) => v === 'true'),
   STATE_PATH: z.string().optional().default('./data/state.json'),
   TRANSPORT: z.string().optional().default('telegram'),
+  SPAWN_OPENCODE: z.string().optional().default('true').transform((v) => v === 'true'),
+  OPENCODE_BIN: z.string().optional().default('opencode'),
+  OPENCODE_PROJECT: z.string().optional().default(process.cwd()),
+  LOG_DIR: z.string().optional().default('./data/logs'),
 })
 
 export interface Config {
@@ -29,6 +33,10 @@ export interface Config {
   tuiVisible: boolean
   statePath: string
   transport: string
+  spawnOpencode: boolean
+  opencodeBin: string
+  opencodeProject: string
+  logDir: string
 }
 
 export function loadConfig(): Config {
@@ -53,5 +61,9 @@ export function loadConfig(): Config {
     tuiVisible: parsed.TUI_VISIBLE,
     statePath: parsed.STATE_PATH,
     transport: parsed.TRANSPORT,
+    spawnOpencode: parsed.SPAWN_OPENCODE,
+    opencodeBin: parsed.OPENCODE_BIN,
+    opencodeProject: parsed.OPENCODE_PROJECT,
+    logDir: parsed.LOG_DIR,
   }
 }

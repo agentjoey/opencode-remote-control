@@ -7,11 +7,16 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/launcher.js",
+    "start:dev": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration"
+  },
+  "bin": {
+    "opencode-remote-control": "dist/launcher.js",
+    "oprc": "dist/launcher.js"
   },
   "dependencies": {
     "@opencode-ai/sdk": "^1.14.0",
