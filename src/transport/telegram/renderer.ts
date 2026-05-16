@@ -38,6 +38,25 @@ function stopButton(sessionId: string) {
   return { inline_keyboard: [[{ text: '⏹ Stop', callback_data: `relay:abort:${sessionId}` }]] }
 }
 
+function collapseTools(tools: ToolCall[]): ToolCall[] {
+  if (tools.length <= 7) return tools
+  const running = tools.filter((t) => t.status === 'running')
+  const done = tools.filter((t) => t.status !== 'running')
+  if (tools.length <= 15) {
+    const first = done.slice(0, 2)
+    const remaining = tools.slice(first.length)
+    const tail = remaining.slice(-5)
+    const middleCount = tools.length - first.length - tail.length
+    if (middleCount <= 0) return [...first, ...tail]
+    return [...first, { tool: '__more__', args: `${middleCount} more tool calls`, status: 'done' as const }, ...tail]
+  }
+  const first = done.slice(0, 1)
+  const remaining = tools.slice(first.length)
+  const tail = remaining.slice(-4)
+  const middleCount = tools.length - first.length - tail.length
+  return [...first, { tool: '__more__', args: `${middleCount} more tool calls`, status: 'done' as const }, ...tail]
+}
+
 export class TelegramSessionRenderer {
   private chatId: string
   private sessionId: string
@@ -121,13 +140,17 @@ export class TelegramSessionRenderer {
     }
   }
 
-  // Skeleton — Section 3 collapse + pagination logic added in Tasks 7-9.
   private renderChunkBody(md: string, tools: ToolCall[], opts: { streaming?: boolean; meta?: AssistantMeta }): string {
     const lines: string[] = []
-    if (tools.length > 0) {
-      for (const t of tools) {
-        const mark = t.status === 'done' ? '✓' : t.status === 'error' ? '✗' : '…'
-        lines.push(`▸ ${t.tool}${t.args ? ` · ${t.args}` : ''} ${mark}`)
+    const collapsed = collapseTools(tools)
+    if (collapsed.length > 0) {
+      for (const t of collapsed) {
+        if (t.tool === '__more__') {
+          lines.push(`… ${t.args}`)
+        } else {
+          const mark = t.status === 'done' ? '✓' : t.status === 'error' ? '✗' : '…'
+          lines.push(`▸ ${t.tool}${t.args ? ` · ${escHtml(t.args)}` : ''} ${mark}`)
+        }
       }
       lines.push('')
     }
