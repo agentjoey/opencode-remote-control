@@ -24,6 +24,8 @@ describe('inline stop button', () => {
       setCurrentAgent: vi.fn(),
       getActiveAbort: vi.fn().mockReturnValue(undefined),
       setActiveAbort: vi.fn(),
+      getSessionCost: vi.fn().mockReturnValue(undefined),
+      setSessionCost: vi.fn(),
       flush: vi.fn().mockResolvedValue(undefined),
     } as unknown as SessionState
 

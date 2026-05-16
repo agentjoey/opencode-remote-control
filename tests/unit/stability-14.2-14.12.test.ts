@@ -65,6 +65,8 @@ function fakeState() {
       if (ac === undefined) aborts.delete(id)
       else aborts.set(id, ac)
     },
+    getSessionCost: () => undefined,
+    setSessionCost: vi.fn(),
     flush: async () => {},
   } as any
 }
