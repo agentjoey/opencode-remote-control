@@ -107,7 +107,7 @@ export function createRelay(deps: RelayDeps) {
         const p = e.properties
 
         // Debug: log all event types
-        log.info(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
+        log.debug(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
 
         if (e.type === 'session.idle') {
           log.info('session idle, breaking')
@@ -185,6 +185,24 @@ export function createRelay(deps: RelayDeps) {
                 await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
                 lastEdit = now
               }
+            }
+          }
+        }
+
+        // Handle text streaming deltas (flat properties: partID, field, delta)
+        if (e.type === 'message.part.delta') {
+          if (!assistantMessageId && typeof p?.messageID === 'string') {
+            assistantMessageId = p.messageID
+          }
+          const partId = p?.partID as string | undefined
+          const field = p?.field as string | undefined
+          const delta = p?.delta as string | undefined
+          if (partId && field === 'text' && typeof delta === 'string') {
+            streamedText += delta
+            const now = Date.now()
+            if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
+              await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+              lastEdit = now
             }
           }
         }
