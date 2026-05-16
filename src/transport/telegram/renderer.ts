@@ -1,0 +1,126 @@
+import type { Telegram } from 'telegraf'
+import type { StructuredCard, ToolCall, AssistantMeta } from '../../core/structured-card.js'
+import { markdownToTelegramHtml } from '../../utils/markdown.js'
+import { createLogger } from '../../utils/logger.js'
+
+const log = createLogger('tg-renderer')
+
+const TG_MAX = 4000
+const RESERVE_META = 200
+const RESERVE_ANSWER_FRAC = 0.7
+const CHUNK_SOFT_LIMIT = Number(process.env.TG_CHUNK_SOFT_LIMIT ?? 3500)
+const CHUNK_HARD_LIMIT = Number(process.env.TG_CHUNK_HARD_LIMIT ?? 3900)
+
+interface RendererOpts {
+  chatId: string
+  sessionId: string
+  bot: Telegram
+}
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function fmtK(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+}
+
+function metaFooter(meta: AssistantMeta): string {
+  const parts: string[] = []
+  if (typeof meta.cost === 'number') parts.push(`💰 $${meta.cost.toFixed(3)}`)
+  if (meta.tokens) parts.push(`↑${fmtK(meta.tokens.input)} ↓${fmtK(meta.tokens.output)}`)
+  if (meta.agent) parts.push(meta.agent)
+  if (meta.model) parts.push(meta.model)
+  return parts.join('  ·  ')
+}
+
+function stopButton(sessionId: string) {
+  return { inline_keyboard: [[{ text: '⏹ Stop', callback_data: `relay:abort:${sessionId}` }]] }
+}
+
+export class TelegramSessionRenderer {
+  private chatId: string
+  private sessionId: string
+  private bot: Telegram
+  private activeMessageId?: string
+
+  constructor(opts: RendererOpts) {
+    this.chatId = opts.chatId
+    this.sessionId = opts.sessionId
+    this.bot = opts.bot
+  }
+
+  async onCard(card: StructuredCard): Promise<void> {
+    switch (card.kind) {
+      case 'thinking':  return this.startThinking(card.showStop)
+      case 'streaming': return this.renderStreaming(card.markdownSrc, card.tools)
+      case 'assistant': return this.finalize(card.markdownSrc, card.tools, card.meta)
+      case 'error':     return this.markError(card.message)
+      case 'user':      return       // Telegram already shows user's own message
+      case 'status':
+      case 'info':
+      case 'approval':  return       // Handled by command handlers, not via renderer in v0.5.0
+    }
+  }
+
+  private async startThinking(showStop: boolean): Promise<void> {
+    const reply_markup = showStop ? stopButton(this.sessionId) : undefined
+    const sent = await this.bot.sendMessage(this.chatId, '⏳  Working…', { parse_mode: 'HTML', reply_markup })
+    this.activeMessageId = String(sent.message_id)
+  }
+
+  private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
+    if (!this.activeMessageId) return
+    const text = this.renderChunkBody(md, tools, { streaming: true })
+    try {
+      await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, {
+        parse_mode: 'HTML',
+        reply_markup: stopButton(this.sessionId),
+      })
+    } catch (err) {
+      const m = (err as Error).message
+      if (!m.includes('message is not modified')) log.warn('edit failed', m)
+    }
+  }
+
+  private async finalize(md: string, tools: ToolCall[], meta: AssistantMeta): Promise<void> {
+    if (!this.activeMessageId) {
+      // No thinking card was sent — send fresh
+      const sent = await this.bot.sendMessage(this.chatId, this.renderChunkBody(md, tools, { meta }), { parse_mode: 'HTML' })
+      this.activeMessageId = String(sent.message_id)
+      return
+    }
+    const text = this.renderChunkBody(md, tools, { meta })
+    try {
+      await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
+    } catch (err) { log.warn('finalize edit failed', (err as Error).message) }
+  }
+
+  private async markError(message: string): Promise<void> {
+    const text = `❌  <b>Error</b>\n\n<code>${escHtml(message)}</code>`
+    if (this.activeMessageId) {
+      try { await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) }
+      catch {}
+    } else {
+      await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+    }
+  }
+
+  // Skeleton — Section 3 collapse + pagination logic added in Tasks 7-9.
+  private renderChunkBody(md: string, tools: ToolCall[], opts: { streaming?: boolean; meta?: AssistantMeta }): string {
+    const lines: string[] = []
+    if (tools.length > 0) {
+      for (const t of tools) {
+        const mark = t.status === 'done' ? '✓' : t.status === 'error' ? '✗' : '…'
+        lines.push(`▸ ${t.tool}${t.args ? ` · ${t.args}` : ''} ${mark}`)
+      }
+      lines.push('')
+    }
+    if (md) lines.push(markdownToTelegramHtml(md))
+    if (opts.meta) {
+      const footer = metaFooter(opts.meta)
+      if (footer) { lines.push(''); lines.push('──────────'); lines.push(`<i>${escHtml(footer)}</i>`) }
+    }
+    return lines.join('\n')
+  }
+}
