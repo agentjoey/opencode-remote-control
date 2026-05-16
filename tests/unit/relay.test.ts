@@ -35,7 +35,7 @@ function fakeTransport(): Transport & { sent: Card[]; edits: Card[] } {
 function fakeClient() {
   return {
     session: {
-      prompt: vi.fn().mockResolvedValue({ data: {} }),
+      promptAsync: vi.fn().mockResolvedValue({ data: {} }),
       list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_test', time: { created: 1 } }] }),
       get: vi.fn().mockResolvedValue({ data: { cost: 0.04, tokens: { input: 5100, output: 1200 }, agent: { name: 'build' }, model: 'k2p6' } }),
       message: vi.fn().mockResolvedValue({ data: { parts: [] } }),
@@ -97,7 +97,7 @@ describe('createRelay', () => {
     expect(transport.sent[0].lines[0]).toMatch(/thinking/i)
   })
 
-  it('calls session.prompt with the session id', async () => {
+  it('calls session.promptAsync with the session id', async () => {
     const transport = fakeTransport()
     const client = fakeClient()
     const relay = createRelay({
@@ -110,7 +110,7 @@ describe('createRelay', () => {
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.session.prompt).toHaveBeenCalledWith(
+    expect(client.session.promptAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         path: { id: 'ses_test' },
         body: expect.objectContaining({ parts: [{ type: 'text', text: 'hi' }] }),
@@ -118,7 +118,7 @@ describe('createRelay', () => {
     )
   })
 
-  it('passes nextAgent and nextModel from state to session.prompt', async () => {
+  it('passes nextAgent and nextModel from state to session.promptAsync', async () => {
     const client = fakeClient()
     const state = fakeState()
     state.setNextAgent('build')
@@ -133,7 +133,7 @@ describe('createRelay', () => {
       tuiVisible: false,
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.session.prompt).toHaveBeenCalledWith(
+    expect(client.session.promptAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
           agent: 'build',
