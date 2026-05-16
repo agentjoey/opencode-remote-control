@@ -4,6 +4,8 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+const TG_MAX = 4000
+
 export function cardToTelegram(card: Card): {
   text: string
   options: {
@@ -21,6 +23,10 @@ export function cardToTelegram(card: Card): {
     lines.push('')
     lines.push(`<i>${escapeHtml(card.footer)}</i>`)
   }
+  let text = lines.join('\n')
+  if (text.length > TG_MAX) {
+    text = text.slice(0, TG_MAX - 14) + '\n…(truncated)'
+  }
   const options: any = { parse_mode: 'HTML' }
   if (card.buttons && card.buttons.length > 0) {
     options.reply_markup = {
@@ -29,5 +35,5 @@ export function cardToTelegram(card: Card): {
       ),
     }
   }
-  return { text: lines.join('\n'), options }
+  return { text, options }
 }
