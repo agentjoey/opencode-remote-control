@@ -52,4 +52,15 @@ describe('SessionState', () => {
     const b = createFileBackedState(path)
     expect(b.getNextAgent()).toBeUndefined()
   })
+
+  it('round-trips tuiSelectedSession + currentAgent', async () => {
+    const path = join(dir, 'state.json')
+    const a = createFileBackedState(path)
+    a.setTuiSelectedSession('ses_xyz')
+    a.setCurrentAgent('build')
+    await a.flush()
+    const b = createFileBackedState(path)
+    expect(b.getTuiSelectedSession()).toBe('ses_xyz')
+    expect(b.getCurrentAgent()).toBe('build')
+  })
 })
