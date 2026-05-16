@@ -76,7 +76,7 @@ export async function runBot(): Promise<void> {
   await transport.start()
 }
 
-if (process.argv[1]?.endsWith('index.js')) {
+if (process.argv[1]?.endsWith('dist/index.js')) {
   runBot().catch((err) => {
     log.error('fatal', err as Error)
     process.exit(1)
