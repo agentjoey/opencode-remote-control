@@ -20,6 +20,7 @@ const schema = z.object({
   OPENCODE_BIN: z.string().optional().default('opencode'),
   OPENCODE_PROJECT: z.string().optional().default(process.cwd()),
   LOG_DIR: z.string().optional().default('./data/logs'),
+  TOOL_CALLS_INLINE: z.string().optional().default('true').transform((v) => v === 'true'),
 })
 
 export interface Config {
@@ -37,6 +38,7 @@ export interface Config {
   opencodeBin: string
   opencodeProject: string
   logDir: string
+  toolCallsInline: boolean
 }
 
 export function loadConfig(): Config {
@@ -65,5 +67,6 @@ export function loadConfig(): Config {
     opencodeBin: parsed.OPENCODE_BIN,
     opencodeProject: parsed.OPENCODE_PROJECT,
     logDir: parsed.LOG_DIR,
+    toolCallsInline: parsed.TOOL_CALLS_INLINE,
   }
 }

@@ -16,6 +16,7 @@ export interface RelayDeps {
   editThrottleMs: number
   chatTimeoutMs: number
   tuiVisible: boolean
+  toolCallsInline?: boolean
 }
 
 function thinkingCard(): Card {
@@ -29,6 +30,15 @@ function errorCard(msg: string): Card {
 function textCard(text: string): Card {
   return { lines: [text] }
 }
+
+function summarizeToolArgs(tool: string, input: any): string {
+  if (tool === 'bash') return (input.command ?? '').slice(0, 60)
+  if (tool === 'read' || tool === 'edit' || tool === 'write') return input.filePath ?? ''
+  if (tool === 'grep' || tool === 'find') return input.pattern ?? input.query ?? ''
+  return ''
+}
+
+const MAX_TOOL_LINES = 30
 
 async function pickSession(client: OpencodeClient, last: string | undefined): Promise<string> {
   if (last) return last
@@ -72,6 +82,8 @@ export function createRelay(deps: RelayDeps) {
       let streamedText = ''
       const textPartIds = new Set<string>()
       let lastEdit = 0
+      const toolEvents: string[] = []
+      const showTools = deps.toolCallsInline !== false
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
         const e = ev as { type: string; properties: any }
@@ -91,6 +103,26 @@ export function createRelay(deps: RelayDeps) {
           }
           if (p?.part?.type === 'text' && typeof p.part.id === 'string') {
             textPartIds.add(p.part.id)
+          }
+          if (showTools && p?.part?.type === 'tool' && typeof p.part.tool === 'string') {
+            const tool = p.part.tool
+            const input = p.part.state?.input ?? {}
+            const arg = summarizeToolArgs(tool, input)
+            const line = `▸ ${tool}${arg ? ` · ${arg}` : ''}`
+            if (toolEvents.length === MAX_TOOL_LINES + 1) {
+              // suppress further lines
+            } else if (toolEvents.length === MAX_TOOL_LINES) {
+              toolEvents.push('…more tool calls suppressed')
+              streamedText += '\n…more tool calls suppressed'
+            } else {
+              toolEvents.push(line)
+              streamedText += (streamedText ? '\n' : '') + line
+              const now = Date.now()
+              if (deps.transport.capabilities.edit && now - lastEdit >= deps.editThrottleMs) {
+                await deps.transport.edit(msg.chatId, initial.messageId, textCard(streamedText))
+                lastEdit = now
+              }
+            }
           }
         }
 
