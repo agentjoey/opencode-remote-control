@@ -134,8 +134,17 @@ You send "implement F1 streaming" from Telegram (or Web).
 5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
    - Telegram: `TelegramSessionRenderer` paginates long outputs into multiple
      messages with progressive tool-call collapse.
-   - Web: `WsHub` sends JSON frame to all subscribed WebSocket clients;
-     SvelteKit frontend updates stores and re-renders components.
+    - Web: `WsHub` sends JSON frame to all subscribed WebSocket clients;
+      SvelteKit frontend updates stores and re-renders components.
+6. **Push notifications** (`src/core/push.ts`) independently monitors
+   `session.idle` events from the EventStream (not relay). When a session
+   finishes with >60s duration:
+   - Fetches the last assistant message via `client.session.messages()`.
+   - Extracts text parts for a Chinese-language summary (first 300 chars).
+   - Publishes `kind:'info'` to CardBus → Telegram renderer sends a new message.
+   - Rate limited: max 10/hour, 5-min cooldown per session.
+   - **Timeout is not an error**: relay may disconnect on timeout, but push
+     waits for the real `session.idle` before notifying.
 
 When you send `/agent build` instead:
 - Handler updates `agentContext.setNextAgent('build')`.
