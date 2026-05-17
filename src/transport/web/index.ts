@@ -10,6 +10,7 @@ import type { EventStream } from '../../opencode/event-stream.js'
 import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
+import { verifyUpgradeJwt } from './middleware/cf-access.js'
 
 const log = createLogger('web')
 
@@ -58,10 +59,14 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
       })
 
       wss = new WebSocketServer({ noServer: true })
-      ;(server as any).on('upgrade', (req: any, socket: any, head: any) => {
+      ;(server as any).on('upgrade', async (req: any, socket: any, head: any) => {
         if (req.url !== '/ws') { socket.destroy(); return }
+        const user = await verifyUpgradeJwt(
+          { headers: req.headers, url: req.url },
+          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail, host: cfg.cfAccess.host ?? cfg.host },
+        )
+        if (!user) { socket.destroy(); return }
         wss!.handleUpgrade(req, socket, head, (ws) => {
-          const user = { email: 'user@unknown' }
           wsHub.attach(ws as any, user)
           ws.on('message', (data) => {
             try { wsHub.handleClientMessage(ws as any, JSON.parse(data.toString())) } catch {}
