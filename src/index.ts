@@ -89,8 +89,7 @@ export async function runBot(): Promise<void> {
 
   const stopPush = startPushNotifications({
     eventStream,
-    transport,
-    chatId: String(config.allowedUserIds[0]),
+    cardBus,
   })
 
   process.once('SIGINT', async () => {
