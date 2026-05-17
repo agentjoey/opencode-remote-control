@@ -176,7 +176,8 @@ export class TelegramSessionRenderer {
     }
     for (let i = 0; i < pieces.length; i++) {
       const isLast = i === pieces.length - 1
-      const header = `<b>Part ${this.chunkIndex + i + 1}/${this.chunkIndex + pieces.length}</b>\n`
+      const partNum = this.chunkIndex + i + 1
+      const header = `<b>Part ${partNum} · done</b>\n`
       const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
       const text = header + body
       if (i === 0 && this.activeMessageId) {

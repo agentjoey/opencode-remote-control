@@ -102,4 +102,67 @@ describe('streaming pagination (explosion fix)', () => {
     expect(lastEdit.text).toContain('$0.010')
     expect(lastEdit.text).not.toMatch(/A{100,}/)
   })
+
+  it('Stop button is present on the new chunk (Part 2) after pagination', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+
+    // Stream enough to trigger pagination
+    const part1 = 'A'.repeat(5000) + '\n\n'
+    const part2 = 'B'.repeat(1000)
+    const text = part1 + part2
+    let accum = part1
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    accum = text
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+
+    // The second send (Part 2) should have Stop button
+    expect(bot.sent.length).toBe(2)
+    const part2Msg = bot.sent[1]
+    expect(part2Msg.options.reply_markup).toBeDefined()
+    expect(part2Msg.options.reply_markup.inline_keyboard[0][0].text).toBe('⏹ Stop')
+    expect(part2Msg.options.reply_markup.inline_keyboard[0][0].callback_data).toContain('ses')
+  })
+
+  it('Part 1 done header appears correctly after pagination', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+
+    const part1 = 'A'.repeat(5000) + '\n\n'
+    const part2 = 'B'.repeat(500)
+    const text = part1 + part2
+    let accum = part1
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    accum = text
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+
+    // The first edit after pagination should be on Part 1 and contain "Part 1 · done"
+    const part1DoneEdit = bot.edits.find((e: any) => e.text.includes('Part 1 · done'))
+    expect(part1DoneEdit).toBeDefined()
+
+    // The new sent message should contain "Part 2 · streaming…"
+    expect(bot.sent.length).toBe(2)
+    expect(bot.sent[1].text).toContain('Part 2 · streaming')
+  })
+
+  it('finalize multi-piece uses Part N · done headers', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+
+    // Long text that triggers finalize split into multiple pieces
+    const longText = ('B'.repeat(2000) + '\n\n').repeat(5)
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: longText, tools: [], meta: { cost: 0.01 } })
+
+    // Check that all Piece headers use "· done" format, not "k/N"
+    const partTexts = [...bot.edits.map((e: any) => e.text), ...bot.sent.map((s: any) => s.text)]
+    for (const t of partTexts) {
+      if (t.includes('Part ')) {
+        expect(t).toMatch(/Part \d+ · done/)
+        expect(t).not.toMatch(/Part \d+\/\d+/)
+      }
+    }
+  })
 })
