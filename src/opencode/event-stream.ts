@@ -62,6 +62,9 @@ export class EventStream {
                 if (status[sid]?.type !== 'busy') {
                   log.info(`session ${sid} already idle after SSE reconnect, emitting synthetic idle`)
                   this.emitter.emit(sid, { type: 'session.idle', properties: { sessionID: sid } })
+                } else {
+                  log.info(`session ${sid} still busy after SSE reconnect, emitting synthetic busy`)
+                  this.emitter.emit(sid, { type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
                 }
               }
             } catch {}
