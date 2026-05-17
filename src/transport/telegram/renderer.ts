@@ -87,6 +87,7 @@ export class TelegramSessionRenderer {
   private editsInBurst = 0
   private chunkIndex = 0
   private streamingChunkBuffer = ''
+  private chunkStartOffset = 0
 
   constructor(opts: RendererOpts) {
     this.chatId = opts.chatId
@@ -121,17 +122,19 @@ export class TelegramSessionRenderer {
 
   private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
     if (!this.activeMessageId) return
+    const chunkMd = md.slice(this.chunkStartOffset)
     this.streamingChunkBuffer = md
-    const renderedLen = this.renderChunkBody(md, tools, { streaming: true }).length
-    const naturalBoundary = md.endsWith('\n\n') || tools.some((t) => t.status === 'done')
+    const renderedLen = this.renderChunkBody(chunkMd, tools, { streaming: true }).length
+    const naturalBoundary = chunkMd.endsWith('\n\n') || tools.some((t) => t.status === 'done')
 
     if (renderedLen >= CHUNK_HARD_LIMIT || (renderedLen >= CHUNK_SOFT_LIMIT && naturalBoundary)) {
       const header = `<b>Part ${this.chunkIndex + 1} · done</b>\n`
       try {
         await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined,
-          header + this.renderChunkBody(md, tools, {}), { parse_mode: 'HTML' })
+          header + this.renderChunkBody(chunkMd, tools, {}), { parse_mode: 'HTML' })
       } catch {}
       this.chunkIndex += 1
+      this.chunkStartOffset = md.length
       const newHeader = `<b>Part ${this.chunkIndex + 1} · streaming…</b>\n⏳`
       const sent = await this.bot.sendMessage(this.chatId, newHeader, {
         parse_mode: 'HTML', reply_markup: stopButton(this.sessionId),
@@ -149,7 +152,7 @@ export class TelegramSessionRenderer {
 
     this.lastEditAt = now
     this.editsInBurst += 1
-    const text = this.renderChunkBody(md, tools, { streaming: true })
+    const text = this.renderChunkBody(chunkMd, tools, { streaming: true })
     try {
       await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, {
         parse_mode: 'HTML',
@@ -162,8 +165,9 @@ export class TelegramSessionRenderer {
   }
 
   private async finalize(md: string, tools: ToolCall[], meta: AssistantMeta): Promise<void> {
+    const remainMd = md.slice(this.chunkStartOffset)
     const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
-    const pieces = splitMarkdown(md, PER_CHUNK)
+    const pieces = splitMarkdown(remainMd, PER_CHUNK)
     if (pieces.length === 1) {
       const text = this.renderChunkBody(pieces[0], tools, { meta })
       if (this.activeMessageId) {
@@ -177,7 +181,7 @@ export class TelegramSessionRenderer {
     }
     for (let i = 0; i < pieces.length; i++) {
       const isLast = i === pieces.length - 1
-      const header = `<b>Part ${i + 1}/${pieces.length}</b>\n`
+      const header = `<b>Part ${this.chunkIndex + i + 1}/${this.chunkIndex + pieces.length}</b>\n`
       const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
       const text = header + body
       if (i === 0 && this.activeMessageId) {
