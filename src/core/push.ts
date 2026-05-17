@@ -1,5 +1,5 @@
 import type { EventStream } from '../opencode/event-stream.js'
-import type { Transport } from '../transport/interface.js'
+import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
 import { createLogger } from '../utils/logger.js'
 
@@ -7,8 +7,7 @@ const log = createLogger('push')
 
 export interface PushDeps {
   eventStream: EventStream
-  transport: Transport
-  chatId: string
+  cardBus: CardBus
   testFailuresEnabled?: boolean
   maxPerHour?: number
 }
@@ -40,6 +39,10 @@ export function startPushNotifications(deps: PushDeps): () => void {
     engagedAt.set(sessionId, Date.now())
   }
 
+  function publish(card: StructuredCard) {
+    try { deps.cardBus.publish(card) } catch (err) { log.warn('publish failed', err as Error) }
+  }
+
   const unsub = deps.eventStream.onAny(async (raw) => {
     const e = raw as { type: string; properties?: any }
     const p = e.properties
@@ -62,12 +65,12 @@ export function startPushNotifications(deps: PushDeps): () => void {
       const engagedRecently = Date.now() - lastEngaged < 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
-        const card: StructuredCard = {
+        publish({
           kind: 'info',
+          sessionId: sid,
           title: 'Session finished',
           sections: [{ body: `✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)` }],
-        }
-        await deps.transport.send(deps.chatId, card).catch(() => {})
+        })
       }
     }
 
@@ -77,15 +80,15 @@ export function startPushNotifications(deps: PushDeps): () => void {
         const tail = (part.state.output as string).slice(-200)
         if (/\b(FAIL|FAILED|error:|✗)\b/.test(tail) && canPush(sid)) {
           recordPush(sid)
-          const card: StructuredCard = {
+          publish({
             kind: 'info',
+            sessionId: sid,
             title: 'Test failure detected',
             sections: [
               { body: `⚠️ Possible test failure in <code>…${sid.slice(-8)}</code>` },
               { body: '<pre>' + tail.replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' },
             ],
-          }
-          await deps.transport.send(deps.chatId, card).catch(() => {})
+          })
         }
       }
     }

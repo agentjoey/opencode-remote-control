@@ -29,5 +29,5 @@ export type StructuredCard =
   | { kind: 'user';      sessionId: string;  text: string;  ts: number }
   | { kind: 'error';     sessionId: string;  message: string }
   | { kind: 'status';    sessionId: string;  fields: Record<string, string>; buttons?: Button[][] }
-  | { kind: 'info';      title: string;      sections: InfoSection[] }
+  | { kind: 'info';      title: string;      sections: InfoSection[]; sessionId?: string }
   | { kind: 'approval';  sessionId: string;  title: string;  args: unknown;  requestId: string }
