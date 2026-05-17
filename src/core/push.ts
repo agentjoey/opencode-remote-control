@@ -82,8 +82,12 @@ export function startPushNotifications(deps: PushDeps): () => void {
     } else if (e.type === 'session.idle' || (e.type === 'session.status' && p?.status?.type === 'idle')) {
       const start = busySince.get(sid)
       busySince.delete(sid)
-      if (!start) return
-      const duration = Date.now() - start
+      // If the session was already busy when this listener started (e.g. bot
+      // restart mid-session), busySince is empty. Fall back to recording
+      // engagement time as a conservative estimate — the session was at least
+      // running since the bot's first contact with it.
+      const effectiveStart = start ?? engagedAt.get(sid) ?? Date.now()
+      const duration = Date.now() - effectiveStart
       const lastEngaged = engagedAt.get(sid) ?? 0
       const engagedRecently = Date.now() - lastEngaged < 12 * 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
