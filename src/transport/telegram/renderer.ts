@@ -1,5 +1,5 @@
 import type { Telegram } from 'telegraf'
-import type { StructuredCard, ToolCall, AssistantMeta } from '../../core/structured-card.js'
+import type { StructuredCard, ToolCall, AssistantMeta, InfoSection } from '../../core/structured-card.js'
 import { markdownToTelegramHtml } from '../../utils/markdown.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -108,8 +108,8 @@ export class TelegramSessionRenderer {
       case 'error':     return this.markError(card.message)
       case 'user':      return       // Telegram already shows user's own message
       case 'status':
-      case 'info':
       case 'approval':  return       // Handled by command handlers, not via renderer in v0.5.0
+      case 'info':      return this.sendInfo(card.title, card.sections)
     }
   }
 
@@ -198,6 +198,20 @@ export class TelegramSessionRenderer {
       catch {}
     } else {
       await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+    }
+  }
+
+  private async sendInfo(title: string, sections: InfoSection[]): Promise<void> {
+    const lines: string[] = []
+    if (title) lines.push(`<b>${escHtml(title)}</b>`)
+    for (const s of sections) {
+      if (s.heading) lines.push(`<u>${escHtml(s.heading)}</u>`)
+      lines.push(markdownToTelegramHtml(s.body))
+    }
+    try {
+      await this.bot.sendMessage(this.chatId, lines.join('\n'), { parse_mode: 'HTML' })
+    } catch (err) {
+      log.warn('sendInfo failed', (err as Error).message)
     }
   }
 

@@ -120,7 +120,7 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
       const chatId = String(cfg.allowedUserIds[0])
 
       cardBus.subscribeAll((card) => {
-        if ('sessionId' in card) {
+        if ('sessionId' in card && card.sessionId) {
           const r = getRenderer(card.sessionId, chatId)
           void r.onCard(card)
           if (card.kind === 'assistant' || card.kind === 'error') {
