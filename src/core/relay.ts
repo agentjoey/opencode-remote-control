@@ -5,6 +5,7 @@ import type { SessionState } from './state.js'
 import type { EventStream } from '../opencode/event-stream.js'
 import type { StructuredCard, ToolCall } from './structured-card.js'
 import { submitPrompt } from '../opencode/submit.js'
+import { summarizeToolArgs } from './history.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
@@ -16,13 +17,6 @@ export interface RelayDeps {
   state: SessionState
   chatTimeoutMs: number
   tuiVisible: boolean
-}
-
-function summarizeToolArgs(tool: string, input: any): string {
-  if (tool === 'bash') return (input.command ?? '').slice(0, 60)
-  if (tool === 'read' || tool === 'edit' || tool === 'write') return input.filePath ?? ''
-  if (tool === 'grep' || tool === 'find') return input.pattern ?? input.query ?? ''
-  return ''
 }
 
 const SUBMIT_MAX_RETRIES = 5
