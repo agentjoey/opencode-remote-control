@@ -90,4 +90,37 @@ describe('TelegramSessionRenderer', () => {
     expect(last.text).toMatch(/cmd19/)
     expect(last.text).toMatch(/… 15 more tool calls/)
   })
+
+  it('pins running tools into tail (8-15 tools, 2 running)', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    const tools: Array<{ tool: string; args: string; status: 'done' | 'running' }> = []
+    for (let i = 0; i < 12; i++) {
+      const status = (i === 2 || i === 4) ? 'running' : 'done'
+      tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
+    }
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools: tools as any, meta: {} })
+    const last = bot.edits.at(-1)!
+    // tail should contain the 2 running tools: cmd2 (…), cmd4 (…)
+    expect(last.text).toMatch(/cmd2/)
+    expect(last.text).toMatch(/cmd4/)
+  })
+
+  it('pins running tool into tail (>15 tools, 1 running at pos 0)', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    const tools: Array<{ tool: string; args: string; status: 'done' | 'running' }> = []
+    for (let i = 0; i < 20; i++) {
+      const status = i === 0 ? 'running' : 'done'
+      tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
+    }
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools: tools as any, meta: {} })
+    const last = bot.edits.at(-1)!
+    // tail should contain the running tool cmd0
+    expect(last.text).toMatch(/cmd0/)
+    // tail should have last 3 done + the running one = 4 total in tail
+    expect(last.text).toMatch(/cmd17/)  // tail: [done16, done17, done18, done19] → tailDone from position firstCount+1 to end
+  })
 })
