@@ -5,6 +5,7 @@ import type { SessionState } from '../../core/state.js'
 import type { EventStream } from '../../opencode/event-stream.js'
 import { checkHealth } from '../../opencode/client.js'
 import { createLogger } from '../../utils/logger.js'
+import { getVersionInfo } from '../../utils/version.js'
 import { registerInfoCommands } from './handlers/info-commands.js'
 
 const log = createLogger('handlers')
@@ -42,6 +43,19 @@ async function fetchUserAgents(baseUrl: string): Promise<AgentConfig[]> {
     }))
 }
 
+/**
+ * Parse a "providerID/modelID" string into the shape expected by state/relay.
+ * Returns undefined if the string lacks a slash. Preserves slashes inside modelID.
+ */
+function parseAgentModel(modelStr: string): { providerID: string; modelID: string } | undefined {
+  const idx = modelStr.indexOf('/')
+  if (idx <= 0 || idx === modelStr.length - 1) return undefined
+  return {
+    providerID: modelStr.slice(0, idx),
+    modelID: modelStr.slice(idx + 1),
+  }
+}
+
 
 function shortPath(p: string): string {
   const cwd = process.cwd()
@@ -73,7 +87,10 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
       if (c !== undefined) totalCost += c
     }
   } catch {}
+  const pinnedSession = deps.state.getPinnedSessionId()
+  const lastSession = deps.state.getLastSessionId()
   const tuiSession = deps.state.getTuiSelectedSession()
+  const effectiveSession = pinnedSession ?? lastSession
   const currentAgent = deps.state.getCurrentAgent()
   const nextAgent = deps.state.getNextAgent()
   const nextModel = deps.state.getNextModel()
@@ -81,13 +98,17 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
   const row = (label: string, value: string) =>
     `  <b>${label}</b>   ${value}`
 
+  const sessionLabel = pinnedSession ? 'Bot 📌' : 'Bot'
   const lines = [
     `${healthy ? '🟢' : '🔴'}  <b>opencode</b>  ·  ${healthy ? 'healthy' : 'unreachable'}`,
     '',
     row('Sessions', `${totalSessions}  ·  ${busyCount} busy`),
     ...(totalCost > 0 ? [row('Cost', `$${totalCost.toFixed(2)} today`)] : []),
-    ...(tuiSession
-      ? [row('Session', `<code>…${tuiSession.slice(-8)}</code>${currentAgent ? `  ·  ${currentAgent}` : ''}`)]
+    ...(effectiveSession
+      ? [row(sessionLabel, `<code>…${effectiveSession.slice(-8)}</code>${currentAgent ? `  ·  ${currentAgent}` : ''}`)]
+      : []),
+    ...(tuiSession && tuiSession !== effectiveSession
+      ? [row('TUI', `<code>…${tuiSession.slice(-8)}</code>`)]
       : []),
     ...((nextAgent || nextModel)
       ? ['',
@@ -191,16 +212,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     const text = ctx.message && 'text' in ctx.message ? ctx.message.text : ''
     const args = text ? text.split(' ').slice(1)[0]?.trim() : undefined
     if (args && args.length > 0) {
-      deps.state.setLastSessionId(args)
-      // Also sync to TUI if possible
-      try {
-        await fetch(`${deps.baseUrl}/tui/select-session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionID: args }),
-          signal: AbortSignal.timeout(5000),
-        })
-      } catch {}
+      deps.state.setPinnedSessionId(args)
       await ctx.reply(
         `<b>📌 Pinned</b>\n\n<code>${args}</code>`,
         {
@@ -212,16 +224,16 @@ export function registerHandlers(deps: HandlersDeps): void {
       )
       return
     }
-    const last = deps.state.getLastSessionId()
-    if (!last) {
+    const pinned = deps.state.getPinnedSessionId()
+    if (!pinned) {
       await ctx.reply(
-        'No session pinned. Send a message or use /sessions to choose one.',
+        'No session pinned. Use <code>/session &lt;id&gt;</code> or pick from /sessions.',
         { parse_mode: 'HTML' },
       )
       return
     }
     await ctx.reply(
-      `<b>📌 Pinned session</b>\n\n<code>${last}</code>`,
+      `<b>📌 Pinned session</b>\n\n<code>${pinned}</code>`,
       {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
@@ -406,6 +418,19 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
   })
 
+  deps.bot.command('version', async (ctx: Context) => {
+    const { version, commit, uptime, node } = getVersionInfo()
+    await ctx.reply(
+      [
+        `<b>opencode-remote-control</b>  v${version}`,
+        `Commit: <code>${commit}</code>`,
+        `Uptime: ${uptime}`,
+        `Node: ${node}`,
+      ].join('\n'),
+      { parse_mode: 'HTML' },
+    )
+  })
+
   deps.bot.command('help', async (ctx: Context) => {
     await ctx.reply(
       [
@@ -424,6 +449,7 @@ export function registerHandlers(deps: HandlersDeps): void {
         '  /model   Set next model',
         '  /current Last session used',
         '  /abort   Stop generation',
+        '  /version Bot version + uptime',
         '  /help    This message',
         '',
         'Send any text to relay it into opencode.',
@@ -451,6 +477,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       { command: 'model', description: 'Set next model' },
       { command: 'current', description: 'Last session used' },
       { command: 'abort', description: 'Stop the current generation' },
+      { command: 'version', description: 'Bot version + uptime' },
       { command: 'help', description: 'Show help' },
     ])
     .catch((err) => log.warn('setMyCommands failed', err))
@@ -459,21 +486,31 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.action(/^session:pin:(.+)$/, async (ctx) => {
     const id = ctx.match[1]
-    deps.state.setLastSessionId(id)
+    deps.state.setPinnedSessionId(id)
     await ctx.answerCbQuery(`Pinned ${id.slice(-8)}`)
-    await ctx.editMessageText(
-      `<b>📌 Pinned</b>\n\n<code>${id}</code>`,
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        `<b>📌 Pinned</b>\n\n<code>${id}</code>`,
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('session:pin edit failed', msg)
+    }
   })
 
   deps.bot.action('session:unpin', async (ctx) => {
-    deps.state.setLastSessionId(undefined)
+    deps.state.setPinnedSessionId(undefined)
     await ctx.answerCbQuery('Unpinned')
-    await ctx.editMessageText(
-      '<b>📌 Session unpinned</b>\n\nMessages will use the newest session.',
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        '<b>📌 Session unpinned</b>\n\nMessages will use the most recently active session.',
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('session:unpin edit failed', msg)
+    }
   })
 
   deps.bot.action('status:refresh', async (ctx) => {
@@ -504,27 +541,56 @@ export function registerHandlers(deps: HandlersDeps): void {
       } catch {}
     }
     await ctx.answerCbQuery('Aborting…')
-    await ctx.editMessageText('🛑 Generation aborted.', { parse_mode: 'HTML' })
+    try {
+      await ctx.editMessageText('🛑 Generation aborted.', { parse_mode: 'HTML' })
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('status:abort edit failed', msg)
+    }
   })
 
   deps.bot.action(/^agent:set:(.+)$/, async (ctx) => {
     const name = ctx.match[1]
     log.info(`agent:set callback: ${name}`)
     deps.state.setNextAgent(name)
+    // Sync model to whatever this agent is bound to in opencode.jsonc, so the
+    // user doesn't end up running a new agent against a stale /model override.
+    let modelSuffix = ''
+    try {
+      const agents = await fetchUserAgents(deps.baseUrl)
+      const a = agents.find((x) => x.name === name)
+      const parsed = a ? parseAgentModel(a.model) : undefined
+      if (parsed) {
+        deps.state.setNextModel(parsed)
+        modelSuffix = ` · <code>${parsed.modelID}</code>`
+      }
+    } catch (err) {
+      log.warn(`agent:set model sync failed: ${(err as Error).message}`)
+    }
     await ctx.answerCbQuery(`Agent → ${name}`)
-    await ctx.editMessageText(
-      `<b>🤖 Agent set</b>\n\nNext message will use <b>${name}</b>.`,
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        `<b>🤖 Agent set</b>\n\nNext message will use <b>${name}</b>${modelSuffix}.`,
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('agent:set edit failed', msg)
+    }
   })
 
   deps.bot.action('agent:clear', async (ctx) => {
     deps.state.setNextAgent(undefined)
     await ctx.answerCbQuery('Agent cleared')
-    await ctx.editMessageText(
-      '<b>🤖 Agent cleared</b>\n\nNext message will use the default agent.',
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        '<b>🤖 Agent cleared</b>\n\nNext message will use the default agent.',
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('agent:clear edit failed', msg)
+    }
   })
 
   deps.bot.action(/^model:set:([^:]+):(.+)$/, async (ctx) => {
@@ -534,19 +600,29 @@ export function registerHandlers(deps: HandlersDeps): void {
     const parsed = { providerID, modelID }
     deps.state.setNextModel(parsed)
     await ctx.answerCbQuery(`Model → ${modelID}`)
-    await ctx.editMessageText(
-      `<b>⚙️ Model set</b>\n\nNext message will use <code>${providerID}/${modelID}</code>.`,
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        `<b>⚙️ Model set</b>\n\nNext message will use <code>${providerID}/${modelID}</code>.`,
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('model:set edit failed', msg)
+    }
   })
 
   deps.bot.action('model:clear', async (ctx) => {
     deps.state.setNextModel(undefined)
     await ctx.answerCbQuery('Model cleared')
-    await ctx.editMessageText(
-      '<b>⚙️ Model cleared</b>\n\nNext message will use the default model.',
-      { parse_mode: 'HTML' },
-    )
+    try {
+      await ctx.editMessageText(
+        '<b>⚙️ Model cleared</b>\n\nNext message will use the default model.',
+        { parse_mode: 'HTML' },
+      )
+    } catch (err) {
+      const msg = (err as Error).message
+      if (!msg.includes('message is not modified')) log.warn('model:clear edit failed', msg)
+    }
   })
 
   // Step 2: pick a specific model after selecting a provider
@@ -728,12 +804,10 @@ export function setupApproval(
     }
 
     try {
-      const res = await fetch(`${deps.baseUrl}/permission/${permId}/reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response }),
+      await (deps.client.session as any).permissionRespond({
+        path: { id: p.sessionId, permissionID: p.permissionId },
+        body: { response },
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
     } catch (err) {
       log.error(`failed to reply permission ${permId}`, err as Error)
       await ctx.answerCbQuery('Failed to reply. The request may have expired.')
