@@ -5,7 +5,7 @@ import { buildServer } from '../../../src/transport/web/server'
 describe('buildServer', () => {
   it('GET /api/me returns user email with dev bypass', async () => {
     const app = buildServer({
-      cfAccess: { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' },
+      cfAccess: { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: '127.0.0.1' },
       client: {} as any,
       state: {} as any,
       cardBus: {} as any,

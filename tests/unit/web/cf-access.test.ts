@@ -43,7 +43,7 @@ describe('cfAccessMiddleware', () => {
   })
 
   it('dev bypass works on loopback host', async () => {
-    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' })
+    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: '127.0.0.1' })
     const c = { req: { header: () => undefined, query: () => undefined }, env: () => undefined, set: vi.fn(), json: vi.fn(), header: vi.fn() } as any
     const next = vi.fn()
     await mw(c, next)
