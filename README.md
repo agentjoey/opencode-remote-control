@@ -124,6 +124,18 @@ See [`docs/OPS.md`](docs/OPS.md) for logs, troubleshooting, and updates.
 
 Send any text to relay it into opencode.
 
+## Push notifications
+
+The bot monitors opencode sessions and proactively sends summaries to Telegram:
+
+| Trigger | When | Content |
+|---------|------|---------|
+| Session finished | >60s run completes | Duration + assistant text summary (first 300 chars) |
+| Test failure | Bash output contains FAIL/FAILED | Last 200 chars of output |
+| Timeout | `CHAT_TIMEOUT_MS` elapsed | Bot disconnects; push waits for `session.idle` to notify |
+
+Rate limits: max 10 notifications/hour, 5-min cooldown per session.
+
 ## Multi-transport
 
 The project runs multiple transports simultaneously. Enable Telegram, Web, or
