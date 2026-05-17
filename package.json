@@ -1,6 +1,6 @@
 {
   "name": "opencode-remote-control",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Sidecar Telegram bot for remote-controlling a local opencode TUI session (umbrella project for future channels)",
   "type": "module",
   "main": "dist/index.js",
