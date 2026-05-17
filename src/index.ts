@@ -79,6 +79,7 @@ export async function runBot(): Promise<void> {
     state,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: config.tuiVisible,
+    baseUrl: config.opencodeBaseUrl,
   })
 
   for (const t of transports) {
@@ -90,6 +91,7 @@ export async function runBot(): Promise<void> {
   const stopPush = startPushNotifications({
     eventStream,
     cardBus,
+    client,
   })
 
   process.once('SIGINT', async () => {

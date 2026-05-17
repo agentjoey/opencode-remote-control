@@ -1,6 +1,7 @@
 import type { EventStream } from '../opencode/event-stream.js'
 import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
+import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('push')
@@ -8,6 +9,7 @@ const log = createLogger('push')
 export interface PushDeps {
   eventStream: EventStream
   cardBus: CardBus
+  client: OpencodeClient
   testFailuresEnabled?: boolean
   maxPerHour?: number
 }
@@ -43,6 +45,27 @@ export function startPushNotifications(deps: PushDeps): () => void {
     try { deps.cardBus.publish(card) } catch (err) { log.warn('publish failed', err as Error) }
   }
 
+  async function fetchSummary(sid: string): Promise<string> {
+    try {
+      const res = await deps.client.session.messages({ path: { id: sid } })
+      const messages = (res.data ?? []) as any[]
+      const lastAssistant = [...messages].reverse().find((m: any) => m.role === 'assistant')
+      if (!lastAssistant) return ''
+      const parts = lastAssistant.parts ?? []
+      const texts: string[] = []
+      for (const p of parts) {
+        if (p.type === 'text' && typeof p.text === 'string') {
+          texts.push(p.text)
+        }
+      }
+      const combined = texts.join('')
+      return combined.length > 300 ? combined.slice(0, 300) + '…' : combined
+    } catch (err) {
+      log.warn('fetchSummary failed', (err as Error).message)
+      return ''
+    }
+  }
+
   const unsub = deps.eventStream.onAny(async (raw) => {
     const e = raw as { type: string; properties?: any }
     const p = e.properties
@@ -65,12 +88,14 @@ export function startPushNotifications(deps: PushDeps): () => void {
       const engagedRecently = Date.now() - lastEngaged < 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
-        publish({
-          kind: 'info',
-          sessionId: sid,
-          title: 'Session finished',
-          sections: [{ body: `✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)` }],
-        })
+        const summary = await fetchSummary(sid)
+        const sections: Array<{ body: string }> = [
+          { body: `✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)` },
+        ]
+        if (summary) {
+          sections.push({ body: '<pre>' + summary.replace(/[<>&]/g, (c: string) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' })
+        }
+        publish({ kind: 'info', sessionId: sid, title: 'Session finished', sections })
       }
     }
 
