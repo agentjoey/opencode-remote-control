@@ -17,6 +17,9 @@ export interface RelayDeps {
   state: SessionState
   chatTimeoutMs: number
   tuiVisible: boolean
+  /** opencode server base URL — used for raw HTTP calls (e.g. /tui/select-session)
+   * that SDK v1 does not yet expose as a typed method. */
+  baseUrl: string
 }
 
 const SUBMIT_MAX_RETRIES = 5
@@ -72,48 +75,130 @@ function formatK(n: number): string {
   return String(n)
 }
 
+async function waitForBusySession(eventStream: EventStream, signal: AbortSignal, timeoutMs: number): Promise<string | undefined> {
+  return new Promise<string | undefined>((resolve) => {
+    let done = false
+    const finish = (sid: string | undefined) => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      if (typeof unsub === 'function') unsub()
+      resolve(sid)
+    }
+    const timer = setTimeout(() => finish(undefined), timeoutMs)
+    const unsub = eventStream.onAny((rawEvent) => {
+      const e = rawEvent as { type?: string; properties?: any }
+      const p = e?.properties
+      if (e.type === 'session.status' && p?.status?.type === 'busy') {
+        const sid = typeof p?.sessionID === 'string' ? p.sessionID : undefined
+        if (sid) finish(sid)
+      }
+    })
+    signal.addEventListener('abort', () => finish(undefined), { once: true })
+  })
+}
+
+/**
+ * Navigate the TUI to a specific session via POST /tui/select-session.
+ * SDK v1 does not expose this as a typed method, so use raw fetch.
+ * Best-effort: failures (TUI not attached, opencode unreachable) are non-fatal.
+ */
+async function selectTuiSession(baseUrl: string, sessionID: string, signal?: AbortSignal): Promise<void> {
+  try {
+    const timeoutSignal = AbortSignal.timeout(2000)
+    const combinedSignal = signal
+      ? AbortSignal.any([signal, timeoutSignal])
+      : timeoutSignal
+    const res = await fetch(`${baseUrl}/tui/select-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionID }),
+      signal: combinedSignal,
+    })
+    if (!res.ok) {
+      log.debug(`tui/select-session HTTP ${res.status}`)
+    }
+  } catch (err) {
+    log.debug(`tui/select-session skipped: ${(err as Error).message}`)
+  }
+}
+
 async function pickSessionFallback(client: OpencodeClient): Promise<string> {
   const res = await client.session.list()
-  const sessions = (res.data ?? []) as Array<{ id: string; time?: { created?: number } }>
+  const sessions = (res.data ?? []) as Array<{ id: string; time?: { created?: number; updated?: number } }>
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
-  const sorted = [...sessions].sort((a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0))
+  // Sort by time.updated (most recently active) rather than time.created (newest).
+  // The TUI is typically working in the most recently active session, not the newest one.
+  const sorted = [...sessions].sort((a, b) =>
+    (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
+  )
   return sorted[0].id
 }
 
 export function createRelay(deps: RelayDeps) {
   return async function handleIncoming(msg: IncomingMessage): Promise<void> {
-    const tuiSession = deps.state.getTuiSelectedSession()
-    const lastSession = deps.state.getLastSessionId()
-    const sessionId = tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
-    deps.state.setLastSessionId(sessionId)
-
     const ac = new AbortController()
-    deps.state.setActiveAbort(sessionId, ac)
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
-    deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
-    deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
+    // Placeholder sessionId for the thinking card — will be updated once we know the real session.
+    const earlySessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
+    deps.cardBus.publish({ kind: 'thinking', sessionId: earlySessionId, showStop: true })
+    deps.cardBus.publish({ kind: 'user', sessionId: earlySessionId, text: msg.text, ts: Date.now() })
+
+    // Declared outside try so catch/finally can reference it.
+    let sessionId: string = earlySessionId
+    // Set abort controller early so callers can abort before session is resolved.
+    deps.state.setActiveAbort(earlySessionId, ac)
 
     try {
-      if (deps.tuiVisible) {
+      const nextAgent = deps.state.getNextAgent()
+      const nextModel = deps.state.getNextModel()
+
+      // Strategy 1: Submit via TUI — TUI knows its own current session.
+      // Only used when: no override (tui.submitPrompt cannot carry per-message
+      // overrides), no pin, AND tuiVisible (user wants TUI to drive routing).
+      let resolvedId: string | undefined
+      const hasOverrides = !!(nextAgent || nextModel)
+
+      if (!hasOverrides && !deps.state.getPinnedSessionId() && deps.tuiVisible) {
         try {
           await deps.client.tui.appendPrompt({ body: { text: msg.text } } as any)
+          await (deps.client.tui as any).submitPrompt()
+          log.info('submitted via TUI, waiting for busy session…')
+          resolvedId = await waitForBusySession(deps.eventStream, ac.signal, 4000)
+          if (resolvedId) {
+            log.info(`TUI routed to session=${resolvedId.slice(-8)}`)
+          } else {
+            log.warn('TUI submit succeeded but no busy event within 4s, falling back')
+          }
         } catch (err) {
-          log.warn(`TUI mirror failed: ${(err as Error).message}`)
+          log.warn(`TUI submit failed: ${(err as Error).message}, falling back to direct API`)
         }
       }
 
-      const nextAgent = deps.state.getNextAgent()
-      const nextModel = deps.state.getNextModel()
-      log.info(`submitting to session=${sessionId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+      // Strategy 2: Direct API submission (pinned > last > most-recently-active fallback).
+      // When tuiVisible, first navigate the TUI to this session via /tui/select-session
+      // so the conversation appears in the TUI window (the bot drives, TUI mirrors).
+      if (!resolvedId) {
+        const pinnedSession = deps.state.getPinnedSessionId()
+        const lastSession = deps.state.getLastSessionId()
+        resolvedId = pinnedSession ?? lastSession ?? await pickSessionFallback(deps.client)
+        log.info(`submitting directly to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+        if (deps.tuiVisible) {
+          await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
+        }
+        await submitWithRetry(deps.client, {
+          text: msg.text,
+          sessionId: resolvedId,
+          agent: nextAgent,
+          model: nextModel,
+          signal: ac.signal,
+        })
+      }
 
-      await submitWithRetry(deps.client, {
-        text: msg.text,
-        sessionId,
-        agent: nextAgent,
-        model: nextModel,
-        signal: ac.signal,
-      })
+      sessionId = resolvedId
+      deps.state.setLastSessionId(sessionId)
+      deps.state.setActiveAbort(sessionId, ac)
 
       let assistantMessageId: string | undefined
       let streamedText = ''
@@ -241,8 +326,12 @@ export function createRelay(deps: RelayDeps) {
       deps.cardBus.publish({ kind: 'assistant', sessionId, markdownSrc: final, tools: [...tools], meta })
     } catch (err) {
       const e = err as Error
-      log.warn('relay error', e.message)
-      deps.cardBus.publish({ kind: 'error', sessionId, message: e.message })
+      if (ac.signal.aborted) {
+        log.info('relay aborted (timeout or user stop) — push will notify on session idle')
+      } else {
+        log.warn('relay error', e.message)
+        deps.cardBus.publish({ kind: 'error', sessionId, message: e.message })
+      }
     } finally {
       clearTimeout(timer)
       deps.state.setActiveAbort(sessionId, undefined)
