@@ -85,7 +85,7 @@ export function startPushNotifications(deps: PushDeps): () => void {
       if (!start) return
       const duration = Date.now() - start
       const lastEngaged = engagedAt.get(sid) ?? 0
-      const engagedRecently = Date.now() - lastEngaged < 60 * 60 * 1000
+      const engagedRecently = Date.now() - lastEngaged < 12 * 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
         const summary = await fetchSummary(sid)
