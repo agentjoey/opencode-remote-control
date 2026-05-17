@@ -63,18 +63,13 @@ function collapseTools(tools: ToolCall[]): ToolCall[] {
   if (tools.length <= 7) return tools
   const running = tools.filter((t) => t.status === 'running')
   const done = tools.filter((t) => t.status !== 'running')
-  if (tools.length <= 15) {
-    const first = done.slice(0, 2)
-    const remaining = tools.slice(first.length)
-    const tail = remaining.slice(-5)
-    const middleCount = tools.length - first.length - tail.length
-    if (middleCount <= 0) return [...first, ...tail]
-    return [...first, { tool: '__more__', args: `${middleCount} more tool calls`, status: 'done' as const }, ...tail]
-  }
-  const first = done.slice(0, 1)
-  const remaining = tools.slice(first.length)
-  const tail = remaining.slice(-4)
+  const tailCount = tools.length <= 15 ? 5 : 4
+  const firstCount = tools.length <= 15 ? 2 : 1
+  const first = done.slice(0, firstCount)
+  const tailDone = done.slice(firstCount).slice(-(tailCount - Math.min(running.length, tailCount)))
+  const tail = [...tailDone, ...running].slice(-tailCount)
   const middleCount = tools.length - first.length - tail.length
+  if (middleCount <= 0) return [...first, ...tail]
   return [...first, { tool: '__more__', args: `${middleCount} more tool calls`, status: 'done' as const }, ...tail]
 }
 
