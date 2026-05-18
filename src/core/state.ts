@@ -6,6 +6,7 @@ const log = createLogger('state')
 
 interface PersistedState {
   lastSessionId?: string
+  pinnedSessionId?: string
   nextAgent?: string
   nextModel?: { providerID: string; modelID: string }
   tuiSelectedSession?: string
@@ -15,6 +16,8 @@ interface PersistedState {
 export interface SessionState {
   getLastSessionId(): string | undefined
   setLastSessionId(id: string | undefined): void
+  getPinnedSessionId(): string | undefined
+  setPinnedSessionId(id: string | undefined): void
   getNextAgent(): string | undefined
   setNextAgent(name: string | undefined): void
   getNextModel(): { providerID: string; modelID: string } | undefined
@@ -59,6 +62,12 @@ export function createFileBackedState(path: string): SessionState {
     setLastSessionId: (id) => {
       if (id === undefined) delete cache.lastSessionId
       else cache.lastSessionId = id
+      void persist()
+    },
+    getPinnedSessionId: () => cache.pinnedSessionId,
+    setPinnedSessionId: (id) => {
+      if (id === undefined) delete cache.pinnedSessionId
+      else cache.pinnedSessionId = id
       void persist()
     },
     getNextAgent: () => cache.nextAgent,

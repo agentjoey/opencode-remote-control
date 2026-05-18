@@ -1,6 +1,9 @@
 import type { WebSocket } from 'ws'
 import type { CardBus } from '../../core/card-bus.js'
 import type { StructuredCard } from '../../core/structured-card.js'
+import type { SessionState } from '../../core/state.js'
+import type { OpencodeClient } from '@opencode-ai/sdk'
+import { fetchSessionSummaries } from './session-summary.js'
 
 interface ClientState {
   ws: WebSocket
@@ -15,8 +18,9 @@ export interface WsHub {
   broadcast(card: StructuredCard): void
 }
 
-export function createWsHub(opts: { cardBus: CardBus }): WsHub {
+export function createWsHub(opts: { cardBus: CardBus; client: OpencodeClient; state: SessionState }): WsHub {
   const clients = new Map<WebSocket, ClientState>()
+
   opts.cardBus.subscribeAll((card) => {
     const sid = 'sessionId' in card ? card.sessionId : undefined
     for (const state of clients.values()) {
@@ -27,9 +31,10 @@ export function createWsHub(opts: { cardBus: CardBus }): WsHub {
   })
 
   return {
-    attach(ws, user) {
+    async attach(ws, user) {
+      const sessions = await fetchSessionSummaries(opts.client, opts.state).catch(() => [])
       clients.set(ws, { ws, user })
-      try { ws.send(JSON.stringify({ type: 'hello', sessions: [] })) } catch {}
+      try { ws.send(JSON.stringify({ type: 'hello', sessions })) } catch {}
     },
     handleClientMessage(ws, msg) {
       const state = clients.get(ws)
@@ -37,9 +42,12 @@ export function createWsHub(opts: { cardBus: CardBus }): WsHub {
       if (msg.type === 'ping') { ws.send(JSON.stringify({ type: 'pong' })); return }
       if (msg.type === 'subscribe' && typeof msg.sessionId === 'string') {
         state.subscribedSession = msg.sessionId
-        for (const c of opts.cardBus.recent(msg.sessionId, msg.limit ?? 100)) {
-          try { ws.send(JSON.stringify({ type: 'card', card: c })) } catch {}
-        }
+        // Do NOT replay the cardBus recent buffer. The client already loaded
+        // history via GET /api/session/:id; replaying buffered cards causes
+        // duplicate inserts and an O(N²) re-render avalanche (100 cards =
+        // 5000 Card mounts because each appendCard re-renders the full list).
+        // Live cards published after subscribe flow through the regular
+        // subscribeAll path.
       }
     },
     detach(ws) { clients.delete(ws) },

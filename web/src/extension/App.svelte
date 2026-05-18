@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { getBotUrl } from '../lib/adapters/extension.js'
-  import { setBaseUrl } from '../lib/api/client.js'
+  import { setBaseUrl, api } from '../lib/api/client.js'
   import { createWsClient } from '../lib/ws/client.js'
   import { connection } from '../lib/stores/connection.js'
-  import { sessionList } from '../lib/stores/sessions.js'
+  import { sessionList, cardsBySession, appendCard, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
   import SessionList from '../lib/components/SessionList.svelte'
   import Card from '../lib/components/Card.svelte'
@@ -15,35 +15,56 @@
   let botUrl = ''
   let configured = false
   let error = ''
+  let wsClient: ReturnType<typeof createWsClient> | null = null
+
+  function handleSelect(id: string) {
+    activeSession.set(id)
+    api.history(id)
+      .then((cards) => setHistory(id, cards))
+      .catch(console.warn)
+    wsClient?.send({ type: 'subscribe', sessionId: id })
+  }
 
   onMount(async () => {
     try {
       botUrl = await getBotUrl()
       setBaseUrl(botUrl)
       configured = true
-      createWsClient({ url: `${botUrl.replace(/^http/, 'ws')}/ws`, onMessage: (msg) => {
-        if (msg.type === 'hello') {
-          // Handle initial session list
-        } else if (msg.type === 'card') {
-          // Handle card - this would update stores
-        }
-      }})
+
+      wsClient = createWsClient({
+        url: `${botUrl.replace(/^http/, 'ws')}/ws`,
+        onReconnect: () => {
+          const id = $activeSession
+          if (id) {
+            wsClient?.send({ type: 'subscribe', sessionId: id })
+          }
+        },
+        onMessage: (msg) => {
+          if (msg.type === 'hello' && msg.sessions) {
+            sessionList.set(msg.sessions)
+          } else if (msg.type === 'card' && msg.card) {
+            appendCard(msg.card)
+          } else if (msg.type === 'sessions' && msg.sessions) {
+            sessionList.set(msg.sessions)
+          }
+        },
+      })
+
+      api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
     } catch (err) {
       error = String(err)
     }
 
-    // Listen for injected prompts from context menu
     const listener = (msg: any) => {
       if (msg?.type === 'inject-prompt') {
-        // Pre-fill composer (handled via store or event)
-        window.dispatchEvent(new CustomEvent('oprc-inject-prompt', { detail: msg.payload }))
+        window.dispatchEvent(new CustomEvent('ocrc-inject-prompt', { detail: msg.payload }))
       }
     }
     chrome.runtime.onMessage.addListener(listener)
     return () => chrome.runtime.onMessage.removeListener(listener)
   })
 
-  $: currentCards = $activeSession ? ($sessionList[$activeSession] ?? []) : []
+  $: currentCards = $activeSession ? ($cardsBySession[$activeSession] ?? []) : []
 
   function onSend(text: string) {
     if (!$activeSession) return
@@ -73,12 +94,12 @@
 {:else}
   <div class="app">
     <header>
-      <span class="logo">oprc</span>
+      <span class="logo">ocrc</span>
       <ConnectionBadge status={$connection} />
     </header>
     <div class="body">
       <aside>
-        <SessionList />
+        <SessionList activeId={$activeSession ?? undefined} onSelect={handleSelect} />
       </aside>
       <main>
         <div class="cards" bind:this={scrollEl}>
