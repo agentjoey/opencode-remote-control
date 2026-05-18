@@ -7,3 +7,5 @@ dist/
 # opencode workspace config (local model selection)
 config.json
 .opencode/
+# runtime persisted state (sessionId / agent / model selection)
+data/
