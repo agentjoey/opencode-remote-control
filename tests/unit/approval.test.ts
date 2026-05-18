@@ -185,9 +185,9 @@ describe('approval flow', () => {
 
   // ── Button callback: approve:once ──
 
-  it('calls client.session.permissionRespond on approve button click', async () => {
-    const permissionRespond = vi.fn().mockResolvedValue(undefined)
-    deps.client = { session: { permissionRespond } } as any
+  it('calls postSessionIdPermissionsPermissionId on approve button click', async () => {
+    const postSessionIdPermissionsPermissionId = vi.fn().mockResolvedValue(undefined)
+    deps.client = { session: { postSessionIdPermissionsPermissionId } } as any
 
     await emitAndWait({
       type: 'permission.asked',
@@ -202,7 +202,7 @@ describe('approval flow', () => {
 
     await approveHandler(ctx)
 
-    expect(permissionRespond).toHaveBeenCalledWith({
+    expect(postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
       path: { id: 'ses_btn', permissionID: 'perm-btn-001' },
       body: { response: 'once' },
     })
