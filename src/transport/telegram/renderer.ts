@@ -208,10 +208,20 @@ export class TelegramSessionRenderer {
       if (s.heading) lines.push(`<u>${escHtml(s.heading)}</u>`)
       lines.push(markdownToTelegramHtml(s.body))
     }
-    try {
-      await this.bot.sendMessage(this.chatId, lines.join('\n'), { parse_mode: 'HTML' })
-    } catch (err) {
-      log.warn('sendInfo failed', (err as Error).message)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await this.bot.sendMessage(this.chatId, lines.join('\n'), { parse_mode: 'HTML' })
+        return
+      } catch (err) {
+        const msg = (err as Error).message
+        if (attempt < 2 && /ECONNRESET|ETIMEDOUT|network/i.test(msg)) {
+          log.warn(`sendInfo retry ${attempt + 1}/3: ${msg}`)
+          await new Promise((r) => setTimeout(r, 2000))
+        } else {
+          log.warn('sendInfo failed', msg)
+          return
+        }
+      }
     }
   }
 

@@ -49,9 +49,14 @@ export function startPushNotifications(deps: PushDeps): () => void {
     try {
       const res = await deps.client.session.messages({ path: { id: sid } })
       const messages = (res.data ?? []) as any[]
+      log.info(`fetchSummary: ${messages.length} messages for ${sid.slice(-8)}`)
       const lastAssistant = [...messages].reverse().find((m: any) => m.role === 'assistant')
-      if (!lastAssistant) return ''
+      if (!lastAssistant) {
+        log.info(`fetchSummary: no assistant message in ${messages.length} messages`)
+        return ''
+      }
       const parts = lastAssistant.parts ?? []
+      log.info(`fetchSummary: last assistant has ${parts.length} parts`)
       const texts: string[] = []
       for (const p of parts) {
         if (p.type === 'text' && typeof p.text === 'string') {
@@ -59,6 +64,7 @@ export function startPushNotifications(deps: PushDeps): () => void {
         }
       }
       const combined = texts.join('')
+      log.info(`fetchSummary: ${combined.length} chars of text from ${texts.length} text parts`)
       return combined.length > 300 ? combined.slice(0, 300) + '…' : combined
     } catch (err) {
       log.warn('fetchSummary failed', (err as Error).message)
