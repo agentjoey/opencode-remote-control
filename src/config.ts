@@ -12,7 +12,7 @@ const schema = z.object({
   CHAT_TIMEOUT_MS: z.string().regex(/^\d+$/).default('600000').transform(Number),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   STREAM_OUTPUT: z.string().optional().default('true').transform((v) => v === 'true'),
-  TUI_VISIBLE: z.string().optional().default('false').transform((v) => v === 'true'),
+  TUI_VISIBLE: z.string().optional().default('true').transform((v) => v === 'true'),
   STATE_PATH: z.string().optional().default('./data/state.json'),
   TRANSPORT: z.string().optional().default('telegram'),
   SPAWN_OPENCODE: z.string().optional().default('true').transform((v) => v === 'true'),

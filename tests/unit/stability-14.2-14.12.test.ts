@@ -28,6 +28,8 @@ function fakeState() {
   return {
     getLastSessionId: () => 'ses_test',
     setLastSessionId: vi.fn(),
+    getPinnedSessionId: () => undefined,
+    setPinnedSessionId: vi.fn(),
     getNextAgent: () => undefined,
     setNextAgent: vi.fn(),
     getNextModel: () => undefined,
@@ -65,6 +67,7 @@ describe('14.2 concurrent busy', () => {
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
 
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })

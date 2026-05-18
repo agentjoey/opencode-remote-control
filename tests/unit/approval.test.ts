@@ -185,7 +185,10 @@ describe('approval flow', () => {
 
   // ── Button callback: approve:once ──
 
-  it('POSTs to /permission/{id}/reply on approve button click', async () => {
+  it('calls client.session.permissionRespond on approve button click', async () => {
+    const permissionRespond = vi.fn().mockResolvedValue(undefined)
+    deps.client = { session: { permissionRespond } } as any
+
     await emitAndWait({
       type: 'permission.asked',
       properties: { id: 'perm-btn-001', permission: 'edit', sessionID: 'ses_btn' },
@@ -199,13 +202,10 @@ describe('approval flow', () => {
 
     await approveHandler(ctx)
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:4096/permission/perm-btn-001/reply',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ response: 'once' }),
-      }),
-    )
+    expect(permissionRespond).toHaveBeenCalledWith({
+      path: { id: 'ses_btn', permissionID: 'perm-btn-001' },
+      body: { response: 'once' },
+    })
     expect(ctx.editMessageText).toHaveBeenCalledWith('✅ Allowed (once)\n\nedit', { parse_mode: 'HTML' })
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('✅ Allowed (once)')
   })

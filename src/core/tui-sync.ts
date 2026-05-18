@@ -16,17 +16,19 @@ export function startTuiSync(deps: SyncDeps): () => void {
   // Subscribe to events; whenever we see a sessionID in any event,
   // update tuiSelectedSession.
   const unsub = deps.eventStream.onAny((rawEvent) => {
-    const e = rawEvent as { properties?: any }
+    const e = rawEvent as { type?: string; properties?: any }
     const p = e?.properties
     const sid =
       (typeof p?.sessionID === 'string' && p.sessionID) ||
       (typeof p?.part?.sessionID === 'string' && p.part.sessionID) ||
       (typeof p?.info?.sessionID === 'string' && p.info.sessionID) ||
       undefined
-    if (sid) {
+    if (!sid) return
+    // Only update tuiSelectedSession from explicit TUI navigation events.
+    // Updating from all events (including subagent sessions) caused session
+    // mismatch: subagent SSE events would silently redirect the bot to a wrong session.
+    if (e.type === 'tui.session.select') {
       deps.state.setTuiSelectedSession(sid)
-      // Also sync to lastSessionId so /current reflects TUI state
-      deps.state.setLastSessionId(sid)
     }
   })
 

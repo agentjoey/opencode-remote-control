@@ -1,7 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createRelay } from '../../src/core/relay'
 import { createCardBus } from '../../src/core/card-bus'
 import type { StructuredCard } from '../../src/core/structured-card'
+
+// selectTuiSession uses raw fetch (SDK v1 lacks tui.selectSession).
+// Stub global fetch so tests don't hit real localhost:4096 — that would
+// navigate the developer's actual TUI.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
+})
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function fakeClient() {
   return {
@@ -12,14 +22,14 @@ function fakeClient() {
       message: vi.fn().mockResolvedValue({ data: { parts: [] } }),
       messages: vi.fn().mockResolvedValue({ data: [] }),
     },
-    tui: { appendPrompt: vi.fn() },
+    tui: { appendPrompt: vi.fn(), submitPrompt: vi.fn() },
   } as any
 }
 
 function fakeEventStream(events: any[] = []) {
   return {
     session: async function* () { for (const e of events) yield e },
-    onAny: vi.fn(),
+    onAny: vi.fn().mockReturnValue(() => {}),
     setStatusChecker: vi.fn(),
   } as any
 }
@@ -32,6 +42,8 @@ function fakeState() {
   return {
     getLastSessionId: () => sid,
     setLastSessionId: (id: string | undefined) => { sid = id },
+    getPinnedSessionId: () => undefined,
+    setPinnedSessionId: vi.fn(),
     getNextAgent: () => agent,
     setNextAgent: (n: string | undefined) => { agent = n },
     getNextModel: () => model,
@@ -64,6 +76,7 @@ describe('createRelay', () => {
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
 
@@ -87,6 +100,7 @@ describe('createRelay', () => {
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
 
@@ -109,13 +123,14 @@ describe('createRelay', () => {
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
 
     expect(cards.some(c => c.kind === 'error' && (c as any).message === 'boom')).toBe(true)
   })
 
-  it('mirrors prompt to TUI when tuiVisible=true', async () => {
+  it('submits via TUI when tuiVisible and no overrides and no pin (auto session detection)', async () => {
     const client = fakeClient()
     const relay = createRelay({
       cardBus: createCardBus(),
@@ -124,23 +139,35 @@ describe('createRelay', () => {
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: true,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.tui.appendPrompt).toHaveBeenCalledWith({ body: { text: 'hi' } })
+    expect(client.tui.submitPrompt).toHaveBeenCalled()
   })
 
-  it('does NOT call TUI when tuiVisible=false', async () => {
+  it('does NOT call TUI when session is pinned (uses direct API even with tuiVisible)', async () => {
     const client = fakeClient()
+    const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_pinned'
     const relay = createRelay({
       cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
-      state: fakeState(),
+      state,
       chatTimeoutMs: 5000,
-      tuiVisible: false,
+      tuiVisible: true,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.tui.appendPrompt).not.toHaveBeenCalled()
+    expect(client.tui.submitPrompt).not.toHaveBeenCalled()
+    expect(client.session.promptAsync).toHaveBeenCalled()
+    // With tuiVisible=true, Strategy 2 should also call /tui/select-session
+    expect((globalThis.fetch as any)).toHaveBeenCalledWith(
+      'http://localhost:4096/tui/select-session',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 
   it('retries submitPrompt on network error then succeeds', async () => {
@@ -151,13 +178,16 @@ describe('createRelay', () => {
       if (calls <= 2) throw new Error('fetch failed')
       return { data: {} }
     })
+    const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_test'
     const relay = createRelay({
       cardBus: createCardBus(),
       client,
       eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
-      state: fakeState(),
+      state,
       chatTimeoutMs: 120000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(calls).toBe(3)
@@ -171,13 +201,16 @@ describe('createRelay', () => {
     const cards: StructuredCard[] = []
     cardBus.subscribeAll((c) => cards.push(c))
 
+    const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_test'
     const relay = createRelay({
       cardBus,
       client,
       eventStream: fakeEventStream([]),
-      state: fakeState(),
+      state,
       chatTimeoutMs: 120000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.session.promptAsync).toHaveBeenCalledTimes(5)
@@ -193,13 +226,16 @@ describe('createRelay', () => {
     const cards: StructuredCard[] = []
     cardBus.subscribeAll((c) => cards.push(c))
 
+    const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_test'
     const relay = createRelay({
       cardBus,
       client,
       eventStream: fakeEventStream([]),
-      state: fakeState(),
+      state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
     expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
@@ -211,6 +247,7 @@ describe('createRelay', () => {
   it('stops retrying when aborted', async () => {
     const client = fakeClient()
     const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_test'
     client.session.promptAsync = vi.fn().mockImplementation(async (opts: any) => {
       if (opts.signal?.aborted) throw new Error('aborted')
       throw new Error('fetch failed')
@@ -222,6 +259,7 @@ describe('createRelay', () => {
       state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     setTimeout(() => {
       const ac = state.getActiveAbort('ses_test')
@@ -233,6 +271,7 @@ describe('createRelay', () => {
 
   it('registers abort controller in state during run', async () => {
     const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_test'
     const relay = createRelay({
       cardBus: createCardBus(),
       client: fakeClient(),
@@ -240,10 +279,39 @@ describe('createRelay', () => {
       state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(state.setActiveAbort).toHaveBeenCalledTimes(2)
+    expect(state.setActiveAbort).toHaveBeenCalledTimes(3)
     expect(state.setActiveAbort).toHaveBeenNthCalledWith(1, 'ses_test', expect.any(AbortController))
-    expect(state.setActiveAbort).toHaveBeenNthCalledWith(2, 'ses_test', undefined)
+    expect(state.setActiveAbort).toHaveBeenNthCalledWith(2, 'ses_test', expect.any(AbortController))
+    expect(state.setActiveAbort).toHaveBeenNthCalledWith(3, 'ses_test', undefined)
+  })
+
+  it('deduplicates tools by part.id on repeated tool updates', async () => {
+    const cardBus = createCardBus()
+    const cards: StructuredCard[] = []
+    cardBus.subscribeAll((c) => cards.push(c))
+
+    const relay = createRelay({
+      cardBus,
+      client: fakeClient(),
+      eventStream: fakeEventStream([
+        { type: 'message.part.updated', properties: { part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'running' } } } },
+        { type: 'message.part.updated', properties: { part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'done' } } } },
+        { type: 'session.idle', properties: {} },
+      ]),
+      state: fakeState(),
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
+    })
+    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
+
+    // Should NOT have 2 bash entries — only 1 (updated from running to done)
+    const final = cards.find(c => c.kind === 'assistant') as any
+    const bashTools = final.tools.filter((t: any) => t.tool === 'bash')
+    expect(bashTools.length).toBe(1)
+    expect(bashTools[0].status).toBe('done')
   })
 })
