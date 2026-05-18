@@ -1,7 +1,11 @@
 <script lang="ts">
   import { sessionList } from '../stores/sessions.js'
-  import { activeSession } from '../stores/activeSession.js'
   import type { SessionSummary } from '../api/types.js'
+
+  // PWA passes activeId from $page.params and relies on <a href> for routing.
+  // Extension passes onSelect (and no <a href> navigation happens).
+  export let activeId: string | undefined = undefined
+  export let onSelect: ((id: string) => void) | undefined = undefined
 
   function formatTime(ts: number): string {
     const diff = Date.now() - ts * 1000
@@ -12,14 +16,22 @@
     if (h < 24) return `${h}h`
     return `${Math.floor(h / 24)}d`
   }
+
+  function handleClick(e: MouseEvent, id: string) {
+    if (onSelect) {
+      e.preventDefault()
+      onSelect(id)
+    }
+  }
 </script>
 
 <div class="sidebar">
   {#each $sessionList as s (s.id)}
-    <button
+    <a
+      href="/{s.id}/"
       class="session"
-      class:active={$activeSession === s.id}
-      on:click={() => activeSession.set(s.id)}
+      class:active={activeId === s.id}
+      on:click={(e) => handleClick(e, s.id)}
     >
       <div class="row">
         <span class="agent">{s.agent ?? 'opencode'}</span>
@@ -28,7 +40,7 @@
       {#if s.title}
         <div class="title">{s.title}</div>
       {/if}
-    </button>
+    </a>
   {/each}
 </div>
 

@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { goto } from '$app/navigation'
   import { page } from '$app/stores'
+  import { afterNavigate } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, cardsBySession, appendCard, setHistory } from '$lib/stores/sessions.js'
-  import { activeSession } from '$lib/stores/activeSession.js'
   import { connection } from '$lib/stores/connection.js'
   import SessionList from '$lib/components/SessionList.svelte'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
@@ -15,6 +14,16 @@
   let email = ''
   let wsClient: ReturnType<typeof createWsClient> | null = null
   let pendingApproval: StructuredCard | null = null
+  let lastLoaded: string | null = null
+
+  function loadSession(id: string | undefined) {
+    if (!id || id === lastLoaded) return
+    lastLoaded = id
+    api.history(id)
+      .then((cards) => setHistory(id, cards))
+      .catch((err) => console.warn('[layout] history failed', err))
+    wsClient?.send({ type: 'subscribe', sessionId: id })
+  }
 
   onMount(() => {
     api.me().then((m) => { email = m.email }).catch(() => {})
@@ -23,6 +32,11 @@
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     wsClient = createWsClient({
       url: `${protocol}//${location.host}/ws`,
+      // On reconnect, re-send subscribe directly — loadSession() would
+      // early-return because lastLoaded already equals the current session id.
+      onReconnect: () => {
+        if (lastLoaded) wsClient?.send({ type: 'subscribe', sessionId: lastLoaded })
+      },
       onMessage: (msg) => {
         if (msg.type === 'card' && msg.card) {
           appendCard(msg.card)
@@ -36,39 +50,31 @@
       },
     })
 
-    const unsub = activeSession.subscribe((id) => {
-      if (!id) return
-      api.history(id).then((cards) => setHistory(id, cards)).catch(() => {})
-      wsClient?.send({ type: 'subscribe', sessionId: id })
-      if ($page.params.sessionId !== id) {
-        goto(`/${id}/`)
-      }
-    })
-
-    // redirect to first session if none active
-    const unsubList = sessionList.subscribe((list) => {
-      if (!$activeSession && list.length > 0) {
-        activeSession.set(list[0].id)
-      }
-    })
+    // afterNavigate doesn't fire for the first page load — handle it here.
+    loadSession($page.params.sessionId)
 
     return () => {
-      unsub()
-      unsubList()
       wsClient?.close()
     }
+  })
+
+  // afterNavigate runs after each client-side navigation completes,
+  // so it never collides with the navigation's own page-store updates
+  // (which used to cause an effect-update loop in the previous design).
+  afterNavigate((nav: { to: { params: Record<string, string> } | null }) => {
+    loadSession(nav.to?.params?.sessionId)
   })
 </script>
 
 <div class="app">
   <header>
-    <span class="brand">oprc</span>
+    <span class="brand">ocrc</span>
     <ConnectionBadge />
     <span class="email">{email}</span>
   </header>
 
   <div class="body">
-    <SessionList />
+    <SessionList activeId={$page.params.sessionId} />
     <main>
       <slot />
     </main>
