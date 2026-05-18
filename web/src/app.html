@@ -5,15 +5,16 @@
   <link rel="icon" href="%sveltekit.assets%/favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0a0a0a" />
-  <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
   %sveltekit.head%
 </head>
 <body data-sveltekit-preload-data="hover">
   <div style="display: contents">%sveltekit.body%</div>
   <script>
+    // Service worker was removed in v0.5.x (was pass-through, no benefit, caused
+    // stale-script bugs). Force-unregister any leftover SW from older builds.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const r of regs) r.unregister()
       })
     }
   </script>

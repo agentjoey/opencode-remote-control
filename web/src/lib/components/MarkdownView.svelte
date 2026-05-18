@@ -4,7 +4,30 @@
 
   export let src: string
 
-  $: html = DOMPurify.sanitize(marked.parse(src, { async: false }) as string)
+  // Cap markdown rendering at 20k chars — anything longer is shown as raw text.
+  // Some assistant outputs (long extraction tasks, JSON blobs) blow up marked's
+  // tokenizer and freeze the main thread for 5+ seconds.
+  const MAX_MARKDOWN_LEN = 20_000
+
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+  }
+
+  function render(text: string): string {
+    if (text.length > MAX_MARKDOWN_LEN) {
+      return `<pre class="raw">${escapeHtml(text)}</pre>`
+    }
+    try {
+      return DOMPurify.sanitize(marked.parse(text, { async: false }) as string)
+    } catch {
+      return `<pre class="raw">${escapeHtml(text)}</pre>`
+    }
+  }
+
+  $: html = render(src)
 </script>
 
 <div class="md">{@html html}</div>
