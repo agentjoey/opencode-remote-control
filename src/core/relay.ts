@@ -204,6 +204,7 @@ export function createRelay(deps: RelayDeps) {
       let streamedText = ''
       const textPartIds = new Set<string>()
       const tools: ToolCall[] = []
+      const toolPartIndex = new Map<string, number>()
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
         const e = ev as { type: string; properties: any }
@@ -257,12 +258,26 @@ export function createRelay(deps: RelayDeps) {
           }
 
           if (part.type === 'tool' && typeof part.tool === 'string') {
-            const status = part.state?.status ?? 'running'
-            tools.push({
+            const rawStatus = part.state?.status ?? 'running'
+            const status = rawStatus === 'error' ? 'error' : rawStatus === 'done' ? 'done' : 'running' as ToolCall['status']
+            const entry: ToolCall = {
               tool: part.tool,
               args: summarizeToolArgs(part.tool, part.state?.input ?? {}),
-              status: status === 'error' ? 'error' : status === 'done' ? 'done' : 'running',
-            })
+              status,
+            }
+            const partId = typeof part.id === 'string' ? part.id : undefined
+            let existingIdx = -1
+            if (partId !== undefined && toolPartIndex.has(partId)) {
+              existingIdx = toolPartIndex.get(partId)!
+            } else if (partId === undefined) {
+              existingIdx = tools.findIndex((t) => t.tool === entry.tool && t.args === entry.args)
+            }
+            if (existingIdx >= 0) {
+              tools[existingIdx] = entry
+            } else {
+              tools.push(entry)
+              if (partId !== undefined) toolPartIndex.set(partId, tools.length - 1)
+            }
             deps.cardBus.publish({ kind: 'streaming', sessionId, markdownSrc: streamedText, tools: [...tools] })
           }
         }

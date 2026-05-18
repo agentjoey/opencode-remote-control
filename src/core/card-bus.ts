@@ -22,7 +22,10 @@ export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
   }
 
   function safe(fn: (c: StructuredCard) => void, c: StructuredCard) {
-    try { fn(c) } catch (err) { log.warn('subscriber error', (err as Error).message) }
+    try { fn(c) } catch (err) {
+      const sid = 'sessionId' in c ? c.sessionId : undefined
+      log.warn('subscriber error', (err as Error).message, { kind: c.kind, sessionId: sid })
+    }
   }
 
   return {

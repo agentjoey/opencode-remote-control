@@ -11,6 +11,9 @@ const config = {
       fallback: 'index.html',
     }),
     prerender: { entries: [] },
+    alias: {
+      $shared: '../src/core',
+    },
   },
 }
 

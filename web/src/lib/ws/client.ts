@@ -6,6 +6,7 @@ export interface WsClientOpts {
   url: string
   onMessage?: (msg: any) => void
   onStatus?: (status: ConnectionStatus) => void
+  onReconnect?: () => void
 }
 
 export interface WsClient {
@@ -57,6 +58,7 @@ export function createWsClient(opts: WsClientOpts): WsClient {
     ws.onopen = () => {
       reconnectAttempt = 0
       setStatus('connected')
+      opts.onReconnect?.()
       schedulePing()
     }
 

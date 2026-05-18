@@ -4,6 +4,9 @@ import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
 import { cfAccessMiddleware, type CfAccessOpts } from './middleware/cf-access.js'
+import { createLogger } from '../../utils/logger.js'
+
+const log = createLogger('web')
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -18,6 +21,7 @@ import { registerDiff } from './routes/diff.js'
 import { registerTodo } from './routes/todo.js'
 import { registerContext } from './routes/context.js'
 import { registerApproval } from './routes/approval.js'
+import { registerVersion } from './routes/version.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -38,6 +42,11 @@ export interface BuildServerOpts {
 
 export function buildServer(opts: BuildServerOpts): Hono {
   const app = new Hono()
+  app.use('/api/*', async (c, next) => {
+    const t0 = Date.now()
+    await next()
+    log.info(`${c.req.method} ${c.req.path} → ${c.res.status} ${Date.now() - t0}ms`)
+  })
   app.use('/api/*', cfAccessMiddleware(opts.cfAccess))
   app.get('/api/me', (c) => {
     const user = c.get('user') as { email: string } | undefined
@@ -52,5 +61,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerTodo(app, opts.client)
   registerContext(app, opts.client, opts.state)
   registerApproval(app, opts.client)
+  registerVersion(app)
   return app
 }

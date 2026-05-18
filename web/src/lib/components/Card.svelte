@@ -6,6 +6,7 @@
   import CardAssistant from './CardAssistant.svelte'
   import CardError from './CardError.svelte'
   import CardInfo from './CardInfo.svelte'
+  import CardStatus from './CardStatus.svelte'
 
   export let card: StructuredCard
 </script>
@@ -22,6 +23,18 @@
   <CardError {card} />
 {:else if card.kind === 'info'}
   <CardInfo {card} />
+{:else if card.kind === 'status'}
+  <CardStatus {card} />
 {:else if card.kind === 'approval'}
-  <!-- handled by ApprovalModal -->
+  <!-- Approval rendered by +layout.svelte modal -->
+{:else}
+  <div class="card placeholder">[{card.kind}]</div>
 {/if}
+
+<style>
+  .placeholder {
+    padding: 10px;
+    color: #888;
+    font-style: italic;
+  }
+</style>
