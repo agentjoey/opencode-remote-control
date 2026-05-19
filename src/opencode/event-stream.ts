@@ -7,7 +7,7 @@ const RECONNECT_BASE_MS = 3000
 const RECONNECT_MAX_MS = 30000
 const MAX_CONSECUTIVE_FAILURES = 15
 
-const HEARTBEAT_GAP_MS = 30_000
+const HEARTBEAT_GAP_MS = Number(process.env.SSE_HEARTBEAT_MS ?? 30_000)
 
 export class EventStream {
   private emitter = new EventEmitter()

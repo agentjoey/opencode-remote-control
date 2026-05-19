@@ -238,6 +238,7 @@ npm run typecheck       # 只跑类型检查，不输出文件
 | **Telegram** |||
 | `TG_CHUNK_SOFT_LIMIT` | `3500` | 分页软限制（字符数） |
 | `TG_CHUNK_HARD_LIMIT` | `3900` | 分页硬限制（字符数） |
+| `SSE_HEARTBEAT_MS` | `30000` | SSE 心跳超时（毫秒），超时无事件则重连 |
 
 ---
 
