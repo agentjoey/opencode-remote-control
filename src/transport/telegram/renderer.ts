@@ -162,16 +162,17 @@ export class TelegramSessionRenderer {
   }
 
   private async renderThinking(text: string): Promise<void> {
+    // Share throttle with renderStreaming
+    const now = Date.now()
+    if (now - this.lastEditAt < this.currentThrottleMs() && this.editsInBurst >= 3) return
+    this.lastEditAt = now
+    this.editsInBurst += 1
+
     const maxLen = 350
     const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text
     const body = `<i>💭 ${escHtml(display)}</i>`
     if (this.thinkingMessageId) {
-      try {
-        await this.bot.editMessageText(this.chatId, Number(this.thinkingMessageId), undefined, body, { parse_mode: 'HTML' })
-      } catch (err) {
-        const m = (err as Error).message
-        if (!m.includes('message is not modified')) log.warn('thinking edit failed', m)
-      }
+      await retryEdit(this.bot, this.chatId, Number(this.thinkingMessageId), body, { parse_mode: 'HTML' as const })
     } else {
       const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
       this.thinkingMessageId = String(sent.message_id)
