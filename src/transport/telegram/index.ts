@@ -122,7 +122,10 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
       cardBus.subscribeAll((card) => {
         if ('sessionId' in card && card.sessionId) {
           const r = getRenderer(card.sessionId, chatId)
-          void r.onCard(card)
+          log.info(`[telegram] card received: kind=${card.kind} sessionId=${card.sessionId}`)
+          r.onCard(card).catch((err) => {
+            log.error(`[telegram] onCard failed for ${card.kind}`, err as Error)
+          })
           if (card.kind === 'assistant' || card.kind === 'error') {
             renderers.delete(card.sessionId)
           }

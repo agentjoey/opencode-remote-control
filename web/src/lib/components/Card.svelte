@@ -2,6 +2,7 @@
   import type { StructuredCard } from '../api/types.js'
   import CardUser from './CardUser.svelte'
   import CardThinking from './CardThinking.svelte'
+  import CardThinkStream from './CardThinkStream.svelte'
   import CardStreaming from './CardStreaming.svelte'
   import CardAssistant from './CardAssistant.svelte'
   import CardError from './CardError.svelte'
@@ -15,6 +16,8 @@
   <CardUser {card} />
 {:else if card.kind === 'thinking'}
   <CardThinking {card} />
+{:else if card.kind === 'think-stream'}
+  <CardThinkStream {card} />
 {:else if card.kind === 'streaming'}
   <CardStreaming {card} />
 {:else if card.kind === 'assistant'}

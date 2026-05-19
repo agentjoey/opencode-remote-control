@@ -7,6 +7,8 @@ const RECONNECT_BASE_MS = 3000
 const RECONNECT_MAX_MS = 30000
 const MAX_CONSECUTIVE_FAILURES = 15
 
+const HEARTBEAT_GAP_MS = 30_000
+
 export class EventStream {
   private emitter = new EventEmitter()
   private stopped = false
@@ -15,6 +17,7 @@ export class EventStream {
   private activeListeners = new Set<string>()
   private statusChecker?: () => Promise<Record<string, { type: string }>>
   private reconnectMs: number
+  private heartbeatTimer?: ReturnType<typeof setTimeout>
 
   constructor(reconnectMs = RECONNECT_BASE_MS) {
     this.reconnectMs = reconnectMs
@@ -70,8 +73,23 @@ export class EventStream {
             } catch {}
           }
 
+          const abortController = new AbortController()
+
+          // Heartbeat: if no event arrives within HEARTBEAT_GAP_MS, force reconnect.
+          const resetHeartbeat = () => {
+            if (this.heartbeatTimer) clearTimeout(this.heartbeatTimer)
+            this.heartbeatTimer = setTimeout(() => {
+              log.warn('SSE heartbeat timeout, forcing reconnect')
+              abortController.abort()
+            }, HEARTBEAT_GAP_MS)
+          }
+          resetHeartbeat()
+
+          const signal = abortController.signal
+
           for await (const event of stream) {
-            if (this.stopped) break
+            if (this.stopped || signal.aborted) break
+            resetHeartbeat()
             const sid = this.extractSessionID(event)
             if (sid) this.emitter.emit(sid, event)
             this.emitter.emit('*', event)
@@ -136,6 +154,7 @@ export class EventStream {
   stop(): void {
     this.stopped = true
     this.running = false
+    if (this.heartbeatTimer) clearTimeout(this.heartbeatTimer)
     this.emitter.removeAllListeners()
   }
 }
