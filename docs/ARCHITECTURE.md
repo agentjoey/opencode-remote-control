@@ -58,20 +58,22 @@ full decision record.
 
 ---
 
-## File tree (Phase 5 / v0.5.0)
+## File tree (Phase 5 / v0.5.5+)
 
 ```
 src/
   core/                          ← channel-agnostic
-    structured-card.ts           8-variant discriminated union (thinking/streaming/assistant/…)
+    structured-card.ts           10-variant discriminated union (thinking/think-stream/streaming/assistant/…)
+                                 streaming + assistant now use blocks: ContentBlock[] (text | tool in order)
+    stream-accumulator.ts        SDK part.id dedup → ordered ContentBlock[] (v0.5.5+)
     card-bus.ts                  per-session + wildcard subscribers, ring buffer
-    relay.ts                     SDK submit → SSE iterate → CardBus.publish
-    history.ts                   messageToCards, reconstructHistory
+    relay.ts                     SDK submit → SSE iterate → accumulator → CardBus.publish
+    history.ts                   messageToCards, reconstructHistory (produces blocks)
     state.ts                     SessionState + AgentContext (persistent)
 
   opencode/                      ← opencode-facing
     client.ts                    SDK client factory + health check
-    event-stream.ts              persistent SSE subscriber
+    event-stream.ts              persistent SSE subscriber + 30s heartbeat reconnect
     submit.ts                    client.session.prompt wrapper
     tui-bridge.ts                tui.appendPrompt mirror
 
@@ -80,7 +82,8 @@ src/
     telegram/
       index.ts                   createTelegramTransport()
       handlers.ts                slash commands + button callbacks
-      renderer.ts                TelegramSessionRenderer: per-session pagination + collapse
+      renderer.ts                TelegramSessionRenderer: blocks→text+tool extraction, pagination + collapse
+      render.ts                  legacy card→Telegram HTML (non-streaming cards)
     web/
       index.ts                   createWebTransport()
       server.ts                  Hono HTTP + static
@@ -125,13 +128,13 @@ You send "implement F1 streaming" from Telegram (or Web).
    - Calls `client.session.prompt({ path, body: { parts, agent, model } })`.
 4. The relay enters its SSE loop: iterates events from
    `eventStream.session(sessionId, signal)`.
-   - On `message.part.delta` → accumulates delta; publishes
-     `kind: 'streaming'` to `CardBus` (throttled).
-   - On `tool.*` events → updates tool calls; publishes updated
-     `kind: 'streaming'`.
-   - On `session.idle` → publishes final `kind: 'assistant'` with `meta`.
-   - On `session.error` → publishes `kind: 'error'`.
-5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
+   - On `message.part.updated` → feeds SDK Part into `StreamAccumulator` (dedup by `part.id`).
+     Reasoning parts emit `kind:'think-stream'` cards. Text/Tool parts accumulate into
+     ordered `ContentBlock[]` and publish `kind:'streaming'`.
+   - On `message.part.delta` → raw text delta also routes through accumulator.
+   - On `session.idle` → publishes final `kind:'assistant'` with `blocks` and `meta`.
+   - On `session.error` → publishes `kind:'error'`.
+ 5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
    - Telegram: `TelegramSessionRenderer` paginates long outputs into multiple
      messages with progressive tool-call collapse.
     - Web: `WsHub` sends JSON frame to all subscribed WebSocket clients;

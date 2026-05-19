@@ -1,8 +1,8 @@
-# 流式架构优化方案 v1.1 — SDK 对照分析
+# 流式架构优化方案 v1.1 — 实施完成
 
-> **日期**: 2026-05-19
-> **对照基线**: `@opencode-ai/sdk@1.14.51` SDK types + 当前 `relay.ts` v0.5.5
-> **结论**: 方案整体可行，但需基于 SDK 实际类型做 **3 处修正**。Sprint 1（Accumulator）无冲突，可立即执行。
+> **日期**: 2026-05-19  
+> **对照基线**: `@opencode-ai/sdk@1.14.51` SDK types + 当前 `relay.ts` v0.5.5  
+> **状态**: ✅ 全部实施完成（3 commits）
 
 ---
 
@@ -294,9 +294,18 @@ const timer = setInterval(() => {
 
 ---
 
-## 6. 下一步
+## 6. 实施记录
 
-- [ ] **Review 本文档** → 用户确认后执行 Sprint 1A
-- [ ] Sprint 1A 完成，tag v0.5.6
-- [ ] Sprint 1B 完成，tag v0.5.7
-- [ ] Sprint 2 完成后讨论是否 tag v0.6.0
+| Sprint | Commit | 日期 | 内容 |
+|--------|--------|------|------|
+| 1A | `c579c8b` | 05-19 | Stream Accumulator（12 tests, relay 重构） |
+| 1B | `e9e4dde` | 05-19 | Reasoning think-stream + 30s heartbeat |
+| 2  | `cce7324` | 05-19 | ContentBlock[] 替换 markdownSrc/tools |
+
+**合计**: 新增 3 个核心文件，修改 16 个文件，152→151 tests（去掉 1 个内部 reasoning 测试），tsc 零错误。
+
+**新增卡片类型**:
+- `kind: 'think-stream'` — 思考内容实时流式卡片
+- `streaming` / `assistant` — `markdownSrc` + `tools` → `blocks: ContentBlock[]`
+
+**向后不兼容**: streaming/assistant 卡片的 `markdownSrc` 和 `tools` 字段已移除，改用 `blocks`。
