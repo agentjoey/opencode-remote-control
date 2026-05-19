@@ -265,6 +265,10 @@ export function createRelay(deps: RelayDeps) {
             }
           }
 
+          if (part.type === 'reasoning' && typeof part.text === 'string') {
+            deps.cardBus.publish({ kind: 'think-stream', sessionId, thinkingText: part.text })
+          }
+
           deps.cardBus.publish({
             kind: 'streaming',
             sessionId,

@@ -78,6 +78,7 @@ export class TelegramSessionRenderer {
   private sessionId: string
   private bot: Telegram
   private activeMessageId?: string
+  private thinkingMessageId?: string
   private lastEditAt = 0
   private editsInBurst = 0
   private chunkIndex = 0
@@ -98,14 +99,15 @@ export class TelegramSessionRenderer {
 
   async onCard(card: StructuredCard): Promise<void> {
     switch (card.kind) {
-      case 'thinking':  return this.startThinking(card.showStop)
-      case 'streaming': return this.renderStreaming(card.markdownSrc, card.tools)
-      case 'assistant': return this.finalize(card.markdownSrc, card.tools, card.meta)
-      case 'error':     return this.markError(card.message)
-      case 'user':      return       // Telegram already shows user's own message
+      case 'thinking':     return this.startThinking(card.showStop)
+      case 'think-stream': return this.renderThinking(card.thinkingText)
+      case 'streaming':    return this.renderStreaming(card.markdownSrc, card.tools)
+      case 'assistant':    return this.finalize(card.markdownSrc, card.tools, card.meta)
+      case 'error':        return this.markError(card.message)
+      case 'user':         return       // Telegram already shows user's own message
       case 'status':
-      case 'approval':  return       // Handled by command handlers, not via renderer in v0.5.0
-      case 'info':      return this.sendInfo(card.title, card.sections)
+      case 'approval':     return       // Handled by command handlers, not via renderer in v0.5.0
+      case 'info':         return this.sendInfo(card.title, card.sections)
     }
   }
 
@@ -113,6 +115,23 @@ export class TelegramSessionRenderer {
     const reply_markup = showStop ? stopButton(this.sessionId) : undefined
     const sent = await this.bot.sendMessage(this.chatId, '⏳  Working…', { parse_mode: 'HTML', reply_markup })
     this.activeMessageId = String(sent.message_id)
+  }
+
+  private async renderThinking(text: string): Promise<void> {
+    const maxLen = 350  // leave room for "💭 " + "…" + HTML overhead
+    const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text
+    const body = `<i>💭 ${escHtml(display)}</i>`
+    if (this.thinkingMessageId) {
+      try {
+        await this.bot.editMessageText(this.chatId, Number(this.thinkingMessageId), undefined, body, { parse_mode: 'HTML' })
+      } catch (err) {
+        const m = (err as Error).message
+        if (!m.includes('message is not modified')) log.warn('thinking edit failed', m)
+      }
+    } else {
+      const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
+      this.thinkingMessageId = String(sent.message_id)
+    }
   }
 
   private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
@@ -160,17 +179,31 @@ export class TelegramSessionRenderer {
   }
 
   private async finalize(md: string, tools: ToolCall[], meta: AssistantMeta): Promise<void> {
-    const remainMd = md.slice(this.chunkStartOffset)
+    // Delete the thinking message when final answer arrives
+    if (this.thinkingMessageId) {
+      await this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch(() => {})
+      this.thinkingMessageId = undefined
+    }
+
+    log.info(`finalize: md=${md.length} chars, chunkOffset=${this.chunkStartOffset}, activeMessageId=${this.activeMessageId ?? 'none'}`)
+    const remainMd = this.chunkStartOffset > md.length ? md : md.slice(this.chunkStartOffset)
     const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
     const pieces = splitMarkdown(remainMd, PER_CHUNK)
+    log.info(`finalize: ${pieces.length} piece(s), remainMd=${remainMd.length} chars`)
     if (pieces.length === 1) {
       const text = this.renderChunkBody(pieces[0], tools, { meta })
       if (this.activeMessageId) {
-        try { await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) }
+        try { 
+          log.info(`finalize: editing message ${this.activeMessageId}`)
+          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) 
+          log.info('finalize: edit success')
+        }
         catch (err) { log.warn('finalize edit failed', (err as Error).message) }
       } else {
+        log.info('finalize: sending new message')
         const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
         this.activeMessageId = String(sent.message_id)
+        log.info(`finalize: sent new message ${sent.message_id}`)
       }
       return
     }

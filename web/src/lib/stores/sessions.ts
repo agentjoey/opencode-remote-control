@@ -15,7 +15,7 @@ export function appendCard(card: StructuredCard) {
           list[list.length - 1] = card
         }
       } else if (card.kind === 'assistant' || card.kind === 'error') {
-        const trimmed = list.filter((c) => c.kind !== 'thinking' && c.kind !== 'streaming')
+        const trimmed = list.filter((c) => c.kind !== 'thinking' && c.kind !== 'think-stream' && c.kind !== 'streaming')
         trimmed.push(card)
         map[sid] = trimmed
       } else {
