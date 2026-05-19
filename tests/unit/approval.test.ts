@@ -187,7 +187,7 @@ describe('approval flow', () => {
 
   it('calls postSessionIdPermissionsPermissionId on approve button click', async () => {
     const postSessionIdPermissionsPermissionId = vi.fn().mockResolvedValue(undefined)
-    deps.client = { session: { postSessionIdPermissionsPermissionId } } as any
+    deps.client = { postSessionIdPermissionsPermissionId } as any
 
     await emitAndWait({
       type: 'permission.asked',
