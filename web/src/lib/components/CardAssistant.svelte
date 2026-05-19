@@ -1,9 +1,16 @@
 <script lang="ts">
-  import type { ExtractStructuredCard } from '../api/types.js'
+  import type { ExtractStructuredCard, ToolCall } from '../api/types.js'
   import MarkdownView from './MarkdownView.svelte'
   import ToolCallList from './ToolCallList.svelte'
 
   export let card: ExtractStructuredCard<'assistant'>
+
+  $: tools = card.blocks
+    .filter((b): b is ToolCall => b.type === 'tool')
+    .map(b => ({ tool: b.tool, args: b.args, status: b.status }))
+  $: text = card.blocks
+    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+    .map(b => b.text).join('')
 
   function fmtK(n: number): string {
     return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
@@ -11,8 +18,8 @@
 </script>
 
 <div class="card assistant">
-  <ToolCallList tools={card.tools} />
-  <MarkdownView src={card.markdownSrc} />
+  <ToolCallList {tools} />
+  <MarkdownView src={text} />
   {#if card.meta.cost !== undefined}
     <div class="meta">
       💰 ${card.meta.cost.toFixed(3)}

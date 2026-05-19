@@ -21,7 +21,7 @@ describe('TelegramSessionRenderer overflow', () => {
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
     const longMd = Array.from({ length: 30 }, (_, i) => `Paragraph ${i}: ${'x'.repeat(200)}`).join('\n\n')
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: longMd, tools: [], meta: { cost: 0.04 } })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: longMd }], meta: { cost: 0.04 } })
     // expect at least 2 messages sent (the initial thinking + ≥1 continuation)
     expect(bot.sent.length).toBeGreaterThanOrEqual(2)
     // last message should contain the meta footer
@@ -37,7 +37,7 @@ describe('TelegramSessionRenderer overflow', () => {
     let md = ''
     for (let i = 0; i < 4; i++) {
       md += 'Y'.repeat(1000) + '\n\n'
-      await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: md, tools: [] })
+      await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: md }] })
     }
     expect(bot.sent.length).toBeGreaterThanOrEqual(2)
   })

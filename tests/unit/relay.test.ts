@@ -94,7 +94,7 @@ describe('createRelay', () => {
       cardBus,
       client: fakeClient(),
       eventStream: fakeEventStream([
-        { type: 'message.part.updated', properties: { messageID: 'm1', part: { type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
+        { type: 'message.part.updated', properties: { messageID: 'm1', part: { id: 't1', type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
         { type: 'session.idle', properties: {} },
       ]),
       state: fakeState(),
@@ -106,7 +106,7 @@ describe('createRelay', () => {
 
     const streaming = cards.filter(c => c.kind === 'streaming')
     expect(streaming.length).toBeGreaterThan(0)
-    expect((streaming[streaming.length - 1] as any).tools[0].tool).toBe('bash')
+    expect((streaming[streaming.length - 1] as any).blocks.some((b: any) => b.type === 'tool' && b.tool === 'bash')).toBe(true)
   })
 
   it('publishes error card on session.error', async () => {
@@ -310,8 +310,8 @@ describe('createRelay', () => {
 
     // Should NOT have 2 bash entries — only 1 (updated from running to done)
     const final = cards.find(c => c.kind === 'assistant') as any
-    const bashTools = final.tools.filter((t: any) => t.tool === 'bash')
-    expect(bashTools.length).toBe(1)
-    expect(bashTools[0].status).toBe('done')
+    const bashBlocks = final.blocks.filter((b: any) => b.type === 'tool' && b.tool === 'bash')
+    expect(bashBlocks.length).toBe(1)
+    expect(bashBlocks[0].status).toBe('done')
   })
 })

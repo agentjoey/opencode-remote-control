@@ -22,7 +22,7 @@ describe('Telegram overflow integration', () => {
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
     const longMd = Array.from({ length: 80 }, (_, i) => `Section ${i}:\n${'x'.repeat(200)}`).join('\n\n')
     expect(longMd.length).toBeGreaterThan(15000)
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: longMd, tools: [], meta: { cost: 0.1 } })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: longMd }], meta: { cost: 0.1 } })
     expect(bot.sent.length).toBeGreaterThanOrEqual(3)
     const last = bot.sent.at(-1)!
     expect(last.text).toMatch(/\$0\.100/)

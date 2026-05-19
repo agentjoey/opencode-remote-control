@@ -39,7 +39,7 @@ describe('streaming pagination (explosion fix)', () => {
     let accum = ''
     for (let i = 0; i < text.length; i += 100) {
       accum = text.slice(0, i + 100)
-      await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+      await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
     }
 
     // total sendMessage calls should be ≤ 3 (1 thinking + at most 2 pagination chunks)
@@ -58,11 +58,11 @@ describe('streaming pagination (explosion fix)', () => {
 
     // Accumulate past first boundary
     let accum = prefix
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
     // Now add suffix - this should trigger pagination at first chunk boundary
     accum = text
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
     // Should have 2 sends: thinking + new part
     expect(bot.sent.length).toBeGreaterThanOrEqual(2)
@@ -88,12 +88,12 @@ describe('streaming pagination (explosion fix)', () => {
     const part2 = 'final answer here'
     const text = part1 + part2
     let accum = part1
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
     accum = text
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
     // Now finalize
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: text, tools: [], meta: { cost: 0.01 } })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: text }], meta: { cost: 0.01 } })
 
     // The last edit (finalize of remaining chunk) should contain the suffix and cost,
     // NOT the AAAA prefix (which was already in Part 1)
@@ -113,9 +113,9 @@ describe('streaming pagination (explosion fix)', () => {
     const part2 = 'B'.repeat(1000)
     const text = part1 + part2
     let accum = part1
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
     accum = text
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
     // The second send (Part 2) should have Stop button
     expect(bot.sent.length).toBe(2)
@@ -134,9 +134,9 @@ describe('streaming pagination (explosion fix)', () => {
     const part2 = 'B'.repeat(500)
     const text = part1 + part2
     let accum = part1
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
     accum = text
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: accum, tools: [] })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
     // The first edit after pagination should be on Part 1 and contain "Part 1 · done"
     const part1DoneEdit = bot.edits.find((e: any) => e.text.includes('Part 1 · done'))
@@ -154,7 +154,7 @@ describe('streaming pagination (explosion fix)', () => {
 
     // Long text that triggers finalize split into multiple pieces
     const longText = ('B'.repeat(2000) + '\n\n').repeat(5)
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: longText, tools: [], meta: { cost: 0.01 } })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: longText }], meta: { cost: 0.01 } })
 
     // Check that all Piece headers use "· done" format, not "k/N"
     const partTexts = [...bot.edits.map((e: any) => e.text), ...bot.sent.map((s: any) => s.text)]

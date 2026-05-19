@@ -11,7 +11,7 @@ export function appendCard(card: StructuredCard) {
       const list = map[sid] ?? []
       const last = list[list.length - 1]
       if (last?.kind === 'streaming' && card.kind === 'streaming') {
-        if (last.markdownSrc !== card.markdownSrc || JSON.stringify(last.tools) !== JSON.stringify(card.tools)) {
+        if (JSON.stringify(last.blocks) !== JSON.stringify(card.blocks)) {
           list[list.length - 1] = card
         }
       } else if (card.kind === 'assistant' || card.kind === 'error') {

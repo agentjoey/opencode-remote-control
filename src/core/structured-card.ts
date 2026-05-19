@@ -22,13 +22,18 @@ export interface Button {
   data: string
 }
 
+/** A single block in a streaming or final assistant message. Order matters. */
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' }
+
 export type StructuredCard =
-  | { kind: 'thinking';    sessionId: string;  showStop: boolean }
+  | { kind: 'thinking';     sessionId: string;  showStop: boolean }
   | { kind: 'think-stream'; sessionId: string;  thinkingText: string }
-  | { kind: 'streaming';   sessionId: string;  markdownSrc: string;  tools: ToolCall[] }
-  | { kind: 'assistant';   sessionId: string;  markdownSrc: string;  tools: ToolCall[]; meta: AssistantMeta }
-  | { kind: 'user';        sessionId: string;  text: string;  ts: number }
-  | { kind: 'error';       sessionId: string;  message: string }
-  | { kind: 'status';      sessionId: string;  fields: Record<string, string>; buttons?: Button[][] }
-  | { kind: 'info';        title: string;      sections: InfoSection[]; sessionId?: string }
-  | { kind: 'approval';    sessionId: string;  title: string;  args: unknown;  requestId: string }
+  | { kind: 'streaming';    sessionId: string;  blocks: ContentBlock[] }
+  | { kind: 'assistant';    sessionId: string;  blocks: ContentBlock[]; meta: AssistantMeta }
+  | { kind: 'user';         sessionId: string;  text: string;  ts: number }
+  | { kind: 'error';        sessionId: string;  message: string }
+  | { kind: 'status';       sessionId: string;  fields: Record<string, string>; buttons?: Button[][] }
+  | { kind: 'info';         title: string;      sections: InfoSection[]; sessionId?: string }
+  | { kind: 'approval';     sessionId: string;  title: string;  args: unknown;  requestId: string }
