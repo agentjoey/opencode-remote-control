@@ -3,7 +3,7 @@ import type { CardBus } from './card-bus.js'
 import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import type { EventStream } from '../opencode/event-stream.js'
-import type { StructuredCard, ToolCall } from './structured-card.js'
+import type { StructuredCard } from './structured-card.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import { submitPrompt } from '../opencode/submit.js'
 import { createLogger } from '../utils/logger.js'
@@ -253,7 +253,7 @@ export function createRelay(deps: RelayDeps) {
           if (partId && isNewPart) processedPartIds.add(partId)
 
           // Accumulator handles dedup by partId — same id overwrites previous
-          acc.update([input])
+          const blocks = acc.update([input])
 
           if (part.type === 'text') {
             if (typeof p.delta === 'string') {
@@ -269,12 +269,7 @@ export function createRelay(deps: RelayDeps) {
             deps.cardBus.publish({ kind: 'think-stream', sessionId, thinkingText: part.text })
           }
 
-          deps.cardBus.publish({
-            kind: 'streaming',
-            sessionId,
-            markdownSrc: acc.getText(),
-            tools: acc.getTools().map((t): ToolCall => ({ tool: t.tool, args: t.args, status: t.status })),
-          })
+          deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
         }
 
         if (e.type === 'message.part.delta') {
@@ -285,38 +280,38 @@ export function createRelay(deps: RelayDeps) {
           const field = p?.field as string | undefined
           const delta = p?.delta as string | undefined
           if (partId && field === 'text' && typeof delta === 'string') {
-            // For raw delta events, hand off to the same text part via accumulator
-            acc.update([{ id: partId, type: 'text', text: delta }])
-            deps.cardBus.publish({
-              kind: 'streaming',
-              sessionId,
-              markdownSrc: acc.getText(),
-              tools: acc.getTools().map((t): ToolCall => ({ tool: t.tool, args: t.args, status: t.status })),
-            })
+            const blocks = acc.update([{ id: partId, type: 'text', text: delta }])
+            deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
           }
         }
       }
 
       log.info(`SSE stream ended. assistantMessageId: ${assistantMessageId ?? 'none'}`)
 
-      let final = acc.getText()
-      if (!final && assistantMessageId) {
+      let blocks = acc.finalize()
+      if (blocks.length === 0 && assistantMessageId) {
         try {
           const mres = await deps.client.session.message({ path: { id: sessionId, messageID: assistantMessageId } })
           const m = (mres.data ?? {}) as any
           const parts = m.parts ?? []
-          const texts: string[] = []
           for (const part of parts) {
             if (part.type === 'text' && typeof part.text === 'string') {
-              texts.push(part.text)
+              blocks.push({ type: 'text', text: part.text })
+            }
+            if (part.type === 'tool' && typeof part.tool === 'string') {
+              const rawStatus = part.state?.status ?? 'running'
+              blocks.push({
+                type: 'tool',
+                tool: part.tool,
+                args: String(part.state?.input?.cmd ?? part.state?.input ?? '').slice(0, 60),
+                status: rawStatus === 'error' ? 'error' : rawStatus === 'done' || rawStatus === 'completed' ? 'done' : 'running',
+              })
             }
           }
-          if (texts.length > 0) final = texts.join('')
         } catch (err) {
           log.info('fallback fetch message failed', (err as Error).message)
         }
       }
-      if (!final) final = '(empty response)'
 
       const meta: { agent?: string; model?: string; cost?: number; tokens?: { input: number; output: number } } = {}
       try {
@@ -339,14 +334,10 @@ export function createRelay(deps: RelayDeps) {
         // meta is optional
       }
 
-      log.info(`relay: publishing assistant card for ${sessionId}, final=${final.length} chars`)
-      deps.cardBus.publish({
-        kind: 'assistant',
-        sessionId,
-        markdownSrc: final,
-        tools: acc.getTools().map((t): ToolCall => ({ tool: t.tool, args: t.args, status: t.status })),
-        meta,
-      })
+      if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]
+
+      log.info(`relay: publishing assistant card for ${sessionId}, blocks=${blocks.length}`)
+      deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta })
       log.info(`relay: assistant card published for ${sessionId}`)
     } catch (err) {
       const e = err as Error

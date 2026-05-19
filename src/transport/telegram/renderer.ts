@@ -1,5 +1,5 @@
 import type { Telegram } from 'telegraf'
-import type { StructuredCard, ToolCall, AssistantMeta, InfoSection } from '../../core/structured-card.js'
+import type { StructuredCard, ToolCall, AssistantMeta, InfoSection, ContentBlock } from '../../core/structured-card.js'
 import { markdownToTelegramHtml } from '../../utils/markdown.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -73,6 +73,21 @@ function collapseTools(tools: ToolCall[]): ToolCall[] {
   return [...first, { tool: '__more__', args: `${middleCount} more tool calls`, status: 'done' as const }, ...tail]
 }
 
+/** Extract flat markdown string from blocks (concatenate all text blocks). */
+function blocksToText(blocks: ContentBlock[]): string {
+  return blocks
+    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+    .map(b => b.text)
+    .join('')
+}
+
+/** Extract ToolCall[] from blocks. */
+function blocksToTools(blocks: ContentBlock[]): ToolCall[] {
+  return blocks
+    .filter((b): b is { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' } => b.type === 'tool')
+    .map(b => ({ tool: b.tool, args: b.args, status: b.status }))
+}
+
 export class TelegramSessionRenderer {
   private chatId: string
   private sessionId: string
@@ -101,8 +116,8 @@ export class TelegramSessionRenderer {
     switch (card.kind) {
       case 'thinking':     return this.startThinking(card.showStop)
       case 'think-stream': return this.renderThinking(card.thinkingText)
-      case 'streaming':    return this.renderStreaming(card.markdownSrc, card.tools)
-      case 'assistant':    return this.finalize(card.markdownSrc, card.tools, card.meta)
+      case 'streaming':    return this.renderStreaming(card.blocks)
+      case 'assistant':    return this.finalize(card.blocks, card.meta)
       case 'error':        return this.markError(card.message)
       case 'user':         return       // Telegram already shows user's own message
       case 'status':
@@ -118,7 +133,7 @@ export class TelegramSessionRenderer {
   }
 
   private async renderThinking(text: string): Promise<void> {
-    const maxLen = 350  // leave room for "💭 " + "…" + HTML overhead
+    const maxLen = 350
     const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text
     const body = `<i>💭 ${escHtml(display)}</i>`
     if (this.thinkingMessageId) {
@@ -134,8 +149,10 @@ export class TelegramSessionRenderer {
     }
   }
 
-  private async renderStreaming(md: string, tools: ToolCall[]): Promise<void> {
+  private async renderStreaming(blocks: ContentBlock[]): Promise<void> {
     if (!this.activeMessageId) return
+    const md = blocksToText(blocks)
+    const tools = blocksToTools(blocks)
     const chunkMd = md.slice(this.chunkStartOffset)
     this.streamingChunkBuffer = md
     const renderedLen = this.renderChunkBody(chunkMd, tools, { streaming: true }).length
@@ -178,12 +195,14 @@ export class TelegramSessionRenderer {
     }
   }
 
-  private async finalize(md: string, tools: ToolCall[], meta: AssistantMeta): Promise<void> {
-    // Delete the thinking message when final answer arrives
+  private async finalize(blocks: ContentBlock[], meta: AssistantMeta): Promise<void> {
     if (this.thinkingMessageId) {
       await this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch(() => {})
       this.thinkingMessageId = undefined
     }
+
+    const md = blocksToText(blocks)
+    const tools = blocksToTools(blocks)
 
     log.info(`finalize: md=${md.length} chars, chunkOffset=${this.chunkStartOffset}, activeMessageId=${this.activeMessageId ?? 'none'}`)
     const remainMd = this.chunkStartOffset > md.length ? md : md.slice(this.chunkStartOffset)
@@ -193,9 +212,9 @@ export class TelegramSessionRenderer {
     if (pieces.length === 1) {
       const text = this.renderChunkBody(pieces[0], tools, { meta })
       if (this.activeMessageId) {
-        try { 
+        try {
           log.info(`finalize: editing message ${this.activeMessageId}`)
-          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) 
+          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
           log.info('finalize: edit success')
         }
         catch (err) { log.warn('finalize edit failed', (err as Error).message) }

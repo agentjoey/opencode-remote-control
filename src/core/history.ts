@@ -1,5 +1,5 @@
 import type { OpencodeClient } from '@opencode-ai/sdk'
-import type { StructuredCard, ToolCall, AssistantMeta } from './structured-card.js'
+import type { StructuredCard, ContentBlock, AssistantMeta } from './structured-card.js'
 
 export function summarizeToolArgs(tool: string, input: any): string {
   if (tool === 'bash') return (input?.command ?? '').slice(0, 60)
@@ -31,15 +31,15 @@ export function messageToCards(sessionId: string, msg: any): StructuredCard[] {
   }
 
   if (role === 'assistant') {
-    const textParts: string[] = []
-    const tools: ToolCall[] = []
+    const blocks: ContentBlock[] = []
     for (const part of parts) {
       if (part.type === 'text' && typeof part.text === 'string') {
-        textParts.push(part.text)
+        blocks.push({ type: 'text', text: part.text })
       }
       if (part.type === 'tool' && typeof part.tool === 'string') {
         const status = part.state?.status ?? 'running'
-        tools.push({
+        blocks.push({
+          type: 'tool',
           tool: part.tool,
           args: summarizeToolArgs(part.tool, part.state?.input ?? {}),
           status: status === 'error' ? 'error' : status === 'done' ? 'done' : 'running',
@@ -57,12 +57,10 @@ export function messageToCards(sessionId: string, msg: any): StructuredCard[] {
     if (typeof info.cost === 'number') meta.cost = info.cost
     if (info.tokens) meta.tokens = info.tokens
 
-    const markdownSrc = textParts.join('')
     return [{
       kind: 'assistant',
       sessionId,
-      markdownSrc,
-      tools,
+      blocks,
       meta,
     }]
   }

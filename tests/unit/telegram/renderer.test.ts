@@ -37,8 +37,8 @@ describe('TelegramSessionRenderer', () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: 'partial', tools: [] })
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'final', tools: [], meta: { cost: 0.04, agent: 'build', model: 'k2p6' } })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: 'partial' }] })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'final' }], meta: { cost: 0.04, agent: 'build', model: 'k2p6' } })
     const last = bot.edits.at(-1)!
     expect(last.text).toMatch(/final/)
     expect(last.text).toMatch(/\$0\.040/)
@@ -52,7 +52,7 @@ describe('TelegramSessionRenderer', () => {
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
     // 6 rapid deltas — first immediate, next 5 throttled
     for (let i = 0; i < 6; i++) {
-      await r.onCard({ kind: 'streaming', sessionId: 'ses', markdownSrc: 'x'.repeat(i + 1), tools: [] })
+      await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: 'x'.repeat(i + 1) }] })
     }
     expect(bot.edits.length).toBeLessThanOrEqual(2)  // first edit + maybe one throttled
     vi.advanceTimersByTime(2000)
@@ -66,7 +66,7 @@ describe('TelegramSessionRenderer', () => {
     const tools = Array.from({ length: 12 }, (_, i) => ({
       tool: 'bash', args: `cmd${i}`, status: 'done' as const,
     }))
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools, meta: {} })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
     const last = bot.edits.at(-1)!
     expect(last.text).toMatch(/cmd0/)
     expect(last.text).toMatch(/cmd1/)
@@ -83,7 +83,7 @@ describe('TelegramSessionRenderer', () => {
     const tools = Array.from({ length: 20 }, (_, i) => ({
       tool: 'bash', args: `cmd${i}`, status: 'done' as const,
     }))
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools, meta: {} })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
     const last = bot.edits.at(-1)!
     expect(last.text).toMatch(/cmd0/)
     expect(last.text).toMatch(/cmd16/)
@@ -100,7 +100,7 @@ describe('TelegramSessionRenderer', () => {
       const status = (i === 2 || i === 4) ? 'running' : 'done'
       tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
     }
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools: tools as any, meta: {} })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
     const last = bot.edits.at(-1)!
     // tail should contain the 2 running tools: cmd2 (…), cmd4 (…)
     expect(last.text).toMatch(/cmd2/)
@@ -116,7 +116,7 @@ describe('TelegramSessionRenderer', () => {
       const status = i === 0 ? 'running' : 'done'
       tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
     }
-    await r.onCard({ kind: 'assistant', sessionId: 'ses', markdownSrc: 'done', tools: tools as any, meta: {} })
+    await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
     const last = bot.edits.at(-1)!
     // tail should contain the running tool cmd0
     expect(last.text).toMatch(/cmd0/)

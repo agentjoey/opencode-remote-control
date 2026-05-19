@@ -1,40 +1,36 @@
 import { describe, it, expect } from 'vitest'
 import { createStreamAccumulator } from '../../src/core/stream-accumulator'
-import type { TextBlock, ToolBlock, ReasoningBlock } from '../../src/core/stream-accumulator'
 
-/**
- * Mimics SDK Part objects that relay extracts from EventMessagePartUpdated.
- * Part.text is the FULL content of that part — not a delta.
- */
 const textPart = (id: string, text: string): { id: string; type: 'text'; text: string } =>
   ({ id, type: 'text', text })
 
-const toolPart = (id: string, tool: string, args: string, status: ToolBlock['status']): { id: string; type: 'tool'; tool: string; state: { status: string; input: Record<string, unknown> } } =>
+const toolPart = (id: string, tool: string, args: string, status: string): { id: string; type: 'tool'; tool: string; state: { status: string; input: Record<string, unknown> } } =>
   ({ id, type: 'tool', tool, state: { status, input: { cmd: args } } })
 
 const reasoningPart = (id: string, text: string): { id: string; type: 'reasoning'; text: string } =>
   ({ id, type: 'reasoning', text })
 
+const blockText = (b: any) => b.text ?? ''
+const blockTool = (b: any) => b.tool ?? ''
+
 describe('StreamAccumulator', () => {
   it('tracks text part by id and replaces on re-delivery', () => {
     const acc = createStreamAccumulator()
-    // First delivery: server sends part with full text "Hello"
     acc.update([textPart('part_a', 'Hello')])
-    // Re-delivery: same part id, but text now includes more content
     acc.update([textPart('part_a', 'Hello world')])
     const blocks = acc.finalize()
     expect(blocks).toHaveLength(1)
-    expect((blocks[0] as TextBlock).text).toBe('Hello world')
+    expect(blockText(blocks[0])).toBe('Hello world')
   })
 
-  it('orders blocks by first-seen order, not by part id', () => {
+  it('orders blocks by first-seen order', () => {
     const acc = createStreamAccumulator()
     acc.update([textPart('part_b', 'Second')])
     acc.update([textPart('part_a', 'First')])
     const blocks = acc.finalize()
     expect(blocks).toHaveLength(2)
-    expect((blocks[0] as TextBlock).text).toBe('Second')   // part_b arrived first
-    expect((blocks[1] as TextBlock).text).toBe('First')
+    expect(blockText(blocks[0])).toBe('Second')
+    expect(blockText(blocks[1])).toBe('First')
   })
 
   it('returns empty array when nothing accumulated', () => {
@@ -46,7 +42,7 @@ describe('StreamAccumulator', () => {
     const acc = createStreamAccumulator()
     acc.update([textPart('p1', 'A')])
     acc.update([textPart('p2', 'B')])
-    acc.update([textPart('p1', 'A+')]) // update p1
+    acc.update([textPart('p1', 'A+')])
     expect(acc.getText()).toBe('A+B')
   })
 
@@ -56,7 +52,7 @@ describe('StreamAccumulator', () => {
     acc.update([toolPart('tool_1', 'bash', 'ls -la', 'done')])
     const blocks = acc.finalize()
     expect(blocks).toHaveLength(1)
-    expect((blocks[0] as ToolBlock).status).toBe('done')
+    expect((blocks[0] as any).status).toBe('done')
   })
 
   it('adds new tool block when part id differs', () => {
@@ -77,27 +73,15 @@ describe('StreamAccumulator', () => {
     expect(blocks[0].type).toBe('text')
     expect(blocks[1].type).toBe('tool')
     expect(blocks[2].type).toBe('text')
-    expect((blocks[1] as ToolBlock).status).toBe('done')
+    expect((blocks[1] as any).status).toBe('done')
   })
 
-  it('accumulates reasoning text from same part id updates', () => {
+  it('reasoning blocks are internal-only (stripped from output)', () => {
     const acc = createStreamAccumulator()
-    acc.update([reasoningPart('r1', 'I need to use Euclidean algorithm.\n')])
-    acc.update([reasoningPart('r1', 'I need to use Euclidean algorithm.\n1071 = 2 × 462 + 147')])
+    acc.update([reasoningPart('r1', 'I need to think...')])
+    // reasoning is stripped from ContentBlock output — only text/tool survive
     const blocks = acc.finalize()
-    expect(blocks).toHaveLength(1)
-    expect((blocks[0] as ReasoningBlock).text).toContain('Euclidean')
-    expect((blocks[0] as ReasoningBlock).text).toContain('1071 = 2 × 462 + 147')
-  })
-
-  it('reasoning and text blocks are separate', () => {
-    const acc = createStreamAccumulator()
-    acc.update([reasoningPart('r1', 'Let me think...')])
-    acc.update([textPart('p1', 'Here is the answer.')])
-    const blocks = acc.finalize()
-    expect(blocks).toHaveLength(2)
-    expect(blocks[0].type).toBe('reasoning')
-    expect(blocks[1].type).toBe('text')
+    expect(blocks).toHaveLength(0)
   })
 
   it('getText excludes reasoning blocks', () => {
@@ -119,7 +103,7 @@ describe('StreamAccumulator', () => {
     const acc = createStreamAccumulator()
     const r1 = acc.update([textPart('p1', 'A')])
     const r2 = acc.update([textPart('p1', 'AB')])
-    expect((r1[0] as TextBlock).text).toBe('A')
-    expect((r2[0] as TextBlock).text).toBe('AB')
+    expect(blockText(r1[0])).toBe('A')
+    expect(blockText(r2[0])).toBe('AB')
   })
 })
