@@ -21,6 +21,35 @@ function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+/** Retry on Telegram 429 rate limit, up to 3 attempts with backoff. */
+async function retryEdit(
+  bot: Telegram,
+  chatId: string,
+  messageId: number,
+  text: string,
+  extra: Record<string, unknown>,
+): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await bot.editMessageText(chatId, messageId, undefined, text, extra as any)
+      return
+    } catch (err) {
+      const m = (err as any)?.response?.description ?? (err as Error).message
+      const retryAfter = (err as any)?.response?.parameters?.retry_after as number | undefined
+      if (typeof retryAfter === 'number' && attempt < 2) {
+        const delay = (retryAfter + 1) * 1000
+        log.warn(`edit 429 retry ${attempt + 1}/3 in ${delay}ms`)
+        await new Promise(r => setTimeout(r, delay))
+        continue
+      }
+      if (!m.includes('message is not modified') && !m.includes('retry after')) {
+        log.warn('edit failed', m)
+      }
+      return
+    }
+  }
+}
+
 function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 }
@@ -108,8 +137,8 @@ export class TelegramSessionRenderer {
 
   private currentThrottleMs(): number {
     if (this.editsInBurst === 0) return 0
-    if (this.editsInBurst < 5) return 250
-    return 1000
+    if (this.editsInBurst < 3) return 250
+    return 1500
   }
 
   async onCard(card: StructuredCard): Promise<void> {
@@ -184,15 +213,10 @@ export class TelegramSessionRenderer {
     this.lastEditAt = now
     this.editsInBurst += 1
     const text = this.renderChunkBody(chunkMd, tools, { streaming: true })
-    try {
-      await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, {
-        parse_mode: 'HTML',
-        reply_markup: stopButton(this.sessionId),
-      })
-    } catch (err) {
-      const m = (err as Error).message
-      if (!m.includes('message is not modified')) log.warn('edit failed', m)
-    }
+    await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, {
+      parse_mode: 'HTML' as const,
+      reply_markup: stopButton(this.sessionId),
+    })
   }
 
   private async finalize(blocks: ContentBlock[], meta: AssistantMeta): Promise<void> {
@@ -212,12 +236,9 @@ export class TelegramSessionRenderer {
     if (pieces.length === 1) {
       const text = this.renderChunkBody(pieces[0], tools, { meta })
       if (this.activeMessageId) {
-        try {
-          log.info(`finalize: editing message ${this.activeMessageId}`)
-          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
-          log.info('finalize: edit success')
-        }
-        catch (err) { log.warn('finalize edit failed', (err as Error).message) }
+        log.info(`finalize: editing message ${this.activeMessageId}`)
+        await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+        log.info('finalize: edit success')
       } else {
         log.info('finalize: sending new message')
         const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
@@ -233,9 +254,7 @@ export class TelegramSessionRenderer {
       const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
       const text = header + body
       if (i === 0 && this.activeMessageId) {
-        try {
-          await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' })
-        } catch (err) { log.warn('paginate edit failed', (err as Error).message) }
+        await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
       } else {
         const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
         this.activeMessageId = String(sent.message_id)
