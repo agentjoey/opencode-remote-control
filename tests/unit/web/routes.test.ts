@@ -125,7 +125,7 @@ describe('web routes', () => {
 
   it('POST /api/approval proxies the decision to opencode', async () => {
     const respond = vi.fn().mockResolvedValue({})
-    const client = { session: { ...fakeClient().session, postSessionIdPermissionsPermissionId: respond } } as any
+    const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any
     const app = buildServer(baseOpts(fakeState(), client))
     const res = await app.request('/api/approval', {
       method: 'POST',

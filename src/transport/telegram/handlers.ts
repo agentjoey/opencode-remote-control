@@ -804,7 +804,7 @@ export function setupApproval(
     }
 
     try {
-      await (deps.client.session as any).postSessionIdPermissionsPermissionId({
+      await (deps.client as any).postSessionIdPermissionsPermissionId({
         path: { id: p.sessionId, permissionID: p.permissionId },
         body: { response },
       })
