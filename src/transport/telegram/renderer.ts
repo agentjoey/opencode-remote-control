@@ -21,7 +21,8 @@ function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-/** Retry on Telegram 429 rate limit, up to 3 attempts with backoff. */
+/** Retry on Telegram 429 rate limit, up to 3 attempts with backoff.
+ *  Each attempt has a 10s timeout to prevent hanging on stuck TCP connections. */
 async function retryEdit(
   bot: Telegram,
   chatId: string,
@@ -31,7 +32,10 @@ async function retryEdit(
 ): Promise<boolean> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      await bot.editMessageText(chatId, messageId, undefined, text, extra as any)
+      await Promise.race([
+        bot.editMessageText(chatId, messageId, undefined, text, extra as any),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('editMessageText timeout')), 10_000)),
+      ])
       return true
     } catch (err) {
       const m = (err as any)?.response?.description ?? (err as Error).message
