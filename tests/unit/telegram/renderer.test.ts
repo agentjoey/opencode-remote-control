@@ -17,13 +17,13 @@ function fakeBot() {
 }
 
 describe('TelegramSessionRenderer', () => {
-  it('sends thinking card with Stop button on kind=thinking', async () => {
+  it('sends thinking card without Stop button on kind=thinking', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
     expect(bot.sent).toHaveLength(1)
     expect(bot.sent[0].text).toMatch(/Working/i)
-    expect(bot.sent[0].options.reply_markup.inline_keyboard[0][0].text).toBe('⏹ Stop')
+    expect(bot.sent[0].options.reply_markup).toBeUndefined()
   })
 
   it('ignores kind=user (Telegram already shows the user message)', async () => {

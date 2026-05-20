@@ -28,11 +28,11 @@ async function retryEdit(
   messageId: number,
   text: string,
   extra: Record<string, unknown>,
-): Promise<void> {
+): Promise<boolean> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       await bot.editMessageText(chatId, messageId, undefined, text, extra as any)
-      return
+      return true
     } catch (err) {
       const m = (err as any)?.response?.description ?? (err as Error).message
       const retryAfter = (err as any)?.response?.parameters?.retry_after as number | undefined
@@ -42,12 +42,14 @@ async function retryEdit(
         await new Promise(r => setTimeout(r, delay))
         continue
       }
-      if (!m.includes('message is not modified') && !m.includes('retry after')) {
-        log.warn('edit failed', m)
+      if (m.includes('message is not modified')) {
+        return true
       }
-      return
+      log.warn('edit failed', m)
+      return false
     }
   }
+  return false
 }
 
 function fmtK(n: number): string {
@@ -61,10 +63,6 @@ function metaFooter(meta: AssistantMeta): string {
   if (meta.agent) parts.push(meta.agent)
   if (meta.model) parts.push(meta.model)
   return parts.join('  ·  ')
-}
-
-function stopButton(sessionId: string) {
-  return { inline_keyboard: [[{ text: '⏹ Stop', callback_data: `relay:abort:${sessionId}` }]] }
 }
 
 function findBoundary(md: string, near: number): number {
@@ -143,7 +141,7 @@ export class TelegramSessionRenderer {
 
   async onCard(card: StructuredCard): Promise<void> {
     switch (card.kind) {
-      case 'thinking':     return this.startThinking(card.showStop)
+      case 'thinking':     return this.startThinking()
       case 'think-stream': return this.renderThinking(card.thinkingText)
       case 'streaming':    return this.renderStreaming(card.blocks)
       case 'assistant':    return this.finalize(card.blocks, card.meta)
@@ -155,9 +153,8 @@ export class TelegramSessionRenderer {
     }
   }
 
-  private async startThinking(showStop: boolean): Promise<void> {
-    const reply_markup = showStop ? stopButton(this.sessionId) : undefined
-    const sent = await this.bot.sendMessage(this.chatId, '⏳  Working…', { parse_mode: 'HTML', reply_markup })
+  private async startThinking(): Promise<void> {
+    const sent = await this.bot.sendMessage(this.chatId, '⏳  Working…', { parse_mode: 'HTML' })
     this.activeMessageId = String(sent.message_id)
   }
 
@@ -198,7 +195,7 @@ export class TelegramSessionRenderer {
       this.chunkStartOffset = md.length
       const newHeader = `<b>Part ${this.chunkIndex + 1} · streaming…</b>\n⏳`
       const sent = await this.bot.sendMessage(this.chatId, newHeader, {
-        parse_mode: 'HTML', reply_markup: stopButton(this.sessionId),
+        parse_mode: 'HTML',
       })
       this.activeMessageId = String(sent.message_id)
       this.lastEditAt = 0
@@ -216,7 +213,6 @@ export class TelegramSessionRenderer {
     const text = this.renderChunkBody(chunkMd, tools, { streaming: true })
     await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, {
       parse_mode: 'HTML' as const,
-      reply_markup: stopButton(this.sessionId),
     })
   }
 
@@ -238,8 +234,15 @@ export class TelegramSessionRenderer {
       const text = this.renderChunkBody(pieces[0], tools, { meta })
       if (this.activeMessageId) {
         log.info(`finalize: editing message ${this.activeMessageId}`)
-        await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
-        log.info('finalize: edit success')
+        const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+        if (!ok) {
+          log.info(`finalize: edit failed, sending new message`)
+          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+          this.activeMessageId = String(sent.message_id)
+          log.info(`finalize: sent fallback message ${sent.message_id}`)
+        } else {
+          log.info('finalize: edit success')
+        }
       } else {
         log.info('finalize: sending new message')
         const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
@@ -255,7 +258,11 @@ export class TelegramSessionRenderer {
       const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
       const text = header + body
       if (i === 0 && this.activeMessageId) {
-        await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+        const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+        if (!ok) {
+          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+          this.activeMessageId = String(sent.message_id)
+        }
       } else {
         const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
         this.activeMessageId = String(sent.message_id)
