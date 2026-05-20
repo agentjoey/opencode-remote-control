@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.5.6 — 2026-05-20
+
+### Changed
+- **Remove Stop button** — streaming/thinking messages no longer include ⏹ Stop
+  inline keyboard. (/abort command still works via slash command.)
+- **Remove Part N headers** — pagination chunks no longer show `Part N · done` or
+  `Part N · streaming…` prefixes. New continuation chunk shows just `⏳`.
+
+### Fixed
+- **finalize() robust fallback**: `retryEdit()` now returns boolean. If Telegram
+  edit fails, `finalize()` falls back to `sendMessage()` instead of silently
+  dropping the response. Multi-piece finalize paths all have logging.
+- **finalize() last-resort**: outer try-catch sends raw text via `sendMessage()`
+  even if all formatting logic fails.
+- **push.ts timing race**: `fetchSummary()` retries after 3s if the first
+  attempt finds no assistant message (opencode server may not have persisted it
+  yet).
+- **Telegram 429 handling**: `retryEdit()` respects `retry_after`, returns true
+  on "message is not modified", and returns false on genuine failures for
+  proper fallback.
+
 ## v0.4.0-rc.1 — 2026-05-16
 
 ### Added
