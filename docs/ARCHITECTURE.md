@@ -131,7 +131,10 @@ You send "implement F1 streaming" from Telegram (or Web).
    - On `message.part.updated` → feeds SDK Part into `StreamAccumulator` (dedup by `part.id`).
      Reasoning parts are internal-only (think-stream publishing disabled in v0.5.5).
      Text/Tool parts accumulate into ordered `ContentBlock[]` and publish `kind:'streaming'`.
-   - On `message.part.delta` → raw text delta also routes through accumulator.
+   - On `message.part.delta` → raw text delta is **incremental** (not full text).
+     Relay tracks a `partTextAcc` Map per partId, appends deltas to baseline text
+     recorded from the preceding `part.updated`, and routes the *full* accumulated
+     text through accumulator. (v0.5.6 fix)
    - On `session.idle` → publishes final `kind:'assistant'` with `blocks` and `meta`.
    - On `session.error` → publishes `kind:'error'`.
  5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
