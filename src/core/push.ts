@@ -104,6 +104,8 @@ export function startPushNotifications(deps: PushDeps): () => void {
         ]
         if (summary) {
           sections.push({ body: '<pre>' + summary.replace(/[<>&]/g, (c: string) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' })
+        } else {
+          sections.push({ body: '<i>(no assistant response captured)</i>' })
         }
         publish({ kind: 'info', sessionId: sid, title: 'Session finished', sections })
       }
