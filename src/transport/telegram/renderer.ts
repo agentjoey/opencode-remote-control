@@ -217,55 +217,77 @@ export class TelegramSessionRenderer {
   }
 
   private async finalize(blocks: ContentBlock[], meta: AssistantMeta): Promise<void> {
-    if (this.thinkingMessageId) {
-      await this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch(() => {})
-      this.thinkingMessageId = undefined
-    }
-
-    const md = blocksToText(blocks)
-    const tools = blocksToTools(blocks)
-
-    log.info(`finalize: md=${md.length} chars, chunkOffset=${this.chunkStartOffset}, activeMessageId=${this.activeMessageId ?? 'none'}`)
-    const remainMd = this.chunkStartOffset > md.length ? md : md.slice(this.chunkStartOffset)
-    const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
-    const pieces = splitMarkdown(remainMd, PER_CHUNK)
-    log.info(`finalize: ${pieces.length} piece(s), remainMd=${remainMd.length} chars`)
-    if (pieces.length === 1) {
-      const text = this.renderChunkBody(pieces[0], tools, { meta })
-      if (this.activeMessageId) {
-        log.info(`finalize: editing message ${this.activeMessageId}`)
-        const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
-        if (!ok) {
-          log.info(`finalize: edit failed, sending new message`)
-          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
-          this.activeMessageId = String(sent.message_id)
-          log.info(`finalize: sent fallback message ${sent.message_id}`)
-        } else {
-          log.info('finalize: edit success')
-        }
-      } else {
-        log.info('finalize: sending new message')
-        const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
-        this.activeMessageId = String(sent.message_id)
-        log.info(`finalize: sent new message ${sent.message_id}`)
+    try {
+      if (this.thinkingMessageId) {
+        await this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch(() => {})
+        this.thinkingMessageId = undefined
       }
-      return
-    }
-    for (let i = 0; i < pieces.length; i++) {
-      const isLast = i === pieces.length - 1
-      const partNum = this.chunkIndex + i + 1
-      const header = `<b>Part ${partNum} · done</b>\n`
-      const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
-      const text = header + body
-      if (i === 0 && this.activeMessageId) {
-        const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
-        if (!ok) {
+
+      const md = blocksToText(blocks)
+      const tools = blocksToTools(blocks)
+
+      log.info(`finalize: md=${md.length} chars, chunkOffset=${this.chunkStartOffset}, activeMessageId=${this.activeMessageId ?? 'none'}`)
+      const remainMd = this.chunkStartOffset > md.length ? md : md.slice(this.chunkStartOffset)
+      const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
+      const pieces = splitMarkdown(remainMd, PER_CHUNK)
+      log.info(`finalize: ${pieces.length} piece(s), remainMd=${remainMd.length} chars`)
+      if (pieces.length === 1) {
+        const text = this.renderChunkBody(pieces[0], tools, { meta })
+        if (this.activeMessageId) {
+          log.info(`finalize: editing message ${this.activeMessageId}`)
+          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+          if (!ok) {
+            log.info(`finalize: edit failed, sending new message`)
+            const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+            this.activeMessageId = String(sent.message_id)
+            log.info(`finalize: sent fallback message ${sent.message_id}`)
+          } else {
+            log.info('finalize: edit success')
+          }
+        } else {
+          log.info('finalize: sending new message (no activeMessageId)')
           const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
           this.activeMessageId = String(sent.message_id)
+          log.info(`finalize: sent new message ${sent.message_id}`)
         }
-      } else {
-        const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
-        this.activeMessageId = String(sent.message_id)
+        return
+      }
+      for (let i = 0; i < pieces.length; i++) {
+        const isLast = i === pieces.length - 1
+        const partNum = this.chunkIndex + i + 1
+        const header = `<b>Part ${partNum} · done</b>\n`
+        const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
+        const text = header + body
+        log.info(`finalize: piece ${i}/${pieces.length} partNum=${partNum} len=${text.length}`)
+        if (i === 0 && this.activeMessageId) {
+          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+          if (ok) {
+            log.info(`finalize: piece 0 edited message ${this.activeMessageId}`)
+          } else {
+            log.info(`finalize: piece 0 edit failed, sending new`)
+            const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+            this.activeMessageId = String(sent.message_id)
+            log.info(`finalize: piece 0 sent fallback ${sent.message_id}`)
+          }
+        } else {
+          log.info(`finalize: piece ${i} sending new message`)
+          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+          this.activeMessageId = String(sent.message_id)
+          log.info(`finalize: piece ${i} sent ${sent.message_id}`)
+        }
+      }
+      log.info('finalize: all pieces done')
+    } catch (err) {
+      log.error('finalize: FATAL error, attempting last-resort send', (err as Error).message)
+      // Last-resort: try to send the raw text without formatting
+      try {
+        const md = blocksToText(blocks)
+        if (md) {
+          await this.bot.sendMessage(this.chatId, md.slice(0, 3800), { parse_mode: 'HTML' })
+          log.info('finalize: last-resort send succeeded')
+        }
+      } catch (e2) {
+        log.error('finalize: last-resort send also failed', (e2 as Error).message)
       }
     }
   }
