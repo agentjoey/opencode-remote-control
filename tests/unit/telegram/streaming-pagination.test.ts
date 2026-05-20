@@ -103,7 +103,7 @@ describe('streaming pagination (explosion fix)', () => {
     expect(lastEdit.text).not.toMatch(/A{100,}/)
   })
 
-  it('Stop button is present on the new chunk (Part 2) after pagination', async () => {
+  it('Stop button is NOT present on the new chunk (Part 2) after pagination', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
@@ -117,12 +117,10 @@ describe('streaming pagination (explosion fix)', () => {
     accum = text
     await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
-    // The second send (Part 2) should have Stop button
+    // The second send (Part 2) should NOT have Stop button
     expect(bot.sent.length).toBe(2)
     const part2Msg = bot.sent[1]
-    expect(part2Msg.options.reply_markup).toBeDefined()
-    expect(part2Msg.options.reply_markup.inline_keyboard[0][0].text).toBe('⏹ Stop')
-    expect(part2Msg.options.reply_markup.inline_keyboard[0][0].callback_data).toContain('ses')
+    expect(part2Msg.options.reply_markup).toBeUndefined()
   })
 
   it('Part 1 done header appears correctly after pagination', async () => {
