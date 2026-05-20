@@ -98,14 +98,18 @@ export function startPushNotifications(deps: PushDeps): () => void {
       const engagedRecently = Date.now() - lastEngaged < 12 * 60 * 60 * 1000
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
-        const summary = await fetchSummary(sid)
+        let summary = await fetchSummary(sid)
+        // If fetch raced with opencode's persistence, wait and retry once
+        if (!summary) {
+          log.info(`push: first fetch empty for ${sid.slice(-8)}, retrying in 3s`)
+          await new Promise(r => setTimeout(r, 3000))
+          summary = await fetchSummary(sid)
+        }
         const sections: Array<{ body: string }> = [
           { body: `✅ Session <code>…${sid.slice(-8)}</code> finished (${Math.round(duration/1000)}s)` },
         ]
         if (summary) {
           sections.push({ body: '<pre>' + summary.replace(/[<>&]/g, (c: string) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' })
-        } else {
-          sections.push({ body: '<i>(no assistant response captured)</i>' })
         }
         publish({ kind: 'info', sessionId: sid, title: 'Session finished', sections })
       }
