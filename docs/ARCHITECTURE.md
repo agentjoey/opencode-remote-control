@@ -129,8 +129,8 @@ You send "implement F1 streaming" from Telegram (or Web).
 4. The relay enters its SSE loop: iterates events from
    `eventStream.session(sessionId, signal)`.
    - On `message.part.updated` → feeds SDK Part into `StreamAccumulator` (dedup by `part.id`).
-     Reasoning parts emit `kind:'think-stream'` cards. Text/Tool parts accumulate into
-     ordered `ContentBlock[]` and publish `kind:'streaming'`.
+     Reasoning parts are internal-only (think-stream publishing disabled in v0.5.5).
+     Text/Tool parts accumulate into ordered `ContentBlock[]` and publish `kind:'streaming'`.
    - On `message.part.delta` → raw text delta also routes through accumulator.
    - On `session.idle` → publishes final `kind:'assistant'` with `blocks` and `meta`.
    - On `session.error` → publishes `kind:'error'`.
@@ -143,11 +143,11 @@ You send "implement F1 streaming" from Telegram (or Web).
    `session.idle` events from the EventStream (not relay). When a session
    finishes with >60s duration:
    - Fetches the last assistant message via `client.session.messages()`.
-   - Extracts text parts for a Chinese-language summary (first 300 chars).
+   - If first fetch returns empty (race with opencode persistence), waits 3s
+     and retries once.
+   - Extracts text parts for a summary (first 300 chars).
    - Publishes `kind:'info'` to CardBus → Telegram renderer sends a new message.
    - Rate limited: max 10/hour, 5-min cooldown per session.
-   - **Timeout is not an error**: relay may disconnect on timeout, but push
-     waits for the real `session.idle` before notifying.
 
 When you send `/agent build` instead:
 - Handler updates `agentContext.setNextAgent('build')`.
@@ -224,14 +224,23 @@ subscribes to the bus and renders independently:
 ```typescript
 type StructuredCard =
   | { kind: 'thinking';  sessionId: string; showStop: boolean }
-  | { kind: 'streaming'; sessionId: string; markdownSrc: string; tools: ToolCall[] }
-  | { kind: 'assistant'; sessionId: string; markdownSrc: string; tools: ToolCall[]; meta: AssistantMeta }
+  | { kind: 'think-stream'; sessionId: string; thinkingText: string }
+  | { kind: 'streaming'; sessionId: string; blocks: ContentBlock[] }
+  | { kind: 'assistant'; sessionId: string; blocks: ContentBlock[]; meta: AssistantMeta }
   | { kind: 'user';      sessionId: string; text: string; ts: number }
   | { kind: 'error';     sessionId: string; message: string }
   | { kind: 'status';    sessionId: string; fields: Record<string, string>; buttons?: Button[][] }
-  | { kind: 'info';      title: string; sections: InfoSection[] }
+  | { kind: 'info';      title: string; sections: InfoSection[]; sessionId?: string }
   | { kind: 'approval';  sessionId: string; title: string; args: unknown; requestId: string }
+
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' }
 ```
+
+> **v0.5.6 note:** `think-stream` publishing is currently disabled (commented out
+> in relay.ts). `showStop` on `thinking` card is ignored — Stop button was
+> removed from Telegram inline keyboard in v0.5.6.
 
 Transports translate `StructuredCard` to their native dialect:
 - **Telegram**: `TelegramSessionRenderer` handles per-session pagination,
