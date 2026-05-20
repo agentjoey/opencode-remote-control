@@ -21,6 +21,15 @@ function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+/** Wrap a promise with a 10s timeout to prevent hanging on stuck TCP connections. */
+async function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
+  const result = await Promise.race([
+    p,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 10_000)),
+  ])
+  return result
+}
+
 /** Retry on Telegram 429 rate limit, up to 3 attempts with backoff.
  *  Each attempt has a 10s timeout to prevent hanging on stuck TCP connections. */
 async function retryEdit(
@@ -137,6 +146,15 @@ export class TelegramSessionRenderer {
     this.bot = opts.bot
   }
 
+  /** sendMessage with 10s timeout to prevent TCP hang. */
+  private async sendTimed(text: string, extra?: Record<string, unknown>): Promise<{ message_id: number }> {
+    const result: { message_id: number } = await withTimeout(
+      this.bot.sendMessage(this.chatId, text, extra ?? {}),
+      'sendMessage',
+    )
+    return result
+  }
+
   private currentThrottleMs(): number {
     if (this.editsInBurst === 0) return 0
     if (this.editsInBurst < 3) return 250
@@ -158,7 +176,7 @@ export class TelegramSessionRenderer {
   }
 
   private async startThinking(): Promise<void> {
-    const sent = await this.bot.sendMessage(this.chatId, '⏳  Working…', { parse_mode: 'HTML' })
+    const sent = await this.sendTimed('⏳  Working…', { parse_mode: 'HTML' })
     this.activeMessageId = String(sent.message_id)
   }
 
@@ -175,7 +193,7 @@ export class TelegramSessionRenderer {
     if (this.thinkingMessageId) {
       await retryEdit(this.bot, this.chatId, Number(this.thinkingMessageId), body, { parse_mode: 'HTML' as const })
     } else {
-      const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
+      const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
       this.thinkingMessageId = String(sent.message_id)
     }
   }
@@ -196,7 +214,7 @@ export class TelegramSessionRenderer {
       } catch {}
       this.chunkIndex += 1
       this.chunkStartOffset = md.length
-      const sent = await this.bot.sendMessage(this.chatId, '⏳', {
+      const sent = await this.sendTimed('⏳', {
         parse_mode: 'HTML',
       })
       this.activeMessageId = String(sent.message_id)
@@ -240,7 +258,7 @@ export class TelegramSessionRenderer {
           const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
           if (!ok) {
             log.info(`finalize: edit failed, sending new message`)
-            const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+            const sent = await this.sendTimed(text, { parse_mode: 'HTML' })
             this.activeMessageId = String(sent.message_id)
             log.info(`finalize: sent fallback message ${sent.message_id}`)
           } else {
@@ -248,7 +266,7 @@ export class TelegramSessionRenderer {
           }
         } else {
           log.info('finalize: sending new message (no activeMessageId)')
-          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+          const sent = await this.sendTimed(text, { parse_mode: 'HTML' })
           this.activeMessageId = String(sent.message_id)
           log.info(`finalize: sent new message ${sent.message_id}`)
         }
@@ -264,13 +282,13 @@ export class TelegramSessionRenderer {
             log.info(`finalize: piece 0 edited message ${this.activeMessageId}`)
           } else {
             log.info(`finalize: piece 0 edit failed, sending new`)
-            const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
+            const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
             this.activeMessageId = String(sent.message_id)
             log.info(`finalize: piece 0 sent fallback ${sent.message_id}`)
           }
         } else {
           log.info(`finalize: piece ${i} sending new message`)
-          const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
+          const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
           this.activeMessageId = String(sent.message_id)
           log.info(`finalize: piece ${i} sent ${sent.message_id}`)
         }
@@ -282,7 +300,7 @@ export class TelegramSessionRenderer {
       try {
         const md = blocksToText(blocks)
         if (md) {
-          await this.bot.sendMessage(this.chatId, md.slice(0, 3800), { parse_mode: 'HTML' })
+          await this.sendTimed(md.slice(0, 3800), { parse_mode: 'HTML' })
           log.info('finalize: last-resort send succeeded')
         }
       } catch (e2) {
@@ -297,7 +315,7 @@ export class TelegramSessionRenderer {
       try { await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) }
       catch {}
     } else {
-      await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+      await this.sendTimed(text, { parse_mode: 'HTML' })
     }
   }
 
@@ -310,7 +328,7 @@ export class TelegramSessionRenderer {
     }
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        await this.bot.sendMessage(this.chatId, lines.join('\n'), { parse_mode: 'HTML' })
+        await this.sendTimed(lines.join('\n'), { parse_mode: 'HTML' })
         return
       } catch (err) {
         const msg = (err as Error).message
