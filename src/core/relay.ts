@@ -203,6 +203,8 @@ export function createRelay(deps: RelayDeps) {
       let assistantMessageId: string | undefined
       const acc = createStreamAccumulator()
       const processedPartIds = new Set<string>()
+      // Track accumulated text per partId for delta events (deltas are incremental, not full text)
+      const partTextAcc = new Map<string, string>()
 
       for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
         const e = ev as { type: string; properties: any }
@@ -260,6 +262,8 @@ export function createRelay(deps: RelayDeps) {
               log.info(`delta received (${p.delta.length} chars): "${p.delta.slice(0, 50)}..."`)
             } else if (isNewPart && typeof part.text === 'string') {
               log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
+              // Record the full text as the delta baseline for this part
+              if (partId) partTextAcc.set(partId, part.text)
             } else {
               log.info(`text part ignored - delta: ${typeof p.delta}, text: ${typeof part.text}, isNew: ${isNewPart}`)
             }
@@ -281,7 +285,11 @@ export function createRelay(deps: RelayDeps) {
           const field = p?.field as string | undefined
           const delta = p?.delta as string | undefined
           if (partId && field === 'text' && typeof delta === 'string') {
-            const blocks = acc.update([{ id: partId, type: 'text', text: delta }])
+            // Deltas are incremental — append to accumulated full text
+            const prev = partTextAcc.get(partId) ?? ''
+            const fullText = prev + delta
+            partTextAcc.set(partId, fullText)
+            const blocks = acc.update([{ id: partId, type: 'text', text: fullText }])
             deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
           }
         }
