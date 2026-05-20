@@ -186,15 +186,13 @@ export class TelegramSessionRenderer {
     const naturalBoundary = chunkMd.endsWith('\n\n') || tools.some((t) => t.status === 'done')
 
     if (renderedLen >= CHUNK_HARD_LIMIT || (renderedLen >= CHUNK_SOFT_LIMIT && naturalBoundary)) {
-      const header = `<b>Part ${this.chunkIndex + 1} · done</b>\n`
       try {
         await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined,
-          header + this.renderChunkBody(chunkMd, tools, {}), { parse_mode: 'HTML' })
+          this.renderChunkBody(chunkMd, tools, {}), { parse_mode: 'HTML' })
       } catch {}
       this.chunkIndex += 1
       this.chunkStartOffset = md.length
-      const newHeader = `<b>Part ${this.chunkIndex + 1} · streaming…</b>\n⏳`
-      const sent = await this.bot.sendMessage(this.chatId, newHeader, {
+      const sent = await this.bot.sendMessage(this.chatId, '⏳', {
         parse_mode: 'HTML',
       })
       this.activeMessageId = String(sent.message_id)
@@ -254,24 +252,21 @@ export class TelegramSessionRenderer {
       }
       for (let i = 0; i < pieces.length; i++) {
         const isLast = i === pieces.length - 1
-        const partNum = this.chunkIndex + i + 1
-        const header = `<b>Part ${partNum} · done</b>\n`
         const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
-        const text = header + body
-        log.info(`finalize: piece ${i}/${pieces.length} partNum=${partNum} len=${text.length}`)
+        log.info(`finalize: piece ${i}/${pieces.length} len=${body.length}`)
         if (i === 0 && this.activeMessageId) {
-          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
+          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), body, { parse_mode: 'HTML' as const })
           if (ok) {
             log.info(`finalize: piece 0 edited message ${this.activeMessageId}`)
           } else {
             log.info(`finalize: piece 0 edit failed, sending new`)
-            const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+            const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
             this.activeMessageId = String(sent.message_id)
             log.info(`finalize: piece 0 sent fallback ${sent.message_id}`)
           }
         } else {
           log.info(`finalize: piece ${i} sending new message`)
-          const sent = await this.bot.sendMessage(this.chatId, text, { parse_mode: 'HTML' })
+          const sent = await this.bot.sendMessage(this.chatId, body, { parse_mode: 'HTML' })
           this.activeMessageId = String(sent.message_id)
           log.info(`finalize: piece ${i} sent ${sent.message_id}`)
         }
