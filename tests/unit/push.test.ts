@@ -53,8 +53,8 @@ describe('startPushNotifications', () => {
     eventStream.emit({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
     vi.advanceTimersByTime(70_000)
     eventStream.emit({ type: 'session.idle', properties: { sessionID: sid } })
-    // Wait for async fetchSummary to resolve
-    await vi.advanceTimersByTimeAsync(1)
+    // Wait for async fetchSummary (including retry delay) to resolve
+    await vi.advanceTimersByTimeAsync(3100)
     expect(cardBus.publish).toHaveBeenCalledTimes(1)
     expect(cardBus.published[0]).toMatchObject({ kind: 'info', sessionId: sid, title: 'Session finished' })
   })
@@ -93,7 +93,7 @@ describe('startPushNotifications', () => {
       deps.eventStream.emit({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
       vi.advanceTimersByTime(70_000)
       deps.eventStream.emit({ type: 'session.idle', properties: { sessionID: sid } })
-      await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(3100)
     }
     expect(deps.cardBus.publish).toHaveBeenCalledTimes(2)
   })
@@ -103,14 +103,13 @@ describe('startPushNotifications', () => {
     eventStream.emit({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
     vi.advanceTimersByTime(70_000)
     eventStream.emit({ type: 'session.idle', properties: { sessionID: sid } })
-    await vi.advanceTimersByTimeAsync(1)
+    await vi.advanceTimersByTimeAsync(3100)
     expect(cardBus.publish).toHaveBeenCalledTimes(1)
-
     // Repeat immediately — should be suppressed by 5min cooldown
     eventStream.emit({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
     vi.advanceTimersByTime(70_000)
     eventStream.emit({ type: 'session.idle', properties: { sessionID: sid } })
-    await vi.advanceTimersByTimeAsync(1)
+    await vi.advanceTimersByTimeAsync(3100)
     expect(cardBus.publish).toHaveBeenCalledTimes(1) // still 1
   })
 

@@ -73,8 +73,7 @@ describe('streaming pagination (explosion fix)', () => {
     // It should contain 'B' suffix content
     if (bot.sent.length >= 2) {
       const secondSent = bot.sent[1]
-      // The streaming header on the new chunk
-      expect(secondSent.text).toContain('streaming')
+      expect(secondSent.text).toContain('⏳')
     }
   })
 
@@ -123,7 +122,7 @@ describe('streaming pagination (explosion fix)', () => {
     expect(part2Msg.options.reply_markup).toBeUndefined()
   })
 
-  it('Part 1 done header appears correctly after pagination', async () => {
+  it('no Part headers appear after pagination', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
@@ -136,31 +135,23 @@ describe('streaming pagination (explosion fix)', () => {
     accum = text
     await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: accum }] })
 
-    // The first edit after pagination should be on Part 1 and contain "Part 1 · done"
-    const part1DoneEdit = bot.edits.find((e: any) => e.text.includes('Part 1 · done'))
-    expect(part1DoneEdit).toBeDefined()
-
-    // The new sent message should contain "Part 2 · streaming…"
+    // The new chunk message should be just "⏳", no Part header
     expect(bot.sent.length).toBe(2)
-    expect(bot.sent[1].text).toContain('Part 2 · streaming')
+    expect(bot.sent[1].text).toBe('⏳')
+    expect(bot.sent[1].text).not.toContain('Part')
   })
 
-  it('finalize multi-piece uses Part N · done headers', async () => {
+  it('finalize pieces have no Part headers', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
 
-    // Long text that triggers finalize split into multiple pieces
     const longText = ('B'.repeat(2000) + '\n\n').repeat(5)
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: longText }], meta: { cost: 0.01 } })
 
-    // Check that all Piece headers use "· done" format, not "k/N"
     const partTexts = [...bot.edits.map((e: any) => e.text), ...bot.sent.map((s: any) => s.text)]
     for (const t of partTexts) {
-      if (t.includes('Part ')) {
-        expect(t).toMatch(/Part \d+ · done/)
-        expect(t).not.toMatch(/Part \d+\/\d+/)
-      }
+      expect(t).not.toContain('Part ')
     }
   })
 })
