@@ -2,24 +2,27 @@
 
 ## v0.5.6 — 2026-05-20
 
-### Changed
-- **Remove Stop button** — streaming/thinking messages no longer include ⏹ Stop
-  inline keyboard. (/abort command still works via slash command.)
-- **Remove Part N headers** — pagination chunks no longer show `Part N · done` or
-  `Part N · streaming…` prefixes. New continuation chunk shows just `⏳`.
-
 ### Fixed
+- **Delta accumulation** — `message.part.delta` sends incremental text, not full text.
+  Relay now tracks `partTextAcc` per partId, appends deltas to baseline, and passes
+  the full accumulated text to the accumulator. This was the root cause of truncated/
+  partial assistant responses in Telegram.
 - **finalize() robust fallback**: `retryEdit()` now returns boolean. If Telegram
   edit fails, `finalize()` falls back to `sendMessage()` instead of silently
-  dropping the response. Multi-piece finalize paths all have logging.
-- **finalize() last-resort**: outer try-catch sends raw text via `sendMessage()`
-  even if all formatting logic fails.
+  dropping the response.
+- **TCP hang protection**: all `sendMessage` and `editMessageText` calls now have
+  10s timeouts via `withTimeout()` helper and `sendTimed()` wrapper method.
+  Previously stuck TCP connections caused `retryEdit` and fallback `sendMessage`
+  to hang forever.
 - **push.ts timing race**: `fetchSummary()` retries after 3s if the first
   attempt finds no assistant message (opencode server may not have persisted it
   yet).
-- **Telegram 429 handling**: `retryEdit()` respects `retry_after`, returns true
-  on "message is not modified", and returns false on genuine failures for
-  proper fallback.
+
+### Changed
+- **Remove Stop button** — streaming/thinking messages no longer include ⏹ Stop
+  inline keyboard.
+- **Remove Part N headers** — pagination chunks no longer show `Part N · done` or
+  `Part N · streaming…` prefixes. New continuation chunk shows just `⏳`.
 
 ## v0.4.0-rc.1 — 2026-05-16
 
