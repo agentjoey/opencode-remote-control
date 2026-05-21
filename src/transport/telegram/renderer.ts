@@ -31,7 +31,8 @@ async function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
 }
 
 /** Retry on Telegram 429 rate limit, up to 3 attempts with backoff.
- *  Each attempt has a 10s timeout to prevent hanging on stuck TCP connections. */
+ *  Each attempt has a 10s timeout. retry_after is capped at 5s —
+ *  longer cooldowns are treated as permanent failure to force fallback. */
 async function retryEdit(
   bot: Telegram,
   chatId: string,
@@ -50,7 +51,12 @@ async function retryEdit(
       const m = (err as any)?.response?.description ?? (err as Error).message
       const retryAfter = (err as any)?.response?.parameters?.retry_after as number | undefined
       if (typeof retryAfter === 'number' && attempt < 2) {
-        const delay = (retryAfter + 1) * 1000
+        const capped = Math.min(retryAfter, 5)
+        if (capped < retryAfter) {
+          log.warn(`edit 429 retry_after=${retryAfter}s capped to ${capped}s, giving up`)
+          return false
+        }
+        const delay = (capped + 1) * 1000
         log.warn(`edit 429 retry ${attempt + 1}/3 in ${delay}ms`)
         await new Promise(r => setTimeout(r, delay))
         continue
