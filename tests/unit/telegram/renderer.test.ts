@@ -13,50 +13,47 @@ function fakeBot() {
     editMessageText: vi.fn(async function (this: any, chatId: string, messageId: number, _: any, text: string, options: any) {
       this.edits.push({ chatId, messageId: String(messageId), text, options })
     }),
+    deleteMessage: vi.fn(async () => {}),
   }
 }
 
 describe('TelegramSessionRenderer', () => {
-  it('sends thinking card without Stop button on kind=thinking', async () => {
+  it('sends thinking card on kind=thinking', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
     expect(bot.sent).toHaveLength(1)
     expect(bot.sent[0].text).toMatch(/Working/i)
-    expect(bot.sent[0].options.reply_markup).toBeUndefined()
   })
 
-  it('ignores kind=user (Telegram already shows the user message)', async () => {
+  it('streaming is a no-op', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
+    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
+    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: 'partial' }] })
+    // streaming should not cause any sends or edits
+    expect(bot.edits).toHaveLength(0)
+    expect(bot.sent).toHaveLength(1) // only thinking
+  })
+
+  it('ignores kind=user', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'user', sessionId: 'ses', text: 'hi', ts: 0 })
     expect(bot.sent).toHaveLength(0)
   })
 
-  it('finalizes streaming with assistant footer (single chunk)', async () => {
+  it('finalize sends new message with assistant footer (single chunk)', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
-    await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: 'partial' }] })
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'final' }], meta: { cost: 0.04, agent: 'build', model: 'k2p6' } })
-    const last = bot.edits.at(-1)!
-    expect(last.text).toMatch(/final/)
-    expect(last.text).toMatch(/\$0\.040/)
-    expect(last.text).toMatch(/build/)
-  })
-
-  it('throttles consecutive streaming edits', async () => {
-    vi.useFakeTimers()
-    const bot = fakeBot()
-    const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
-    await r.onCard({ kind: 'thinking', sessionId: 'ses', showStop: true })
-    // 6 rapid deltas — first immediate, next 5 throttled
-    for (let i = 0; i < 6; i++) {
-      await r.onCard({ kind: 'streaming', sessionId: 'ses', blocks: [{ type: 'text', text: 'x'.repeat(i + 1) }] })
-    }
-    expect(bot.edits.length).toBeLessThanOrEqual(2)  // first edit + maybe one throttled
-    vi.advanceTimersByTime(2000)
-    vi.useRealTimers()
+    // finalize sends new messages, not edits
+    const assistantMsg = bot.sent.find((s: any) => s.text.includes('final'))
+    expect(assistantMsg).toBeDefined()
+    expect(assistantMsg!.text).toMatch(/final/)
+    expect(assistantMsg!.text).toMatch(/\$0\.040/)
+    expect(assistantMsg!.text).toMatch(/build/)
   })
 
   it('collapses tools list: first 2 + last 5 with … N more when count is 8-15', async () => {
@@ -67,13 +64,13 @@ describe('TelegramSessionRenderer', () => {
       tool: 'bash', args: `cmd${i}`, status: 'done' as const,
     }))
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
-    const last = bot.edits.at(-1)!
+    const last = bot.sent.at(-1)!
     expect(last.text).toMatch(/cmd0/)
     expect(last.text).toMatch(/cmd1/)
-    expect(last.text).toMatch(/cmd7/)        // last 5 → cmd7..cmd11
+    expect(last.text).toMatch(/cmd7/)
     expect(last.text).toMatch(/cmd11/)
     expect(last.text).toMatch(/… 5 more tool calls/)
-    expect(last.text).not.toMatch(/cmd5/)    // collapsed
+    expect(last.text).not.toMatch(/cmd5/)
   })
 
   it('collapses tools list: first 1 + last 4 when count > 15', async () => {
@@ -84,7 +81,7 @@ describe('TelegramSessionRenderer', () => {
       tool: 'bash', args: `cmd${i}`, status: 'done' as const,
     }))
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
-    const last = bot.edits.at(-1)!
+    const last = bot.sent.at(-1)!
     expect(last.text).toMatch(/cmd0/)
     expect(last.text).toMatch(/cmd16/)
     expect(last.text).toMatch(/cmd19/)
@@ -101,8 +98,7 @@ describe('TelegramSessionRenderer', () => {
       tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
     }
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
-    const last = bot.edits.at(-1)!
-    // tail should contain the 2 running tools: cmd2 (…), cmd4 (…)
+    const last = bot.sent.at(-1)!
     expect(last.text).toMatch(/cmd2/)
     expect(last.text).toMatch(/cmd4/)
   })
@@ -117,10 +113,8 @@ describe('TelegramSessionRenderer', () => {
       tools.push({ tool: 'bash', args: `cmd${i}`, status: status as any })
     }
     await r.onCard({ kind: 'assistant', sessionId: 'ses', blocks: [{ type: 'text', text: 'done' }, ...tools.map(t => ({ type: 'tool' as const, tool: t.tool, args: t.args, status: t.status }))], meta: {} })
-    const last = bot.edits.at(-1)!
-    // tail should contain the running tool cmd0
+    const last = bot.sent.at(-1)!
     expect(last.text).toMatch(/cmd0/)
-    // tail should have last 3 done + the running one = 4 total in tail
-    expect(last.text).toMatch(/cmd17/)  // tail: [done16, done17, done18, done19] → tailDone from position firstCount+1 to end
+    expect(last.text).toMatch(/cmd17/)
   })
 })
