@@ -140,15 +140,10 @@ export function createRelay(deps: RelayDeps) {
     const ac = new AbortController()
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
-    // Placeholder sessionId for the thinking card — will be updated once we know the real session.
-    const earlySessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
-    deps.cardBus.publish({ kind: 'thinking', sessionId: earlySessionId, showStop: true })
-    deps.cardBus.publish({ kind: 'user', sessionId: earlySessionId, text: msg.text, ts: Date.now() })
-
     // Declared outside try so catch/finally can reference it.
-    let sessionId: string = earlySessionId
-    // Set abort controller early so callers can abort before session is resolved.
-    deps.state.setActiveAbort(earlySessionId, ac)
+    let sessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
+    // Register abort early so callers can abort before session is resolved.
+    deps.state.setActiveAbort(sessionId, ac)
 
     try {
       const nextAgent = deps.state.getNextAgent()
@@ -199,6 +194,10 @@ export function createRelay(deps: RelayDeps) {
       sessionId = resolvedId
       deps.state.setLastSessionId(sessionId)
       deps.state.setActiveAbort(sessionId, ac)
+
+      // Publish thinking + user cards now that sessionId is known
+      deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
+      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
 
       let assistantMessageId: string | undefined
       const acc = createStreamAccumulator()
