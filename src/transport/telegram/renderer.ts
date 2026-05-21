@@ -5,11 +5,9 @@ import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('tg-renderer')
 
-const TG_MAX = 4000
 const RESERVE_META = 200
 const RESERVE_ANSWER_FRAC = 0.7
 const CHUNK_SOFT_LIMIT = Number(process.env.TG_CHUNK_SOFT_LIMIT ?? 3500)
-const CHUNK_HARD_LIMIT = Number(process.env.TG_CHUNK_HARD_LIMIT ?? 3900)
 
 interface RendererOpts {
   chatId: string
@@ -28,47 +26,6 @@ async function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 10_000)),
   ])
   return result
-}
-
-/** Retry on Telegram 429 rate limit, up to 3 attempts with backoff.
- *  Each attempt has a 10s timeout. retry_after is capped at 5s —
- *  longer cooldowns are treated as permanent failure to force fallback. */
-async function retryEdit(
-  bot: Telegram,
-  chatId: string,
-  messageId: number,
-  text: string,
-  extra: Record<string, unknown>,
-): Promise<boolean> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      await Promise.race([
-        bot.editMessageText(chatId, messageId, undefined, text, extra as any),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('editMessageText timeout')), 10_000)),
-      ])
-      return true
-    } catch (err) {
-      const m = (err as any)?.response?.description ?? (err as Error).message
-      const retryAfter = (err as any)?.response?.parameters?.retry_after as number | undefined
-      if (typeof retryAfter === 'number' && attempt < 2) {
-        const capped = Math.min(retryAfter, 5)
-        if (capped < retryAfter) {
-          log.warn(`edit 429 retry_after=${retryAfter}s capped to ${capped}s, giving up`)
-          return false
-        }
-        const delay = (capped + 1) * 1000
-        log.warn(`edit 429 retry ${attempt + 1}/3 in ${delay}ms`)
-        await new Promise(r => setTimeout(r, delay))
-        continue
-      }
-      if (m.includes('message is not modified')) {
-        return true
-      }
-      log.warn('edit failed', m)
-      return false
-    }
-  }
-  return false
 }
 
 function fmtK(n: number): string {
@@ -138,13 +95,7 @@ export class TelegramSessionRenderer {
   private chatId: string
   private sessionId: string
   private bot: Telegram
-  private activeMessageId?: string
   private thinkingMessageId?: string
-  private lastEditAt = 0
-  private editsInBurst = 0
-  private chunkIndex = 0
-  private streamingChunkBuffer = ''
-  private chunkStartOffset = 0
 
   constructor(opts: RendererOpts) {
     this.chatId = opts.chatId
@@ -161,89 +112,28 @@ export class TelegramSessionRenderer {
     return result
   }
 
-  private currentThrottleMs(): number {
-    if (this.editsInBurst === 0) return 0
-    if (this.editsInBurst < 3) return 250
-    return 1500
-  }
-
   async onCard(card: StructuredCard): Promise<void> {
     switch (card.kind) {
       case 'thinking':     return this.startThinking()
-      case 'think-stream': return this.renderThinking(card.thinkingText)
-      case 'streaming':    return this.renderStreaming(card.blocks)
+      case 'streaming':    return // no-op — Telegram only delivers final result
       case 'assistant':    return this.finalize(card.blocks, card.meta)
       case 'error':        return this.markError(card.message)
       case 'user':         return       // Telegram already shows user's own message
+      case 'think-stream': return       // disabled
       case 'status':
-      case 'approval':     return       // Handled by command handlers, not via renderer in v0.5.0
+      case 'approval':     return       // Handled by command handlers
       case 'info':         return this.sendInfo(card.title, card.sections)
     }
   }
 
   private async startThinking(): Promise<void> {
     const sent = await this.sendTimed('⏳  Working…', { parse_mode: 'HTML' })
-    this.activeMessageId = String(sent.message_id)
-  }
-
-  private async renderThinking(text: string): Promise<void> {
-    // Share throttle with renderStreaming
-    const now = Date.now()
-    if (now - this.lastEditAt < this.currentThrottleMs() && this.editsInBurst >= 3) return
-    this.lastEditAt = now
-    this.editsInBurst += 1
-
-    const maxLen = 350
-    const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text
-    const body = `<i>💭 ${escHtml(display)}</i>`
-    if (this.thinkingMessageId) {
-      await retryEdit(this.bot, this.chatId, Number(this.thinkingMessageId), body, { parse_mode: 'HTML' as const })
-    } else {
-      const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
-      this.thinkingMessageId = String(sent.message_id)
-    }
-  }
-
-  private async renderStreaming(blocks: ContentBlock[]): Promise<void> {
-    if (!this.activeMessageId) return
-    const md = blocksToText(blocks)
-    const tools = blocksToTools(blocks)
-    const chunkMd = md.slice(this.chunkStartOffset)
-    this.streamingChunkBuffer = md
-    const renderedLen = this.renderChunkBody(chunkMd, tools, { streaming: true }).length
-    const naturalBoundary = chunkMd.endsWith('\n\n') || tools.some((t) => t.status === 'done')
-
-    if (renderedLen >= CHUNK_HARD_LIMIT || (renderedLen >= CHUNK_SOFT_LIMIT && naturalBoundary)) {
-      try {
-        await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined,
-          this.renderChunkBody(chunkMd, tools, {}), { parse_mode: 'HTML' })
-      } catch {}
-      this.chunkIndex += 1
-      this.chunkStartOffset = md.length
-      const sent = await this.sendTimed('⏳', {
-        parse_mode: 'HTML',
-      })
-      this.activeMessageId = String(sent.message_id)
-      this.lastEditAt = 0
-      this.editsInBurst = 0
-      return
-    }
-
-    const now = Date.now()
-    const since = now - this.lastEditAt
-    const toolStatusChange = tools.some((t) => t.status === 'done' || t.status === 'error')
-    if (!toolStatusChange && since < this.currentThrottleMs()) return
-
-    this.lastEditAt = now
-    this.editsInBurst += 1
-    const text = this.renderChunkBody(chunkMd, tools, { streaming: true })
-    await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, {
-      parse_mode: 'HTML' as const,
-    })
+    this.thinkingMessageId = String(sent.message_id)
   }
 
   private async finalize(blocks: ContentBlock[], meta: AssistantMeta): Promise<void> {
     try {
+      // Delete thinking placeholder if present
       if (this.thinkingMessageId) {
         await this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch(() => {})
         this.thinkingMessageId = undefined
@@ -251,58 +141,22 @@ export class TelegramSessionRenderer {
 
       const md = blocksToText(blocks)
       const tools = blocksToTools(blocks)
+      log.info(`finalize: md=${md.length} chars`)
 
-      log.info(`finalize: md=${md.length} chars, chunkOffset=${this.chunkStartOffset}, activeMessageId=${this.activeMessageId ?? 'none'}`)
-      const remainMd = this.chunkStartOffset > md.length ? md : md.slice(this.chunkStartOffset)
       const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
-      const pieces = splitMarkdown(remainMd, PER_CHUNK)
-      log.info(`finalize: ${pieces.length} piece(s), remainMd=${remainMd.length} chars`)
-      if (pieces.length === 1) {
-        const text = this.renderChunkBody(pieces[0], tools, { meta })
-        if (this.activeMessageId) {
-          log.info(`finalize: editing message ${this.activeMessageId}`)
-          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), text, { parse_mode: 'HTML' as const })
-          if (!ok) {
-            log.info(`finalize: edit failed, sending new message`)
-            const sent = await this.sendTimed(text, { parse_mode: 'HTML' })
-            this.activeMessageId = String(sent.message_id)
-            log.info(`finalize: sent fallback message ${sent.message_id}`)
-          } else {
-            log.info('finalize: edit success')
-          }
-        } else {
-          log.info('finalize: sending new message (no activeMessageId)')
-          const sent = await this.sendTimed(text, { parse_mode: 'HTML' })
-          this.activeMessageId = String(sent.message_id)
-          log.info(`finalize: sent new message ${sent.message_id}`)
-        }
-        return
-      }
+      const pieces = splitMarkdown(md, PER_CHUNK)
+      log.info(`finalize: ${pieces.length} piece(s)`)
+
       for (let i = 0; i < pieces.length; i++) {
         const isLast = i === pieces.length - 1
         const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
-        log.info(`finalize: piece ${i}/${pieces.length} len=${body.length}`)
-        if (i === 0 && this.activeMessageId) {
-          const ok = await retryEdit(this.bot, this.chatId, Number(this.activeMessageId), body, { parse_mode: 'HTML' as const })
-          if (ok) {
-            log.info(`finalize: piece 0 edited message ${this.activeMessageId}`)
-          } else {
-            log.info(`finalize: piece 0 edit failed, sending new`)
-            const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
-            this.activeMessageId = String(sent.message_id)
-            log.info(`finalize: piece 0 sent fallback ${sent.message_id}`)
-          }
-        } else {
-          log.info(`finalize: piece ${i} sending new message`)
-          const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
-          this.activeMessageId = String(sent.message_id)
-          log.info(`finalize: piece ${i} sent ${sent.message_id}`)
-        }
+        log.info(`finalize: piece ${i}/${pieces.length} sending len=${body.length}`)
+        const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
+        log.info(`finalize: piece ${i} sent ${sent.message_id}`)
       }
       log.info('finalize: all pieces done')
     } catch (err) {
       log.error('finalize: FATAL error, attempting last-resort send', (err as Error).message)
-      // Last-resort: try to send the raw text without formatting
       try {
         const md = blocksToText(blocks)
         if (md) {
@@ -317,12 +171,7 @@ export class TelegramSessionRenderer {
 
   private async markError(message: string): Promise<void> {
     const text = `❌  <b>Error</b>\n\n<code>${escHtml(message)}</code>`
-    if (this.activeMessageId) {
-      try { await this.bot.editMessageText(this.chatId, Number(this.activeMessageId), undefined, text, { parse_mode: 'HTML' }) }
-      catch {}
-    } else {
-      await this.sendTimed(text, { parse_mode: 'HTML' })
-    }
+    await this.sendTimed(text, { parse_mode: 'HTML' })
   }
 
   private async sendInfo(title: string, sections: InfoSection[]): Promise<void> {
