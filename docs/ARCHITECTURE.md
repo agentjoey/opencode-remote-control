@@ -3,7 +3,7 @@
 > Plain-language explanation of how `opencode-remote-control` is structured,
 > what it talks to, and how to extend it.
 >
-> Updated for Phase 3 architecture (v0.3.x onward). Phase 1/2 used a slightly
+> Updated for v0.5.7 (streaming removed from Telegram). Phase 1/2 used a slightly
 > different submission path — see "History" section.
 
 ## The 2-process model
@@ -64,25 +64,31 @@ full decision record.
 src/
   core/                          ← channel-agnostic
     structured-card.ts           10-variant discriminated union (thinking/think-stream/streaming/assistant/…)
-                                 streaming + assistant now use blocks: ContentBlock[] (text | tool in order)
+                                 streaming + assistant use blocks: ContentBlock[] (text | tool in order)
     stream-accumulator.ts        SDK part.id dedup → ordered ContentBlock[] (v0.5.5+)
+                                 v0.5.7: skips empty text="" upserts to prevent content erasure
     card-bus.ts                  per-session + wildcard subscribers, ring buffer
     relay.ts                     SDK submit → SSE iterate → accumulator → CardBus.publish
+                                 v0.5.7: partTextAcc map for delta accumulation; thinking card
+                                 published after sessionId resolved; early abort restored
     history.ts                   messageToCards, reconstructHistory (produces blocks)
     state.ts                     SessionState + AgentContext (persistent)
+    push.ts                      Push notifications (60s+ sessions, test failures)
+                                 v0.5.7: 3s retry on fetchSummary empty (opencode persistence race)
 
   opencode/                      ← opencode-facing
     client.ts                    SDK client factory + health check
     event-stream.ts              persistent SSE subscriber + 30s heartbeat reconnect
     submit.ts                    client.session.prompt wrapper
-    tui-bridge.ts                tui.appendPrompt mirror
+    tui-bridge.ts                tui.appendPrompt mirror (deprecated path)
 
   transport/                     ← user-facing
     interface.ts                 Transport contract (revised: start({cardBus,state}))
     telegram/
       index.ts                   createTelegramTransport()
       handlers.ts                slash commands + button callbacks
-      renderer.ts                TelegramSessionRenderer: blocks→text+tool extraction, pagination + collapse
+      renderer.ts                TelegramSessionRenderer: send-only (no edit/streaming v0.5.7)
+                                 sendTimed() wraps all sendMessage with 10s TCP hang timeout
       render.ts                  legacy card→Telegram HTML (non-streaming cards)
     web/
       index.ts                   createWebTransport()
@@ -126,31 +132,36 @@ You send "implement F1 streaming" from Telegram (or Web).
    - If `TUI_VISIBLE=true`, mirrors prompt into TUI via
      `client.tui.appendPrompt({ body: { text } })`.
    - Calls `client.session.prompt({ path, body: { parts, agent, model } })`.
-4. The relay enters its SSE loop: iterates events from
-   `eventStream.session(sessionId, signal)`.
-   - On `message.part.updated` → feeds SDK Part into `StreamAccumulator` (dedup by `part.id`).
-     Reasoning parts are internal-only (think-stream publishing disabled in v0.5.5).
-     Text/Tool parts accumulate into ordered `ContentBlock[]` and publish `kind:'streaming'`.
-   - On `message.part.delta` → raw text delta is **incremental** (not full text).
-     Relay tracks a `partTextAcc` Map per partId, appends deltas to baseline text
-     recorded from the preceding `part.updated`, and routes the *full* accumulated
-     text through accumulator. (v0.5.6 fix)
-   - On `session.idle` → publishes final `kind:'assistant'` with `blocks` and `meta`.
-   - On `session.error` → publishes `kind:'error'`.
+ 4. The relay enters its SSE loop: iterates events from
+    `eventStream.session(sessionId, signal)`.
+    - On `message.part.updated` → feeds SDK Part into `StreamAccumulator` (dedup by `part.id`).
+      Reasoning parts are internal-only (think-stream publishing disabled).
+      Text/Tool parts accumulate into ordered `ContentBlock[]` and publish `kind:'streaming'`.
+    - On `message.part.delta` → raw text delta is **incremental** (not full text).
+      Relay tracks a `partTextAcc` Map per partId, appends deltas to baseline text
+      recorded from the preceding `part.updated`, and routes the *full* accumulated
+      text through accumulator. (v0.5.6 fix)
+    - The accumulator guards against empty `text=""` overwrites — SDK sends empty
+      text on some `part.updated` events, which would erase content for that partId.
+    - On `session.idle` → publishes final `kind:'assistant'` with `blocks` and `meta`.
+    - On `session.error` → publishes `kind:'error'`.
  5. **CardBus** broadcasts each `StructuredCard` to all subscribed transports.
-   - Telegram: `TelegramSessionRenderer` paginates long outputs into multiple
-     messages with progressive tool-call collapse.
+    - Telegram (v0.5.7+ — no longer streams): `streaming` and `think-stream` cards
+      are silently ignored. Only `assistant` (final result), `error`, and `info` cards
+      trigger `sendMessage()`. The renderer uses `sendTimed()` — every `sendMessage`
+      call has a 10s timeout via `withTimeout()` to prevent TCP hangs. Has no
+      `retryEdit()` or any edit-based logic. Paginates long text into multiple messages.
     - Web: `WsHub` sends JSON frame to all subscribed WebSocket clients;
-      SvelteKit frontend updates stores and re-renders components.
-6. **Push notifications** (`src/core/push.ts`) independently monitors
-   `session.idle` events from the EventStream (not relay). When a session
-   finishes with >60s duration:
-   - Fetches the last assistant message via `client.session.messages()`.
-   - If first fetch returns empty (race with opencode persistence), waits 3s
-     and retries once.
-   - Extracts text parts for a summary (first 300 chars).
-   - Publishes `kind:'info'` to CardBus → Telegram renderer sends a new message.
-   - Rate limited: max 10/hour, 5-min cooldown per session.
+      SvelteKit frontend updates stores and re-renders components with full streaming.
+ 6. **Push notifications** (`src/core/push.ts`) independently monitors
+    `session.idle` events from the EventStream (not relay). When a session
+    finishes with >60s duration:
+    - Fetches the last assistant message via `client.session.messages()`.
+    - If first fetch returns empty (race with opencode persistence), waits 3s
+      and retries once.
+    - Extracts text parts for a summary (first 300 chars).
+    - Publishes `kind:'info'` to CardBus → Telegram renderer sends a new message.
+    - Rate limited: max 10/hour, 5-min cooldown per session.
 
 When you send `/agent build` instead:
 - Handler updates `agentContext.setNextAgent('build')`.
@@ -187,9 +198,9 @@ The bot keeps minimal state, persisted across restarts in `data/state.json`:
 | `ALLOWED_USER_ID` | — (required) | Single allowed Telegram user id |
 | `OPENCODE_BASE_URL` | `http://localhost:4096` | opencode server location |
 | `TRANSPORT` | `telegram` | Active transport (Phase 5: `telegram,web`) |
-| `EDIT_THROTTLE_MS` | `1000` | Min interval between transport.edit calls |
+| `EDIT_THROTTLE_MS` | `1000` | Min interval between transport.edit calls (**Telegram: unused since v0.5.7 — Telegram no longer edits messages**) |
 | `CHAT_TIMEOUT_MS` | `600000` | Per-message timeout |
-| `STREAM_OUTPUT` | `true` | Streaming on/off |
+| `STREAM_OUTPUT` | `true` | Streaming on/off (**Telegram: unused since v0.5.7 — Telegram always delivers final result only; Web: still used**) |
 | `TUI_VISIBLE` | `false` | Mirror prompts to TUI via appendPrompt |
 | `STATE_PATH` | `./data/state.json` | Persistent state location |
 | `LOG_LEVEL` | `info` | debug \| info \| warn \| error |
@@ -241,9 +252,11 @@ type ContentBlock =
   | { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' }
 ```
 
-> **v0.5.6 note:** `think-stream` publishing is currently disabled (commented out
-> in relay.ts). `showStop` on `thinking` card is ignored — Stop button was
-> removed from Telegram inline keyboard in v0.5.6.
+> **v0.5.7 note:** `think-stream` publishing is currently disabled (commented out
+> in relay.ts). `streaming` cards are silently ignored by Telegram renderer —
+> only `assistant`, `error`, and `info` trigger sends. The `showStop` field on
+> `thinking` cards is ignored — Stop button was removed entirely in v0.5.6.
+> Part N headers („·done“/„·streaming…“) also removed.
 
 Transports translate `StructuredCard` to their native dialect:
 - **Telegram**: `TelegramSessionRenderer` handles per-session pagination,

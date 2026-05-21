@@ -1,56 +1,67 @@
 # Current Status — opencode-remote-control
 
-Version:        v0.3.0-rc.1
-Sprint:         3 (Phase 3 — complete, pending tag)
-Sprint File:    .agent/sprints/sprint-003.md
-Last Updated:   2026-05-16
+Version:        v0.5.7
+Last Updated:   2026-05-21
 
-## Sprint 3 — Phase 3: Complete ✅
+## Recent work (v0.5.5 → v0.5.7)
 
-| Task | Status | Commit |
-|------|--------|--------|
-| **Task 1** core/types.ts (Card / Button / IncomingMessage / Capabilities) | ✅ | `2159b2a` |
-| **Task 2** Transport interface | ✅ | `a847863` |
-| **Task 3** SDK submitPrompt with agent/model overrides | ✅ | `c2011de` |
-| **Task 4** file-backed SessionState (lastSessionId + nextAgent + nextModel) | ✅ | `b0c2fe4` |
-| **Task 5** Move bot/reply.ts → transport/telegram/reply-stream.ts | ✅ | `3aef89f` |
-| **Task 6** cardToTelegram render helper | ✅ | `7d4faf5` |
-| **Task 7** core/relay.ts (SDK-native, channel-agnostic) | ✅ | `e0da870` |
-| **Task 8** Config: TUI_VISIBLE, STATE_PATH, TRANSPORT | ✅ | `c2bef5e` |
-| **Task 9** Telegram transport + handlers + delete src/bot/ | ✅ | `2314c5e` |
-| **Task 10** Build verification | ✅ | — |
-| **Task 11** 14.2 concurrent busy (transport-level guard) | ✅ | `5b9c355` |
-| **Task 12** 14.11 network blip (EventStream reconnect) | ✅ | existing |
-| **Task 13** 14.12 unauthorized user (whitelist middleware) | ✅ | `5b9c355` |
-| **Task 14** 14.13 24h soak | ⏳ | manual — start soak now |
-| **Task 15** LICENSE + SECURITY.md + README rewrite | ✅ | `042e37b` |
-| **Task 16** CI + templates + CHANGELOG + CURRENT.md | ✅ | this commit |
+### v0.5.7 — Telegram streaming removed
+- `renderStreaming()`/`renderThinking()`/`retryEdit()` deleted — Telegram now
+  only sends final assistant messages via `sendMessage()` (no edit-based delivery)
+- Web transport keeps full streaming unchanged
 
-Tests: **68 passing** · `npx tsc --noEmit` 无报错 · 11 test files
+### v0.5.6 — Stability fixes
+- **Delta accumulation** — `message.part.delta` is incremental (not full text).
+  Relay tracks `partTextAcc` Map per partId, appends deltas to baseline text
+  from `part.updated`, routes full accumulated text through accumulator.
+  Root cause of truncated/partial assistant responses eliminated.
+- **Empty text overwrite** — accumulator skips `text=""` upserts when block
+  already has non-empty text (SDK sends empty on some `part.updated` events).
+- **TCP hang protection** — all `sendMessage` calls have 10s timeout via
+  `withTimeout()`/`sendTimed()`. No more stuck connections.
+- **429 retry_after capped** at 5s — longer cooldowns force immediate fallback.
+- **Thinking card timing** — published after `sessionId = resolvedId`, fixing
+  earlySessionId ≠ sessionId gap and race. Early abort controller restored.
+- **push fetchSummary retry** — 3s delay + retry if first fetch returns empty
+  (opencode persistence race on session idle).
+- **UI cleanup** — Stop button removed, Part N headers removed, continuation ⏳.
+- **sendInfo retry** — 3 attempts, 2s delay, handles ECONNRESET/ETIMEDOUT.
 
-## Architecture changes
+### Core architecture changes (v0.5.5 → v0.5.7)
+- `renderer.ts`: send-only mode (no edit/streaming). `sendTimed()` wraps every
+  sendMessage with 10s timeout. `onCard('streaming')` → no-op.
+- `relay.ts`: thinking card published after sessionId resolved; `partTextAcc`
+  delta accumulation map; early abort registered before session resolution.
+- `stream-accumulator.ts`: empty-text skip guard (`text=""` → no-op).
+- `push.ts`: 3s retry on empty fetchSummary.
 
-- `src/bot/` **removed** — replaced by `src/core/` + `src/transport/telegram/`
-- Default submission: `client.session.prompt()` — TUI inject is opt-in (`TUI_VISIBLE=true`)
-- `/agent` and `/model` are now **sticky per-message overrides** stored in persistent state
-- `lastSessionId`, `nextAgent`, `nextModel` survive restarts via `data/state.json`
+## Test status
+- **144 tests passing** (26 files)
+- `npx tsc --noEmit` clean
+- `npm run build` → `dist/`
 
-## Open questions (before tag)
+## Key decisions
+- Telegram no longer uses streaming — eliminates editMessageText (source of
+  all TCP hang/429 bugs). Only sendMessage (new messages) with 10s timeout.
+- `retryEdit()` entirely removed from Telegram renderer since no edits performed.
+- `retry_after` capped at 5s — if Telegram rate-limit cooldown exceeds 5s,
+  skip retry and fall back to sendMessage immediately.
+- Accumulator skips empty text upserts to prevent content erasure.
 
-1. **Public handle / author name** — for LICENSE and README byline (`<author-handle-to-confirm>`)
-2. **Security contact email** — SECURITY.md (`<security-email-to-confirm>`)
-3. **Final project / npm name** — keep `opencode-remote-control`?
+## Running services
+- Telegram Bot via launchd: `ai.opencode.remote-control.telegram`
+- Bot log: `/tmp/opencode-remote-control-telegram.log` (stdout), `.err` (stderr)
+- Web PWA: not yet deployed
+- opencode serve: manually started, PID 50317, port 4096
+- Bot restart: `launchctl stop/start ai.opencode.remote-control.telegram`
 
-## How to tag
-
-```bash
-git tag v0.3.0-rc.1
-# DO NOT PUSH — wait for user review
-```
+## Next work
+- Resume MathMagics MVP Task 18 (Q05 prompt iteration) — paused
+- Then Tasks 19-20 (Q18 prompt iteration, Vercel deploy)
+- Verify Telegram 100% delivery after streaming removal
 
 ## Key documents
-
-- **Spec (Phase 3)**: `docs/superpowers/specs/2026-05-16-phase3-design.md`
-- **Plan**: `docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md`
-- **Architecture**: `docs/ARCHITECTURE.md`
 - **CHANGELOG**: `CHANGELOG.md`
+- **Architecture**: `docs/ARCHITECTURE.md`
+- **Operations**: `docs/OPS.md`
+- **Streaming optimization spec**: `docs/superpowers/specs/2026-05-19-streaming-optimization.md`
