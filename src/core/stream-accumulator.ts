@@ -80,6 +80,11 @@ export function createStreamAccumulator(): StreamAccumulator {
         const partId = p.id
 
         if (p.type === 'text' && typeof p.text === 'string') {
+          // Skip empty text overwrites — SDK sends text="" on some part.updated
+          // events, which would erase previously accumulated text for this partId.
+          if (p.text === '' && index.has(partId) && blocks[index.get(partId)!].type === 'text' && blocks[index.get(partId)!].text !== '') {
+            continue
+          }
           upsert({ type: 'text', partId, text: p.text, args: '', status: 'done' }, partId)
         }
 
