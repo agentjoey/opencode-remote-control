@@ -1,12 +1,12 @@
 # Product Backlog — opencode-remote-control
 
 > 未排期任务池，按优先级排列。排入 Sprint 后从此处移除。
-> 最后更新：2026-05-15
+> 最后更新：2026-05-21
 
 ## 🔴 HIGH
 *Sprint 1 完成 MVP 后再补充。*
 
-## 🟡 MED — Phase 3 候选
+## 🟡 MED — 待排期
 
 - [ ] **`/files [query]` 文件浏览** — opencode `/find/file?query=` 包装到 Bot 命令
 - [ ] **`/read <path>` 文件读取** — opencode `/file/content?path=` 包装
@@ -15,7 +15,6 @@
 ## 🟢 LOW
 
 - [ ] **Tailscale 远程模式文档** — 不在本机时通过 Tailscale IP 访问 opencode
-- [ ] **持久化 `lastSessionId`** — 进程重启后保留（当前 MVP 是内存变量）
 - [ ] **/help 多语言** — 中文版本
 
 ## 📋 研究向（未决策）

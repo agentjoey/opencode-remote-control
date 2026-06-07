@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.5.7 — 2026-05-21
+
+### Removed
+- **Telegram streaming** — `renderStreaming()`, `renderThinking()`, `retryEdit()`,
+  all throttling/chunking logic deleted. Telegram now delivers final result only
+  via `sendMessage()`. Web transport keeps streaming unchanged.
+
+### Fixed
+- **SessionId mismatch with thinking card** — thinking card now published after
+  `sessionId = resolvedId`, ensuring the sessionId in the card is always the
+  correct resolved one. Early `setActiveAbort` restored for pre-submit abort.
+- **Delta accumulation** — `message.part.delta` sends incremental text (not full).
+  Relay now tracks `partTextAcc` Map per partId, appends deltas, and passes the
+  full accumulated text to the accumulator. Root cause of truncated responses.
+- **Empty text overwrite** — accumulator skips `text=""` updates when block
+  already has non-empty text (SDK sends empty on some `part.updated` events).
+- **TCP hang** — all sendMessage calls now have 10s timeout via `withTimeout()`/
+  `sendTimed()`. Previously stuck connections hung forever.
+- **429 retry_after cap** — capped at 5s; longer cooldowns force immediate
+  fallback to sendMessage instead of prolonged retries.
+- **push.ts fetchSummary race** — retries after 3s if first attempt returns empty
+  (opencode persistence race on session idle).
+
+### Changed
+- **finalize() error handling** — catches all errors, logs them, and attempts a
+  last-resort sendMessage with truncated text (3800 chars). Previously fatal
+  errors silently dropped responses.
+- **Thinking card** — no more `showStop` functionality (Stop button removed).
+- **UI cleanup** — Stop button removed from thinking/streaming cards; Part N
+  headers („·done“/„·streaming…“) removed; continuation shows just „⏳“.
+- **sendInfo retries** — 3 attempts with 2s delay for ECONNRESET/ETIMEDOUT.
+
 ## v0.5.6 — 2026-05-20
 
 ### Fixed
