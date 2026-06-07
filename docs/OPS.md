@@ -211,7 +211,7 @@ tail -f ~/.cloudflared/logs/REDACTED.log
 cd ~/AgentWorks/Code_Opencode/opencode-remote-control
 
 npm run build           # TypeScript 编译 → dist/
-npm test                # 140 unit tests（vitest run）
+npm test                # 144 unit tests（vitest run）
 npm run typecheck       # 只跑类型检查，不输出文件
 ```
 
@@ -243,6 +243,22 @@ npm run typecheck       # 只跑类型检查，不输出文件
 ---
 
 ## Changelog
+
+### v0.5.7 (2026-05-21)
+- **Telegram 流式移除** — 删除 renderStreaming/renderThinking/retryEdit，只发 final 结果
+- **Delta 累积修复** — `partTextAcc` Map 增量追加而非覆盖，根治截断
+- **空 text 防护** — accumulator 跳过 `text=""` 更新，防止内容清空
+- **TCP 超时保护** — 所有 sendMessage 加 10s timeout（sendTimed/withTimeout）
+- **429 retry_after 封顶** — 超过 5s 直接 fallback 到 sendMessage
+- **Thinking 卡片时序** — sessionId 解析完后才发布，消除 earlySessionId 不一致
+- **push 空摘要重试** — fetchSummary 空时 3s 后重试一次
+- **UI 清理** — 移除 Stop 按钮、Part N 头；continuation 显示 ⏳
+- **sendInfo 重试** — ECONNRESET 时 3 次重试（2s 间隔）
+
+### v0.5.6 (2026-05-20)
+- Delta 累积基础修复（accumulator 替换逻辑）
+- renderer retryEdit fallback
+- 空 text overwrite 防护
 
 ### v0.5.5 (2026-05-17)
 - Card.svelte 补全 7 种 kind 分发（thinking/streaming/assistant/error/info/status/user）

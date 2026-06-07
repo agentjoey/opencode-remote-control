@@ -9,3 +9,5 @@ config.json
 .opencode/
 # runtime persisted state (sessionId / agent / model selection)
 data/
+# deno lock file (project uses Node.js, not Deno)
+deno.lock
