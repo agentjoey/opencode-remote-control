@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.2",
-    "@opencode-ai/sdk": "^1.14.0",
+    "@opencode-ai/sdk": "^1.16.2",
     "dotenv": "^16.4.5",
     "hono": "^4.12.19",
     "jose": "^6.2.3",
