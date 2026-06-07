@@ -302,7 +302,29 @@ const timer = setInterval(() => {
 | 1B | `e9e4dde` | 05-19 | Reasoning think-stream + 30s heartbeat |
 | 2  | `cce7324` | 05-19 | ContentBlock[] 替换 markdownSrc/tools |
 
-**合计**: 新增 3 个核心文件，修改 16 个文件，152→151 tests（去掉 1 个内部 reasoning 测试），tsc 零错误。
+### v0.5.6 (2026-05-20)
+- Delta accumulation fix — `message.part.delta` is incremental, not full text.
+  Relay now tracks `partTextAcc` map per partId, appends deltas to baseline
+  recorded from `part.updated`, and routes full accumulated text through
+  accumulator. (commit `59117d8`)
+- Empty text overwrite guard — accumulator skips `text=""` upserts when block
+  already has non-empty text. (commit `93b9a9a`)
+- All sendMessage calls wrapped with 10s timeout via `withTimeout()`/`sendTimed()`
+  to prevent TCP hang. (commits `625f90d`, `241a76a`)
+- Thinking card timing — published after `sessionId = resolvedId`, eliminating
+  earlySessionId mismatch. (commit `d59fac4`)
+- Early abort controller restored for pre-submit abort capability. (commit `d59fac4`)
+- 429 retry_after capped at 5s. (commit `6432835`)
+- push.ts fetchSummary retries after 3s if first attempt returns empty. (commit `0604220`)
+- Stop button and Part N headers removed. (commit `0604220`)
+- sendInfo 3-attempt retry for ECONNRESET. (commit `0604220`)
+
+### v0.5.7 (2026-05-21)
+- **Telegram streaming fully removed** — `renderStreaming()`/`renderThinking()`/
+  `retryEdit()`/all throttling/chunking logic deleted. Telegram now sends final
+  result only via `sendMessage()`. (commit `d59fac4`)
+
+**合计**: 新增 3 个核心文件，修改 16 个文件，152→151→144 tests，tsc 零错误。
 
 **新增卡片类型**:
 - `kind: 'think-stream'` — 思考内容实时流式卡片
