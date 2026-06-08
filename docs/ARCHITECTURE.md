@@ -3,58 +3,34 @@
 > Plain-language explanation of how `opencode-remote-control` is structured,
 > what it talks to, and how to extend it.
 >
-> Updated for v0.5.7 (streaming removed from Telegram). Phase 1/2 used a slightly
-> different submission path — see "History" section.
+> Updated for v0.6.0 (Plugin Registry mode as primary deployment).
 
-## The 2-process model
+## Deployment models
+
+### Plugin mode (v0.6.0+, recommended)
 
 ```
-┌──────────────────────────────┐         ┌──────────────────────────────┐
-│  opencode (your machine)     │         │  opencode-remote-control     │
-│                              │         │  (this project)              │
-│  ┌──────────────────────┐    │   HTTP  │                              │
-│  │ HTTP server :4096    │◄───┼─────────┤  SDK client                  │
-│  │ - /session/*         │    │   SSE   │  Event stream subscriber     │
-│  │ - /event             ├────┼─────────►  Core relay loop             │
-│  │ - /tui/*             │    │         │  Transport (Telegram, …)     │
-│  │ - /config/*          │    │         │  Persistent state            │
-│  └──────────────────────┘    │         │                              │
-│  ┌──────────────────────┐    │         └──────────────────────────────┘
-│  │ TUI (optional)       │    │                    │
-│  │ - shares opencode    │    │                    ▼
-│  │   server above       │    │           Telegram / Web / etc.
-│  └──────────────────────┘    │
-└──────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  opencode (single process)                            │
+│                                                       │
+│  ┌──────────────────┐  ┌───────────────────────────┐ │
+│  │ AI Engine :4096  │  │ Plugin: remote-control     │ │
+│  │                  │  │  ├─ Telegraf (Telegram)    │ │
+│  │                  │  │  ├─ Hono + WS (Web PWA)    │ │
+│  │                  │  │  └─ relay + CardBus        │ │
+│  └──────────────────┘  └──────────┬────────────────┘ │
+│                                   ▼                   │
+│                          Telegram / Web PWA            │
+└──────────────────────────────────────────────────────┘
 ```
 
-**Two processes:** opencode (which you already run), and us (the bot).
+Install once: `npx opencode-remote-control install`
+Then: `opencode` — bot auto-starts, no extra terminal, no launchd.
 
-- **opencode** runs as `opencode serve --port 4096`. The TUI on your Mac is a
-  *client* of that server, just like we are.
-- **We** are an `@opencode-ai/sdk` consumer. We send prompts, listen for
-  events, render output to the user via whichever transport(s) are enabled.
+### Sidecar mode (legacy, v0.1–v0.5.7)
 
-We don't need the TUI to be running — but if it is, we can mirror prompts
-into it (see `TUI_VISIBLE` option below) so you see the conversation in both
-places.
-
----
-
-## Why two processes (and not a plugin)
-
-opencode supports plugins for hooking into session/tool/message events. We
-considered making this a plugin instead of a sidecar. We didn't, for two
-reasons:
-
-1. Plugins are designed as **event hooks**, not long-lived services. A
-   Telegram bot needs to maintain a long-poll connection; a Web UI needs to
-   serve HTTP. Neither fits the plugin lifecycle cleanly.
-2. Every existing chat-bot in the opencode ecosystem (grinev, cc-connect,
-   opencode-chat-bridge, kortix-channels, …) uses the external pattern. We
-   follow that precedent.
-
-See `docs/superpowers/specs/2026-05-16-architecture-comparison.md` for the
-full decision record.
+Same architecture as below. Set `RC_MODE=legacy` to opt out of Plugin mode
+and run the standalone Node.js process.
 
 ---
 

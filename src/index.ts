@@ -10,6 +10,7 @@ import { createTelegramTransport } from './transport/telegram/index.js'
 import { createWebTransport } from './transport/web/index.js'
 import { startPushNotifications } from './core/push.js'
 import { createLogger } from './utils/logger.js'
+import type { Transport } from './transport/interface.js'
 
 const log = createLogger('main')
 
@@ -52,7 +53,7 @@ export async function runBot(): Promise<void> {
     state,
   })
 
-  const transports = [transport]
+  const transports: Transport[] = [transport]
 
   if (config.webEnabled) {
     const webT = createWebTransport({

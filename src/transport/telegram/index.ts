@@ -8,6 +8,7 @@ import type { EventStream } from '../../opencode/event-stream.js'
 import type { CardBus } from '../../core/card-bus.js'
 import { TelegramSessionRenderer } from './renderer.js'
 import { registerHandlers } from './handlers.js'
+import type { PendingApproval, ApprovalResponse } from './handlers.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('telegram')
@@ -15,10 +16,12 @@ const log = createLogger('telegram')
 export interface TelegramConfig {
   token: string
   allowedUserIds: number[]
-  baseUrl: string
   client: OpencodeClient
-  eventStream: EventStream
   state: SessionState
+  /** opencode server base URL — required for legacy sidecar mode, optional for Plugin mode. */
+  baseUrl?: string
+  /** EventStream — required for legacy sidecar mode, optional for Plugin mode. */
+  eventStream?: EventStream
 }
 
 const CAPS: ChannelCapabilities = {
@@ -29,7 +32,13 @@ const CAPS: ChannelCapabilities = {
   streaming: false,
 }
 
-export function createTelegramTransport(cfg: TelegramConfig): Transport {
+/** Extended transport interface with Plugin mode helpers. */
+export interface TelegramTransport extends Transport {
+  /** Handle a permission event from the Plugin event hook (Plugin mode). */
+  handlePluginPermissionEvent(event: { type: string; properties: any }): Promise<void>
+}
+
+export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport {
   const bot = new Telegraf(cfg.token, { handlerTimeout: 600_000 })
 
   // Whitelist middleware
@@ -43,9 +52,6 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
   })
 
   let messageHandler: ((msg: IncomingMessage) => Promise<void>) | undefined
-  const commandHandlers = new Map<string, (msg: IncomingMessage) => Promise<void>>()
-  let buttonHandler: ((data: string, msg: IncomingMessage) => Promise<void>) | undefined
-
   let isGenerating = false
   let currentAbortController: AbortController | undefined
 
@@ -62,7 +68,7 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     if (!messageHandler) return next()
 
     if (isGenerating) {
-      void ctx.reply('⏳ Session is already generating. Wait for it or /abort.')
+      void ctx.reply('Session is already generating. Wait for it or /abort.')
       return
     }
 
@@ -82,13 +88,16 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     })
   })
 
+  // Plugin-mode approval state (used when eventStream is unavailable)
+  const pendingApprovals = new Map<string, PendingApproval>()
+
   // Register commands + callbacks
   registerHandlers({
     bot,
     client: cfg.client,
-    baseUrl: cfg.baseUrl,
+    baseUrl: cfg.baseUrl ?? '',
     state: cfg.state,
-    eventStream: cfg.eventStream,
+    eventStream: cfg.eventStream as EventStream,
     chatId: cfg.allowedUserIds[0],
     isGenerating: () => isGenerating,
     abortGeneration,
@@ -110,6 +119,15 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
       renderers.set(sessionId, r)
     }
     return r
+  }
+
+  function labelFor(response?: string): string {
+    switch (response) {
+      case 'once':   return 'Allowed (once)'
+      case 'always': return 'Always Allowed'
+      case 'reject': return 'Rejected'
+      default:       return response ?? 'Handled'
+    }
   }
 
   return {
@@ -166,5 +184,71 @@ export function createTelegramTransport(cfg: TelegramConfig): Transport {
     onMessage(h) { messageHandler = h },
     onCommand(_name, _h) { /* commands registered via registerHandlers */ },
     onButtonClick(_h) { /* callbacks registered via registerHandlers */ },
+
+    /** Plugin mode: handle permission events from the opencode event hook. */
+    async handlePluginPermissionEvent(event: { type: string; properties: any }) {
+      const props = event.properties ?? {}
+
+      if (event.type === 'permission.updated' || event.type === 'permission.asked') {
+        const permId = props.id as string | undefined
+        const title = (props.title as string) ?? (props.permission as string) ?? 'Unknown operation'
+        const sessionId = props.sessionID as string | undefined
+        if (!permId || !sessionId) {
+          log.warn(`Plugin permission: missing id or sessionID`, props)
+          return
+        }
+
+        const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        const text = `Permission Required\n\n${escaped}`
+        const keyboard = {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: 'Once', callback_data: `approve:once:${permId}` },
+                { text: 'Always', callback_data: `approve:always:${permId}` },
+                { text: 'Reject', callback_data: `approve:reject:${permId}` },
+              ],
+            ],
+          },
+          parse_mode: 'HTML' as const,
+        }
+
+        try {
+          const msg = await bot.telegram.sendMessage(String(cfg.allowedUserIds[0]), text, keyboard)
+          pendingApprovals.set(permId, {
+            sessionId,
+            permissionId: permId,
+            messageId: msg.message_id,
+            title,
+          })
+          log.info(`[plugin] approval card sent permId=${permId}`)
+        } catch (err) {
+          log.error('[plugin] failed to send approval card', err as Error)
+        }
+      }
+
+      if (event.type === 'permission.replied') {
+        const permId = (props.permissionID as string) ?? (props.requestID as string)
+        const response = (props.response as string) ?? (props.reply as string)
+        if (!permId) return
+
+        const p = pendingApprovals.get(permId)
+        if (!p) return
+
+        pendingApprovals.delete(permId)
+        try {
+          const display = labelFor(response)
+          await bot.telegram.editMessageText(
+            String(cfg.allowedUserIds[0]),
+            p.messageId,
+            undefined,
+            `${display} (from TUI)\n\n${p.title}`,
+            { parse_mode: 'HTML' },
+          )
+        } catch (err) {
+          log.warn(`[plugin] couldn't update card after TUI reply: ${(err as Error).message}`)
+        }
+      }
+    },
   }
 }

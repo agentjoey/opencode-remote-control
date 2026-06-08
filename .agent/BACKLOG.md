@@ -4,7 +4,8 @@
 > 最后更新：2026-05-21
 
 ## 🔴 HIGH
-*Sprint 1 完成 MVP 后再补充。*
+
+- [ ] **安全加固：Bot token 迁移到 shell 环境变量** — 当前明文存储于 `~/.config/opencode/opencode.json`。建议：`export TELEGRAM_BOT_TOKEN=xxx` 写入 `.zshrc`，从 opencode.json 中移除，降低凭证泄露风险（机器共享或多用户场景）。验证：plugin 模式需确认 `process.env.TELEGRAM_BOT_TOKEN` 可以从 shell env 读取。
 
 ## 🟡 MED — 待排期
 

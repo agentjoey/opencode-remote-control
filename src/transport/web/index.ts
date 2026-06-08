@@ -19,10 +19,11 @@ export interface WebTransportConfig {
   host: string
   port: number
   client: OpencodeClient
-  eventStream: EventStream
   cfAccess: { team: string; aud: string; devBypass?: boolean; devEmail?: string; host?: string }
   staticRoot: string
   cacheSize: number
+  /** EventStream — required for legacy sidecar mode, optional for Plugin mode. */
+  eventStream?: EventStream
 }
 
 const CAPS: ChannelCapabilities = {

@@ -13,12 +13,14 @@ const log = createLogger('handlers')
 export interface HandlersDeps {
   bot: Telegraf
   client: OpencodeClient
-  baseUrl: string
   state: SessionState
-  eventStream: EventStream
   chatId: number
   isGenerating: () => boolean
   abortGeneration: () => void
+  /** opencode server base URL — required for legacy mode, optional for Plugin mode. */
+  baseUrl?: string
+  /** EventStream — required for legacy mode, optional for Plugin mode. */
+  eventStream?: EventStream
 }
 
 interface AgentConfig {
@@ -73,12 +75,12 @@ interface StatusCard {
 }
 
 async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
-  const healthy = await checkHealth(deps.baseUrl)
+  const healthy = await checkHealth(deps.baseUrl!)
   let busyCount = 0
   let totalSessions = 0
   let totalCost = 0
   try {
-    const res = await fetch(`${deps.baseUrl}/session/status`)
+    const res = await fetch(`${deps.baseUrl!}/session/status`)
     const data = (await res.json()) as Record<string, { type: string }>
     totalSessions = Object.keys(data).length
     busyCount = Object.values(data).filter((s) => s.type === 'busy').length
@@ -128,7 +130,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   // ── Commands ──
 
   deps.bot.command('start', async (ctx: Context) => {
-    const healthy = await checkHealth(deps.baseUrl)
+    const healthy = await checkHealth(deps.baseUrl!)
     const username = ctx.from?.first_name ?? 'there'
     const nextAgent = deps.state.getNextAgent()
     const nextModel = deps.state.getNextModel()
@@ -310,7 +312,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl!)
       if (agents.length === 0) {
         await ctx.reply(
           '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
@@ -343,7 +345,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${deps.baseUrl!}/config/providers`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`/config/providers HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -410,7 +412,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
     deps.abortGeneration()
     try {
-      const res = await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
+      const res = await fetch(`${deps.baseUrl!}/session/${last}/abort`, { method: 'POST' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       await ctx.reply(`<b>🛑 Aborted</b>\n\n<code>…${last.slice(-8)}</code>`, { parse_mode: 'HTML' })
     } catch (err) {
@@ -537,7 +539,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     const last = deps.state.getLastSessionId()
     if (last) {
       try {
-        await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
+        await fetch(`${deps.baseUrl!}/session/${last}/abort`, { method: 'POST' })
       } catch {}
     }
     await ctx.answerCbQuery('Aborting…')
@@ -557,7 +559,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     // user doesn't end up running a new agent against a stale /model override.
     let modelSuffix = ''
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl!)
       const a = agents.find((x) => x.name === name)
       const parsed = a ? parseAgentModel(a.model) : undefined
       if (parsed) {
@@ -629,7 +631,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action(/^model:pick:(.+)$/, async (ctx) => {
     const providerID = ctx.match[1]
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${deps.baseUrl!}/config/providers`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -669,7 +671,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   // Back to provider list
   deps.bot.action('model:back', async (ctx) => {
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${deps.baseUrl!}/config/providers`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -724,11 +726,13 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   // ── Info commands (split to separate file) ──
-  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl, state: deps.state })
+  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl!, state: deps.state })
 
-  // ── Approval handler ──
-  const pendingApprovals = new Map<string, PendingApproval>()
-  setupApproval(deps, pendingApprovals)
+  // ── Approval handler (only in sidecar mode where eventStream is available) ──
+  if (deps.eventStream) {
+    const pendingApprovals = new Map<string, PendingApproval>()
+    setupApproval(deps, pendingApprovals)
+  }
 }
 
 // ── Approval sub-module ──
@@ -747,7 +751,7 @@ export function setupApproval(
   pending: Map<string, PendingApproval>,
 ): void {
 
-  const offUpdated = deps.eventStream.onAny(async (rawEvent: unknown) => {
+  const offUpdated = deps.eventStream!.onAny(async (rawEvent: unknown) => {
     const ev = rawEvent as { type: string; properties: any }
     if (ev.type?.startsWith('permission.')) {
       log.info(`permission event: type=${ev.type} id=${ev.properties?.id} sessionID=${ev.properties?.sessionID}`)
@@ -826,7 +830,7 @@ export function setupApproval(
     await ctx.answerCbQuery(display)
   })
 
-  const offReplied = deps.eventStream.onAny(async (rawEvent: unknown) => {
+  const offReplied = deps.eventStream!.onAny(async (rawEvent: unknown) => {
     const ev = rawEvent as { type: string; properties: any }
     if (ev.type !== 'permission.replied') return
 

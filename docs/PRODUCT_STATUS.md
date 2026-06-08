@@ -167,3 +167,32 @@ opencode-remote-control
 | 配置 | Zod |
 | 测试 | Vitest, 144 用例 |
 | 部署 | launchd (macOS), Cloudflare Tunnel + Access |
+
+---
+
+## Backlog
+
+### Telegram 多实例路由
+
+**问题背景**：同一 bot token 下，多个 opencode 实例同时运行此 plugin 时，只有最先启动的实例能获取 poll 连接（Telegram 409 冲突），其他实例无法收取消息。用户无法指定 Telegram bot 控制哪个 opencode 实例。
+
+**目标**：支持多实例路由 — 用户可通过命令或会话 ID 绑定 Telegram bot 到特定 opencode 实例/session。
+
+| WI | 内容 | 优先级 |
+|---|---|---|
+| WI-50 | 多实例发现机制（基于 opencode server port 或 session pin） | 🟡 |
+| WI-51 | Telegram bot 支持 `/switch <instance>` 命令切换目标实例 | 🟡 |
+| WI-52 | 单实例模式：同一机器只允许一个 plugin 实例启动 bot | 🟡 |
+| WI-53 | 前端实例列表 API + Web UI 展示 | 🟡 |
+
+### Web 端 Session 自由切换
+
+**现状**：Web UI 已支持 session 列表切换（Phase 5d），但依赖 bot-touched session 记录。
+
+**目标**：完善 Web 端 session 管理，支持跨实例 session 发现和切换。
+
+| WI | 内容 | 优先级 |
+|---|---|---|
+| WI-54 | Web UI 全局 session 搜索（不受限于 bot-touched 记录） | 🟢 |
+| WI-55 | Web 端跨实例 session 发现（通过 opencode API /sessions 代理） | 🟢 |
+| WI-56 | 移动端侧边栏抽屉（响应式） | 🟡 |

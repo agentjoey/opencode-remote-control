@@ -288,6 +288,221 @@ describe('createRelay', () => {
     expect(state.setActiveAbort).toHaveBeenNthCalledWith(3, 'ses_test', undefined)
   })
 
+  // ── Plugin mode tests (eventStream = undefined) ──
+
+  describe('Plugin mode (no eventStream)', () => {
+    it('publishes thinking + user cards and returns without assistant card', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        // no eventStream → Plugin mode
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'plugin test', messageId: 'p1' })
+
+      expect(cards.some(c => c.kind === 'thinking')).toBe(true)
+      expect(cards.some(c => c.kind === 'user' && (c as any).text === 'plugin test')).toBe(true)
+      // In Plugin mode, assistant is NOT published synchronously — handleEvent handles it later
+      expect(cards.some(c => c.kind === 'assistant')).toBe(false)
+      expect(cards.some(c => c.kind === 'error')).toBe(false)
+    })
+
+    it('publishes streaming card via handleEvent for message.part.updated', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p2' })
+
+      // Simulate SDK event hook
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: {
+          sessionID: 'ses_plugin',
+          part: { id: 't1', type: 'text', text: 'hello world' },
+        },
+      })
+
+      const streamingCards = cards.filter(c => c.kind === 'streaming')
+      expect(streamingCards.length).toBeGreaterThan(0)
+      const lastStream = streamingCards[streamingCards.length - 1] as any
+      expect(lastStream.blocks.some((b: any) => b.type === 'text' && b.text === 'hello world')).toBe(true)
+    })
+
+    it('publishes assistant card when session.idle fires', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p3' })
+
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: {
+          sessionID: 'ses_plugin',
+          part: { id: 't1', type: 'text', text: 'response text' },
+        },
+      })
+
+      await relay.handleEvent({
+        type: 'session.idle',
+        properties: { sessionID: 'ses_plugin' },
+      })
+
+      const assistantCard = cards.find(c => c.kind === 'assistant') as any
+      expect(assistantCard).toBeDefined()
+      expect(assistantCard.blocks.some((b: any) => b.type === 'text' && b.text === 'response text')).toBe(true)
+    })
+
+    it('publishes error card when session.error fires', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p4' })
+
+      // Clear thinking/user cards for clean verification
+      cards.length = 0
+
+      await relay.handleEvent({
+        type: 'session.error',
+        properties: { sessionID: 'ses_plugin', error: { message: 'something broke' } },
+      })
+
+      const errorCard = cards.find(c => c.kind === 'error') as any
+      expect(errorCard).toBeDefined()
+      expect(errorCard.message).toMatch(/something broke/)
+    })
+
+    it('handles message.part.delta accumulation', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p5' })
+
+      // First: full text part to establish partId
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: {
+          sessionID: 'ses_plugin',
+          part: { id: 'd1', type: 'text', text: 'Hello' },
+        },
+      })
+
+      // Deltas append to existing text
+      await relay.handleEvent({
+        type: 'message.part.delta',
+        properties: { partID: 'd1', field: 'text', delta: ' world', sessionID: 'ses_plugin' },
+      })
+      await relay.handleEvent({
+        type: 'message.part.delta',
+        properties: { partID: 'd1', field: 'text', delta: '!', sessionID: 'ses_plugin' },
+      })
+
+      await relay.handleEvent({
+        type: 'session.idle',
+        properties: { sessionID: 'ses_plugin' },
+      })
+
+      const assistantCard = cards.find(c => c.kind === 'assistant') as any
+      expect(assistantCard).toBeDefined()
+      expect(assistantCard.blocks.some((b: any) => b.type === 'text' && b.text === 'Hello world!')).toBe(true)
+    })
+
+    it('handles tool updates in Plugin mode', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+
+      const state = fakeState()
+      state.getPinnedSessionId = () => 'ses_plugin'
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state,
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p6' })
+
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: {
+          sessionID: 'ses_plugin',
+          part: { id: 'tool1', type: 'tool', tool: 'bash', state: { input: { cmd: 'ls -la' }, status: 'running' } },
+        },
+      })
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: {
+          sessionID: 'ses_plugin',
+          part: { id: 'tool1', type: 'tool', tool: 'bash', state: { input: { cmd: 'ls -la' }, status: 'done' } },
+        },
+      })
+      await relay.handleEvent({
+        type: 'session.idle',
+        properties: { sessionID: 'ses_plugin' },
+      })
+
+      const assistantCard = cards.find(c => c.kind === 'assistant') as any
+      expect(assistantCard).toBeDefined()
+      const toolBlocks = assistantCard.blocks.filter((b: any) => b.type === 'tool')
+      expect(toolBlocks.length).toBe(1)
+      expect(toolBlocks[0].status).toBe('done')
+    })
+  })
+
   it('deduplicates tools by part.id on repeated tool updates', async () => {
     const cardBus = createCardBus()
     const cards: StructuredCard[] = []

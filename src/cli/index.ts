@@ -26,6 +26,16 @@ async function main() {
     return
   }
 
+  if (cmd === 'install') {
+    await import('./install.js').then((m) => m.main(process.argv.slice(3)))
+    return
+  }
+
+  if (cmd === 'uninstall') {
+    await import('./uninstall.js').then((m) => m.main())
+    return
+  }
+
   // Default: start (run launcher)
   await import('../launcher/index.js')
 }
