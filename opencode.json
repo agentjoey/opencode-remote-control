@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    ["/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control", {
+      "webEnabled": "true"
+    }]
+  ],
+  "agent": {
+    "chat": {
+      "description": "日常问答、快速回复",
+      "mode": "primary",
+      "model": "opencode/deepseek-v4-flash-free"
+    },
+    "plan": {
+      "description": "方案设计、架构规划",
+      "mode": "primary",
+      "model": "google/gemini-3.5-flash"
+    },
+    "build": {
+      "description": "代码编写、功能实现",
+      "mode": "primary",
+      "model": "kimi-for-coding/k2p6"
+    },
+    "audit": {
+      "description": "代码审查、安全分析",
+      "mode": "primary",
+      "model": "deepseek/deepseek-v4-pro"
+    }
+  },
+}

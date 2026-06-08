@@ -1,4 +1,4 @@
-import { Telegraf } from 'telegraf'
+import { Telegraf, Markup } from 'telegraf'
 import type { Context } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
@@ -7,7 +7,7 @@ import type { SessionState } from '../../core/state.js'
 import type { EventStream } from '../../opencode/event-stream.js'
 import type { CardBus } from '../../core/card-bus.js'
 import { TelegramSessionRenderer } from './renderer.js'
-import { registerHandlers } from './handlers.js'
+import { registerHandlers, setupApproval } from './handlers.js'
 import type { PendingApproval, ApprovalResponse } from './handlers.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -101,6 +101,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     chatId: cfg.allowedUserIds[0],
     isGenerating: () => isGenerating,
     abortGeneration,
+    pendingApprovals,
   })
 
   // Error catch-all
@@ -130,12 +131,34 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     }
   }
 
+  let cardBusRef: CardBus | undefined
+
   return {
     name: 'telegram',
     capabilities: CAPS,
     async start(deps: TransportStartDeps) {
       const { cardBus } = deps
+      cardBusRef = cardBus
       const chatId = String(cfg.allowedUserIds[0])
+
+      // Wire approval eventStream listener (sidecar mode only)
+      if (cfg.eventStream) {
+        setupApproval(
+          {
+            bot,
+            client: cfg.client,
+            baseUrl: cfg.baseUrl ?? '',
+            state: cfg.state,
+            eventStream: cfg.eventStream,
+            chatId: cfg.allowedUserIds[0],
+            isGenerating: () => isGenerating,
+            abortGeneration,
+            pendingApprovals,
+            cardBus,
+          },
+          pendingApprovals,
+        )
+      }
 
       cardBus.subscribeAll((card) => {
         if ('sessionId' in card && card.sessionId) {
@@ -153,7 +176,8 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       let attempt = 0
       let conflictCount = 0
       const MAX_CONFLICT = 8
-      for (;;) {
+      const MAX_RETRIES = 10
+      for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
         try {
           await bot.launch()
           log.info('bot polling ended cleanly')
@@ -164,14 +188,18 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
             if (++conflictCount >= MAX_CONFLICT) throw new Error('Telegram 409 persisted')
             log.warn(`409 #${conflictCount}, retry in 5s`)
             await new Promise((r) => setTimeout(r, 5000))
+          } else if (e?.response?.error_code === 401) {
+            log.error('bot token invalid (401), giving up')
+            return
           } else {
             attempt += 1
             const delay = Math.min(1000 * 2 ** attempt, 30000)
-            log.error(`bot.launch failed (attempt ${attempt})`, e?.message ?? err)
+            log.error(`bot.launch failed (attempt ${attempt}/${MAX_RETRIES})`, e?.message ?? err)
             await new Promise((r) => setTimeout(r, delay))
           }
         }
       }
+      log.error(`bot.launch: exhausted ${MAX_RETRIES} retries, giving up`)
     },
     async stop() {
       bot.stop('manual')
@@ -199,17 +227,15 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
         }
 
         const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        const text = `Permission Required\n\n${escaped}`
+        const text = `⚠️  <b>Permission Required</b>\n\n<code>${escaped}</code>`
         const keyboard = {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: 'Once', callback_data: `approve:once:${permId}` },
-                { text: 'Always', callback_data: `approve:always:${permId}` },
-                { text: 'Reject', callback_data: `approve:reject:${permId}` },
-              ],
+          ...Markup.inlineKeyboard([
+            [
+              Markup.button.callback('✅ Once', `approve:once:${permId}`),
+              Markup.button.callback('🔓 Always', `approve:always:${permId}`),
+              Markup.button.callback('❌ Reject', `approve:reject:${permId}`),
             ],
-          },
+          ]),
           parse_mode: 'HTML' as const,
         }
 
@@ -224,6 +250,19 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
           log.info(`[plugin] approval card sent permId=${permId}`)
         } catch (err) {
           log.error('[plugin] failed to send approval card', err as Error)
+        }
+
+        // Publish to CardBus so Web UI can also show the approval modal
+        try {
+          cardBusRef?.publish({
+            kind: 'approval',
+            sessionId,
+            title,
+            args: props.args ?? props.permission ?? {},
+            requestId: permId,
+          })
+        } catch (err) {
+          log.warn('[plugin] failed to publish approval card', err as Error)
         }
       }
 

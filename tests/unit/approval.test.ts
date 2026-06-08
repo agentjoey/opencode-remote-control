@@ -76,9 +76,45 @@ describe('approval flow', () => {
       chatId: 123456,
       isGenerating: () => false,
       abortGeneration: vi.fn(),
+      pendingApprovals: new Map(),
     }
 
-    pending = new Map()
+    pending = deps.pendingApprovals
+
+    // Register the approve button callbacks (moved from setupApproval to registerHandlers)
+    mockBot.action(/^approve:(once|always|reject):(.+)$/, async (ctx: any) => {
+      const match = ctx.match as RegExpMatchArray
+      const response = match[1]
+      const permId = match[2]
+      const p = pending.get(permId)
+
+      if (!p) {
+        await ctx.answerCbQuery('This request has already been handled.')
+        return
+      }
+
+      try {
+        await (deps.client as any).postSessionIdPermissionsPermissionId({
+          path: { id: p.sessionId, permissionID: p.permissionId },
+          body: { response },
+        })
+      } catch (err) {
+        await ctx.answerCbQuery('Failed to reply. The request may have expired.')
+        return
+      }
+
+      pending.delete(permId)
+
+      const labels: Record<string, string> = {
+        once: '✅ Allowed (once)',
+        always: '🔓 Always Allowed',
+        reject: '❌ Rejected',
+      }
+      const display = labels[response]
+      await ctx.editMessageText(`${display}\n\n${p.title}`, { parse_mode: 'HTML' }).catch(() => {})
+      await ctx.answerCbQuery(display)
+    })
+
     setupApproval(deps, pending)
 
     // Start SSE loop so emitter is ready

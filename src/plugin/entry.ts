@@ -6,6 +6,7 @@ import { createWebTransport } from '../transport/web/index.js'
 import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createCardBus } from '../core/card-bus.js'
+import { startPushNotifications } from '../core/push.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
 
@@ -16,7 +17,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
   log.info(`v${VERSION} starting`)
 
   const config = loadPluginConfig(options)
-  log.info(`transport=${config.transport}, web=${config.webEnabled}, port=${config.webPort}`)
+  log.info(`transport=${config.transport}, web=${config.webEnabled}, port=${config.webPort}, baseUrl=${config.baseUrl}`)
 
   const state = createFileBackedState(config.statePath)
   const cardBus = createCardBus()
@@ -27,6 +28,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     state,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: config.tuiVisible,
+    baseUrl: config.baseUrl,
   })
 
   const tgTransport = createTelegramTransport({
@@ -34,13 +36,16 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     allowedUserIds: config.allowedUserIds,
     client: ctx.client,
     state,
+    baseUrl: config.baseUrl,
   })
 
   const transports: Transport[] = [tgTransport]
   tgTransport.onMessage(relay)
 
+  let webTransport: ReturnType<typeof createWebTransport> | undefined
+
   if (config.webEnabled) {
-    const webT = createWebTransport({
+    webTransport = createWebTransport({
       host: config.webHost,
       port: config.webPort,
       client: ctx.client,
@@ -53,16 +58,43 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       staticRoot: config.webStaticRoot,
       cacheSize: config.webCacheSize,
     })
-    transports.push(webT)
+    webTransport.onMessage(relay)
+    transports.push(webTransport)
   }
 
-  await Promise.all(transports.map((t) => t.start({ cardBus, state })))
-  log.info(`${transports.length} transport(s) started`)
+  // Start transports in background — bot.launch() blocks on polling and must not hold up plugin init.
+  // The event hook must be returned immediately so opencode can dispatch events.
+  Promise.all(transports.map((t) => t.start({ cardBus, state })))
+    .then(() => {
+      log.info(`${transports.length} transport(s) started successfully`)
+    })
+    .catch((err) => {
+      log.error('transport start failed', err as Error)
+    })
+
+  // Push notifications — plugin mode (event-driven instead of EventStream)
+  const push = startPushNotifications({ cardBus, client: ctx.client })
+
+  // Poll the TUI-selected session to keep current agent in sync (plugin mode equivalent of tui-sync)
+  const pollTimer = setInterval(async () => {
+    const sid = state.getTuiSelectedSession()
+    if (!sid) return
+    try {
+      const res = await ctx.client.session.get({ path: { id: sid } } as any)
+      const data = res.data as { agent?: string } | undefined
+      if (data?.agent) state.setCurrentAgent(data.agent)
+    } catch {
+      // best effort
+    }
+  }, 5000)
 
   return {
     event: async ({ event }) => {
       const eventType = (event as any)?.type
       if (!eventType) return
+
+      // Feed all events to push notification engine
+      push.handleEvent(event)
 
       switch (eventType) {
         case 'permission.asked':
@@ -73,6 +105,14 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           )
           await relay.handleEvent(event)
           break
+        case 'tui.session.select': {
+          const sid = (event as any)?.properties?.sessionID
+          if (typeof sid === 'string' && sid) {
+            state.setTuiSelectedSession(sid)
+            log.info(`[plugin] TUI session select: ${sid.slice(-8)}`)
+          }
+          break
+        }
         case 'session.idle':
         case 'session.error':
         case 'session.created':
@@ -80,6 +120,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         case 'session.updated':
         case 'session.status':
         case 'message.part.updated':
+        case 'message.part.delta':
         case 'message.updated':
         case 'message.part.removed':
         case 'message.removed':
@@ -101,6 +142,13 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           return lines.join('\n')
         },
       }),
+    },
+    dispose: async () => {
+      log.info('plugin disposing, stopping transports...')
+      clearInterval(pollTimer)
+      push.stop()
+      await Promise.allSettled(transports.map((t) => t.stop()))
+      log.info('plugin disposed')
     },
   }
 }

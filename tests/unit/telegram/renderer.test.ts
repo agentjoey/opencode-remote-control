@@ -36,11 +36,12 @@ describe('TelegramSessionRenderer', () => {
     expect(bot.sent).toHaveLength(1) // only thinking
   })
 
-  it('ignores kind=user', async () => {
+  it('renders user card as italic message', async () => {
     const bot = fakeBot()
     const r = new TelegramSessionRenderer({ chatId: '100', sessionId: 'ses', bot: bot as any })
     await r.onCard({ kind: 'user', sessionId: 'ses', text: 'hi', ts: 0 })
-    expect(bot.sent).toHaveLength(0)
+    expect(bot.sent).toHaveLength(1)
+    expect(bot.sent[0].text).toBe('<i>hi</i>')
   })
 
   it('finalize sends new message with assistant footer (single chunk)', async () => {

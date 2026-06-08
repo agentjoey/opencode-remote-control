@@ -3,7 +3,7 @@ type Level = 'debug' | 'info' | 'warn' | 'error'
 const LEVELS: Record<Level, number> = { debug: 0, info: 1, warn: 2, error: 3 }
 
 function currentLevel(): number {
-  const raw = (process.env.LOG_LEVEL ?? 'info').toLowerCase()
+  const raw = (process.env.LOG_LEVEL ?? 'warn').toLowerCase()
   return LEVELS[raw as Level] ?? LEVELS.info
 }
 

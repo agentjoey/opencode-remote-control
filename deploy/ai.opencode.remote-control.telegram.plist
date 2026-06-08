@@ -12,13 +12,21 @@
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/node</string>
-    <string>dist/launcher.js</string>
+    <string>dist/launcher/index.js</string>
   </array>
 
   <key>EnvironmentVariables</key>
   <dict>
     <key>NODE_ENV</key>
     <string>production</string>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/Users/xtation/.opencode/bin</string>
+    <key>HOME</key>
+    <string>/Users/xtation</string>
+    <key>OPENCODE_BIN</key>
+    <string>/Users/xtation/.opencode/bin/opencode</string>
+    <key>WEB_ENABLED</key>
+    <string>false</string>
   </dict>
 
   <key>RunAtLoad</key><true/>

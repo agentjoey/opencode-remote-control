@@ -96,11 +96,11 @@ export async function runBot(): Promise<void> {
   })
 
   process.once('SIGINT', async () => {
-    eventStream.stop(); stopSync(); stopPush()
+    eventStream.stop(); stopSync(); stopPush.stop()
     for (const t of transports) await t.stop().catch(() => {})
   })
   process.once('SIGTERM', async () => {
-    eventStream.stop(); stopSync(); stopPush()
+    eventStream.stop(); stopSync(); stopPush.stop()
     for (const t of transports) await t.stop().catch(() => {})
   })
 

@@ -18,6 +18,7 @@ export interface PluginConfig {
   tuiVisible: boolean
   transport: string
   chatTimeoutMs: number
+  baseUrl: string
 }
 
 function loadDotEnv(): void {
@@ -75,6 +76,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE === 'true',
     transport: env('TRANSPORT', options?.transport as string) ?? 'telegram',
     chatTimeoutMs: Number(options?.chatTimeoutMs ?? process.env.CHAT_TIMEOUT_MS ?? 600000),
+    baseUrl: env('OPENCODE_BASE_URL', options?.baseUrl as string) ?? 'http://localhost:4096',
   }
 }
 

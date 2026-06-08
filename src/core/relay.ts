@@ -183,7 +183,7 @@ export function createRelay(deps: RelayDeps) {
       let resolvedId: string | undefined
       const hasOverrides = !!(nextAgent || nextModel)
 
-      if (!hasOverrides && !deps.state.getPinnedSessionId() && deps.tuiVisible) {
+      if (!hasOverrides && !deps.state.getPinnedSessionId() && deps.tuiVisible && deps.eventStream) {
         try {
           await deps.client.tui.appendPrompt({ body: { text: msg.text } } as any)
           await (deps.client.tui as any).submitPrompt()

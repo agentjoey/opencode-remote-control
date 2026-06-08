@@ -7,14 +7,15 @@ import { createLogger } from '../utils/logger.js'
 const log = createLogger('push')
 
 export interface PushDeps {
-  eventStream: EventStream
+  /** EventStream — required for sidecar mode. */
+  eventStream?: EventStream
   cardBus: CardBus
   client: OpencodeClient
   testFailuresEnabled?: boolean
   maxPerHour?: number
 }
 
-export function startPushNotifications(deps: PushDeps): () => void {
+export function startPushNotifications(deps: PushDeps) {
   const hourCap = deps.maxPerHour ?? 10
   const sessionCooldownMs = 5 * 60 * 1000
   const recentPushes: number[] = []
@@ -72,7 +73,7 @@ export function startPushNotifications(deps: PushDeps): () => void {
     }
   }
 
-  const unsub = deps.eventStream.onAny(async (raw) => {
+  const handler = async (raw: unknown) => {
     const e = raw as { type: string; properties?: any }
     const p = e.properties
     const sid =
@@ -88,10 +89,6 @@ export function startPushNotifications(deps: PushDeps): () => void {
     } else if (e.type === 'session.idle' || (e.type === 'session.status' && p?.status?.type === 'idle')) {
       const start = busySince.get(sid)
       busySince.delete(sid)
-      // If the session was already busy when this listener started (e.g. bot
-      // restart mid-session), busySince is empty. Fall back to recording
-      // engagement time as a conservative estimate — the session was at least
-      // running since the bot's first contact with it.
       const effectiveStart = start ?? engagedAt.get(sid) ?? Date.now()
       const duration = Date.now() - effectiveStart
       const lastEngaged = engagedAt.get(sid) ?? 0
@@ -99,7 +96,6 @@ export function startPushNotifications(deps: PushDeps): () => void {
       if (duration > 60_000 && engagedRecently && canPush(sid)) {
         recordPush(sid)
         let summary = await fetchSummary(sid)
-        // If fetch raced with opencode's persistence, wait and retry once
         if (!summary) {
           log.info(`push: first fetch empty for ${sid.slice(-8)}, retrying in 3s`)
           await new Promise(r => setTimeout(r, 3000))
@@ -133,7 +129,15 @@ export function startPushNotifications(deps: PushDeps): () => void {
         }
       }
     }
-  })
+  }
 
-  return () => { unsub?.() }
+  // Sidecar mode: listen to EventStream
+  const unsub = deps.eventStream?.onAny(handler)
+
+  return {
+    /** Plugin mode: feed events from the opencode event hook. */
+    handleEvent: handler,
+    /** Stop the event stream listener (sidecar mode). */
+    stop: () => { unsub?.() },
+  }
 }

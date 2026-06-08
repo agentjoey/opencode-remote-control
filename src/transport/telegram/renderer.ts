@@ -118,7 +118,11 @@ export class TelegramSessionRenderer {
       case 'streaming':    return // no-op — Telegram only delivers final result
       case 'assistant':    return this.finalize(card.blocks, card.meta)
       case 'error':        return this.markError(card.message)
-      case 'user':         return       // Telegram already shows user's own message
+      case 'user':         {
+        const userText = card.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        await this.sendTimed(`<i>${userText.slice(0, 200)}${userText.length > 200 ? '…' : ''}</i>`, { parse_mode: 'HTML' })
+        return
+      }
       case 'think-stream': return       // disabled
       case 'status':
       case 'approval':     return       // Handled by command handlers
