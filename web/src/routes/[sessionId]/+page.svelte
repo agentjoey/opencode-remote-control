@@ -1,20 +1,21 @@
 <script lang="ts">
   import { page } from '$app/stores'
   import { tick } from 'svelte'
-  import { cardsBySession } from '$lib/stores/sessions.js'
+  import { feeds, cardsOf } from '$lib/stores/sessions.js'
   import Card from '$lib/components/Card.svelte'
   import Composer from '$lib/components/Composer.svelte'
 
   let scrollEl: HTMLDivElement
-  let lastCount = 0
+  let lastSeen = ''
 
   $: sessionId = $page.params.sessionId
-  $: cards = $cardsBySession[sessionId] ?? []
-
-  // Scroll-to-bottom when new cards arrive (WI-06). Depending on sessionId
-  // alone re-scrolled on every tab focus / mount even when cards were unchanged.
-  $: if (cards.length !== lastCount) {
-    lastCount = cards.length
+  $: feed = $feeds[sessionId]
+  $: cards = cardsOf(feed)
+  // lastSeq increments on every card (including streaming upserts), so this
+  // scrolls during streaming too — not only when the card count changes.
+  $: scrollKey = `${sessionId}:${feed?.lastSeq ?? 0}:${cards.length}`
+  $: if (scrollKey !== lastSeen) {
+    lastSeen = scrollKey
     tick().then(() => {
       if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
     })
@@ -22,7 +23,7 @@
 </script>
 
 <div class="chat" bind:this={scrollEl}>
-  {#each cards as card, i (i)}
+  {#each cards as card (card.id)}
     <Card {card} />
   {/each}
 </div>

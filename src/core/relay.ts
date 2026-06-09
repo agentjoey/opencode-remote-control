@@ -124,6 +124,8 @@ async function pickSessionFallback(client: OpencodeClient): Promise<string> {
 /** Per-session state for Plugin mode where response comes via handleEvent instead of SSE loop. */
 interface PluginSessionCtx {
   sessionId: string
+  /** Stable card id shared by this turn's streaming updates and final assistant. */
+  cardId: string
   acc: ReturnType<typeof createStreamAccumulator>
   assistantMessageId?: string
   processedPartIds: Set<string>
@@ -193,6 +195,7 @@ export function createRelay(deps: RelayDeps) {
       cleanupPluginSession(sessionId)
       const ctx: PluginSessionCtx = {
         sessionId,
+        cardId: `turn:${sessionId}:${Date.now()}`,
         acc: createStreamAccumulator(),
         processedPartIds: new Set(),
         partTextAcc: new Map(),
@@ -222,8 +225,10 @@ export function createRelay(deps: RelayDeps) {
     sessionId: string
     acc: ReturnType<typeof createStreamAccumulator>
     assistantMessageId?: string
+    /** Shared turn id so the final card upserts the streaming card in place. */
+    cardId?: string
   }): Promise<void> {
-    const { sessionId, acc } = params
+    const { sessionId, acc, cardId } = params
     let { assistantMessageId } = params
 
     let blocks = acc.finalize()
@@ -275,7 +280,7 @@ export function createRelay(deps: RelayDeps) {
     if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]
 
     log.info(`relay: publishing assistant card for ${sessionId}, blocks=${blocks.length}`)
-    deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta })
+    deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta, id: cardId })
     // Mark delivery so the push engine doesn't also fire a "Session finished"
     // notification for a session the user just watched complete.
     deps.state.markAssistantDelivered(sessionId)
@@ -326,7 +331,7 @@ export function createRelay(deps: RelayDeps) {
           }
 
           if (!ctx.signal.aborted) {
-            deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks })
+            deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
           }
         }
         return
@@ -343,7 +348,7 @@ export function createRelay(deps: RelayDeps) {
             ctx.partTextAcc.set(partId, fullText)
             if (!ctx.signal.aborted) {
               const blocks = ctx.acc.update([{ id: partId, type: 'text', text: fullText }])
-              deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks })
+              deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
             }
           }
           if (!ctx.assistantMessageId && typeof p?.messageID === 'string') {
@@ -363,10 +368,11 @@ export function createRelay(deps: RelayDeps) {
           const sid = ctx.sessionId
           const acc = ctx.acc
           const msgId = ctx.assistantMessageId
+          const cardId = ctx.cardId
           // Defer SDK calls to next tick to avoid blocking the event hook
           setTimeout(async () => {
             try {
-              await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId })
+              await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId, cardId })
             } catch (err) {
               log.error(`[plugin] publishAssistantCard failed`, err as Error)
             }

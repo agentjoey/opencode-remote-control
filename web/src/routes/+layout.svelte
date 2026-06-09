@@ -4,7 +4,7 @@
   import { afterNavigate } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
-  import { sessionList, cardsBySession, appendCard, setHistory } from '$lib/stores/sessions.js'
+  import { sessionList, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
   import SessionList from '$lib/components/SessionList.svelte'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
@@ -39,7 +39,7 @@
       },
       onMessage: (msg) => {
         if (msg.type === 'card' && msg.card) {
-          appendCard(msg.card)
+          upsertCard(msg.card)
           if (msg.card.kind === 'approval') {
             pendingApproval = msg.card
           }

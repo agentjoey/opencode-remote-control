@@ -50,4 +50,36 @@ describe('CardBus', () => {
     bus.publish(card('ses_1'))
     expect(good).toHaveBeenCalledTimes(1)
   })
+
+  it('stamps monotonic seq and an id per session', () => {
+    const bus = createCardBus()
+    const c1 = card('ses_1'); const c2 = card('ses_1'); const c3 = card('ses_2')
+    bus.publish(c1); bus.publish(c2); bus.publish(c3)
+    expect(c1.seq).toBe(1)
+    expect(c2.seq).toBe(2)
+    expect(c3.seq).toBe(1) // independent per session
+    expect(c1.id).toBeTruthy()
+    expect(c1.id).not.toBe(c2.id)
+    expect(bus.currentSeq('ses_1')).toBe(2)
+    expect(bus.currentSeq('ses_2')).toBe(1)
+  })
+
+  it('preserves a caller-supplied id (streaming/assistant share a turn id)', () => {
+    const bus = createCardBus()
+    const a: StructuredCard = { kind: 'streaming', sessionId: 'ses_1', blocks: [], id: 'turn:x' }
+    const b: StructuredCard = { kind: 'assistant', sessionId: 'ses_1', blocks: [], meta: {}, id: 'turn:x' }
+    bus.publish(a); bus.publish(b)
+    expect(a.id).toBe('turn:x')
+    expect(b.id).toBe('turn:x')
+    expect(a.seq).toBe(1)
+    expect(b.seq).toBe(2) // same id, distinct seq
+  })
+
+  it('drop resets the seq counter and buffer', () => {
+    const bus = createCardBus()
+    bus.publish(card('ses_1'))
+    bus.drop('ses_1')
+    expect(bus.currentSeq('ses_1')).toBe(0)
+    expect(bus.recent('ses_1').length).toBe(0)
+  })
 })

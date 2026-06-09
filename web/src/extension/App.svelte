@@ -4,7 +4,7 @@
   import { setBaseUrl, api } from '../lib/api/client.js'
   import { createWsClient } from '../lib/ws/client.js'
   import { connection } from '../lib/stores/connection.js'
-  import { sessionList, cardsBySession, appendCard, setHistory } from '../lib/stores/sessions.js'
+  import { sessionList, feeds, cardsOf, upsertCard, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
   import SessionList from '../lib/components/SessionList.svelte'
   import Card from '../lib/components/Card.svelte'
@@ -43,7 +43,7 @@
           if (msg.type === 'hello' && msg.sessions) {
             sessionList.set(msg.sessions)
           } else if (msg.type === 'card' && msg.card) {
-            appendCard(msg.card)
+            upsertCard(msg.card)
           } else if (msg.type === 'sessions' && msg.sessions) {
             sessionList.set(msg.sessions)
           }
@@ -64,7 +64,7 @@
     return () => chrome.runtime.onMessage.removeListener(listener)
   })
 
-  $: currentCards = $activeSession ? ($cardsBySession[$activeSession] ?? []) : []
+  $: currentCards = $activeSession ? cardsOf($feeds[$activeSession]) : []
 
   function onSend(text: string) {
     if (!$activeSession) return
@@ -103,7 +103,7 @@
       </aside>
       <main>
         <div class="cards" bind:this={scrollEl}>
-          {#each currentCards as card (card.kind + (card as any).sessionId + (card as any).ts)}
+          {#each currentCards as card (card.id)}
             <Card {card} />
           {/each}
         </div>
