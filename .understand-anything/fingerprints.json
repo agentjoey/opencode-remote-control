@@ -1,0 +1,4721 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "6073902798a8c9f34136e855a2cc08a77c1047ca",
+  "generatedAt": "2026-06-09T02:07:10.669Z",
+  "files": {
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "b604372e6a9ec834ede30b26582c031aeb80a05e30ff4fe40fbaaf644c604cbc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/patch-telegraf.cjs": {
+      "filePath": "scripts/patch-telegraf.cjs",
+      "contentHash": "5bfd22f7a508405607aa449edf0d311e46bc1ea2c81c9ad5f5a76f73515cb038",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "src/cli/index.ts": {
+      "filePath": "src/cli/index.ts",
+      "contentHash": "4e5169843095c437bc80fce9f6b6a7c9b59aa19f372b42c8da4b16d3b05598b5",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:readline",
+          "specifiers": [
+            "createInterface"
+          ]
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "writeFileSync",
+            "existsSync"
+          ]
+        },
+        {
+          "source": "./init.js",
+          "specifiers": [
+            "runInitWizard",
+            "defaultTestConnection"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "src/cli/init.ts": {
+      "filePath": "src/cli/init.ts",
+      "contentHash": "60b711e936475c8b798af3027b979b73a64a4351e91bb0f54571aeb2200e5850",
+      "functions": [
+        {
+          "name": "runInitWizard",
+          "params": [
+            "deps"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 57
+        },
+        {
+          "name": "defaultTestConnection",
+          "params": [
+            "token"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:readline",
+          "specifiers": [
+            "createInterface"
+          ]
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "writeFileSync",
+            "existsSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        }
+      ],
+      "exports": [
+        "runInitWizard",
+        "defaultTestConnection"
+      ],
+      "totalLines": 90,
+      "hasStructuralAnalysis": true
+    },
+    "src/cli/install.ts": {
+      "filePath": "src/cli/install.ts",
+      "contentHash": "655d9156b03f1176465aed59e7fe17c4e851ab7e4cfab7ae82da3b4a3e5a35ed",
+      "functions": [
+        {
+          "name": "configPath",
+          "params": [
+            "local"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "ask",
+          "params": [
+            "rl",
+            "question"
+          ],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "resolveSpec",
+          "params": [
+            "options"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "isOurPlugin",
+          "params": [
+            "entry"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "buildPluginEntry",
+          "params": [
+            "spec",
+            "configOpts"
+          ],
+          "returnType": "PluginEntry",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "runInstall",
+          "params": [
+            "options"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 96
+        },
+        {
+          "name": "main",
+          "params": [
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "existsSync",
+            "readFileSync",
+            "writeFileSync"
+          ]
+        },
+        {
+          "source": "node:readline",
+          "specifiers": [
+            "createInterface"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join",
+            "resolve"
+          ]
+        },
+        {
+          "source": "node:os",
+          "specifiers": [
+            "homedir"
+          ]
+        }
+      ],
+      "exports": [
+        "runInstall",
+        "main"
+      ],
+      "totalLines": 174,
+      "hasStructuralAnalysis": true
+    },
+    "src/cli/uninstall.ts": {
+      "filePath": "src/cli/uninstall.ts",
+      "contentHash": "e5f55e2d066acab419540e7d7f926e3ab6ad1ab7ed0884722e6a2fcd9ce3a519",
+      "functions": [
+        {
+          "name": "isOurPlugin",
+          "params": [
+            "entry"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "runUninstall",
+          "params": [
+            "local"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "existsSync",
+            "readFileSync",
+            "writeFileSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        },
+        {
+          "source": "node:os",
+          "specifiers": [
+            "homedir"
+          ]
+        }
+      ],
+      "exports": [
+        "runUninstall",
+        "main"
+      ],
+      "totalLines": 73,
+      "hasStructuralAnalysis": true
+    },
+    "src/config.ts": {
+      "filePath": "src/config.ts",
+      "contentHash": "00c8bdf642adb05639872d3804d9c2edee10f6003f0a337ac5868d769e99218a",
+      "functions": [
+        {
+          "name": "loadConfig",
+          "params": [],
+          "returnType": "Config",
+          "exported": true,
+          "lineCount": 40
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "zod",
+          "specifiers": [
+            "z"
+          ]
+        }
+      ],
+      "exports": [
+        "loadConfig"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/card-bus.ts": {
+      "filePath": "src/core/card-bus.ts",
+      "contentHash": "bf71d3cab40f10cd09797db988ac567b90257c186f64d4861c74d8226073dcc2",
+      "functions": [
+        {
+          "name": "createCardBus",
+          "params": [
+            "bufferSize"
+          ],
+          "returnType": "CardBus",
+          "exported": true,
+          "lineCount": 45
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "createCardBus"
+      ],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/history.ts": {
+      "filePath": "src/core/history.ts",
+      "contentHash": "24ce7bf8e5a005c48b82ba4136ed368e8db664a832585cd5259df2126d7b86cd",
+      "functions": [
+        {
+          "name": "summarizeToolArgs",
+          "params": [
+            "tool",
+            "input"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "messageToCards",
+          "params": [
+            "sessionId",
+            "msg"
+          ],
+          "returnType": "StructuredCard[]",
+          "exported": true,
+          "lineCount": 59
+        },
+        {
+          "name": "reconstructHistory",
+          "params": [
+            "client",
+            "sessionId",
+            "limit"
+          ],
+          "returnType": "Promise<StructuredCard[]>",
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "./structured-card.js",
+          "specifiers": [
+            "StructuredCard",
+            "ContentBlock",
+            "AssistantMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "summarizeToolArgs",
+        "messageToCards",
+        "reconstructHistory"
+      ],
+      "totalLines": 94,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/push.ts": {
+      "filePath": "src/core/push.ts",
+      "contentHash": "92bba1e76e09fb3403be833c280689093b7a30ea4de282f9fff1dec99548d8fb",
+      "functions": [
+        {
+          "name": "startPushNotifications",
+          "params": [
+            "deps"
+          ],
+          "exported": true,
+          "lineCount": 126
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../core/structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "startPushNotifications"
+      ],
+      "totalLines": 144,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/relay.ts": {
+      "filePath": "src/core/relay.ts",
+      "contentHash": "c484e6eaa8a4e823f88813c204a386f65e43ffdaa9a556f17c9b3cdbf72cc252",
+      "functions": [
+        {
+          "name": "isNetworkError",
+          "params": [
+            "err"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "submitWithRetry",
+          "params": [
+            "client",
+            "opts"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "delayOrAbort",
+          "params": [
+            "ms",
+            "signal"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "formatK",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "waitForBusySession",
+          "params": [
+            "eventStream",
+            "signal",
+            "timeoutMs"
+          ],
+          "returnType": "Promise<string | undefined>",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "selectTuiSession",
+          "params": [
+            "baseUrl",
+            "sessionID",
+            "signal"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "pickSessionFallback",
+          "params": [
+            "client"
+          ],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "extractSessionID",
+          "params": [
+            "raw"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "createRelay",
+          "params": [
+            "deps"
+          ],
+          "exported": true,
+          "lineCount": 405
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "./card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "./types.js",
+          "specifiers": [
+            "IncomingMessage"
+          ]
+        },
+        {
+          "source": "./state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "./structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "./stream-accumulator.js",
+          "specifiers": [
+            "createStreamAccumulator",
+            "PartInput"
+          ]
+        },
+        {
+          "source": "../opencode/submit.js",
+          "specifiers": [
+            "submitPrompt"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "createRelay"
+      ],
+      "totalLines": 566,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/state.ts": {
+      "filePath": "src/core/state.ts",
+      "contentHash": "6c196dd1fbc1f998fc253d6b2a1ea1d50106408ce9de3b38ce2d15e85a46835f",
+      "functions": [
+        {
+          "name": "createFileBackedState",
+          "params": [
+            "path"
+          ],
+          "returnType": "SessionState",
+          "exported": true,
+          "lineCount": 74
+        },
+        {
+          "name": "load",
+          "params": [
+            "path"
+          ],
+          "returnType": "PersistedState",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "readFileSync",
+            "writeFileSync",
+            "renameSync",
+            "existsSync",
+            "mkdirSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "dirname"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "createFileBackedState"
+      ],
+      "totalLines": 121,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/stream-accumulator.ts": {
+      "filePath": "src/core/stream-accumulator.ts",
+      "contentHash": "a8af92caca3b4eec31a1f16d267a081dd8e481b1b872bf33a2445ce8e5868ff1",
+      "functions": [
+        {
+          "name": "createStreamAccumulator",
+          "params": [],
+          "returnType": "StreamAccumulator",
+          "exported": true,
+          "lineCount": 97
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./structured-card.js",
+          "specifiers": [
+            "ContentBlock"
+          ]
+        }
+      ],
+      "exports": [
+        "createStreamAccumulator"
+      ],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/structured-card.ts": {
+      "filePath": "src/core/structured-card.ts",
+      "contentHash": "3879308f00f88ff6df96b755e5608f1f8bb9cd08404b67c90cfc09d2824da189",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/tui-sync.ts": {
+      "filePath": "src/core/tui-sync.ts",
+      "contentHash": "5625d94cb1589417c6f7288d2a7ebae9e9096dccbbd01671015fb944ae909afc",
+      "functions": [
+        {
+          "name": "startTuiSync",
+          "params": [
+            "deps"
+          ],
+          "returnType": "() => void",
+          "exported": true,
+          "lineCount": 39
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "./state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "startTuiSync"
+      ],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/types.ts": {
+      "filePath": "src/core/types.ts",
+      "contentHash": "07639301e13d8d3be883dc5d4d279fda36b4e85ffba13dcc55d2bd22cca567d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/index.ts": {
+      "filePath": "src/index.ts",
+      "contentHash": "1c6c6d83ca99ad33417794594db838235209f4b92134ffb7c073294d44865cb8",
+      "functions": [
+        {
+          "name": "waitForHealth",
+          "params": [
+            "baseUrl"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "runBot",
+          "params": [],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 79
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "dotenv/config",
+          "specifiers": []
+        },
+        {
+          "source": "./config.js",
+          "specifiers": [
+            "loadConfig"
+          ]
+        },
+        {
+          "source": "./opencode/client.js",
+          "specifiers": [
+            "getClient",
+            "checkHealth"
+          ]
+        },
+        {
+          "source": "./opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "./core/state.js",
+          "specifiers": [
+            "createFileBackedState"
+          ]
+        },
+        {
+          "source": "./core/relay.js",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "./core/card-bus.js",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "./core/tui-sync.js",
+          "specifiers": [
+            "startTuiSync"
+          ]
+        },
+        {
+          "source": "./transport/telegram/index.js",
+          "specifiers": [
+            "createTelegramTransport"
+          ]
+        },
+        {
+          "source": "./transport/web/index.js",
+          "specifiers": [
+            "createWebTransport"
+          ]
+        },
+        {
+          "source": "./core/push.js",
+          "specifiers": [
+            "startPushNotifications"
+          ]
+        },
+        {
+          "source": "./utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        },
+        {
+          "source": "./transport/interface.js",
+          "specifiers": [
+            "Transport"
+          ]
+        }
+      ],
+      "exports": [
+        "runBot"
+      ],
+      "totalLines": 117,
+      "hasStructuralAnalysis": true
+    },
+    "src/launcher/index.ts": {
+      "filePath": "src/launcher/index.ts",
+      "contentHash": "a605f79cdb20fb26eb6a8b13424a02e31e1e1f12daa939562c075c705628055c",
+      "functions": [
+        {
+          "name": "waitForHealth",
+          "params": [
+            "baseUrl",
+            "timeoutMs"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "dotenv/config",
+          "specifiers": []
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "mkdirSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        },
+        {
+          "source": "../config.js",
+          "specifiers": [
+            "loadConfig"
+          ]
+        },
+        {
+          "source": "./spawn.js",
+          "specifiers": [
+            "createSupervisor"
+          ]
+        },
+        {
+          "source": "../opencode/client.js",
+          "specifiers": [
+            "checkHealth"
+          ]
+        },
+        {
+          "source": "../index.js",
+          "specifiers": [
+            "runBot"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "src/launcher/spawn.ts": {
+      "filePath": "src/launcher/spawn.ts",
+      "contentHash": "a768afb1a1d42edbcb02a13b5df2d83df35a22305ecc3e5ccf81d6fc7cea5bd0",
+      "functions": [
+        {
+          "name": "createSupervisor",
+          "params": [
+            "opts"
+          ],
+          "returnType": "Supervisor",
+          "exported": true,
+          "lineCount": 47
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:child_process",
+          "specifiers": [
+            "spawn",
+            "ChildProcess"
+          ]
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "openSync",
+            "closeSync"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "createSupervisor"
+      ],
+      "totalLines": 71,
+      "hasStructuralAnalysis": true
+    },
+    "src/opencode/client.ts": {
+      "filePath": "src/opencode/client.ts",
+      "contentHash": "6d27b9cce60a55d44dbe92ed4959e13951aa3ac26555f552ed330f0b6d4be19a",
+      "functions": [
+        {
+          "name": "getClient",
+          "params": [
+            "baseUrl"
+          ],
+          "returnType": "OpencodeClient",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "checkHealth",
+          "params": [
+            "baseUrl"
+          ],
+          "returnType": "Promise<boolean>",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "createOpencodeClient",
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [
+        "getClient",
+        "checkHealth"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "src/opencode/event-stream.ts": {
+      "filePath": "src/opencode/event-stream.ts",
+      "contentHash": "3cb46ed9bdb33ef692879ebcab27c8276392e989716094f79940ae576bcd471e",
+      "functions": [],
+      "classes": [
+        {
+          "name": "EventStream",
+          "methods": [
+            "constructor",
+            "setStatusChecker",
+            "reconnectDelay",
+            "extractSessionID",
+            "start",
+            "session",
+            "onAny",
+            "stop"
+          ],
+          "properties": [
+            "emitter",
+            "stopped",
+            "consecutiveFailures",
+            "running",
+            "activeListeners",
+            "statusChecker",
+            "reconnectMs",
+            "heartbeatTimer"
+          ],
+          "exported": true,
+          "lineCount": 149
+        }
+      ],
+      "imports": [
+        {
+          "source": "node:events",
+          "specifiers": [
+            "EventEmitter"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "EventStream"
+      ],
+      "totalLines": 161,
+      "hasStructuralAnalysis": true
+    },
+    "src/opencode/submit.ts": {
+      "filePath": "src/opencode/submit.ts",
+      "contentHash": "3722807ba1e5ce7b45307c11a3399f3ce5681e59a4cfecd99910c118c54cff23",
+      "functions": [
+        {
+          "name": "submitPrompt",
+          "params": [
+            "client",
+            "opts"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [
+        "submitPrompt"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "src/plugin/config.ts": {
+      "filePath": "src/plugin/config.ts",
+      "contentHash": "080d355325f4f2b72a780a03261f44ec7766cca50c1b3ec6a1fe66264ab5605e",
+      "functions": [
+        {
+          "name": "loadDotEnv",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "env",
+          "params": [
+            "key",
+            "optionsVal"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "loadPluginConfig",
+          "params": [
+            "options"
+          ],
+          "returnType": "PluginConfig",
+          "exported": true,
+          "lineCount": 48
+        },
+        {
+          "name": "bool",
+          "params": [
+            "val"
+          ],
+          "returnType": "boolean | undefined",
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "dotenv",
+          "specifiers": [
+            "dotenvConfig"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "resolve",
+            "dirname"
+          ]
+        },
+        {
+          "source": "node:url",
+          "specifiers": [
+            "fileURLToPath"
+          ]
+        }
+      ],
+      "exports": [
+        "loadPluginConfig"
+      ],
+      "totalLines": 95,
+      "hasStructuralAnalysis": true
+    },
+    "src/plugin/entry.ts": {
+      "filePath": "src/plugin/entry.ts",
+      "contentHash": "feac4780ac036c938c74bfffba9db547d33be92a4b178722ed7e5eac1be5e287",
+      "functions": [
+        {
+          "name": "remoteControlPlugin",
+          "params": [
+            "ctx",
+            "options"
+          ],
+          "exported": true,
+          "lineCount": 141
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/plugin",
+          "specifiers": [
+            "tool"
+          ]
+        },
+        {
+          "source": "@opencode-ai/plugin",
+          "specifiers": [
+            "Plugin"
+          ]
+        },
+        {
+          "source": "./config.js",
+          "specifiers": [
+            "loadPluginConfig"
+          ]
+        },
+        {
+          "source": "../transport/telegram/index.js",
+          "specifiers": [
+            "createTelegramTransport",
+            "TelegramTransport"
+          ]
+        },
+        {
+          "source": "../transport/web/index.js",
+          "specifiers": [
+            "createWebTransport"
+          ]
+        },
+        {
+          "source": "../core/state.js",
+          "specifiers": [
+            "createFileBackedState"
+          ]
+        },
+        {
+          "source": "../core/relay.js",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "../core/card-bus.js",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../core/push.js",
+          "specifiers": [
+            "startPushNotifications"
+          ]
+        },
+        {
+          "source": "../transport/interface.js",
+          "specifiers": [
+            "Transport"
+          ]
+        },
+        {
+          "source": "../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "remoteControlPlugin"
+      ],
+      "totalLines": 159,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/interface.ts": {
+      "filePath": "src/transport/interface.ts",
+      "contentHash": "5b58cc803a1f923899f624ec24d99db78b8c5b1c9ba3aa302919eb3e7f543d1f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../core/structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../core/types.js",
+          "specifiers": [
+            "IncomingMessage",
+            "ChannelCapabilities"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/handlers.ts": {
+      "filePath": "src/transport/telegram/handlers.ts",
+      "contentHash": "dce1a0cc655dcd62a5fb813ebf5830b128106d394c9bbbccb3eb515fa48ca40a",
+      "functions": [
+        {
+          "name": "hasHttpApi",
+          "params": [
+            "baseUrl"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "checkHealth",
+          "params": [
+            "baseUrl"
+          ],
+          "returnType": "Promise<boolean>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "fetchUserAgents",
+          "params": [
+            "baseUrl",
+            "directory"
+          ],
+          "returnType": "Promise<AgentConfig[]>",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "parseAgentModel",
+          "params": [
+            "modelStr"
+          ],
+          "returnType": "{ providerID: string; modelID: string } | undefined",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "shortPath",
+          "params": [
+            "p"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "buildStatusCard",
+          "params": [
+            "deps"
+          ],
+          "returnType": "Promise<StatusCard>",
+          "exported": false,
+          "lineCount": 59
+        },
+        {
+          "name": "registerHandlers",
+          "params": [
+            "deps"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 660
+        },
+        {
+          "name": "setupApproval",
+          "params": [
+            "deps",
+            "pending"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 98
+        },
+        {
+          "name": "labelFor",
+          "params": [
+            "response"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Telegraf",
+            "Context"
+          ]
+        },
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Markup"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "../../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        },
+        {
+          "source": "../../utils/version.js",
+          "specifiers": [
+            "getVersionInfo"
+          ]
+        },
+        {
+          "source": "./handlers/info-commands.js",
+          "specifiers": [
+            "registerInfoCommands"
+          ]
+        }
+      ],
+      "exports": [
+        "registerHandlers",
+        "setupApproval"
+      ],
+      "totalLines": 946,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/handlers/info-commands.ts": {
+      "filePath": "src/transport/telegram/handlers/info-commands.ts",
+      "contentHash": "962a67269f141abd5de0b5bdd01b2f5730851bd05fb78a8b905b10fd19250bea",
+      "functions": [
+        {
+          "name": "safeBaseUrl",
+          "params": [
+            "url"
+          ],
+          "returnType": "string | null",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "registerInfoCommands",
+          "params": [
+            "deps"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 111
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Telegraf",
+            "Context"
+          ]
+        },
+        {
+          "source": "../../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "registerInfoCommands"
+      ],
+      "totalLines": 128,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/index.ts": {
+      "filePath": "src/transport/telegram/index.ts",
+      "contentHash": "958939382e30c5b4f33bc9dd26eb09b6f9aebba6a8d8005969b5e79d62318e6f",
+      "functions": [
+        {
+          "name": "createTelegramTransport",
+          "params": [
+            "cfg"
+          ],
+          "returnType": "TelegramTransport",
+          "exported": true,
+          "lineCount": 260
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Telegraf",
+            "Markup"
+          ]
+        },
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Context"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../core/types.js",
+          "specifiers": [
+            "IncomingMessage",
+            "ChannelCapabilities"
+          ]
+        },
+        {
+          "source": "../interface.js",
+          "specifiers": [
+            "Transport",
+            "TransportStartDeps"
+          ]
+        },
+        {
+          "source": "../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "../../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "./renderer.js",
+          "specifiers": [
+            "TelegramSessionRenderer"
+          ]
+        },
+        {
+          "source": "./handlers.js",
+          "specifiers": [
+            "registerHandlers",
+            "setupApproval"
+          ]
+        },
+        {
+          "source": "./handlers.js",
+          "specifiers": [
+            "PendingApproval",
+            "ApprovalResponse"
+          ]
+        },
+        {
+          "source": "../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "createTelegramTransport"
+      ],
+      "totalLines": 303,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/render.ts": {
+      "filePath": "src/transport/telegram/render.ts",
+      "contentHash": "30308bc32f9ed6b1497cc23caf2665b27fbe2c61aa3e601a98e97e49a85c525b",
+      "functions": [
+        {
+          "name": "escapeHtml",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "cardToTelegram",
+          "params": [
+            "card"
+          ],
+          "returnType": "{\n  text: string\n  options: {\n    parse_mode: 'HTML'\n    reply_markup?: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> }\n  }\n}",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../../core/types.js",
+          "specifiers": [
+            "Card"
+          ]
+        }
+      ],
+      "exports": [
+        "cardToTelegram"
+      ],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/renderer.ts": {
+      "filePath": "src/transport/telegram/renderer.ts",
+      "contentHash": "5f1ed97966f4c3e0c7b2627d88334a68d2a95ca2f61751df857ce4572ba25436",
+      "functions": [
+        {
+          "name": "escHtml",
+          "params": [
+            "s"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "withTimeout",
+          "params": [
+            "p",
+            "label"
+          ],
+          "returnType": "Promise<T>",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "fmtK",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "metaFooter",
+          "params": [
+            "meta"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "findBoundary",
+          "params": [
+            "md",
+            "near"
+          ],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "splitMarkdown",
+          "params": [
+            "md",
+            "perChunk"
+          ],
+          "returnType": "string[]",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "collapseTools",
+          "params": [
+            "tools"
+          ],
+          "returnType": "ToolCall[]",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "blocksToText",
+          "params": [
+            "blocks"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "blocksToTools",
+          "params": [
+            "blocks"
+          ],
+          "returnType": "ToolCall[]",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "TelegramSessionRenderer",
+          "methods": [
+            "constructor",
+            "sendTimed",
+            "onCard",
+            "startThinking",
+            "finalize",
+            "markError",
+            "sendInfo",
+            "renderChunkBody"
+          ],
+          "properties": [
+            "chatId",
+            "sessionId",
+            "bot",
+            "thinkingMessageId"
+          ],
+          "exported": true,
+          "lineCount": 137
+        }
+      ],
+      "imports": [
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Telegram"
+          ]
+        },
+        {
+          "source": "../../core/structured-card.js",
+          "specifiers": [
+            "StructuredCard",
+            "ToolCall",
+            "AssistantMeta",
+            "InfoSection",
+            "ContentBlock"
+          ]
+        },
+        {
+          "source": "../../utils/markdown.js",
+          "specifiers": [
+            "markdownToTelegramHtml"
+          ]
+        },
+        {
+          "source": "../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        }
+      ],
+      "exports": [
+        "TelegramSessionRenderer"
+      ],
+      "totalLines": 231,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/telegram/reply-stream.ts": {
+      "filePath": "src/transport/telegram/reply-stream.ts",
+      "contentHash": "2feb3e7c4f2aaea40f696623a969daabaef3ef29c2953b03113247806582da87",
+      "functions": [
+        {
+          "name": "createReplyStream",
+          "params": [
+            "ctx",
+            "messageId",
+            "opts"
+          ],
+          "returnType": "ReplyStream",
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "telegraf",
+          "specifiers": [
+            "Context"
+          ]
+        },
+        {
+          "source": "../../utils/markdown.js",
+          "specifiers": [
+            "chunkMessage"
+          ]
+        }
+      ],
+      "exports": [
+        "createReplyStream"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/index.ts": {
+      "filePath": "src/transport/web/index.ts",
+      "contentHash": "1f07ee3f0f406dd51eee65030c55d80fdf9c9f78f68df390398a68e3d1223cd3",
+      "functions": [
+        {
+          "name": "createWebTransport",
+          "params": [
+            "cfg"
+          ],
+          "returnType": "Transport",
+          "exported": true,
+          "lineCount": 93
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "existsSync",
+            "readFileSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        },
+        {
+          "source": "@hono/node-server",
+          "specifiers": [
+            "serve",
+            "ServerType"
+          ]
+        },
+        {
+          "source": "ws",
+          "specifiers": [
+            "WebSocketServer"
+          ]
+        },
+        {
+          "source": "@hono/node-server/serve-static",
+          "specifiers": [
+            "serveStatic"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../core/types.js",
+          "specifiers": [
+            "IncomingMessage",
+            "ChannelCapabilities"
+          ]
+        },
+        {
+          "source": "../interface.js",
+          "specifiers": [
+            "Transport",
+            "TransportStartDeps"
+          ]
+        },
+        {
+          "source": "../../core/structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "../../opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "./server.js",
+          "specifiers": [
+            "buildServer"
+          ]
+        },
+        {
+          "source": "./ws-hub.js",
+          "specifiers": [
+            "createWsHub"
+          ]
+        },
+        {
+          "source": "../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        },
+        {
+          "source": "./middleware/cf-access.js",
+          "specifiers": [
+            "verifyUpgradeJwt"
+          ]
+        }
+      ],
+      "exports": [
+        "createWebTransport"
+      ],
+      "totalLines": 127,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/middleware/cf-access.ts": {
+      "filePath": "src/transport/web/middleware/cf-access.ts",
+      "contentHash": "089cd2402f972ced6f51a29e61ba66a88135b7e40554afbd8da3c1764ad9715d",
+      "functions": [
+        {
+          "name": "isLoopbackAddr",
+          "params": [
+            "addr"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "isLoopback",
+          "params": [
+            "host"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "remoteAddr",
+          "params": [
+            "c"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "extractJwt",
+          "params": [
+            "headers",
+            "query"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "verifyUpgradeJwt",
+          "params": [
+            "req",
+            "opts"
+          ],
+          "returnType": "Promise<{ email: string; sub: string } | null>",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "cfAccessMiddleware",
+          "params": [
+            "opts"
+          ],
+          "returnType": "MiddlewareHandler",
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "MiddlewareHandler"
+          ]
+        },
+        {
+          "source": "jose",
+          "specifiers": [
+            "createRemoteJWKSet",
+            "jwtVerify"
+          ]
+        }
+      ],
+      "exports": [
+        "verifyUpgradeJwt",
+        "cfAccessMiddleware"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/abort.ts": {
+      "filePath": "src/transport/web/routes/abort.ts",
+      "contentHash": "6c8fc38137e388268aa11e76af8456425c50ae229e10f02514e5ec92cc451403",
+      "functions": [
+        {
+          "name": "registerAbort",
+          "params": [
+            "app",
+            "state"
+          ],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "../../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        }
+      ],
+      "exports": [
+        "registerAbort"
+      ],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/approval.ts": {
+      "filePath": "src/transport/web/routes/approval.ts",
+      "contentHash": "2253709f5c9196941e0bf8fd8702930fda35e7b614345a8d50abe47c8b699c7c",
+      "functions": [
+        {
+          "name": "registerApproval",
+          "params": [
+            "app",
+            "client"
+          ],
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [
+        "registerApproval"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/context.ts": {
+      "filePath": "src/transport/web/routes/context.ts",
+      "contentHash": "93f048ebdaeb5b45d89d6398774f1c0990a9ead1864b012614f6e82f369254cd",
+      "functions": [
+        {
+          "name": "registerContext",
+          "params": [
+            "app",
+            "client",
+            "state"
+          ],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        }
+      ],
+      "exports": [
+        "registerContext"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/diff.ts": {
+      "filePath": "src/transport/web/routes/diff.ts",
+      "contentHash": "542f38063840cc6071d09db83c5779bb594dec12eac66975913e224591a01aaa",
+      "functions": [
+        {
+          "name": "registerDiff",
+          "params": [
+            "app",
+            "client"
+          ],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [
+        "registerDiff"
+      ],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/message.ts": {
+      "filePath": "src/transport/web/routes/message.ts",
+      "contentHash": "e78e950a2a8ff41488968f0f49db5ff4eb4f67adf0bff2df77a944dbd882cef4",
+      "functions": [
+        {
+          "name": "registerMessage",
+          "params": [
+            "app",
+            "onMessage"
+          ],
+          "exported": true,
+          "lineCount": 17
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "../../../core/types.js",
+          "specifiers": [
+            "IncomingMessage"
+          ]
+        }
+      ],
+      "exports": [
+        "registerMessage"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/session.ts": {
+      "filePath": "src/transport/web/routes/session.ts",
+      "contentHash": "3f8fc3f8f18f5ca73b437a2a3cc8d70a46b833e79c99141cab34aece246ef658",
+      "functions": [
+        {
+          "name": "registerSession",
+          "params": [
+            "app",
+            "client"
+          ],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../../core/history.js",
+          "specifiers": [
+            "reconstructHistory"
+          ]
+        }
+      ],
+      "exports": [
+        "registerSession"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/sessions.ts": {
+      "filePath": "src/transport/web/routes/sessions.ts",
+      "contentHash": "4d90c8a3f7a9ffeb77b877b1f3abed2d054fd022bb61e175f470de0565a47c28",
+      "functions": [
+        {
+          "name": "registerSessions",
+          "params": [
+            "app",
+            "client",
+            "state"
+          ],
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../session-summary.js",
+          "specifiers": [
+            "fetchSessionSummaries"
+          ]
+        }
+      ],
+      "exports": [
+        "registerSessions"
+      ],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/todo.ts": {
+      "filePath": "src/transport/web/routes/todo.ts",
+      "contentHash": "fd97fc3a79b9c429ebe562422b9dae6508e1b87b43ef5c48fb9072eda677ce27",
+      "functions": [
+        {
+          "name": "registerTodo",
+          "params": [
+            "app",
+            "client"
+          ],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [
+        "registerTodo"
+      ],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/routes/version.ts": {
+      "filePath": "src/transport/web/routes/version.ts",
+      "contentHash": "a20062f99d2689e6af9c68a0038f1d986a73edd7725825711c98258579ba3a59",
+      "functions": [
+        {
+          "name": "registerVersion",
+          "params": [
+            "app"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "../../../utils/version.js",
+          "specifiers": [
+            "getVersionInfo"
+          ]
+        }
+      ],
+      "exports": [
+        "registerVersion"
+      ],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/server.ts": {
+      "filePath": "src/transport/web/server.ts",
+      "contentHash": "c371abc4e3bb12550b7db5ac43151d4516fc49f23c73a4a337d18e18970072d1",
+      "functions": [
+        {
+          "name": "buildServer",
+          "params": [
+            "opts"
+          ],
+          "returnType": "Hono",
+          "exported": true,
+          "lineCount": 24
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "../../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../../core/types.js",
+          "specifiers": [
+            "IncomingMessage"
+          ]
+        },
+        {
+          "source": "./middleware/cf-access.js",
+          "specifiers": [
+            "cfAccessMiddleware",
+            "CfAccessOpts"
+          ]
+        },
+        {
+          "source": "../../utils/logger.js",
+          "specifiers": [
+            "createLogger"
+          ]
+        },
+        {
+          "source": "./routes/sessions.js",
+          "specifiers": [
+            "registerSessions"
+          ]
+        },
+        {
+          "source": "./routes/session.js",
+          "specifiers": [
+            "registerSession"
+          ]
+        },
+        {
+          "source": "./routes/message.js",
+          "specifiers": [
+            "registerMessage"
+          ]
+        },
+        {
+          "source": "./routes/abort.js",
+          "specifiers": [
+            "registerAbort"
+          ]
+        },
+        {
+          "source": "./routes/diff.js",
+          "specifiers": [
+            "registerDiff"
+          ]
+        },
+        {
+          "source": "./routes/todo.js",
+          "specifiers": [
+            "registerTodo"
+          ]
+        },
+        {
+          "source": "./routes/context.js",
+          "specifiers": [
+            "registerContext"
+          ]
+        },
+        {
+          "source": "./routes/approval.js",
+          "specifiers": [
+            "registerApproval"
+          ]
+        },
+        {
+          "source": "./routes/version.js",
+          "specifiers": [
+            "registerVersion"
+          ]
+        }
+      ],
+      "exports": [
+        "buildServer"
+      ],
+      "totalLines": 67,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/session-summary.ts": {
+      "filePath": "src/transport/web/session-summary.ts",
+      "contentHash": "1d29f12f21e92e5a265eb197e91d63c5d9c0c095c92e3a0e9696c815942b44a0",
+      "functions": [
+        {
+          "name": "fetchSessionSummaries",
+          "params": [
+            "client",
+            "state"
+          ],
+          "returnType": "Promise<SessionSummary[]>",
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        }
+      ],
+      "exports": [
+        "fetchSessionSummaries"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "src/transport/web/ws-hub.ts": {
+      "filePath": "src/transport/web/ws-hub.ts",
+      "contentHash": "7fdd08c24b5be2d84adae4320a583715016a4052c6e95721b8c8dc53b592ae52",
+      "functions": [
+        {
+          "name": "createWsHub",
+          "params": [
+            "opts"
+          ],
+          "returnType": "WsHub",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "ws",
+          "specifiers": [
+            "WebSocket"
+          ]
+        },
+        {
+          "source": "../../core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../../core/structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "../../core/state.js",
+          "specifiers": [
+            "SessionState"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        },
+        {
+          "source": "./session-summary.js",
+          "specifiers": [
+            "fetchSessionSummaries"
+          ]
+        }
+      ],
+      "exports": [
+        "createWsHub"
+      ],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/logger.ts": {
+      "filePath": "src/utils/logger.ts",
+      "contentHash": "1204c868dc48974ea7df6e8d4581e0071844a22e56bc9324769c48da037d6cf9",
+      "functions": [
+        {
+          "name": "currentLevel",
+          "params": [],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "logFilePath",
+          "params": [],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "ensureLogFile",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "format",
+          "params": [
+            "level",
+            "mod",
+            "msg",
+            "extra"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "write",
+          "params": [
+            "level",
+            "mod",
+            "msg",
+            "extra"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "createLogger",
+          "params": [
+            "mod"
+          ],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "appendFileSync",
+            "mkdirSync"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        },
+        {
+          "source": "node:os",
+          "specifiers": [
+            "homedir"
+          ]
+        }
+      ],
+      "exports": [
+        "createLogger"
+      ],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/markdown.ts": {
+      "filePath": "src/utils/markdown.ts",
+      "contentHash": "7f23e55bbd14d174af862ba0aa0181ea21565f2706228abe79b56db705ccc92e",
+      "functions": [
+        {
+          "name": "escapeMarkdownV2",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "escHtml",
+          "params": [
+            "s"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "markdownToTelegramHtml",
+          "params": [
+            "md"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 72
+        },
+        {
+          "name": "processInline",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 30
+        },
+        {
+          "name": "chunkMessage",
+          "params": [
+            "text",
+            "maxLength"
+          ],
+          "returnType": "string[]",
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "escapeMarkdownV2",
+        "markdownToTelegramHtml",
+        "chunkMessage"
+      ],
+      "totalLines": 151,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/version.ts": {
+      "filePath": "src/utils/version.ts",
+      "contentHash": "53c4fc1dd7937833f1e746ccd544f90a7f4266f018842cdadc60be48c6779ad0",
+      "functions": [
+        {
+          "name": "getGitCommit",
+          "params": [],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "formatUptime",
+          "params": [
+            "ms"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "getVersionInfo",
+          "params": [],
+          "returnType": "VersionInfo",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "readFileSync"
+          ]
+        },
+        {
+          "source": "node:child_process",
+          "specifiers": [
+            "execSync"
+          ]
+        },
+        {
+          "source": "node:url",
+          "specifiers": [
+            "fileURLToPath"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "dirname",
+            "join"
+          ]
+        }
+      ],
+      "exports": [
+        "getVersionInfo"
+      ],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "tests/integration/telegram-overflow.test.ts": {
+      "filePath": "tests/integration/telegram-overflow.test.ts",
+      "contentHash": "ca0e0eebf01b9cd3c12a24f137a9a49c315aebc5d026581c7d31fd6971f09c4f",
+      "functions": [
+        {
+          "name": "fakeBot",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/renderer",
+          "specifiers": [
+            "TelegramSessionRenderer"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/approval.test.ts": {
+      "filePath": "tests/unit/approval.test.ts",
+      "contentHash": "64887c2adcb9613bd7b486e6268258ea759da716776969190d16ab177d3b1bb9",
+      "functions": [
+        {
+          "name": "flush",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach"
+          ]
+        },
+        {
+          "source": "../../src/opencode/event-stream.js",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/handlers.js",
+          "specifiers": [
+            "setupApproval",
+            "HandlersDeps",
+            "PendingApproval"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 272,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/card-bus.test.ts": {
+      "filePath": "tests/unit/card-bus.test.ts",
+      "contentHash": "ad652ea01df7f2bd67e13c0f08b134595b33016781559d5ebc0f230fbd2dcd03",
+      "functions": [
+        {
+          "name": "card",
+          "params": [
+            "sessionId",
+            "kind"
+          ],
+          "returnType": "StructuredCard",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/config.test.ts": {
+      "filePath": "tests/unit/config.test.ts",
+      "contentHash": "301ff96d04b46386747a9d92475901c7f294463a64660208d3dee7a981a040be",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "beforeEach",
+            "afterEach"
+          ]
+        },
+        {
+          "source": "../../src/config",
+          "specifiers": [
+            "loadConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 91,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/event-stream.test.ts": {
+      "filePath": "tests/unit/event-stream.test.ts",
+      "contentHash": "79c9870bc21f814e7dbe8e4acce69c279aa635f6b8fa61f2120df9ff90425fa9",
+      "functions": [
+        {
+          "name": "fakeClient",
+          "params": [
+            "events"
+          ],
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/opencode/event-stream",
+          "specifiers": [
+            "EventStream"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 163,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/history.test.ts": {
+      "filePath": "tests/unit/history.test.ts",
+      "contentHash": "973be8b57105695d69409069e393d6dbc0acb418b9db524e0ab4d3933187523a",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/core/history",
+          "specifiers": [
+            "messageToCards",
+            "reconstructHistory",
+            "summarizeToolArgs"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/init-wizard.test.ts": {
+      "filePath": "tests/unit/init-wizard.test.ts",
+      "contentHash": "6a9ec5644961027d1ce32d2746f4c9fb17125f17d71d92883f6769d887cbe00c",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/cli/init.js",
+          "specifiers": [
+            "runInitWizard",
+            "InitDeps"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/markdown.test.ts": {
+      "filePath": "tests/unit/markdown.test.ts",
+      "contentHash": "931f6002c9c10f4a0ffd2e097a35b6a12bee72e6fac2b35b93842cc31e0b0456",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect"
+          ]
+        },
+        {
+          "source": "../../src/utils/markdown",
+          "specifiers": [
+            "escapeMarkdownV2",
+            "chunkMessage"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/opencode-client.test.ts": {
+      "filePath": "tests/unit/opencode-client.test.ts",
+      "contentHash": "c70863354a95e49ba9abbb35addca93a71250ea9f606f59d166f9943a74f6846",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach"
+          ]
+        },
+        {
+          "source": "../../src/opencode/client",
+          "specifiers": [
+            "checkHealth"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/plugin-entry.test.ts": {
+      "filePath": "tests/unit/plugin-entry.test.ts",
+      "contentHash": "8a9bc8cd60748c3ad365a472338eb9d78c57ebd2e53bb3312bfc36750bfedeb3",
+      "functions": [
+        {
+          "name": "fakeCardBus",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "fakeState",
+          "params": [],
+          "exported": false,
+          "lineCount": 23
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach",
+            "afterEach"
+          ]
+        },
+        {
+          "source": "../../src/core/state.js",
+          "specifiers": [
+            "createFileBackedState"
+          ]
+        },
+        {
+          "source": "../../src/core/relay.js",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus.js",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/push.js",
+          "specifiers": [
+            "startPushNotifications"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/index.js",
+          "specifiers": [
+            "createTelegramTransport"
+          ]
+        },
+        {
+          "source": "../../src/plugin/entry.js",
+          "specifiers": [
+            "remoteControlPlugin"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 280,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/push.test.ts": {
+      "filePath": "tests/unit/push.test.ts",
+      "contentHash": "cf9a205d0dbf4a0f8dd0b9cd89d3b9f6cc533b1c1936532ae3ea5458449152f5",
+      "functions": [
+        {
+          "name": "fakeEventStream",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "fakeCardBus",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "fakeClient",
+          "params": [
+            "lastAssistantText"
+          ],
+          "returnType": "OpencodeClient",
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach"
+          ]
+        },
+        {
+          "source": "../../src/core/push",
+          "specifiers": [
+            "startPushNotifications"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../../src/opencode/event-stream",
+          "specifiers": [
+            "EventStream"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        },
+        {
+          "source": "@opencode-ai/sdk",
+          "specifiers": [
+            "OpencodeClient"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/relay.test.ts": {
+      "filePath": "tests/unit/relay.test.ts",
+      "contentHash": "e7e915ef709c359cdf1346d8f12233315d5223357fe53d2735e2947049551e8b",
+      "functions": [
+        {
+          "name": "fakeClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "fakeEventStream",
+          "params": [
+            "events"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "fakeState",
+          "params": [],
+          "exported": false,
+          "lineCount": 28
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach",
+            "afterEach"
+          ]
+        },
+        {
+          "source": "../../src/core/relay",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 533,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/reply.test.ts": {
+      "filePath": "tests/unit/reply.test.ts",
+      "contentHash": "f7eb7f3d6ec8149917a909af47ad2ae6188a47df89b352367676d4fc1b3dc465",
+      "functions": [
+        {
+          "name": "fakeCtx",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/reply-stream",
+          "specifiers": [
+            "createReplyStream"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 86,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/spawn.test.ts": {
+      "filePath": "tests/unit/spawn.test.ts",
+      "contentHash": "2ea593e5b42bb202cfa3e059ff1b4ac05390c06427c688f327e1ae94251a1b28",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/launcher/spawn",
+          "specifiers": [
+            "createSupervisor"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/stability-14.2-14.12.test.ts": {
+      "filePath": "tests/unit/stability-14.2-14.12.test.ts",
+      "contentHash": "5a2c23aee7c7e45608a7d42de01976ff57eaacbf7ff19de6be8a15f9ad96e8ee",
+      "functions": [
+        {
+          "name": "fakeClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "fakeEventStream",
+          "params": [
+            "events"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "fakeState",
+          "params": [],
+          "exported": false,
+          "lineCount": 25
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/core/relay",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 87,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/state.test.ts": {
+      "filePath": "tests/unit/state.test.ts",
+      "contentHash": "3ec74fee040c157dc0d7ee43b06ec8fdf7e90b98d86a1527735e0e4ecf9928a0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "beforeEach",
+            "afterEach"
+          ]
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "mkdtempSync",
+            "rmSync",
+            "writeFileSync"
+          ]
+        },
+        {
+          "source": "node:os",
+          "specifiers": [
+            "tmpdir"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        },
+        {
+          "source": "../../src/core/state",
+          "specifiers": [
+            "createFileBackedState"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 67,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/stream-accumulator.test.ts": {
+      "filePath": "tests/unit/stream-accumulator.test.ts",
+      "contentHash": "7e6993ddfbd016aedc759169f25338a237830b95ee34cf741b04624a8e9221a9",
+      "functions": [
+        {
+          "name": "textPart",
+          "params": [
+            "id",
+            "text"
+          ],
+          "returnType": "{ id: string; type: 'text'; text: string }",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "toolPart",
+          "params": [
+            "id",
+            "tool",
+            "args",
+            "status"
+          ],
+          "returnType": "{ id: string; type: 'tool'; tool: string; state: { status: string; input: Record<string, unknown> } }",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "reasoningPart",
+          "params": [
+            "id",
+            "text"
+          ],
+          "returnType": "{ id: string; type: 'reasoning'; text: string }",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "blockText",
+          "params": [
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "blockTool",
+          "params": [
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect"
+          ]
+        },
+        {
+          "source": "../../src/core/stream-accumulator",
+          "specifiers": [
+            "createStreamAccumulator"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 110,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/structured-card.test.ts": {
+      "filePath": "tests/unit/structured-card.test.ts",
+      "contentHash": "356344760a8e0e3beb10b1a2c659f18408bba83367e58334af5fecf5f3a49ffb",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard",
+            "AssistantMeta"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/submit.test.ts": {
+      "filePath": "tests/unit/submit.test.ts",
+      "contentHash": "f637396e9bb83af9a468d748eb8d95befcd3d2d7b7de5507900a2f57f309d20f",
+      "functions": [
+        {
+          "name": "fakeClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../src/opencode/submit",
+          "specifiers": [
+            "submitPrompt"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/telegram-render.test.ts": {
+      "filePath": "tests/unit/telegram-render.test.ts",
+      "contentHash": "b8ce2a9c8c537c987d47a6a4bf1218ed4ec5abc92a534f48578996ee3ab6fa56",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/render",
+          "specifiers": [
+            "cardToTelegram"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/telegram/overflow.test.ts": {
+      "filePath": "tests/unit/telegram/overflow.test.ts",
+      "contentHash": "09728568bfe070b1a83d3cbacf00a868c1de9c0e1ec215f7cacbbd73049d5c1c",
+      "functions": [
+        {
+          "name": "fakeBot",
+          "params": [],
+          "exported": false,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/telegram/renderer",
+          "specifiers": [
+            "TelegramSessionRenderer"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/telegram/renderer.test.ts": {
+      "filePath": "tests/unit/telegram/renderer.test.ts",
+      "contentHash": "3c03e6b906edf4a17dc0d9e3d4268071bcacfaab616a3a4c46eaa8e01e41f8a8",
+      "functions": [
+        {
+          "name": "fakeBot",
+          "params": [],
+          "exported": false,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/telegram/renderer",
+          "specifiers": [
+            "TelegramSessionRenderer"
+          ]
+        },
+        {
+          "source": "../../../src/core/structured-card",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 122,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/tri-end-coordination.test.ts": {
+      "filePath": "tests/unit/tri-end-coordination.test.ts",
+      "contentHash": "ddf4785e285be49c526fb882405a31ef8c60e5af1f6e12331c28a7825966b97e",
+      "functions": [
+        {
+          "name": "fakeBot",
+          "params": [],
+          "exported": false,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus.js",
+          "specifiers": [
+            "createCardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/relay.js",
+          "specifiers": [
+            "createRelay"
+          ]
+        },
+        {
+          "source": "../../src/transport/telegram/renderer.js",
+          "specifiers": [
+            "TelegramSessionRenderer"
+          ]
+        },
+        {
+          "source": "../../src/core/card-bus.js",
+          "specifiers": [
+            "CardBus"
+          ]
+        },
+        {
+          "source": "../../src/core/structured-card.js",
+          "specifiers": [
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 246,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/cf-access-host-spoof.test.ts": {
+      "filePath": "tests/unit/web/cf-access-host-spoof.test.ts",
+      "contentHash": "041d67c730f4abb785396a4df0add6a01ce1d1f74bfb5a9d77555755ea5544f3",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/middleware/cf-access",
+          "specifiers": [
+            "verifyUpgradeJwt"
+          ]
+        },
+        {
+          "source": "jose",
+          "specifiers": [
+            "jwtVerify"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 116,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/cf-access.test.ts": {
+      "filePath": "tests/unit/web/cf-access.test.ts",
+      "contentHash": "9b06a9008fbc2a25609e721878973ec5efd44b3841dd42b555a2eaf5bea7d827",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/middleware/cf-access",
+          "specifiers": [
+            "cfAccessMiddleware"
+          ]
+        },
+        {
+          "source": "jose",
+          "specifiers": [
+            "jwtVerify",
+            "createRemoteJWKSet"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 63,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/routes.test.ts": {
+      "filePath": "tests/unit/web/routes.test.ts",
+      "contentHash": "7116dd11a3a1f3399f9bc09c704f40cf14c48491842942f3d032f29262858d6a",
+      "functions": [
+        {
+          "name": "fakeState",
+          "params": [],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "fakeClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "baseOpts",
+          "params": [
+            "state",
+            "client"
+          ],
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/server",
+          "specifiers": [
+            "buildServer"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 139,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/server.test.ts": {
+      "filePath": "tests/unit/web/server.test.ts",
+      "contentHash": "6b73634fdce8fab564c1825ac253aa10f497e8b07db866b2a9b1ec50b54b8fb0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "hono",
+          "specifiers": [
+            "Hono"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/server",
+          "specifiers": [
+            "buildServer"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/transport.test.ts": {
+      "filePath": "tests/unit/web/transport.test.ts",
+      "contentHash": "dc763c224935cc3380525bb052e94dd706d60f719565bf5a2f5e42d2280d966e",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/index",
+          "specifiers": [
+            "createWebTransport"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/ws-auth.test.ts": {
+      "filePath": "tests/unit/web/ws-auth.test.ts",
+      "contentHash": "d6d525642602cfede3bea4d469b8ba16e9321f7b5a80ed03f890f51115fe6e7b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/middleware/cf-access",
+          "specifiers": [
+            "verifyUpgradeJwt"
+          ]
+        },
+        {
+          "source": "jose",
+          "specifiers": [
+            "jwtVerify"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 78,
+      "hasStructuralAnalysis": true
+    },
+    "tests/unit/web/ws-hub.test.ts": {
+      "filePath": "tests/unit/web/ws-hub.test.ts",
+      "contentHash": "34d1f064477f40ce9083b7bba2fa6e5cdd9a85d7f566935b0f1f114eacca644b",
+      "functions": [
+        {
+          "name": "fakeWs",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "fakeClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "fakeState",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi"
+          ]
+        },
+        {
+          "source": "../../../src/transport/web/ws-hub",
+          "specifiers": [
+            "createWsHub"
+          ]
+        },
+        {
+          "source": "../../../src/core/card-bus",
+          "specifiers": [
+            "createCardBus"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "vitest.config.ts": {
+      "filePath": "vitest.config.ts",
+      "contentHash": "7c01dca361484e8af48cce537b5374036898ec911e86082031768dbaa56aff4f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest/config",
+          "specifiers": [
+            "defineConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "web/extension/background.ts": {
+      "filePath": "web/extension/background.ts",
+      "contentHash": "7b584ac99162287e687d8f212d566617bc4de207b6b831ccb39dde10da3f6bf9",
+      "functions": [
+        {
+          "name": "formatSelection",
+          "params": [
+            "info",
+            "tab"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "web/extension/popup.ts": {
+      "filePath": "web/extension/popup.ts",
+      "contentHash": "da202c19b421a7a4ab8682e5989cf3d89fe2c2cd93b72aacc65afaf9af5af968",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": true
+    },
+    "web/extension/sidepanel-entry.ts": {
+      "filePath": "web/extension/sidepanel-entry.ts",
+      "contentHash": "f4b9c5faa27e7d5262cc87a8d6bf649cb2668dbb04ff4f60ebadc6cc49ac4210",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "svelte",
+          "specifiers": [
+            "mount"
+          ]
+        },
+        {
+          "source": "../src/extension/App.svelte",
+          "specifiers": [
+            "App"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/extension/App.svelte": {
+      "filePath": "web/src/extension/App.svelte",
+      "contentHash": "02c470b869536410489b203b9b1a3daea0883a977970563748c3cd595c58d922",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 128,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/adapters/extension.ts": {
+      "filePath": "web/src/lib/adapters/extension.ts",
+      "contentHash": "0cb49bfb4aa71c8076c15d6dd935fc9d90c8358b472d47ac0b4b815c7f61b0e4",
+      "functions": [
+        {
+          "name": "getBotUrl",
+          "params": [],
+          "returnType": "Promise<string>",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "getBotUrl"
+      ],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/api/client.ts": {
+      "filePath": "web/src/lib/api/client.ts",
+      "contentHash": "5eaf0c87648c2d2c9265a9bd8aba1b1ee4b1df4cec14c2bba88bb10ebc3f912f",
+      "functions": [
+        {
+          "name": "setBaseUrl",
+          "params": [
+            "url"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "jsonGet",
+          "params": [
+            "path"
+          ],
+          "returnType": "Promise<T>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "jsonPost",
+          "params": [
+            "path",
+            "body"
+          ],
+          "returnType": "Promise<T>",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./types.js",
+          "specifiers": [
+            "StructuredCard",
+            "SessionSummary"
+          ]
+        }
+      ],
+      "exports": [
+        "setBaseUrl",
+        "api"
+      ],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/api/types.ts": {
+      "filePath": "web/src/lib/api/types.ts",
+      "contentHash": "70d00aa2d5efcc9092a8ffe3076e57e8e32993e13ecbf59d13b64b15d2459dcc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "$shared/structured-card.js",
+          "specifiers": [
+            "ToolCall",
+            "AssistantMeta",
+            "InfoSection",
+            "Button",
+            "StructuredCard"
+          ]
+        }
+      ],
+      "exports": [
+        "ToolCall",
+        "AssistantMeta",
+        "InfoSection",
+        "Button",
+        "StructuredCard"
+      ],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/components/ApprovalModal.svelte": {
+      "filePath": "web/src/lib/components/ApprovalModal.svelte",
+      "contentHash": "54009ed3a2744a3831eb7d88e3fd0a1462833d146bbbeb6906a98ba8c8839192",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/Card.svelte": {
+      "filePath": "web/src/lib/components/Card.svelte",
+      "contentHash": "f3fe1718b0790bb6d00105c3ccf73b6d05fefbf9a8caf2b64d13a5ab3a079218",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardAssistant.svelte": {
+      "filePath": "web/src/lib/components/CardAssistant.svelte",
+      "contentHash": "ea094bddbae7bcf21bea38367fcdfc81ce7f04012bb6dc13fdc16891b864f08c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardError.svelte": {
+      "filePath": "web/src/lib/components/CardError.svelte",
+      "contentHash": "53f1d79d642f529bc5e616ed118878e524a74a7cb0091d26130a185b5e0ae910",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardInfo.svelte": {
+      "filePath": "web/src/lib/components/CardInfo.svelte",
+      "contentHash": "392043c90c46795b7263901b41d7a3b9441186edd8b8571e03f9740f10b5b07e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 50,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardStatus.svelte": {
+      "filePath": "web/src/lib/components/CardStatus.svelte",
+      "contentHash": "e25f7893635ea6af3dc7b9ee3ffdb9b7541ff5972a550901a3aec130b25a5b6b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardStreaming.svelte": {
+      "filePath": "web/src/lib/components/CardStreaming.svelte",
+      "contentHash": "9936dad114fdbc3ba6681fa8aa508b0518a35eabbb4d7e1a8d985149d0f13dfb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardThinking.svelte": {
+      "filePath": "web/src/lib/components/CardThinking.svelte",
+      "contentHash": "9fd5c5631a4f40b78ac11baaf821f261b883e3d27668d2475ffbbb7bb40bef09",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 39,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardThinkStream.svelte": {
+      "filePath": "web/src/lib/components/CardThinkStream.svelte",
+      "contentHash": "4ab8d6648b1e10c2aaa061acab30372dd8a882a01bd975f69fecfd52f8fb27b4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/CardUser.svelte": {
+      "filePath": "web/src/lib/components/CardUser.svelte",
+      "contentHash": "6a7456f2a6faf2868ac45199027a07dafdaaefeb4ff54f457b737df1b825db7b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/Composer.svelte": {
+      "filePath": "web/src/lib/components/Composer.svelte",
+      "contentHash": "9730204b5d11fce2335cc60c684198d7ea9d410eb5c6e0a96097783573ae7545",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/ConnectionBadge.svelte": {
+      "filePath": "web/src/lib/components/ConnectionBadge.svelte",
+      "contentHash": "5c745709aa78a0e55ec7275ea8a79589af26a3f93544d52b1948558b4f9ce7d9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/MarkdownView.svelte": {
+      "filePath": "web/src/lib/components/MarkdownView.svelte",
+      "contentHash": "6e13d6097d31b55071fb71b2cd16e54f2f3b841355c4620b8fe5596381f336db",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/MarkdownView.test.ts": {
+      "filePath": "web/src/lib/components/MarkdownView.test.ts",
+      "contentHash": "d381436e5ff8b952195753409dd8b7cfeabb8040a82efab8961aec4f82afc6d2",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect"
+          ]
+        },
+        {
+          "source": "@testing-library/svelte",
+          "specifiers": [
+            "render"
+          ]
+        },
+        {
+          "source": "./MarkdownView.svelte",
+          "specifiers": [
+            "MarkdownView"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/components/SessionList.svelte": {
+      "filePath": "web/src/lib/components/SessionList.svelte",
+      "contentHash": "27e45d25e5db77c284460b5e77c3e9e8352a7977b12a788f71b2b5505cfb6459",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 93,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/components/ToolCallList.svelte": {
+      "filePath": "web/src/lib/components/ToolCallList.svelte",
+      "contentHash": "de0ee5fabf32ad2583579cf9bd791ec6649163086906b699c2b7e3524a129bd5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/lib/stores/activeSession.ts": {
+      "filePath": "web/src/lib/stores/activeSession.ts",
+      "contentHash": "f534e310ffaad8b647ee653cf7f08008acf513597f734f46908f0bce5936d0dd",
+      "functions": [
+        {
+          "name": "readCookie",
+          "params": [],
+          "returnType": "string | null",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "writeCookie",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "createActiveSessionStore",
+          "params": [],
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "svelte/store",
+          "specifiers": [
+            "writable"
+          ]
+        }
+      ],
+      "exports": [
+        "activeSession"
+      ],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/stores/connection.ts": {
+      "filePath": "web/src/lib/stores/connection.ts",
+      "contentHash": "a6c56619cef2d9cbed1fa9ca9cee75f68bd6a7fee95a9eaf23b7d416db6dd3d6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "svelte/store",
+          "specifiers": [
+            "writable"
+          ]
+        }
+      ],
+      "exports": [
+        "connection"
+      ],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/stores/sessions.ts": {
+      "filePath": "web/src/lib/stores/sessions.ts",
+      "contentHash": "7dbe268a34ba760ead1bb5cf9c2a74fbbe7de650897665516caf4089bf50aae0",
+      "functions": [
+        {
+          "name": "appendCard",
+          "params": [
+            "card"
+          ],
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "setHistory",
+          "params": [
+            "sessionId",
+            "cards"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "svelte/store",
+          "specifiers": [
+            "writable"
+          ]
+        },
+        {
+          "source": "../api/types.js",
+          "specifiers": [
+            "StructuredCard",
+            "SessionSummary"
+          ]
+        }
+      ],
+      "exports": [
+        "sessionList",
+        "cardsBySession",
+        "appendCard",
+        "setHistory"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/ws/client.test.ts": {
+      "filePath": "web/src/lib/ws/client.test.ts",
+      "contentHash": "736f7054d57edbadb583eb25f3aa6fa2e5eaac9c23b09ec8bb6a632c27444440",
+      "functions": [],
+      "classes": [
+        {
+          "name": "FakeWebSocket",
+          "methods": [
+            "constructor",
+            "send",
+            "close"
+          ],
+          "properties": [
+            "instances",
+            "CONNECTING",
+            "OPEN",
+            "CLOSING",
+            "CLOSED",
+            "url",
+            "readyState",
+            "onopen",
+            "onmessage",
+            "onclose",
+            "onerror",
+            "sent"
+          ],
+          "exported": false,
+          "lineCount": 23
+        }
+      ],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "it",
+            "expect",
+            "vi",
+            "beforeEach",
+            "afterEach"
+          ]
+        },
+        {
+          "source": "./client",
+          "specifiers": [
+            "createWsClient"
+          ]
+        },
+        {
+          "source": "../stores/connection",
+          "specifiers": [
+            "connection"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 52,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/lib/ws/client.ts": {
+      "filePath": "web/src/lib/ws/client.ts",
+      "contentHash": "7339acf19ba286b26f92cd70850a82c06b598692b731fee95bb0f75dd5647d73",
+      "functions": [
+        {
+          "name": "createWsClient",
+          "params": [
+            "opts"
+          ],
+          "returnType": "WsClient",
+          "exported": true,
+          "lineCount": 96
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../stores/connection.js",
+          "specifiers": [
+            "connection",
+            "ConnectionStatus"
+          ]
+        }
+      ],
+      "exports": [
+        "createWsClient"
+      ],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/routes/[sessionId]/+page.svelte": {
+      "filePath": "web/src/routes/[sessionId]/+page.svelte",
+      "contentHash": "0e26da8a23b3c20f254e42afe4eeac85779800166a72ca3e265ff028ece658e9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/routes/+layout.svelte": {
+      "filePath": "web/src/routes/+layout.svelte",
+      "contentHash": "0b52a7402dbf3a153ff61d7e5f33b94966cd4f0a7087c6db7619097fe75bc8e8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 132,
+      "hasStructuralAnalysis": false
+    },
+    "web/src/routes/+layout.ts": {
+      "filePath": "web/src/routes/+layout.ts",
+      "contentHash": "b10defd1ccc4c0d590ab4aee68691d9803259cc6012c27fe951ede51ac82e915",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "ssr",
+        "prerender",
+        "trailingSlash"
+      ],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "web/src/routes/+page.svelte": {
+      "filePath": "web/src/routes/+page.svelte",
+      "contentHash": "68d843791761f58162de0b86af3b161497c0de59c5c4946116886fb5f6539186",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "web/static/manifest.webmanifest": {
+      "filePath": "web/static/manifest.webmanifest",
+      "contentHash": "71ee52d385b535f94ea5126f96c6ee2f3339d166e2758b63d5b7aef2cb2ec413",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
+    "web/svelte.config.js": {
+      "filePath": "web/svelte.config.js",
+      "contentHash": "11c56258e8862fe9dda9824fb8b9570990c03ab0a9212bda0ed8bed9f937afdc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@sveltejs/adapter-static",
+          "specifiers": [
+            "adapter"
+          ]
+        },
+        {
+          "source": "@sveltejs/vite-plugin-svelte",
+          "specifiers": [
+            "vitePreprocess"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "web/tests/e2e/happy-path.spec.ts": {
+      "filePath": "web/tests/e2e/happy-path.spec.ts",
+      "contentHash": "8460b0237dec9e32c29ea9860307911c4dcdb3c2da8370f3862878f50a76ba0b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@playwright/test",
+          "specifiers": [
+            "test",
+            "expect"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "web/vite.config.ts": {
+      "filePath": "web/vite.config.ts",
+      "contentHash": "cdff03d0238b456c38a9d2fab96f20f5ef9de87f848688bc5950854c445d5258",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@sveltejs/kit/vite",
+          "specifiers": [
+            "sveltekit"
+          ]
+        },
+        {
+          "source": "vite",
+          "specifiers": [
+            "defineConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "web/vite.extension.config.ts": {
+      "filePath": "web/vite.extension.config.ts",
+      "contentHash": "6c597fdda3ba3079f156196241ab18915b5d5260e6661517d2a551135cd972aa",
+      "functions": [
+        {
+          "name": "extensionManifestPlugin",
+          "params": [],
+          "exported": false,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vite",
+          "specifiers": [
+            "defineConfig"
+          ]
+        },
+        {
+          "source": "@sveltejs/vite-plugin-svelte",
+          "specifiers": [
+            "svelte"
+          ]
+        },
+        {
+          "source": "path",
+          "specifiers": [
+            "resolve"
+          ]
+        },
+        {
+          "source": "fs",
+          "specifiers": [
+            "readFileSync",
+            "writeFileSync",
+            "mkdirSync",
+            "copyFileSync"
+          ]
+        },
+        {
+          "source": "path",
+          "specifiers": [
+            "dirname"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 52,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

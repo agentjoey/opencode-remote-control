@@ -1,0 +1,177 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/transport/telegram/renderer.ts",
+      "type": "file",
+      "name": "renderer.ts",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "summary": "Telegram transport renderer that turns structured cards (thinking/assistant/error/info) into paginated HTML Telegram messages, with markdown chunking, tool-call collapsing, and a per-message timeout safeguard against stuck TCP connections.",
+      "tags": ["telegram", "renderer", "transport", "pagination", "markdown"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "type": "class",
+      "name": "TelegramSessionRenderer",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [94, 230],
+      "summary": "Session-scoped renderer that dispatches incoming StructuredCard events to the right Telegram message flow: thinking placeholders, multi-chunk final answers with footer, error notices, and retried info/help messages.",
+      "tags": ["telegram", "renderer", "session", "stateful"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/renderer.ts:splitMarkdown",
+      "type": "function",
+      "name": "splitMarkdown",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [52, 63],
+      "summary": "Splits a markdown string into chunks of at most perChunk characters, preferring paragraph then single-line boundaries near the target so chunks stay readable.",
+      "tags": ["utility", "markdown", "pagination", "chunking"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/telegram/renderer.ts:collapseTools",
+      "type": "function",
+      "name": "collapseTools",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [65, 77],
+      "summary": "Collapses long tool-call lists into a small head/tail window with a synthetic __more__ placeholder, keeping all currently-running tools and a couple of completed ones at the head and tail.",
+      "tags": ["utility", "tool-calls", "truncation", "telegram"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/telegram/renderer.ts:finalize",
+      "type": "function",
+      "name": "finalize",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [142, 178],
+      "summary": "Deletes the thinking placeholder, splits the assistant markdown into paginated chunks, renders each chunk (with tools on the first piece and a meta footer on the last), and falls back to a 3800-char last-resort send on failure.",
+      "tags": ["telegram", "pagination", "error-handling", "rendering"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/renderer.ts:sendInfo",
+      "type": "function",
+      "name": "sendInfo",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [185, 207],
+      "summary": "Renders an info card (title + sections of body markdown) as a single HTML Telegram message and retries up to 3 times with 2s backoff on transient network errors (ECONNRESET/ETIMEDOUT).",
+      "tags": ["telegram", "retry", "error-handling", "info"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/telegram/renderer.ts:renderChunkBody",
+      "type": "function",
+      "name": "renderChunkBody",
+      "filePath": "src/transport/telegram/renderer.ts",
+      "lineRange": [209, 229],
+      "summary": "Composes the per-chunk HTML body: a collapsed tool-call list, the converted markdown body, and an optional meta footer separated by a horizontal rule on the final chunk.",
+      "tags": ["telegram", "rendering", "markdown", "footer"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/integration/telegram-overflow.test.ts",
+      "type": "file",
+      "name": "telegram-overflow.test.ts",
+      "filePath": "tests/integration/telegram-overflow.test.ts",
+      "summary": "Integration test asserting that a 15000+ char assistant answer is paginated into at least three Telegram messages and that the cost footer lands on the last message.",
+      "tags": ["test", "integration", "telegram", "pagination"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/telegram/overflow.test.ts",
+      "type": "file",
+      "name": "overflow.test.ts",
+      "filePath": "tests/unit/telegram/overflow.test.ts",
+      "summary": "Unit test asserting that TelegramSessionRenderer paginates a long final answer into multiple sent messages, with the cost footer attached to the last one.",
+      "tags": ["test", "unit", "telegram", "pagination"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "function:src/transport/telegram/renderer.ts:splitMarkdown",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "function:src/transport/telegram/renderer.ts:collapseTools",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "target": "function:src/transport/telegram/renderer.ts:finalize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "target": "function:src/transport/telegram/renderer.ts:sendInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "target": "function:src/transport/telegram/renderer.ts:renderChunkBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/telegram/renderer.ts:finalize",
+      "target": "function:src/transport/telegram/renderer.ts:splitMarkdown",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/telegram/renderer.ts:finalize",
+      "target": "function:src/transport/telegram/renderer.ts:renderChunkBody",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/telegram/renderer.ts:renderChunkBody",
+      "target": "function:src/transport/telegram/renderer.ts:collapseTools",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "file:tests/integration/telegram-overflow.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "file:tests/unit/telegram/overflow.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

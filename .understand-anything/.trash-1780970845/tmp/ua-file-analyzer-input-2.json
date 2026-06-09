@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "src/transport/telegram/renderer.ts", "language": "typescript", "sizeLines": 260, "fileCategory": "code"},
+    {"path": "tests/integration/telegram-overflow.test.ts", "language": "typescript", "sizeLines": 33, "fileCategory": "code"},
+    {"path": "tests/unit/telegram/overflow.test.ts", "language": "typescript", "sizeLines": 130, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "src/transport/telegram/renderer.ts": [],
+    "tests/integration/telegram-overflow.test.ts": [],
+    "tests/unit/telegram/overflow.test.ts": []
+  }
+}

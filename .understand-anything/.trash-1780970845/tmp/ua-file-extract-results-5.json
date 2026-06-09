@@ -1,0 +1,290 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "web/src/lib/stores/connection.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 3,
+      "exports": [
+        {
+          "name": "connection",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/ws/client.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 51,
+      "nonEmptyLines": 45,
+      "classes": [
+        {
+          "name": "FakeWebSocket",
+          "startLine": 5,
+          "endLine": 27,
+          "methods": [
+            "constructor",
+            "send",
+            "close"
+          ],
+          "properties": [
+            "instances",
+            "CONNECTING",
+            "OPEN",
+            "CLOSING",
+            "CLOSED",
+            "url",
+            "readyState",
+            "onopen",
+            "onmessage",
+            "onclose",
+            "onerror",
+            "sent"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "FakeWebSocket.instances.push",
+          "lineNumber": 21
+        },
+        {
+          "caller": "constructor",
+          "callee": "setTimeout",
+          "lineNumber": 22
+        },
+        {
+          "caller": "constructor",
+          "callee": "this.onopen",
+          "lineNumber": 22
+        },
+        {
+          "caller": "send",
+          "callee": "this.sent.push",
+          "lineNumber": 25
+        },
+        {
+          "caller": "close",
+          "callee": "this.onclose",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "web/src/lib/ws/client.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 112,
+      "nonEmptyLines": 97,
+      "functions": [
+        {
+          "name": "createWsClient",
+          "startLine": 17,
+          "endLine": 112,
+          "params": [
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createWsClient",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setStatus",
+          "callee": "connection.set",
+          "lineNumber": 26
+        },
+        {
+          "caller": "setStatus",
+          "callee": "opts.onStatus",
+          "lineNumber": 27
+        },
+        {
+          "caller": "clearTimers",
+          "callee": "clearTimeout",
+          "lineNumber": 31
+        },
+        {
+          "caller": "clearTimers",
+          "callee": "clearTimeout",
+          "lineNumber": 32
+        },
+        {
+          "caller": "clearTimers",
+          "callee": "clearTimeout",
+          "lineNumber": 33
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "setTimeout",
+          "lineNumber": 37
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "ws.send",
+          "lineNumber": 39
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "JSON.stringify",
+          "lineNumber": 39
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "setTimeout",
+          "lineNumber": 40
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "ws?.close",
+          "lineNumber": 41
+        },
+        {
+          "caller": "schedulePing",
+          "callee": "reconnect",
+          "lineNumber": 42
+        },
+        {
+          "caller": "connect",
+          "callee": "setStatus",
+          "lineNumber": 50
+        },
+        {
+          "caller": "connect",
+          "callee": "reconnect",
+          "lineNumber": 54
+        },
+        {
+          "caller": "connect",
+          "callee": "setStatus",
+          "lineNumber": 60
+        },
+        {
+          "caller": "connect",
+          "callee": "opts.onReconnect",
+          "lineNumber": 61
+        },
+        {
+          "caller": "connect",
+          "callee": "schedulePing",
+          "lineNumber": 62
+        },
+        {
+          "caller": "connect",
+          "callee": "JSON.parse",
+          "lineNumber": 67
+        },
+        {
+          "caller": "connect",
+          "callee": "clearTimeout",
+          "lineNumber": 69
+        },
+        {
+          "caller": "connect",
+          "callee": "schedulePing",
+          "lineNumber": 70
+        },
+        {
+          "caller": "connect",
+          "callee": "opts.onMessage",
+          "lineNumber": 73
+        },
+        {
+          "caller": "connect",
+          "callee": "clearTimers",
+          "lineNumber": 78
+        },
+        {
+          "caller": "connect",
+          "callee": "reconnect",
+          "lineNumber": 79
+        },
+        {
+          "caller": "connect",
+          "callee": "ws?.close",
+          "lineNumber": 83
+        },
+        {
+          "caller": "reconnect",
+          "callee": "clearTimers",
+          "lineNumber": 88
+        },
+        {
+          "caller": "reconnect",
+          "callee": "setStatus",
+          "lineNumber": 90
+        },
+        {
+          "caller": "reconnect",
+          "callee": "Math.min",
+          "lineNumber": 91
+        },
+        {
+          "caller": "reconnect",
+          "callee": "setTimeout",
+          "lineNumber": 93
+        },
+        {
+          "caller": "createWsClient",
+          "callee": "connect",
+          "lineNumber": 96
+        },
+        {
+          "caller": "send",
+          "callee": "ws.send",
+          "lineNumber": 101
+        },
+        {
+          "caller": "send",
+          "callee": "JSON.stringify",
+          "lineNumber": 101
+        },
+        {
+          "caller": "close",
+          "callee": "clearTimers",
+          "lineNumber": 106
+        },
+        {
+          "caller": "close",
+          "callee": "ws?.close",
+          "lineNumber": 107
+        },
+        {
+          "caller": "close",
+          "callee": "setStatus",
+          "lineNumber": 109
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

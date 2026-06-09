@@ -1,0 +1,410 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "docs/reviews/2026-05-17-phase5-sprint-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 152,
+      "nonEmptyLines": 109,
+      "sections": [
+        {
+          "heading": "Phase 5 Web — Sprint Plan (2026-05-17)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "排期",
+          "level": 2,
+          "line": 11
+        },
+        {
+          "heading": "P0 — 阻断用户体验",
+          "level": 2,
+          "line": 23
+        },
+        {
+          "heading": "[WI-00] 修复 Web UI 点击 session 后主线程 hang ⚠️ 新增",
+          "level": 3,
+          "line": 25
+        },
+        {
+          "heading": "[WI-01] Card.svelte 补全卡片分发",
+          "level": 3,
+          "line": 41
+        },
+        {
+          "heading": "[WI-02] WS 重连后自动重新订阅",
+          "level": 3,
+          "line": 49
+        },
+        {
+          "heading": "[WI-03] Extension 侧边栏 WS 消息处理",
+          "level": 3,
+          "line": 57
+        },
+        {
+          "heading": "P1 — 功能缺陷 / 维护债",
+          "level": 2,
+          "line": 67
+        },
+        {
+          "heading": "[WI-04] 前端 info 类型同步 sessionId",
+          "level": 3,
+          "line": 69
+        },
+        {
+          "heading": "[WI-05] Extension manifest 版本号同步 + CSP",
+          "level": 3,
+          "line": 74
+        },
+        {
+          "heading": "[WI-06] 自动滚动依赖修正",
+          "level": 3,
+          "line": 79
+        },
+        {
+          "heading": "[WI-07] relay tools 去重",
+          "level": 3,
+          "line": 85
+        },
+        {
+          "heading": "P2 — 体验优化 / 架构改进",
+          "level": 2,
+          "line": 93
+        },
+        {
+          "heading": "[WI-08] 前端类型复用后端",
+          "level": 3,
+          "line": 95
+        },
+        {
+          "heading": "[WI-09] hello 消息注入 session 列表",
+          "level": 3,
+          "line": 101
+        },
+        {
+          "heading": "[WI-10] SPA fallback 优化",
+          "level": 3,
+          "line": 106
+        },
+        {
+          "heading": "[WI-11] streaming 去重逻辑优化",
+          "level": 3,
+          "line": 111
+        },
+        {
+          "heading": "[WI-12] card-bus 异常日志增强",
+          "level": 3,
+          "line": 116
+        },
+        {
+          "heading": "验证 & 收尾（0.5h）",
+          "level": 2,
+          "line": 123
+        },
+        {
+          "heading": "汇总",
+          "level": 2,
+          "line": 142
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 20
+      }
+    },
+    {
+      "path": "docs/reviews/2026-05-17-phase5-web-code-review.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 302,
+      "nonEmptyLines": 220,
+      "sections": [
+        {
+          "heading": "Phase 5 Web Code Review Report",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一、全局基线",
+          "level": 2,
+          "line": 11
+        },
+        {
+          "heading": "二、分层审查",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "2.1 类型系统层",
+          "level": 3,
+          "line": 26
+        },
+        {
+          "heading": "【Important】`web/src/lib/api/types.ts:34` — `info` 类型与后端不一致",
+          "level": 4,
+          "line": 28
+        },
+        {
+          "heading": "【Suggestion】`web/src/lib/api/types.ts` 整体与 `src/core/structured-card.ts` 重复定义",
+          "level": 4,
+          "line": 38
+        },
+        {
+          "heading": "2.2 后端传输层",
+          "level": 3,
+          "line": 46
+        },
+        {
+          "heading": "【Critical】`src/transport/web/server.ts:54` — `/api/me` 绕过 CF Access 中间件时返回明文 email",
+          "level": 4,
+          "line": 48
+        },
+        {
+          "heading": "【Important】`src/transport/web/ws-hub.ts:32` — `hello` 消息不含实际数据",
+          "level": 4,
+          "line": 59
+        },
+        {
+          "heading": "【Suggestion】`src/transport/web/middleware/cf-access.ts:18-31` — `extractJwt` query 解析未解码",
+          "level": 4,
+          "line": 68
+        },
+        {
+          "heading": "【Suggestion】`src/transport/web/index.ts:66-74` — SPA fallback 的启发式可能误判",
+          "level": 4,
+          "line": 79
+        },
+        {
+          "heading": "2.3 前端组件层",
+          "level": 3,
+          "line": 92
+        },
+        {
+          "heading": "【Important】`web/src/lib/components/Card.svelte:1-12` — 卡片分发器不完整",
+          "level": 4,
+          "line": 94
+        },
+        {
+          "heading": "【Important】`web/src/lib/ws/client.ts:75` — 重连丢失订阅状态",
+          "level": 4,
+          "line": 107
+        },
+        {
+          "heading": "【Important】`web/src/extension/App.svelte:24-30` — Extension 的 WS 消息处理为空",
+          "level": 4,
+          "line": 119
+        },
+        {
+          "heading": "【Suggestion】`web/src/routes/[sessionId]/+page.svelte:12-17` — 自动滚动的响应式依赖过于宽泛",
+          "level": 4,
+          "line": 134
+        },
+        {
+          "heading": "【Suggestion】`web/src/lib/stores/sessions.ts:12-14` — streaming 去重逻辑可能丢数据",
+          "level": 4,
+          "line": 146
+        },
+        {
+          "heading": "2.4 内核层（relay / card-bus / push）",
+          "level": 3,
+          "line": 157
+        },
+        {
+          "heading": "【Important】`src/core/relay.ts:259-266` — tools 数组可能产生重复条目",
+          "level": 4,
+          "line": 159
+        },
+        {
+          "heading": "【Suggestion】`src/core/card-bus.ts:24-26` — 订阅者异常隔离日志级别不足",
+          "level": 4,
+          "line": 174
+        },
+        {
+          "heading": "2.5 Extension 层",
+          "level": 3,
+          "line": 185
+        },
+        {
+          "heading": "【Important】`web/extension/manifest.json:4` — 版本号过期",
+          "level": 4,
+          "line": 187
+        },
+        {
+          "heading": "【Suggestion】`web/extension/background.ts:14` — `sendMessage` 无回调确认",
+          "level": 4,
+          "line": 196
+        },
+        {
+          "heading": "2.6 路由层（Backend API）",
+          "level": 3,
+          "line": 205
+        },
+        {
+          "heading": "【Suggestion】`src/transport/web/routes/message.ts:17` — fire-and-forget 无错误反馈",
+          "level": 4,
+          "line": 207
+        },
+        {
+          "heading": "【Suggestion】`src/transport/web/routes/sessions.ts:9` — 过滤逻辑对全新安装不友好",
+          "level": 4,
+          "line": 217
+        },
+        {
+          "heading": "三、安全审查",
+          "level": 2,
+          "line": 227
+        },
+        {
+          "heading": "【Important】Extension CSP 未配置",
+          "level": 4,
+          "line": 240
+        },
+        {
+          "heading": "四、测试覆盖分析",
+          "level": 2,
+          "line": 248
+        },
+        {
+          "heading": "五、问题汇总",
+          "level": 2,
+          "line": 263
+        },
+        {
+          "heading": "Critical（0）",
+          "level": 3,
+          "line": 265
+        },
+        {
+          "heading": "Important（7）",
+          "level": 3,
+          "line": 268
+        },
+        {
+          "heading": "Suggestion（6）",
+          "level": 3,
+          "line": 280
+        },
+        {
+          "heading": "六、总体评价",
+          "level": 2,
+          "line": 293
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 34
+      }
+    },
+    {
+      "path": "docs/reviews/2026-05-17-phase5-work-items.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 123,
+      "nonEmptyLines": 89,
+      "sections": [
+        {
+          "heading": "Phase 5 Web — Work Items (from code review 2026-05-17)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "P0 — 阻断用户体验",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "[WI-01] Card.svelte 补全卡片分发",
+          "level": 3,
+          "line": 10
+        },
+        {
+          "heading": "[WI-02] WS 重连后自动重新订阅",
+          "level": 3,
+          "line": 18
+        },
+        {
+          "heading": "[WI-03] Extension 侧边栏 WS 消息处理",
+          "level": 3,
+          "line": 26
+        },
+        {
+          "heading": "P1 — 功能缺陷 / 维护债",
+          "level": 2,
+          "line": 36
+        },
+        {
+          "heading": "[WI-04] 前端 info 类型同步 sessionId",
+          "level": 3,
+          "line": 38
+        },
+        {
+          "heading": "[WI-05] Extension manifest 版本号同步 + CSP",
+          "level": 3,
+          "line": 46
+        },
+        {
+          "heading": "[WI-06] 自动滚动依赖修正",
+          "level": 3,
+          "line": 54
+        },
+        {
+          "heading": "[WI-07] relay tools 去重",
+          "level": 3,
+          "line": 62
+        },
+        {
+          "heading": "P2 — 体验优化 / 架构改进",
+          "level": 2,
+          "line": 72
+        },
+        {
+          "heading": "[WI-08] 前端类型复用",
+          "level": 3,
+          "line": 74
+        },
+        {
+          "heading": "[WI-09] hello 消息注入 session 列表",
+          "level": 3,
+          "line": 82
+        },
+        {
+          "heading": "[WI-10] SPA fallback 优化",
+          "level": 3,
+          "line": 90
+        },
+        {
+          "heading": "[WI-11] streaming 去重逻辑优化",
+          "level": 3,
+          "line": 98
+        },
+        {
+          "heading": "[WI-12] card-bus 异常日志增强",
+          "level": 3,
+          "line": 106
+        },
+        {
+          "heading": "汇总",
+          "level": 2,
+          "line": 116
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 17
+      }
+    }
+  ]
+}

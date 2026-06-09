@@ -1,0 +1,1378 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/core/card-bus.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 52,
+      "functions": [
+        {
+          "name": "createCardBus",
+          "startLine": 15,
+          "endLine": 59,
+          "params": [
+            "bufferSize"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createCardBus",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "safe",
+          "callee": "fn",
+          "lineNumber": 25
+        },
+        {
+          "caller": "safe",
+          "callee": "log.warn",
+          "lineNumber": 27
+        },
+        {
+          "caller": "publish",
+          "callee": "sessionIdOf",
+          "lineNumber": 33
+        },
+        {
+          "caller": "publish",
+          "callee": "log.info",
+          "lineNumber": 34
+        },
+        {
+          "caller": "publish",
+          "callee": "perSession.get",
+          "lineNumber": 34
+        },
+        {
+          "caller": "publish",
+          "callee": "buffers.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "publish",
+          "callee": "buf.push",
+          "lineNumber": 37
+        },
+        {
+          "caller": "publish",
+          "callee": "buf.shift",
+          "lineNumber": 38
+        },
+        {
+          "caller": "publish",
+          "callee": "buffers.set",
+          "lineNumber": 39
+        },
+        {
+          "caller": "publish",
+          "callee": "perSession.get(sid)?.forEach",
+          "lineNumber": 40
+        },
+        {
+          "caller": "publish",
+          "callee": "perSession.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "publish",
+          "callee": "safe",
+          "lineNumber": 40
+        },
+        {
+          "caller": "publish",
+          "callee": "all.forEach",
+          "lineNumber": 42
+        },
+        {
+          "caller": "publish",
+          "callee": "safe",
+          "lineNumber": 42
+        },
+        {
+          "caller": "subscribe",
+          "callee": "perSession.get",
+          "lineNumber": 45
+        },
+        {
+          "caller": "subscribe",
+          "callee": "perSession.set",
+          "lineNumber": 46
+        },
+        {
+          "caller": "subscribe",
+          "callee": "s.add",
+          "lineNumber": 47
+        },
+        {
+          "caller": "subscribe",
+          "callee": "s!.delete",
+          "lineNumber": 48
+        },
+        {
+          "caller": "subscribeAll",
+          "callee": "all.add",
+          "lineNumber": 51
+        },
+        {
+          "caller": "subscribeAll",
+          "callee": "all.delete",
+          "lineNumber": 52
+        },
+        {
+          "caller": "recent",
+          "callee": "buffers.get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "recent",
+          "callee": "buf.slice",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/push.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 143,
+      "nonEmptyLines": 129,
+      "functions": [
+        {
+          "name": "startPushNotifications",
+          "startLine": 18,
+          "endLine": 143,
+          "params": [
+            "deps"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "startPushNotifications",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "canPush",
+          "callee": "Date.now",
+          "lineNumber": 27
+        },
+        {
+          "caller": "canPush",
+          "callee": "recentPushes.shift",
+          "lineNumber": 28
+        },
+        {
+          "caller": "canPush",
+          "callee": "lastSessionPush.get",
+          "lineNumber": 30
+        },
+        {
+          "caller": "recordPush",
+          "callee": "Date.now",
+          "lineNumber": 36
+        },
+        {
+          "caller": "recordPush",
+          "callee": "recentPushes.push",
+          "lineNumber": 37
+        },
+        {
+          "caller": "recordPush",
+          "callee": "lastSessionPush.set",
+          "lineNumber": 38
+        },
+        {
+          "caller": "recordEngagement",
+          "callee": "engagedAt.set",
+          "lineNumber": 42
+        },
+        {
+          "caller": "recordEngagement",
+          "callee": "Date.now",
+          "lineNumber": 42
+        },
+        {
+          "caller": "publish",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 46
+        },
+        {
+          "caller": "publish",
+          "callee": "log.warn",
+          "lineNumber": 46
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "deps.client.session.messages",
+          "lineNumber": 51
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "log.info",
+          "lineNumber": 53
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "sid.slice",
+          "lineNumber": 53
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "[...messages].reverse().find",
+          "lineNumber": 54
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "[...messages].reverse",
+          "lineNumber": 54
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "log.info",
+          "lineNumber": 56
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "log.info",
+          "lineNumber": 60
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "texts.push",
+          "lineNumber": 64
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "texts.join",
+          "lineNumber": 67
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "log.info",
+          "lineNumber": 68
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "combined.slice",
+          "lineNumber": 69
+        },
+        {
+          "caller": "fetchSummary",
+          "callee": "log.warn",
+          "lineNumber": 71
+        },
+        {
+          "caller": "handler",
+          "callee": "recordEngagement",
+          "lineNumber": 85
+        },
+        {
+          "caller": "handler",
+          "callee": "busySince.has",
+          "lineNumber": 88
+        },
+        {
+          "caller": "handler",
+          "callee": "busySince.set",
+          "lineNumber": 88
+        },
+        {
+          "caller": "handler",
+          "callee": "Date.now",
+          "lineNumber": 88
+        },
+        {
+          "caller": "handler",
+          "callee": "busySince.get",
+          "lineNumber": 90
+        },
+        {
+          "caller": "handler",
+          "callee": "busySince.delete",
+          "lineNumber": 91
+        },
+        {
+          "caller": "handler",
+          "callee": "engagedAt.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "handler",
+          "callee": "Date.now",
+          "lineNumber": 92
+        },
+        {
+          "caller": "handler",
+          "callee": "Date.now",
+          "lineNumber": 93
+        },
+        {
+          "caller": "handler",
+          "callee": "engagedAt.get",
+          "lineNumber": 94
+        },
+        {
+          "caller": "handler",
+          "callee": "Date.now",
+          "lineNumber": 95
+        },
+        {
+          "caller": "handler",
+          "callee": "canPush",
+          "lineNumber": 96
+        },
+        {
+          "caller": "handler",
+          "callee": "recordPush",
+          "lineNumber": 97
+        },
+        {
+          "caller": "handler",
+          "callee": "fetchSummary",
+          "lineNumber": 98
+        },
+        {
+          "caller": "handler",
+          "callee": "log.info",
+          "lineNumber": 100
+        },
+        {
+          "caller": "handler",
+          "callee": "sid.slice",
+          "lineNumber": 100
+        },
+        {
+          "caller": "handler",
+          "callee": "setTimeout",
+          "lineNumber": 101
+        },
+        {
+          "caller": "handler",
+          "callee": "fetchSummary",
+          "lineNumber": 102
+        },
+        {
+          "caller": "handler",
+          "callee": "sid.slice",
+          "lineNumber": 105
+        },
+        {
+          "caller": "handler",
+          "callee": "Math.round",
+          "lineNumber": 105
+        },
+        {
+          "caller": "handler",
+          "callee": "sections.push",
+          "lineNumber": 108
+        },
+        {
+          "caller": "handler",
+          "callee": "summary.replace",
+          "lineNumber": 108
+        },
+        {
+          "caller": "handler",
+          "callee": "publish",
+          "lineNumber": 110
+        },
+        {
+          "caller": "handler",
+          "callee": "(part.state.output as string).slice",
+          "lineNumber": 117
+        },
+        {
+          "caller": "handler",
+          "callee": "/\\b(FAIL|FAILED|error:|✗)\\b/.test",
+          "lineNumber": 118
+        },
+        {
+          "caller": "handler",
+          "callee": "canPush",
+          "lineNumber": 118
+        },
+        {
+          "caller": "handler",
+          "callee": "recordPush",
+          "lineNumber": 119
+        },
+        {
+          "caller": "handler",
+          "callee": "publish",
+          "lineNumber": 120
+        },
+        {
+          "caller": "handler",
+          "callee": "sid.slice",
+          "lineNumber": 125
+        },
+        {
+          "caller": "handler",
+          "callee": "tail.replace",
+          "lineNumber": 126
+        },
+        {
+          "caller": "startPushNotifications",
+          "callee": "deps.eventStream?.onAny",
+          "lineNumber": 135
+        },
+        {
+          "caller": "startPushNotifications",
+          "callee": "unsub",
+          "lineNumber": 141
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/relay.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 565,
+      "nonEmptyLines": 508,
+      "functions": [
+        {
+          "name": "isNetworkError",
+          "startLine": 28,
+          "endLine": 37,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "submitWithRetry",
+          "startLine": 39,
+          "endLine": 59,
+          "params": [
+            "client",
+            "opts"
+          ]
+        },
+        {
+          "name": "delayOrAbort",
+          "startLine": 61,
+          "endLine": 71,
+          "params": [
+            "ms",
+            "signal"
+          ]
+        },
+        {
+          "name": "formatK",
+          "startLine": 73,
+          "endLine": 76,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "waitForBusySession",
+          "startLine": 78,
+          "endLine": 100,
+          "params": [
+            "eventStream",
+            "signal",
+            "timeoutMs"
+          ]
+        },
+        {
+          "name": "selectTuiSession",
+          "startLine": 107,
+          "endLine": 127,
+          "params": [
+            "baseUrl",
+            "sessionID",
+            "signal"
+          ]
+        },
+        {
+          "name": "pickSessionFallback",
+          "startLine": 129,
+          "endLine": 139,
+          "params": [
+            "client"
+          ]
+        },
+        {
+          "name": "extractSessionID",
+          "startLine": 152,
+          "endLine": 159,
+          "params": [
+            "raw"
+          ]
+        },
+        {
+          "name": "createRelay",
+          "startLine": 161,
+          "endLine": 565,
+          "params": [
+            "deps"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createRelay",
+          "line": 161,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isNetworkError",
+          "callee": "err.message.toLowerCase",
+          "lineNumber": 29
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 30
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 31
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 32
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 33
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 34
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 35
+        },
+        {
+          "caller": "isNetworkError",
+          "callee": "msg.includes",
+          "lineNumber": 36
+        },
+        {
+          "caller": "submitWithRetry",
+          "callee": "submitPrompt",
+          "lineNumber": 45
+        },
+        {
+          "caller": "submitWithRetry",
+          "callee": "isNetworkError",
+          "lineNumber": 50
+        },
+        {
+          "caller": "submitWithRetry",
+          "callee": "Math.pow",
+          "lineNumber": 51
+        },
+        {
+          "caller": "submitWithRetry",
+          "callee": "log.warn",
+          "lineNumber": 52
+        },
+        {
+          "caller": "submitWithRetry",
+          "callee": "delayOrAbort",
+          "lineNumber": 53
+        },
+        {
+          "caller": "delayOrAbort",
+          "callee": "Promise.resolve",
+          "lineNumber": 62
+        },
+        {
+          "caller": "delayOrAbort",
+          "callee": "setTimeout",
+          "lineNumber": 64
+        },
+        {
+          "caller": "delayOrAbort",
+          "callee": "signal.removeEventListener",
+          "lineNumber": 65
+        },
+        {
+          "caller": "delayOrAbort",
+          "callee": "resolve",
+          "lineNumber": 66
+        },
+        {
+          "caller": "onAbort",
+          "callee": "clearTimeout",
+          "lineNumber": 68
+        },
+        {
+          "caller": "onAbort",
+          "callee": "reject",
+          "lineNumber": 68
+        },
+        {
+          "caller": "delayOrAbort",
+          "callee": "signal.addEventListener",
+          "lineNumber": 69
+        },
+        {
+          "caller": "formatK",
+          "callee": "(n / 1000).toFixed",
+          "lineNumber": 74
+        },
+        {
+          "caller": "formatK",
+          "callee": "String",
+          "lineNumber": 75
+        },
+        {
+          "caller": "finish",
+          "callee": "clearTimeout",
+          "lineNumber": 85
+        },
+        {
+          "caller": "finish",
+          "callee": "unsub",
+          "lineNumber": 86
+        },
+        {
+          "caller": "finish",
+          "callee": "resolve",
+          "lineNumber": 87
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "setTimeout",
+          "lineNumber": 89
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "finish",
+          "lineNumber": 89
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "eventStream.onAny",
+          "lineNumber": 90
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "finish",
+          "lineNumber": 95
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "signal.addEventListener",
+          "lineNumber": 98
+        },
+        {
+          "caller": "waitForBusySession",
+          "callee": "finish",
+          "lineNumber": 98
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "baseUrl.replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 111
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "AbortSignal.any",
+          "lineNumber": 113
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "fetch",
+          "lineNumber": 115
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "JSON.stringify",
+          "lineNumber": 118
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "log.debug",
+          "lineNumber": 122
+        },
+        {
+          "caller": "selectTuiSession",
+          "callee": "log.debug",
+          "lineNumber": 125
+        },
+        {
+          "caller": "pickSessionFallback",
+          "callee": "client.session.list",
+          "lineNumber": 130
+        },
+        {
+          "caller": "pickSessionFallback",
+          "callee": "[...sessions].sort",
+          "lineNumber": 135
+        },
+        {
+          "caller": "cleanupPluginSession",
+          "callee": "pluginSessions.get",
+          "lineNumber": 166
+        },
+        {
+          "caller": "cleanupPluginSession",
+          "callee": "clearTimeout",
+          "lineNumber": 168
+        },
+        {
+          "caller": "cleanupPluginSession",
+          "callee": "pluginSessions.delete",
+          "lineNumber": 169
+        },
+        {
+          "caller": "relay",
+          "callee": "setTimeout",
+          "lineNumber": 175
+        },
+        {
+          "caller": "relay",
+          "callee": "ac.abort",
+          "lineNumber": 175
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getPinnedSessionId",
+          "lineNumber": 177
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 177
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 178
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getNextAgent",
+          "lineNumber": 181
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 182
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getPinnedSessionId",
+          "lineNumber": 187
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.client.tui.appendPrompt",
+          "lineNumber": 189
+        },
+        {
+          "caller": "relay",
+          "callee": "(deps.client.tui as any).submitPrompt",
+          "lineNumber": 190
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 191
+        },
+        {
+          "caller": "relay",
+          "callee": "waitForBusySession",
+          "lineNumber": 192
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 194
+        },
+        {
+          "caller": "relay",
+          "callee": "resolvedId.slice",
+          "lineNumber": 194
+        },
+        {
+          "caller": "relay",
+          "callee": "log.warn",
+          "lineNumber": 196
+        },
+        {
+          "caller": "relay",
+          "callee": "log.warn",
+          "lineNumber": 199
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getPinnedSessionId",
+          "lineNumber": 204
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 205
+        },
+        {
+          "caller": "relay",
+          "callee": "pickSessionFallback",
+          "lineNumber": 206
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 207
+        },
+        {
+          "caller": "relay",
+          "callee": "resolvedId.slice",
+          "lineNumber": 207
+        },
+        {
+          "caller": "relay",
+          "callee": "selectTuiSession",
+          "lineNumber": 209
+        },
+        {
+          "caller": "relay",
+          "callee": "submitWithRetry",
+          "lineNumber": 211
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.setLastSessionId",
+          "lineNumber": 221
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 222
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 225
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 226
+        },
+        {
+          "caller": "relay",
+          "callee": "Date.now",
+          "lineNumber": 226
+        },
+        {
+          "caller": "relay",
+          "callee": "cleanupPluginSession",
+          "lineNumber": 230
+        },
+        {
+          "caller": "relay",
+          "callee": "createStreamAccumulator",
+          "lineNumber": 233
+        },
+        {
+          "caller": "relay",
+          "callee": "pluginSessions.set",
+          "lineNumber": 239
+        },
+        {
+          "caller": "relay",
+          "callee": "createStreamAccumulator",
+          "lineNumber": 245
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.eventStream.session",
+          "lineNumber": 249
+        },
+        {
+          "caller": "relay",
+          "callee": "log.debug",
+          "lineNumber": 253
+        },
+        {
+          "caller": "relay",
+          "callee": "JSON.stringify(p).slice",
+          "lineNumber": 253
+        },
+        {
+          "caller": "relay",
+          "callee": "JSON.stringify",
+          "lineNumber": 253
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 256
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 260
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 272
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 278
+        },
+        {
+          "caller": "relay",
+          "callee": "JSON.stringify(part.state?.input ?? {}).slice",
+          "lineNumber": 282
+        },
+        {
+          "caller": "relay",
+          "callee": "JSON.stringify",
+          "lineNumber": 282
+        },
+        {
+          "caller": "relay",
+          "callee": "processedPartIds.has",
+          "lineNumber": 291
+        },
+        {
+          "caller": "relay",
+          "callee": "processedPartIds.add",
+          "lineNumber": 292
+        },
+        {
+          "caller": "relay",
+          "callee": "acc.update",
+          "lineNumber": 294
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 298
+        },
+        {
+          "caller": "relay",
+          "callee": "p.delta.slice",
+          "lineNumber": 298
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 300
+        },
+        {
+          "caller": "relay",
+          "callee": "part.text.slice",
+          "lineNumber": 300
+        },
+        {
+          "caller": "relay",
+          "callee": "partTextAcc.set",
+          "lineNumber": 301
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 303
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 307
+        },
+        {
+          "caller": "relay",
+          "callee": "partTextAcc.get",
+          "lineNumber": 318
+        },
+        {
+          "caller": "relay",
+          "callee": "partTextAcc.set",
+          "lineNumber": 320
+        },
+        {
+          "caller": "relay",
+          "callee": "acc.update",
+          "lineNumber": 321
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 322
+        },
+        {
+          "caller": "relay",
+          "callee": "publishAssistantCard",
+          "lineNumber": 327
+        },
+        {
+          "caller": "relay",
+          "callee": "clearTimeout",
+          "lineNumber": 333
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 334
+        },
+        {
+          "caller": "relay",
+          "callee": "log.info",
+          "lineNumber": 338
+        },
+        {
+          "caller": "relay",
+          "callee": "log.warn",
+          "lineNumber": 340
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 341
+        },
+        {
+          "caller": "relay",
+          "callee": "clearTimeout",
+          "lineNumber": 343
+        },
+        {
+          "caller": "relay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 344
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "acc.finalize",
+          "lineNumber": 356
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "deps.client.session.message",
+          "lineNumber": 359
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "blocks.push",
+          "lineNumber": 364
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "blocks.push",
+          "lineNumber": 368
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "String(part.state?.input?.cmd ?? part.state?.input ?? '').slice",
+          "lineNumber": 371
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "String",
+          "lineNumber": 371
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "log.info",
+          "lineNumber": 377
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "deps.client.session.get",
+          "lineNumber": 383
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "deps.state.setSessionCost",
+          "lineNumber": 390
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "s.model.split('/').pop",
+          "lineNumber": 397
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "s.model.split",
+          "lineNumber": 397
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "log.info",
+          "lineNumber": 404
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 405
+        },
+        {
+          "caller": "publishAssistantCard",
+          "callee": "log.info",
+          "lineNumber": 406
+        },
+        {
+          "caller": "createRelay",
+          "callee": "extractSessionID",
+          "lineNumber": 423
+        },
+        {
+          "caller": "createRelay",
+          "callee": "pluginSessions.get",
+          "lineNumber": 424
+        },
+        {
+          "caller": "createRelay",
+          "callee": "JSON.stringify(part.state?.input ?? {}).slice",
+          "lineNumber": 434
+        },
+        {
+          "caller": "createRelay",
+          "callee": "JSON.stringify",
+          "lineNumber": 434
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.processedPartIds.has",
+          "lineNumber": 436
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.processedPartIds.add",
+          "lineNumber": 437
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.acc.update",
+          "lineNumber": 446
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.partTextAcc.set",
+          "lineNumber": 450
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 455
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.partTextAcc.get",
+          "lineNumber": 467
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.partTextAcc.set",
+          "lineNumber": 469
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.acc.update",
+          "lineNumber": 471
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 472
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.info",
+          "lineNumber": 484
+        },
+        {
+          "caller": "createRelay",
+          "callee": "ctx.sessionId.slice",
+          "lineNumber": 484
+        },
+        {
+          "caller": "createRelay",
+          "callee": "publishAssistantCard",
+          "lineNumber": 486
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.error",
+          "lineNumber": 492
+        },
+        {
+          "caller": "createRelay",
+          "callee": "cleanupPluginSession",
+          "lineNumber": 494
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 495
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.info",
+          "lineNumber": 497
+        },
+        {
+          "caller": "createRelay",
+          "callee": "sid.slice",
+          "lineNumber": 497
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 498
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.warn",
+          "lineNumber": 506
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 506
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 507
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 507
+        },
+        {
+          "caller": "createRelay",
+          "callee": "cleanupPluginSession",
+          "lineNumber": 508
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.state.setActiveAbort",
+          "lineNumber": 509
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.warn",
+          "lineNumber": 513
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 513
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 514
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 514
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.debug",
+          "lineNumber": 523
+        },
+        {
+          "caller": "createRelay",
+          "callee": "info.sessionID.slice",
+          "lineNumber": 523
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.info",
+          "lineNumber": 534
+        },
+        {
+          "caller": "createRelay",
+          "callee": "sid.slice",
+          "lineNumber": 534
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 535
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.warn",
+          "lineNumber": 543
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 543
+        },
+        {
+          "caller": "createRelay",
+          "callee": "deps.cardBus.publish",
+          "lineNumber": 544
+        },
+        {
+          "caller": "createRelay",
+          "callee": "String",
+          "lineNumber": 544
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.debug",
+          "lineNumber": 551
+        },
+        {
+          "caller": "createRelay",
+          "callee": "sid.slice",
+          "lineNumber": 551
+        },
+        {
+          "caller": "createRelay",
+          "callee": "log.debug",
+          "lineNumber": 560
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    }
+  ]
+}

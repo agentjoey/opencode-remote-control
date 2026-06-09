@@ -1,0 +1,242 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/transport/web/middleware/cf-access.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 104,
+      "nonEmptyLines": 93,
+      "functions": [
+        {
+          "name": "isLoopbackAddr",
+          "startLine": 12,
+          "endLine": 17,
+          "params": [
+            "addr"
+          ]
+        },
+        {
+          "name": "isLoopback",
+          "startLine": 19,
+          "endLine": 23,
+          "params": [
+            "host"
+          ]
+        },
+        {
+          "name": "remoteAddr",
+          "startLine": 25,
+          "endLine": 33,
+          "params": [
+            "c"
+          ]
+        },
+        {
+          "name": "extractJwt",
+          "startLine": 35,
+          "endLine": 48,
+          "params": [
+            "headers",
+            "query"
+          ]
+        },
+        {
+          "name": "verifyUpgradeJwt",
+          "startLine": 50,
+          "endLine": 71,
+          "params": [
+            "req",
+            "opts"
+          ]
+        },
+        {
+          "name": "cfAccessMiddleware",
+          "startLine": 73,
+          "endLine": 104,
+          "params": [
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "verifyUpgradeJwt",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "cfAccessMiddleware",
+          "line": 73,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isLoopbackAddr",
+          "callee": "addr.replace(/^::ffff:/, '').split",
+          "lineNumber": 15
+        },
+        {
+          "caller": "isLoopbackAddr",
+          "callee": "addr.replace",
+          "lineNumber": 15
+        },
+        {
+          "caller": "isLoopback",
+          "callee": "host.split",
+          "lineNumber": 21
+        },
+        {
+          "caller": "extractJwt",
+          "callee": "q.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "extractJwt",
+          "callee": "cookie.match",
+          "lineNumber": 45
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "isLoopbackAddr",
+          "lineNumber": 54
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "isLoopback",
+          "lineNumber": 54
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "req.url.split",
+          "lineNumber": 58
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "extractJwt",
+          "lineNumber": 59
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "createRemoteJWKSet",
+          "lineNumber": 62
+        },
+        {
+          "caller": "verifyUpgradeJwt",
+          "callee": "jwtVerify",
+          "lineNumber": 63
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "createRemoteJWKSet",
+          "lineNumber": 76
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "remoteAddr",
+          "lineNumber": 79
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "isLoopbackAddr",
+          "lineNumber": 80
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "isLoopback",
+          "lineNumber": 80
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.set",
+          "lineNumber": 83
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "next",
+          "lineNumber": 84
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.req.header",
+          "lineNumber": 88
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.req.query",
+          "lineNumber": 89
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.req.header('cookie')?.match",
+          "lineNumber": 90
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.req.header",
+          "lineNumber": 90
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.json",
+          "lineNumber": 93
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "jwtVerify",
+          "lineNumber": 97
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.set",
+          "lineNumber": 98
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "next",
+          "lineNumber": 99
+        },
+        {
+          "caller": "cfAccessMiddleware",
+          "callee": "c.json",
+          "lineNumber": 101
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/cf-access-host-spoof.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 103,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/cf-access.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 62,
+      "nonEmptyLines": 55,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

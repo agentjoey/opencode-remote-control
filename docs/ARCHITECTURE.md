@@ -3,58 +3,33 @@
 > Plain-language explanation of how `opencode-remote-control` is structured,
 > what it talks to, and how to extend it.
 >
-> Updated for v0.5.7 (streaming removed from Telegram). Phase 1/2 used a slightly
-> different submission path — see "History" section.
+> Updated for v0.6.0 (Plugin Registry mode as primary deployment).
 
-## The 2-process model
+## Deployment models
+
+### Plugin mode (v0.6.0+, recommended)
 
 ```
-┌──────────────────────────────┐         ┌──────────────────────────────┐
-│  opencode (your machine)     │         │  opencode-remote-control     │
-│                              │         │  (this project)              │
-│  ┌──────────────────────┐    │   HTTP  │                              │
-│  │ HTTP server :4096    │◄───┼─────────┤  SDK client                  │
-│  │ - /session/*         │    │   SSE   │  Event stream subscriber     │
-│  │ - /event             ├────┼─────────►  Core relay loop             │
-│  │ - /tui/*             │    │         │  Transport (Telegram, …)     │
-│  │ - /config/*          │    │         │  Persistent state            │
-│  └──────────────────────┘    │         │                              │
-│  ┌──────────────────────┐    │         └──────────────────────────────┘
-│  │ TUI (optional)       │    │                    │
-│  │ - shares opencode    │    │                    ▼
-│  │   server above       │    │           Telegram / Web / etc.
-│  └──────────────────────┘    │
-└──────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  opencode (single process)                            │
+│                                                       │
+│  ┌──────────────────┐  ┌───────────────────────────┐ │
+│  │ AI Engine :4096  │  │ Plugin: remote-control     │ │
+│  │                  │  │  ├─ Telegraf (Telegram)    │ │
+│  │                  │  │  ├─ Hono + WS (Web PWA)    │ │
+│  │                  │  │  └─ relay + CardBus        │ │
+│  └──────────────────┘  └──────────┬────────────────┘ │
+│                                   ▼                   │
+│                          Telegram / Web PWA            │
+└──────────────────────────────────────────────────────┘
 ```
 
-**Two processes:** opencode (which you already run), and us (the bot).
+Install once: `npx opencode-remote-control install`
+Then: `opencode` — bot auto-starts, no extra terminal, no launchd.
 
-- **opencode** runs as `opencode serve --port 4096`. The TUI on your Mac is a
-  *client* of that server, just like we are.
-- **We** are an `@opencode-ai/sdk` consumer. We send prompts, listen for
-  events, render output to the user via whichever transport(s) are enabled.
-
-We don't need the TUI to be running — but if it is, we can mirror prompts
-into it (see `TUI_VISIBLE` option below) so you see the conversation in both
-places.
-
----
-
-## Why two processes (and not a plugin)
-
-opencode supports plugins for hooking into session/tool/message events. We
-considered making this a plugin instead of a sidecar. We didn't, for two
-reasons:
-
-1. Plugins are designed as **event hooks**, not long-lived services. A
-   Telegram bot needs to maintain a long-poll connection; a Web UI needs to
-   serve HTTP. Neither fits the plugin lifecycle cleanly.
-2. Every existing chat-bot in the opencode ecosystem (grinev, cc-connect,
-   opencode-chat-bridge, kortix-channels, …) uses the external pattern. We
-   follow that precedent.
-
-See `docs/superpowers/specs/2026-05-16-architecture-comparison.md` for the
-full decision record.
+> **v0.6.0:** the standalone sidecar / `EventStream` SSE path was removed. The
+> plugin runs in-process and consumes the opencode plugin **event hook**
+> directly (`relay.handleEvent`). There is no `RC_MODE=legacy` anymore.
 
 ---
 
@@ -77,10 +52,7 @@ src/
                                  v0.5.7: 3s retry on fetchSummary empty (opencode persistence race)
 
   opencode/                      ← opencode-facing
-    client.ts                    SDK client factory + health check
-    event-stream.ts              persistent SSE subscriber + 30s heartbeat reconnect
-    submit.ts                    client.session.prompt wrapper
-    tui-bridge.ts                tui.appendPrompt mirror (deprecated path)
+    submit.ts                    client.session.promptAsync wrapper
 
   transport/                     ← user-facing
     interface.ts                 Transport contract (revised: start({cardBus,state}))
@@ -89,7 +61,6 @@ src/
       handlers.ts                slash commands + button callbacks
       renderer.ts                TelegramSessionRenderer: send-only (no edit/streaming v0.5.7)
                                  sendTimed() wraps all sendMessage with 10s TCP hang timeout
-      render.ts                  legacy card→Telegram HTML (non-streaming cards)
     web/
       index.ts                   createWebTransport()
       server.ts                  Hono HTTP + static
@@ -98,8 +69,10 @@ src/
       routes/*.ts                /api/* REST endpoints
 
   utils/
-  config.ts                      zod env schema (WEB_* variables)
-  index.ts                       starts all enabled transports
+  plugin/
+    entry.ts                     plugin entrypoint — wires transports, relay, push, event hook
+    config.ts                    plugin config (env + opencode.json plugin options)
+  index.ts                       re-exports the plugin
 
 web/                             ← SvelteKit PWA + Chrome Extension
   src/
@@ -190,20 +163,22 @@ The bot keeps minimal state, persisted across restarts in `data/state.json`:
 
 ## Configuration
 
-`src/config.ts` validates env vars via zod:
+`src/plugin/config.ts` resolves config from opencode.json plugin options and
+env vars (`.env` is auto-loaded):
 
 | Var | Default | Purpose |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | — (required) | Telegram bot token from @BotFather |
-| `ALLOWED_USER_ID` | — (required) | Single allowed Telegram user id |
-| `OPENCODE_BASE_URL` | `http://localhost:4096` | opencode server location |
-| `TRANSPORT` | `telegram` | Active transport (Phase 5: `telegram,web`) |
-| `EDIT_THROTTLE_MS` | `1000` | Min interval between transport.edit calls (**Telegram: unused since v0.5.7 — Telegram no longer edits messages**) |
+| `ALLOWED_USER_IDS` | — (required) | Comma-separated allowed Telegram user ids |
+| `WEB_ENABLED` | `false` | Enable the Web/PWA transport |
+| `WEB_HOST` | `127.0.0.1` | Web bind address |
+| `WEB_PORT` | `7081` | Web port |
+| `WEB_CF_ACCESS_TEAM` / `_AUD` | — | Cloudflare Access team + audience for JWT verification |
+| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass CF Access **only for a loopback socket peer**. Off by default — a loopback bind is not safe behind a tunnel |
 | `CHAT_TIMEOUT_MS` | `600000` | Per-message timeout |
-| `STREAM_OUTPUT` | `true` | Streaming on/off (**Telegram: unused since v0.5.7 — Telegram always delivers final result only; Web: still used**) |
-| `TUI_VISIBLE` | `false` | Mirror prompts to TUI via appendPrompt |
+| `TUI_VISIBLE` | `true` | Navigate the TUI to the target session via `/tui/select-session` |
 | `STATE_PATH` | `./data/state.json` | Persistent state location |
-| `LOG_LEVEL` | `info` | debug \| info \| warn \| error |
+| `TG_CHUNK_SOFT_LIMIT` | `3500` | Telegram message pagination soft limit |
 
 ---
 

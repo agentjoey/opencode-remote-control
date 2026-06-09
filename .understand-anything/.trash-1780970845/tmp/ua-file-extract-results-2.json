@@ -1,0 +1,710 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/transport/telegram/renderer.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 230,
+      "nonEmptyLines": 206,
+      "functions": [
+        {
+          "name": "escHtml",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "withTimeout",
+          "startLine": 23,
+          "endLine": 29,
+          "params": [
+            "p",
+            "label"
+          ]
+        },
+        {
+          "name": "fmtK",
+          "startLine": 31,
+          "endLine": 33,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "metaFooter",
+          "startLine": 35,
+          "endLine": 42,
+          "params": [
+            "meta"
+          ]
+        },
+        {
+          "name": "findBoundary",
+          "startLine": 44,
+          "endLine": 50,
+          "params": [
+            "md",
+            "near"
+          ]
+        },
+        {
+          "name": "splitMarkdown",
+          "startLine": 52,
+          "endLine": 63,
+          "params": [
+            "md",
+            "perChunk"
+          ]
+        },
+        {
+          "name": "collapseTools",
+          "startLine": 65,
+          "endLine": 77,
+          "params": [
+            "tools"
+          ]
+        },
+        {
+          "name": "blocksToText",
+          "startLine": 80,
+          "endLine": 85,
+          "params": [
+            "blocks"
+          ]
+        },
+        {
+          "name": "blocksToTools",
+          "startLine": 88,
+          "endLine": 92,
+          "params": [
+            "blocks"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "TelegramSessionRenderer",
+          "startLine": 94,
+          "endLine": 230,
+          "methods": [
+            "constructor",
+            "sendTimed",
+            "onCard",
+            "startThinking",
+            "finalize",
+            "markError",
+            "sendInfo",
+            "renderChunkBody"
+          ],
+          "properties": [
+            "chatId",
+            "sessionId",
+            "bot",
+            "thinkingMessageId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TelegramSessionRenderer",
+          "line": 94,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "escHtml",
+          "callee": "s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 19
+        },
+        {
+          "caller": "escHtml",
+          "callee": "s.replace(/&/g, '&amp;').replace",
+          "lineNumber": 19
+        },
+        {
+          "caller": "escHtml",
+          "callee": "s.replace",
+          "lineNumber": 19
+        },
+        {
+          "caller": "withTimeout",
+          "callee": "Promise.race",
+          "lineNumber": 24
+        },
+        {
+          "caller": "withTimeout",
+          "callee": "setTimeout",
+          "lineNumber": 26
+        },
+        {
+          "caller": "withTimeout",
+          "callee": "reject",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fmtK",
+          "callee": "(n / 1000).toFixed",
+          "lineNumber": 32
+        },
+        {
+          "caller": "fmtK",
+          "callee": "String",
+          "lineNumber": 32
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "parts.push",
+          "lineNumber": 37
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "meta.cost.toFixed",
+          "lineNumber": 37
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "parts.push",
+          "lineNumber": 38
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "fmtK",
+          "lineNumber": 38
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "fmtK",
+          "lineNumber": 38
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "parts.push",
+          "lineNumber": 39
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "parts.push",
+          "lineNumber": 40
+        },
+        {
+          "caller": "metaFooter",
+          "callee": "parts.join",
+          "lineNumber": 41
+        },
+        {
+          "caller": "findBoundary",
+          "callee": "md.lastIndexOf",
+          "lineNumber": 45
+        },
+        {
+          "caller": "findBoundary",
+          "callee": "md.lastIndexOf",
+          "lineNumber": 47
+        },
+        {
+          "caller": "splitMarkdown",
+          "callee": "md.slice",
+          "lineNumber": 56
+        },
+        {
+          "caller": "splitMarkdown",
+          "callee": "out.push",
+          "lineNumber": 57
+        },
+        {
+          "caller": "splitMarkdown",
+          "callee": "findBoundary",
+          "lineNumber": 58
+        },
+        {
+          "caller": "splitMarkdown",
+          "callee": "out.push",
+          "lineNumber": 59
+        },
+        {
+          "caller": "splitMarkdown",
+          "callee": "remaining.slice",
+          "lineNumber": 59
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "tools.filter",
+          "lineNumber": 67
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "tools.filter",
+          "lineNumber": 68
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "done.slice",
+          "lineNumber": 71
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "done.slice(firstCount).slice",
+          "lineNumber": 72
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "done.slice",
+          "lineNumber": 72
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "Math.min",
+          "lineNumber": 72
+        },
+        {
+          "caller": "collapseTools",
+          "callee": "[...tailDone, ...running].slice",
+          "lineNumber": 73
+        },
+        {
+          "caller": "blocksToText",
+          "callee": "blocks\n    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')\n    .map(b => b.text)\n    .join",
+          "lineNumber": 81
+        },
+        {
+          "caller": "blocksToText",
+          "callee": "blocks\n    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')\n    .map",
+          "lineNumber": 81
+        },
+        {
+          "caller": "blocksToText",
+          "callee": "blocks\n    .filter",
+          "lineNumber": 81
+        },
+        {
+          "caller": "blocksToTools",
+          "callee": "blocks\n    .filter((b): b is { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' } => b.type === 'tool')\n    .map",
+          "lineNumber": 89
+        },
+        {
+          "caller": "blocksToTools",
+          "callee": "blocks\n    .filter",
+          "lineNumber": 89
+        },
+        {
+          "caller": "sendTimed",
+          "callee": "withTimeout",
+          "lineNumber": 108
+        },
+        {
+          "caller": "sendTimed",
+          "callee": "this.bot.sendMessage",
+          "lineNumber": 109
+        },
+        {
+          "caller": "onCard",
+          "callee": "this.startThinking",
+          "lineNumber": 117
+        },
+        {
+          "caller": "onCard",
+          "callee": "this.finalize",
+          "lineNumber": 119
+        },
+        {
+          "caller": "onCard",
+          "callee": "this.markError",
+          "lineNumber": 120
+        },
+        {
+          "caller": "onCard",
+          "callee": "card.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 122
+        },
+        {
+          "caller": "onCard",
+          "callee": "card.text.replace(/&/g, '&amp;').replace",
+          "lineNumber": 122
+        },
+        {
+          "caller": "onCard",
+          "callee": "card.text.replace",
+          "lineNumber": 122
+        },
+        {
+          "caller": "onCard",
+          "callee": "this.sendTimed",
+          "lineNumber": 123
+        },
+        {
+          "caller": "onCard",
+          "callee": "userText.slice",
+          "lineNumber": 123
+        },
+        {
+          "caller": "onCard",
+          "callee": "this.sendInfo",
+          "lineNumber": 129
+        },
+        {
+          "caller": "startThinking",
+          "callee": "this.sendTimed",
+          "lineNumber": 135
+        },
+        {
+          "caller": "startThinking",
+          "callee": "String",
+          "lineNumber": 136
+        },
+        {
+          "caller": "startThinking",
+          "callee": "log.warn",
+          "lineNumber": 138
+        },
+        {
+          "caller": "finalize",
+          "callee": "this.bot.deleteMessage(this.chatId, Number(this.thinkingMessageId)).catch",
+          "lineNumber": 146
+        },
+        {
+          "caller": "finalize",
+          "callee": "this.bot.deleteMessage",
+          "lineNumber": 146
+        },
+        {
+          "caller": "finalize",
+          "callee": "Number",
+          "lineNumber": 146
+        },
+        {
+          "caller": "finalize",
+          "callee": "blocksToText",
+          "lineNumber": 150
+        },
+        {
+          "caller": "finalize",
+          "callee": "blocksToTools",
+          "lineNumber": 151
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 152
+        },
+        {
+          "caller": "finalize",
+          "callee": "Math.floor",
+          "lineNumber": 154
+        },
+        {
+          "caller": "finalize",
+          "callee": "splitMarkdown",
+          "lineNumber": 155
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 156
+        },
+        {
+          "caller": "finalize",
+          "callee": "this.renderChunkBody",
+          "lineNumber": 160
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 161
+        },
+        {
+          "caller": "finalize",
+          "callee": "this.sendTimed",
+          "lineNumber": 162
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 163
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 165
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.error",
+          "lineNumber": 167
+        },
+        {
+          "caller": "finalize",
+          "callee": "blocksToText",
+          "lineNumber": 169
+        },
+        {
+          "caller": "finalize",
+          "callee": "this.sendTimed",
+          "lineNumber": 171
+        },
+        {
+          "caller": "finalize",
+          "callee": "md.slice",
+          "lineNumber": 171
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.info",
+          "lineNumber": 172
+        },
+        {
+          "caller": "finalize",
+          "callee": "log.error",
+          "lineNumber": 175
+        },
+        {
+          "caller": "markError",
+          "callee": "escHtml",
+          "lineNumber": 181
+        },
+        {
+          "caller": "markError",
+          "callee": "this.sendTimed",
+          "lineNumber": 182
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "lines.push",
+          "lineNumber": 187
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "escHtml",
+          "lineNumber": 187
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "lines.push",
+          "lineNumber": 189
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "escHtml",
+          "lineNumber": 189
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "lines.push",
+          "lineNumber": 190
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "markdownToTelegramHtml",
+          "lineNumber": 190
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "this.sendTimed",
+          "lineNumber": 194
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "lines.join",
+          "lineNumber": 194
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "/ECONNRESET|ETIMEDOUT|network/i.test",
+          "lineNumber": 198
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "log.warn",
+          "lineNumber": 199
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "setTimeout",
+          "lineNumber": 200
+        },
+        {
+          "caller": "sendInfo",
+          "callee": "log.warn",
+          "lineNumber": 202
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "collapseTools",
+          "lineNumber": 211
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 215
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 218
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "escHtml",
+          "lineNumber": 218
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 221
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 223
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "markdownToTelegramHtml",
+          "lineNumber": 223
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "metaFooter",
+          "lineNumber": 225
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 226
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 226
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.push",
+          "lineNumber": 226
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "escHtml",
+          "lineNumber": 226
+        },
+        {
+          "caller": "renderChunkBody",
+          "callee": "lines.join",
+          "lineNumber": 228
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 9,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "tests/integration/telegram-overflow.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 28,
+      "functions": [
+        {
+          "name": "fakeBot",
+          "startLine": 4,
+          "endLine": 16,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 8
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.sent.push",
+          "lineNumber": 9
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 12
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.edits.push",
+          "lineNumber": 13
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "String",
+          "lineNumber": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/telegram/overflow.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "fakeBot",
+          "startLine": 4,
+          "endLine": 17,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 8
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.sent.push",
+          "lineNumber": 9
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 12
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.edits.push",
+          "lineNumber": 13
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "String",
+          "lineNumber": 13
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

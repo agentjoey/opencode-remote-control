@@ -1,0 +1,677 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 5,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 2185,
+      "nonEmptyLines": 1725,
+      "sections": [
+        {
+          "heading": "opencode-remote-control Implementation Plan",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "File Structure Recap",
+          "level": 2,
+          "line": 17
+        },
+        {
+          "heading": "Task 0: Project Scaffold",
+          "level": 2,
+          "line": 52
+        },
+        {
+          "heading": "Task 1: Utility — `escapeMarkdownV2` and `chunkMessage`",
+          "level": 2,
+          "line": 225
+        },
+        {
+          "heading": "Task 2: Utility — `logger`",
+          "level": 2,
+          "line": 350
+        },
+        {
+          "heading": "Task 3: Config Loading",
+          "level": 2,
+          "line": 410
+        },
+        {
+          "heading": "Task 4: opencode Client + Health",
+          "level": 2,
+          "line": 536
+        },
+        {
+          "heading": "Task 5: Event Stream — SSE Singleton",
+          "level": 2,
+          "line": 635
+        },
+        {
+          "heading": "Task 6: TUI Bridge — submit + status diff",
+          "level": 2,
+          "line": 878
+        },
+        {
+          "heading": "Task 7: Reply Stream — throttled edit + chunked finalize",
+          "level": 2,
+          "line": 1087
+        },
+        {
+          "heading": "Task 8: Chat Handler",
+          "level": 2,
+          "line": 1260
+        },
+        {
+          "heading": "Task 9: Approval Handler",
+          "level": 2,
+          "line": 1379
+        },
+        {
+          "heading": "Task 10: Commands Handler",
+          "level": 2,
+          "line": 1544
+        },
+        {
+          "heading": "Task 11: Bot Wiring + Entry Point",
+          "level": 2,
+          "line": 1704
+        },
+        {
+          "heading": "Task 12: Live Integration Test (manual / pre-release)",
+          "level": 2,
+          "line": 1902
+        },
+        {
+          "heading": "Task 13: launchd Deployment",
+          "level": 2,
+          "line": 1989
+        },
+        {
+          "heading": "Task 14: MVP Acceptance Walk-Through",
+          "level": 2,
+          "line": 2075
+        },
+        {
+          "heading": "Self-Review",
+          "level": 2,
+          "line": 2156
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 18
+      }
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 1408,
+      "nonEmptyLines": 1130,
+      "sections": [
+        {
+          "heading": "Phase 3 Implementation Plan",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 1: Add types to core",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Task 2: Define Transport interface",
+          "level": 2,
+          "line": 67
+        },
+        {
+          "heading": "Task 3: Create SDK submit helper",
+          "level": 2,
+          "line": 109
+        },
+        {
+          "heading": "Task 4: Create persistent SessionState + AgentContext",
+          "level": 2,
+          "line": 227
+        },
+        {
+          "heading": "Task 5: Move bot/reply.ts to transport/telegram/",
+          "level": 2,
+          "line": 396
+        },
+        {
+          "heading": "Task 6: Card render helpers for Telegram",
+          "level": 2,
+          "line": 428
+        },
+        {
+          "heading": "Task 7: Create core/relay.ts",
+          "level": 2,
+          "line": 528
+        },
+        {
+          "heading": "Task 8: Update config.ts for TUI_VISIBLE + STATE_PATH",
+          "level": 2,
+          "line": 852
+        },
+        {
+          "heading": "Task 9: Implement Telegram transport (createTelegramTransport)",
+          "level": 2,
+          "line": 913
+        },
+        {
+          "heading": "Task 10: Verify end-to-end via live smoke test",
+          "level": 2,
+          "line": 1163
+        },
+        {
+          "heading": "Task 11: Stability — run 14.x acceptance tests",
+          "level": 2,
+          "line": 1207
+        },
+        {
+          "heading": "Task 12: OSS prep — LICENSE + SECURITY.md",
+          "level": 2,
+          "line": 1220
+        },
+        {
+          "heading": "Task 13: Rewrite README.md for public consumption",
+          "level": 2,
+          "line": 1282
+        },
+        {
+          "heading": "Task 14: docs/transports/telegram.md + CONTRIBUTING-NEW-TRANSPORT.md",
+          "level": 2,
+          "line": 1310
+        },
+        {
+          "heading": "Task 15: GitHub Actions CI + issue/PR templates",
+          "level": 2,
+          "line": 1333
+        },
+        {
+          "heading": "Task 16: Final audit + tag v0.3.0-rc.1",
+          "level": 2,
+          "line": 1369
+        },
+        {
+          "heading": "Final acceptance checklist (per design spec Section 10)",
+          "level": 2,
+          "line": 1395
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 18
+      }
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 1542,
+      "nonEmptyLines": 1220,
+      "sections": [
+        {
+          "heading": "Phase 4 Implementation Plan",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 0: Multi-user allowlist (Track D.3, do first)",
+          "level": 2,
+          "line": 19
+        },
+        {
+          "heading": "Task 1: Subprocess spawn helper",
+          "level": 2,
+          "line": 132
+        },
+        {
+          "heading": "Task 2: Launcher entry point + extract runBot",
+          "level": 2,
+          "line": 289
+        },
+        {
+          "heading": "Task 3: launchd plist + install scripts",
+          "level": 2,
+          "line": 428
+        },
+        {
+          "heading": "Task 4: Live test — kill opencode, launcher recovers",
+          "level": 2,
+          "line": 517
+        },
+        {
+          "heading": "Task 5: Probe SSE for TUI-state events",
+          "level": 2,
+          "line": 550
+        },
+        {
+          "heading": "Task 6: Extend SessionState with TUI-observed fields",
+          "level": 2,
+          "line": 580
+        },
+        {
+          "heading": "Task 7: TUI-sync subscriber",
+          "level": 2,
+          "line": 632
+        },
+        {
+          "heading": "Task 8: Update /status and /session pin",
+          "level": 2,
+          "line": 715
+        },
+        {
+          "heading": "Task 9: /diff /todo /context commands",
+          "level": 2,
+          "line": 775
+        },
+        {
+          "heading": "Task 10: Inline tool-call rendering in relay",
+          "level": 2,
+          "line": 889
+        },
+        {
+          "heading": "Task 11: Push notifications module",
+          "level": 2,
+          "line": 978
+        },
+        {
+          "heading": "Task 12: Inline Stop button (Track D.1)",
+          "level": 2,
+          "line": 1112
+        },
+        {
+          "heading": "Task 13: Cost footer on responses + /status total (Track D.2)",
+          "level": 2,
+          "line": 1223
+        },
+        {
+          "heading": "Task 14: npx init wizard + publish-readiness (Track D.4)",
+          "level": 2,
+          "line": 1305
+        },
+        {
+          "heading": "Task 15: End-to-end smoke + tag",
+          "level": 2,
+          "line": 1467
+        },
+        {
+          "heading": "Final acceptance checklist (per design spec)",
+          "level": 2,
+          "line": 1523
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 18
+      }
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 4783,
+      "nonEmptyLines": 3969,
+      "sections": [
+        {
+          "heading": "Phase 5 Implementation Plan — Web UI + Streaming Overflow Fix",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Execution Notes",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Phase 4.5 — OSS Prep Wrap-up",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "Task 0a: Add CONTRIBUTING.md",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "fill in TELEGRAM_BOT_TOKEN and ALLOWED_USER_IDS",
+          "level": 1,
+          "line": 49
+        },
+        {
+          "heading": "Task 0b: Add Dependabot config",
+          "level": 3,
+          "line": 91
+        },
+        {
+          "heading": "Task 0c: Tag v0.4.0-rc.1",
+          "level": 3,
+          "line": 124
+        },
+        {
+          "heading": "Phase 5.A — Foundation: relay refactor + Telegram pagination",
+          "level": 2,
+          "line": 153
+        },
+        {
+          "heading": "Task 1: StructuredCard types",
+          "level": 3,
+          "line": 155
+        },
+        {
+          "heading": "Task 2: CardBus",
+          "level": 3,
+          "line": 250
+        },
+        {
+          "heading": "Task 3: History reconstruction (messageToCards + reconstructHistory)",
+          "level": 3,
+          "line": 399
+        },
+        {
+          "heading": "Task 4: Transport interface (revised)",
+          "level": 3,
+          "line": 551
+        },
+        {
+          "heading": "Task 5: Relay refactor — publish to CardBus",
+          "level": 3,
+          "line": 611
+        },
+        {
+          "heading": "Task 6: TelegramSessionRenderer skeleton",
+          "level": 3,
+          "line": 1008
+        },
+        {
+          "heading": "Task 7: Adaptive throttling",
+          "level": 3,
+          "line": 1222
+        },
+        {
+          "heading": "Task 8: Tool collapse rendering",
+          "level": 3,
+          "line": 1309
+        },
+        {
+          "heading": "Task 9: Multi-message pagination",
+          "level": 3,
+          "line": 1424
+        },
+        {
+          "heading": "Task 10: Wire Telegram transport to CardBus + renderer",
+          "level": 3,
+          "line": 1622
+        },
+        {
+          "heading": "Task 11: Wire `index.ts` to new multi-transport startup",
+          "level": 3,
+          "line": 1780
+        },
+        {
+          "heading": "Task 12: Integration smoke — Telegram overflow fix",
+          "level": 3,
+          "line": 1883
+        },
+        {
+          "heading": "✅ Phase 5.A Checkpoint",
+          "level": 2,
+          "line": 1944
+        },
+        {
+          "heading": "Phase 5.B — Web Backend",
+          "level": 2,
+          "line": 1958
+        },
+        {
+          "heading": "Task 13: Add server dependencies",
+          "level": 3,
+          "line": 1960
+        },
+        {
+          "heading": "Task 14: CF Access middleware",
+          "level": 3,
+          "line": 1987
+        },
+        {
+          "heading": "Task 15: Hono server skeleton + /api/me",
+          "level": 3,
+          "line": 2129
+        },
+        {
+          "heading": "Task 16: REST routes — sessions, history, message, abort",
+          "level": 3,
+          "line": 2234
+        },
+        {
+          "heading": "Task 17: REST routes — diff, todo, context, approval",
+          "level": 3,
+          "line": 2487
+        },
+        {
+          "heading": "Task 18: WebSocket hub",
+          "level": 3,
+          "line": 2654
+        },
+        {
+          "heading": "Task 19: Web transport entry — createWebTransport",
+          "level": 3,
+          "line": 2789
+        },
+        {
+          "heading": "Task 20: Multi-transport startup wiring",
+          "level": 3,
+          "line": 2956
+        },
+        {
+          "heading": "✅ Phase 5.B Checkpoint",
+          "level": 2,
+          "line": 3060
+        },
+        {
+          "heading": "Phase 5.C — Web Frontend (SvelteKit)",
+          "level": 2,
+          "line": 3075
+        },
+        {
+          "heading": "Task 21: Initialize SvelteKit in `web/`",
+          "level": 3,
+          "line": 3077
+        },
+        {
+          "heading": "Task 22: WebSocket client + connection store",
+          "level": 3,
+          "line": 3229
+        },
+        {
+          "heading": "Task 23: API client + session/cards stores",
+          "level": 3,
+          "line": 3389
+        },
+        {
+          "heading": "Task 24: MarkdownView + ToolCallList components",
+          "level": 3,
+          "line": 3537
+        },
+        {
+          "heading": "Task 25: Card components",
+          "level": 3,
+          "line": 3639
+        },
+        {
+          "heading": "Task 26: ApprovalModal + Composer",
+          "level": 3,
+          "line": 3808
+        },
+        {
+          "heading": "Task 27: SessionList + ConnectionBadge",
+          "level": 3,
+          "line": 3900
+        },
+        {
+          "heading": "Task 28: Layout + routes + WS wiring",
+          "level": 3,
+          "line": 3974
+        },
+        {
+          "heading": "Task 29: PWA manifest + service worker + icons",
+          "level": 3,
+          "line": 4137
+        },
+        {
+          "heading": "✅ Phase 5.C Checkpoint",
+          "level": 2,
+          "line": 4218
+        },
+        {
+          "heading": "Phase 5.D — Chrome Extension",
+          "level": 2,
+          "line": 4231
+        },
+        {
+          "heading": "Task 30: Extension manifest + side panel HTML",
+          "level": 3,
+          "line": 4233
+        },
+        {
+          "heading": "Task 31: Extension build script",
+          "level": 3,
+          "line": 4382
+        },
+        {
+          "heading": "✅ Phase 5.D Checkpoint",
+          "level": 2,
+          "line": 4459
+        },
+        {
+          "heading": "Phase 5.E — Release Polish",
+          "level": 2,
+          "line": 4469
+        },
+        {
+          "heading": "Task 32: README + CHANGELOG update",
+          "level": 3,
+          "line": 4471
+        },
+        {
+          "heading": "Task 33: CI updates",
+          "level": 3,
+          "line": 4565
+        },
+        {
+          "heading": "Task 34: Playwright happy-path E2E",
+          "level": 3,
+          "line": 4611
+        },
+        {
+          "heading": "Task 35: Final verification + tag v0.5.0",
+          "level": 3,
+          "line": 4692
+        },
+        {
+          "heading": "Final Test Matrix",
+          "level": 2,
+          "line": 4742
+        },
+        {
+          "heading": "Self-Review Checklist (Plan vs. Spec)",
+          "level": 2,
+          "line": 4756
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 53
+      }
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 712,
+      "nonEmptyLines": 547,
+      "sections": [
+        {
+          "heading": "Phase 6 Implementation Plan — Plugin Registry Migration",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 1: Add dependencies + package.json reconfiguration",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Task 2: Create Plugin entry point",
+          "level": 2,
+          "line": 71
+        },
+        {
+          "heading": "Task 3: Adapt relay for event-hook mode",
+          "level": 2,
+          "line": 158
+        },
+        {
+          "heading": "Task 4: Adapt transports for plugin mode",
+          "level": 2,
+          "line": 259
+        },
+        {
+          "heading": "Task 5: Wire event hook in plugin entry",
+          "level": 2,
+          "line": 325
+        },
+        {
+          "heading": "Task 6: Create install CLI command",
+          "level": 2,
+          "line": 392
+        },
+        {
+          "heading": "Task 7: Create uninstall CLI + rc-status tool",
+          "level": 2,
+          "line": 499
+        },
+        {
+          "heading": "Task 8: Update docs and tests",
+          "level": 2,
+          "line": 560
+        },
+        {
+          "heading": "Task 9: Integration test + npm publish prep",
+          "level": 2,
+          "line": 639
+        },
+        {
+          "heading": "Task Summary",
+          "level": 2,
+          "line": 699
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    }
+  ]
+}

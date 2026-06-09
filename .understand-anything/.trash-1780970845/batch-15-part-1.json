@@ -1,0 +1,877 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/launcher/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/launcher/index.ts",
+      "summary": "Launcher entry point that optionally spawns an opencode server, waits for it to become healthy, then starts the remote-control bot. Handles SIGINT/SIGTERM for graceful shutdown.",
+      "tags": [
+        "entry-point",
+        "launcher",
+        "supervisor",
+        "lifecycle",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/launcher/index.ts:waitForHealth",
+      "type": "function",
+      "name": "waitForHealth",
+      "filePath": "src/launcher/index.ts",
+      "lineRange": [
+        12,
+        19
+      ],
+      "summary": "Polls the opencode HTTP health endpoint until it reports healthy or the timeout elapses, polling once per second.",
+      "tags": [
+        "polling",
+        "health-check",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/launcher/index.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "src/launcher/index.ts",
+      "lineRange": [
+        21,
+        56
+      ],
+      "summary": "Top-level launcher coroutine: loads config, spawns opencode if needed, waits for health, wires shutdown signal handlers, and invokes the bot runner.",
+      "tags": [
+        "entry-point",
+        "lifecycle",
+        "supervisor",
+        "async"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/launcher/spawn.ts",
+      "type": "file",
+      "name": "spawn.ts",
+      "filePath": "src/launcher/spawn.ts",
+      "summary": "Factory for a child-process supervisor that auto-restarts a spawned process with exponential backoff and forwards child stdout/stderr to a log file.",
+      "tags": [
+        "supervisor",
+        "child-process",
+        "restart",
+        "logging",
+        "factory"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/launcher/spawn.ts:createSupervisor",
+      "type": "function",
+      "name": "createSupervisor",
+      "filePath": "src/launcher/spawn.ts",
+      "lineRange": [
+        24,
+        70
+      ],
+      "summary": "Creates a Supervisor handle around a child process. On exit, reschedules a new spawn using a configurable backoff schedule, with SIGTERM followed by SIGKILL on stop.",
+      "tags": [
+        "supervisor",
+        "child-process",
+        "backoff",
+        "lifecycle"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/opencode/client.ts",
+      "type": "file",
+      "name": "client.ts",
+      "filePath": "src/opencode/client.ts",
+      "summary": "Singleton wrapper around the @opencode-ai/sdk client plus a simple HTTP health check used at startup to confirm the opencode server is responsive.",
+      "tags": [
+        "client",
+        "sdk",
+        "singleton",
+        "health-check"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/opencode/client.ts:getClient",
+      "type": "function",
+      "name": "getClient",
+      "filePath": "src/opencode/client.ts",
+      "lineRange": [
+        5,
+        9
+      ],
+      "summary": "Returns the memoized OpencodeClient instance for the given base URL, creating it on first call.",
+      "tags": [
+        "singleton",
+        "factory",
+        "sdk"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/opencode/client.ts:checkHealth",
+      "type": "function",
+      "name": "checkHealth",
+      "filePath": "src/opencode/client.ts",
+      "lineRange": [
+        11,
+        20
+      ],
+      "summary": "Fetches /global/health from the opencode server and returns whether it reports healthy, swallowing network errors as false.",
+      "tags": [
+        "health-check",
+        "http",
+        "probe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/opencode/event-stream.ts",
+      "type": "file",
+      "name": "event-stream.ts",
+      "filePath": "src/opencode/event-stream.ts",
+      "summary": "Reconnecting SSE wrapper around the opencode event stream. Per-session subscriber queues back-pressure events, emits synthetic idle/busy events after reconnects, and enforces a heartbeat timeout.",
+      "tags": [
+        "sse",
+        "event-stream",
+        "reconnect",
+        "backoff",
+        "heartbeat"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:src/opencode/event-stream.ts:EventStream",
+      "type": "class",
+      "name": "EventStream",
+      "filePath": "src/opencode/event-stream.ts",
+      "lineRange": [
+        12,
+        160
+      ],
+      "summary": "Manages a long-lived subscription to opencode's Server-Sent Events feed, including reconnect with exponential backoff, heartbeat-driven forced reconnects, and per-session async iterators that queue events for consumers.",
+      "tags": [
+        "sse",
+        "reconnect",
+        "backoff",
+        "event-emitter",
+        "async-iterator"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/opencode/submit.ts",
+      "type": "file",
+      "name": "submit.ts",
+      "filePath": "src/opencode/submit.ts",
+      "summary": "Thin wrapper around the opencode session.promptAsync SDK call that builds the request body and supports cancellation through an AbortSignal.",
+      "tags": [
+        "submit",
+        "prompt",
+        "sdk",
+        "abort"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/opencode/submit.ts:submitPrompt",
+      "type": "function",
+      "name": "submitPrompt",
+      "filePath": "src/opencode/submit.ts",
+      "lineRange": [
+        17,
+        32
+      ],
+      "summary": "Sends a free-form text prompt (optionally with agent/model overrides) to a session via the async SDK, respecting the caller's AbortSignal.",
+      "tags": [
+        "submit",
+        "prompt",
+        "sdk",
+        "abort"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/plugin/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "src/plugin/config.ts",
+      "summary": "Loads plugin configuration from .env files and plugin options, validating required values like the Telegram bot token and allowed user IDs.",
+      "tags": [
+        "config",
+        "env",
+        "validation",
+        "dotenv"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/plugin/config.ts:loadPluginConfig",
+      "type": "function",
+      "name": "loadPluginConfig",
+      "filePath": "src/plugin/config.ts",
+      "lineRange": [
+        40,
+        87
+      ],
+      "summary": "Reads the .env chain (CWD, project dir, config dir), merges plugin options, and returns a fully-typed PluginConfig with all Telegram, web, state, and timing settings.",
+      "tags": [
+        "config",
+        "env",
+        "validation",
+        "merge"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/plugin/entry.ts",
+      "type": "file",
+      "name": "entry.ts",
+      "filePath": "src/plugin/entry.ts",
+      "summary": "OpenCode plugin entry point. Loads config, wires the CardBus and file-backed state, instantiates the Telegram and/or Web transports, starts push notifications, and forwards plugin events (TUI selection, permissions, tool execution) to the transports.",
+      "tags": [
+        "entry-point",
+        "plugin",
+        "lifecycle",
+        "event-handler",
+        "transports"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/plugin/entry.ts:remoteControlPlugin",
+      "type": "function",
+      "name": "remoteControlPlugin",
+      "filePath": "src/plugin/entry.ts",
+      "lineRange": [
+        16,
+        156
+      ],
+      "summary": "Implements the OpenCode plugin contract: bootstraps state, configures transports, registers permission and TUI event handlers, polls the TUI-selected session, and returns a cleanup hook for shutdown.",
+      "tags": [
+        "plugin",
+        "entry-point",
+        "lifecycle",
+        "event-handler"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/transport/interface.ts",
+      "type": "file",
+      "name": "interface.ts",
+      "filePath": "src/transport/interface.ts",
+      "summary": "TypeScript interface definitions for the Transport abstraction and its startup dependencies (CardBus, SessionState).",
+      "tags": [
+        "interface",
+        "type-definition",
+        "transport"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/telegram/handlers.ts",
+      "type": "file",
+      "name": "handlers.ts",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "summary": "Registers all Telegram bot commands and callback actions (status, sessions, session pinning, files, diff, todo, context, agent/model selection, abort, version, help) and wires permission-request approval flows from opencode events to inline keyboards.",
+      "tags": [
+        "telegram",
+        "bot",
+        "command-handler",
+        "inline-keyboard",
+        "approval",
+        "permissions"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:hasHttpApi",
+      "type": "function",
+      "name": "hasHttpApi",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        37,
+        39
+      ],
+      "summary": "Returns whether the opencode base URL looks like an HTTP/HTTPS endpoint (used to gate SDK-free HTTP probes).",
+      "tags": [
+        "helper",
+        "url",
+        "probe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:checkHealth",
+      "type": "function",
+      "name": "checkHealth",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        42,
+        50
+      ],
+      "summary": "Probes the opencode /global/health endpoint directly via fetch, returning whether the server is healthy.",
+      "tags": [
+        "health-check",
+        "http",
+        "probe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:fetchUserAgents",
+      "type": "function",
+      "name": "fetchUserAgents",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        52,
+        70
+      ],
+      "summary": "Fetches the opencode /config HTTP endpoint and returns the list of configured agents with their model identifiers.",
+      "tags": [
+        "http",
+        "config",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:parseAgentModel",
+      "type": "function",
+      "name": "parseAgentModel",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        76,
+        83
+      ],
+      "summary": "Parses a 'providerID/modelID' string into separate provider and model identifiers used for setting the next model.",
+      "tags": [
+        "parser",
+        "model",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:shortPath",
+      "type": "function",
+      "name": "shortPath",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        86,
+        94
+      ],
+      "summary": "Trims an absolute file path to its last 3 components for compact display in Telegram messages.",
+      "tags": [
+        "display",
+        "path",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:buildStatusCard",
+      "type": "function",
+      "name": "buildStatusCard",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        101,
+        159
+      ],
+      "summary": "Assembles the rich /status card with health, total cost, current/TUI/pinned session ids, current and next agent/model, plus inline keyboard buttons for navigation.",
+      "tags": [
+        "ui",
+        "card",
+        "status",
+        "inline-keyboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:registerHandlers",
+      "type": "function",
+      "name": "registerHandlers",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        161,
+        811
+      ],
+      "summary": "Bulk registration of all Telegram bot commands (/start, /status, /sessions, /session, /files, /diff, /todo, /context, /agent, /model, /current, /abort, /version, /help) and all inline-keyboard callback actions.",
+      "tags": [
+        "command-handler",
+        "bot",
+        "registration",
+        "callback"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:setupApproval",
+      "type": "function",
+      "name": "setupApproval",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        824,
+        921
+      ],
+      "summary": "Subscribes to the EventStream for permission-request events, posts an approval card with Allow/Allow-Always/Reject inline buttons, and resolves the request when the user responds.",
+      "tags": [
+        "approval",
+        "permission",
+        "event-handler",
+        "inline-keyboard"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers.ts:labelFor",
+      "type": "function",
+      "name": "labelFor",
+      "filePath": "src/transport/telegram/handlers.ts",
+      "lineRange": [
+        923,
+        930
+      ],
+      "summary": "Maps a permission response ('once' / 'always' / 'reject') to a human-readable label used in the Telegram message footer.",
+      "tags": [
+        "mapper",
+        "permission",
+        "display"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/telegram/handlers/info-commands.ts",
+      "type": "file",
+      "name": "info-commands.ts",
+      "filePath": "src/transport/telegram/handlers/info-commands.ts",
+      "summary": "Read-only Telegram commands (/diff, /todo, /context) that pull data from the opencode HTTP API or SDK and format it as inline Telegram replies.",
+      "tags": [
+        "telegram",
+        "command-handler",
+        "info",
+        "read-only"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/telegram/handlers/info-commands.ts:registerInfoCommands",
+      "type": "function",
+      "name": "registerInfoCommands",
+      "filePath": "src/transport/telegram/handlers/info-commands.ts",
+      "lineRange": [
+        17,
+        127
+      ],
+      "summary": "Registers the /diff, /todo, and /context commands on the Telegram bot, fetching data from the opencode HTTP API and formatting it into readable messages.",
+      "tags": [
+        "command-handler",
+        "telegram",
+        "info"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/transport/telegram/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/transport/telegram/index.ts",
+      "summary": "Factory for the Telegram transport: configures authorization middleware, message handling, command registration, approval flow, card rendering per chat, and a long-running telegraf bot.",
+      "tags": [
+        "transport",
+        "telegram",
+        "telegraf",
+        "factory",
+        "auth",
+        "lifecycle"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/telegram/index.ts:createTelegramTransport",
+      "type": "function",
+      "name": "createTelegramTransport",
+      "filePath": "src/transport/telegram/index.ts",
+      "lineRange": [
+        41,
+        299
+      ],
+      "summary": "Builds a Transport backed by a Telegraf bot: enforces allowed-user-id checks, wires message and command handlers, runs the approval flow, manages per-chat renderers, launches the bot, and exposes start/stop/send/onMessage/onButtonClick.",
+      "tags": [
+        "transport",
+        "telegraf",
+        "auth",
+        "factory",
+        "lifecycle"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/transport/telegram/render.ts",
+      "type": "file",
+      "name": "render.ts",
+      "filePath": "src/transport/telegram/render.ts",
+      "summary": "Converts a generic structured Card into a Telegram message (HTML-formatted text plus an inline keyboard) respecting Telegram's 4096-char limit.",
+      "tags": [
+        "rendering",
+        "telegram",
+        "html",
+        "inline-keyboard",
+        "truncation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/render.ts:cardToTelegram",
+      "type": "function",
+      "name": "cardToTelegram",
+      "filePath": "src/transport/telegram/render.ts",
+      "lineRange": [
+        9,
+        44
+      ],
+      "summary": "Renders a Card as Telegram HTML text with an optional inline_keyboard, truncating output to fit Telegram's 4000-char message body limit.",
+      "tags": [
+        "rendering",
+        "telegram",
+        "truncation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/telegram/reply-stream.ts",
+      "type": "file",
+      "name": "reply-stream.ts",
+      "filePath": "src/transport/telegram/reply-stream.ts",
+      "summary": "Helpers for progressively editing a Telegram 'thinking' status message and then chunking the final response across multiple reply messages.",
+      "tags": [
+        "telegram",
+        "streaming",
+        "edit-message",
+        "chunking"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/telegram/reply-stream.ts:createReplyStream",
+      "type": "function",
+      "name": "createReplyStream",
+      "filePath": "src/transport/telegram/reply-stream.ts",
+      "lineRange": [
+        14,
+        47
+      ],
+      "summary": "Creates a ReplyStream object with throttled update() that edits an existing Telegram message and finalize() that replaces the status message with the final response, chunked for size limits.",
+      "tags": [
+        "streaming",
+        "throttle",
+        "edit-message",
+        "chunking"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/launcher/index.ts",
+      "target": "function:src/launcher/index.ts:waitForHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/launcher/index.ts",
+      "target": "function:src/launcher/index.ts:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/launcher/spawn.ts",
+      "target": "function:src/launcher/spawn.ts:createSupervisor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/launcher/spawn.ts",
+      "target": "function:src/launcher/spawn.ts:createSupervisor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "function:src/opencode/client.ts:getClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "function:src/opencode/client.ts:checkHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "function:src/opencode/client.ts:getClient",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "function:src/opencode/client.ts:checkHealth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "class:src/opencode/event-stream.ts:EventStream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "class:src/opencode/event-stream.ts:EventStream",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/opencode/submit.ts",
+      "target": "function:src/opencode/submit.ts:submitPrompt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/opencode/submit.ts",
+      "target": "function:src/opencode/submit.ts:submitPrompt",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/plugin/config.ts",
+      "target": "function:src/plugin/config.ts:loadPluginConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/plugin/config.ts",
+      "target": "function:src/plugin/config.ts:loadPluginConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/plugin/entry.ts",
+      "target": "function:src/plugin/entry.ts:remoteControlPlugin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/plugin/entry.ts",
+      "target": "function:src/plugin/entry.ts:remoteControlPlugin",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:hasHttpApi",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:checkHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:fetchUserAgents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:parseAgentModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:shortPath",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:buildStatusCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:registerHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:setupApproval",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:labelFor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:registerHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "function:src/transport/telegram/handlers.ts:setupApproval",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/handlers/info-commands.ts",
+      "target": "function:src/transport/telegram/handlers/info-commands.ts:registerInfoCommands",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/handlers/info-commands.ts",
+      "target": "function:src/transport/telegram/handlers/info-commands.ts:registerInfoCommands",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/index.ts",
+      "target": "function:src/transport/telegram/index.ts:createTelegramTransport",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/index.ts",
+      "target": "function:src/transport/telegram/index.ts:createTelegramTransport",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/render.ts",
+      "target": "function:src/transport/telegram/render.ts:cardToTelegram",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/render.ts",
+      "target": "function:src/transport/telegram/render.ts:cardToTelegram",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/telegram/reply-stream.ts",
+      "target": "function:src/transport/telegram/reply-stream.ts:createReplyStream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/telegram/reply-stream.ts",
+      "target": "function:src/transport/telegram/reply-stream.ts:createReplyStream",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/launcher/spawn.ts",
+      "target": "file:tests/unit/spawn.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "file:tests/unit/opencode-client.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "file:tests/unit/event-stream.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "file:tests/unit/push.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/opencode/submit.ts",
+      "target": "file:tests/unit/submit.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/telegram/render.ts",
+      "target": "file:tests/unit/telegram-render.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/telegram/reply-stream.ts",
+      "target": "file:tests/unit/reply.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

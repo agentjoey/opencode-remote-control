@@ -1,0 +1,2128 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".agent/BACKLOG.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 41,
+      "nonEmptyLines": 29,
+      "sections": [
+        {
+          "heading": "Product Backlog — opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "🔴 HIGH",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "🟡 MED — 待排期",
+          "level": 2,
+          "line": 14
+        },
+        {
+          "heading": "🟢 LOW",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "📋 研究向（未决策）",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "✅ 已完成",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "Sprint 1 — Phase 1 MVP",
+          "level": 3,
+          "line": 32
+        },
+        {
+          "heading": "Sprint 2 — Phase 2: Command Cards + Streaming",
+          "level": 3,
+          "line": 35
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": ".agent/CURRENT.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 45,
+      "nonEmptyLines": 39,
+      "sections": [
+        {
+          "heading": "Current Status — opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Recent work (v0.5.7 → v0.6.0-rc.1)",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Plugin Registry Migration",
+          "level": 3,
+          "line": 8
+        },
+        {
+          "heading": "Docs & Specs",
+          "level": 3,
+          "line": 23
+        },
+        {
+          "heading": "Test status",
+          "level": 2,
+          "line": 32
+        },
+        {
+          "heading": "Key decisions",
+          "level": 2,
+          "line": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 14,
+      "nonEmptyLines": 14,
+      "sections": [
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "updates",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 32,
+      "nonEmptyLines": 26,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 0
+      }
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 18,
+      "nonEmptyLines": 14,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 0
+      }
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 18,
+      "nonEmptyLines": 11,
+      "sections": [
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 1
+        },
+        {
+          "heading": "Details",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Testing",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Checklist",
+          "level": 2,
+          "line": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 25,
+      "metrics": {}
+    },
+    {
+      "path": "deploy/ai.opencode.remote-control.telegram.plist",
+      "language": "xml",
+      "fileCategory": "config",
+      "totalLines": 43,
+      "nonEmptyLines": 37,
+      "metrics": {}
+    },
+    {
+      "path": "docs/superpowers/phase5-acceptance.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 57,
+      "nonEmptyLines": 45,
+      "sections": [
+        {
+          "heading": "Phase 5 Acceptance Checklist",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Test Results",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Tasks Completed",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "Known Issues / Notes",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "Tag",
+          "level": 2,
+          "line": 46
+        },
+        {
+          "heading": "Next Phase",
+          "level": 2,
+          "line": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
+    },
+    {
+      "path": "docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 171,
+      "nonEmptyLines": 132,
+      "sections": [
+        {
+          "heading": "Contributing a New Transport",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Overview",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "The Transport interface",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "Step-by-step recipe",
+          "level": 2,
+          "line": 64
+        },
+        {
+          "heading": "1. Create the transport directory",
+          "level": 3,
+          "line": 66
+        },
+        {
+          "heading": "2. Implement `create<Name>Transport(config): Transport`",
+          "level": 3,
+          "line": 72
+        },
+        {
+          "heading": "3. Register the transport in the loader",
+          "level": 3,
+          "line": 85
+        },
+        {
+          "heading": "4. Add env vars to `src/config.ts`",
+          "level": 3,
+          "line": 96
+        },
+        {
+          "heading": "5. Write tests",
+          "level": 3,
+          "line": 101
+        },
+        {
+          "heading": "6. Write docs",
+          "level": 3,
+          "line": 110
+        },
+        {
+          "heading": "7. Update README",
+          "level": 3,
+          "line": 115
+        },
+        {
+          "heading": "Example: skeleton transport",
+          "level": 2,
+          "line": 120
+        },
+        {
+          "heading": "Capabilities guide",
+          "level": 2,
+          "line": 160
+        },
+        {
+          "heading": "Questions?",
+          "level": 2,
+          "line": 169
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 14
+      }
+    },
+    {
+      "path": "docs/transports/telegram.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 87,
+      "nonEmptyLines": 61,
+      "sections": [
+        {
+          "heading": "Telegram Transport Setup",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. Create a bot with BotFather",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "2. Find your Telegram user ID",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "3. Configure the bot",
+          "level": 2,
+          "line": 17
+        },
+        {
+          "heading": "4. Start opencode",
+          "level": 2,
+          "line": 26
+        },
+        {
+          "heading": "5. Start the bot",
+          "level": 2,
+          "line": 32
+        },
+        {
+          "heading": "Common errors",
+          "level": 2,
+          "line": 46
+        },
+        {
+          "heading": "\"409 Conflict\"",
+          "level": 3,
+          "line": 48
+        },
+        {
+          "heading": "\"Unauthorized\"",
+          "level": 3,
+          "line": 53
+        },
+        {
+          "heading": "\"💭 thinking...\" stuck forever",
+          "level": 3,
+          "line": 58
+        },
+        {
+          "heading": "\"No opencode sessions found\"",
+          "level": 3,
+          "line": 64
+        },
+        {
+          "heading": "Running as a launchd service (macOS)",
+          "level": 2,
+          "line": 69
+        },
+        {
+          "heading": "See also",
+          "level": 2,
+          "line": 83
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "scripts/install-launchd.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 28,
+      "nonEmptyLines": 23,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "scripts/patch-telegraf.cjs",
+      "language": "javascript",
+      "fileCategory": "code",
+      "totalLines": 41,
+      "nonEmptyLines": 35,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "scripts/uninstall.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 7,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/cli/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 46,
+      "nonEmptyLines": 39,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 6,
+          "endLine": 41,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "createInterface",
+          "lineNumber": 10
+        },
+        {
+          "caller": "main",
+          "callee": "rl.question",
+          "lineNumber": 12
+        },
+        {
+          "caller": "main",
+          "callee": "writeFileSync",
+          "lineNumber": 13
+        },
+        {
+          "caller": "main",
+          "callee": "existsSync",
+          "lineNumber": 14
+        },
+        {
+          "caller": "main",
+          "callee": "process.cwd",
+          "lineNumber": 16
+        },
+        {
+          "caller": "main",
+          "callee": "runInitWizard",
+          "lineNumber": 18
+        },
+        {
+          "caller": "main",
+          "callee": "rl.close",
+          "lineNumber": 19
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 24
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 25
+        },
+        {
+          "caller": "main",
+          "callee": "import('./install.js').then",
+          "lineNumber": 30
+        },
+        {
+          "caller": "main",
+          "callee": "import",
+          "lineNumber": 30
+        },
+        {
+          "caller": "main",
+          "callee": "m.main",
+          "lineNumber": 30
+        },
+        {
+          "caller": "main",
+          "callee": "process.argv.slice",
+          "lineNumber": 30
+        },
+        {
+          "caller": "main",
+          "callee": "import('./uninstall.js').then",
+          "lineNumber": 35
+        },
+        {
+          "caller": "main",
+          "callee": "import",
+          "lineNumber": 35
+        },
+        {
+          "caller": "main",
+          "callee": "m.main",
+          "lineNumber": 35
+        },
+        {
+          "caller": "main",
+          "callee": "import",
+          "lineNumber": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/cli/init.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 89,
+      "nonEmptyLines": 78,
+      "functions": [
+        {
+          "name": "runInitWizard",
+          "startLine": 13,
+          "endLine": 69,
+          "params": [
+            "deps"
+          ]
+        },
+        {
+          "name": "defaultTestConnection",
+          "startLine": 71,
+          "endLine": 77,
+          "params": [
+            "token"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runInitWizard",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "defaultTestConnection",
+          "line": 71,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 14
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 15
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 16
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "(await deps.ask('Telegram Bot Token: ')).trim",
+          "lineNumber": 18
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.ask",
+          "lineNumber": 18
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 20
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "process.exit",
+          "lineNumber": 21
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "(await deps.ask('Your Telegram User ID: ')).trim",
+          "lineNumber": 24
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.ask",
+          "lineNumber": 24
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "/^\\d+$/.test",
+          "lineNumber": 25
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 26
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "process.exit",
+          "lineNumber": 27
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.ask",
+          "lineNumber": 30
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "spawnRaw.trim().toLowerCase().startsWith",
+          "lineNumber": 31
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "spawnRaw.trim().toLowerCase",
+          "lineNumber": 31
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "spawnRaw.trim",
+          "lineNumber": 31
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 33
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.testConnection",
+          "lineNumber": 35
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 36
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 38
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.ask",
+          "lineNumber": 39
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "force.trim().toLowerCase().startsWith",
+          "lineNumber": 40
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "force.trim().toLowerCase",
+          "lineNumber": 40
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "force.trim",
+          "lineNumber": 40
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "process.exit",
+          "lineNumber": 41
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "join",
+          "lineNumber": 45
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.exists",
+          "lineNumber": 46
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.ask",
+          "lineNumber": 47
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "overwrite.trim().toLowerCase().startsWith",
+          "lineNumber": 48
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "overwrite.trim().toLowerCase",
+          "lineNumber": 48
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "overwrite.trim",
+          "lineNumber": 48
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 49
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "process.exit",
+          "lineNumber": 50
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "deps.writeFile",
+          "lineNumber": 61
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "lines.join",
+          "lineNumber": 61
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 62
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 63
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 64
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 65
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 66
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 67
+        },
+        {
+          "caller": "runInitWizard",
+          "callee": "console.log",
+          "lineNumber": 68
+        },
+        {
+          "caller": "defaultTestConnection",
+          "callee": "fetch",
+          "lineNumber": 72
+        },
+        {
+          "caller": "defaultTestConnection",
+          "callee": "res.json().catch",
+          "lineNumber": 74
+        },
+        {
+          "caller": "defaultTestConnection",
+          "callee": "res.json",
+          "lineNumber": 74
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/cli/install.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 169,
+      "nonEmptyLines": 134,
+      "functions": [
+        {
+          "name": "configPath",
+          "startLine": 16,
+          "endLine": 18,
+          "params": [
+            "local"
+          ]
+        },
+        {
+          "name": "ask",
+          "startLine": 20,
+          "endLine": 22,
+          "params": [
+            "rl",
+            "question"
+          ]
+        },
+        {
+          "name": "resolveSpec",
+          "startLine": 24,
+          "endLine": 29,
+          "params": [
+            "options"
+          ]
+        },
+        {
+          "name": "isOurPlugin",
+          "startLine": 31,
+          "endLine": 34,
+          "params": [
+            "entry"
+          ]
+        },
+        {
+          "name": "buildPluginEntry",
+          "startLine": 36,
+          "endLine": 38,
+          "params": [
+            "spec",
+            "configOpts"
+          ]
+        },
+        {
+          "name": "runInstall",
+          "startLine": 40,
+          "endLine": 131,
+          "params": [
+            "options"
+          ]
+        },
+        {
+          "name": "main",
+          "startLine": 133,
+          "endLine": 162,
+          "params": [
+            "args"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runInstall",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 133,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "configPath",
+          "callee": "join",
+          "lineNumber": 17
+        },
+        {
+          "caller": "configPath",
+          "callee": "process.cwd",
+          "lineNumber": 17
+        },
+        {
+          "caller": "ask",
+          "callee": "rl.question",
+          "lineNumber": 21
+        },
+        {
+          "caller": "resolveSpec",
+          "callee": "process.cwd",
+          "lineNumber": 26
+        },
+        {
+          "caller": "isOurPlugin",
+          "callee": "Array.isArray",
+          "lineNumber": 32
+        },
+        {
+          "caller": "isOurPlugin",
+          "callee": "process.cwd",
+          "lineNumber": 33
+        },
+        {
+          "caller": "runInstall",
+          "callee": "configPath",
+          "lineNumber": 41
+        },
+        {
+          "caller": "runInstall",
+          "callee": "resolveSpec",
+          "lineNumber": 43
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 45
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 46
+        },
+        {
+          "caller": "runInstall",
+          "callee": "existsSync",
+          "lineNumber": 49
+        },
+        {
+          "caller": "runInstall",
+          "callee": "JSON.parse",
+          "lineNumber": 51
+        },
+        {
+          "caller": "runInstall",
+          "callee": "readFileSync",
+          "lineNumber": 51
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.error",
+          "lineNumber": 53
+        },
+        {
+          "caller": "runInstall",
+          "callee": "process.exit",
+          "lineNumber": 54
+        },
+        {
+          "caller": "runInstall",
+          "callee": "plugins.findIndex",
+          "lineNumber": 64
+        },
+        {
+          "caller": "runInstall",
+          "callee": "Array.isArray",
+          "lineNumber": 67
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 70
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 71
+        },
+        {
+          "caller": "runInstall",
+          "callee": "createInterface",
+          "lineNumber": 79
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 81
+        },
+        {
+          "caller": "runInstall",
+          "callee": "ask",
+          "lineNumber": 84
+        },
+        {
+          "caller": "runInstall",
+          "callee": "token.trim",
+          "lineNumber": 85
+        },
+        {
+          "caller": "runInstall",
+          "callee": "ask",
+          "lineNumber": 88
+        },
+        {
+          "caller": "runInstall",
+          "callee": "ids.trim",
+          "lineNumber": 89
+        },
+        {
+          "caller": "runInstall",
+          "callee": "ask",
+          "lineNumber": 92
+        },
+        {
+          "caller": "runInstall",
+          "callee": "web.trim",
+          "lineNumber": 93
+        },
+        {
+          "caller": "runInstall",
+          "callee": "rl.close",
+          "lineNumber": 95
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.error",
+          "lineNumber": 98
+        },
+        {
+          "caller": "runInstall",
+          "callee": "process.exit",
+          "lineNumber": 99
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.error",
+          "lineNumber": 102
+        },
+        {
+          "caller": "runInstall",
+          "callee": "process.exit",
+          "lineNumber": 103
+        },
+        {
+          "caller": "runInstall",
+          "callee": "buildPluginEntry",
+          "lineNumber": 112
+        },
+        {
+          "caller": "runInstall",
+          "callee": "plugins.push",
+          "lineNumber": 117
+        },
+        {
+          "caller": "runInstall",
+          "callee": "writeFileSync",
+          "lineNumber": 121
+        },
+        {
+          "caller": "runInstall",
+          "callee": "JSON.stringify",
+          "lineNumber": 121
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 123
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 124
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 125
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 126
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 127
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 128
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 129
+        },
+        {
+          "caller": "runInstall",
+          "callee": "console.log",
+          "lineNumber": 130
+        },
+        {
+          "caller": "main",
+          "callee": "process.argv.slice",
+          "lineNumber": 133
+        },
+        {
+          "caller": "main",
+          "callee": "args.includes",
+          "lineNumber": 134
+        },
+        {
+          "caller": "main",
+          "callee": "args.includes",
+          "lineNumber": 134
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 135
+        },
+        {
+          "caller": "main",
+          "callee": "runInstall",
+          "lineNumber": 158
+        },
+        {
+          "caller": "main",
+          "callee": "args.includes",
+          "lineNumber": 159
+        },
+        {
+          "caller": "main",
+          "callee": "args.includes",
+          "lineNumber": 160
+        },
+        {
+          "caller": "main",
+          "callee": "args.includes",
+          "lineNumber": 160
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/cli/uninstall.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 72,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "isOurPlugin",
+          "startLine": 10,
+          "endLine": 13,
+          "params": [
+            "entry"
+          ]
+        },
+        {
+          "name": "runUninstall",
+          "startLine": 15,
+          "endLine": 45,
+          "params": [
+            "local"
+          ]
+        },
+        {
+          "name": "main",
+          "startLine": 47,
+          "endLine": 65,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "runUninstall",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isOurPlugin",
+          "callee": "Array.isArray",
+          "lineNumber": 11
+        },
+        {
+          "caller": "isOurPlugin",
+          "callee": "name.startsWith",
+          "lineNumber": 12
+        },
+        {
+          "caller": "isOurPlugin",
+          "callee": "process.cwd",
+          "lineNumber": 12
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "join",
+          "lineNumber": 16
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "process.cwd",
+          "lineNumber": 16
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "existsSync",
+          "lineNumber": 18
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "console.log",
+          "lineNumber": 19
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "process.exit",
+          "lineNumber": 20
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "JSON.parse",
+          "lineNumber": 25
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "readFileSync",
+          "lineNumber": 25
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "console.error",
+          "lineNumber": 27
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "process.exit",
+          "lineNumber": 28
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "plugins.filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "isOurPlugin",
+          "lineNumber": 32
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "console.log",
+          "lineNumber": 35
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "writeFileSync",
+          "lineNumber": 42
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "JSON.stringify",
+          "lineNumber": 42
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "console.log",
+          "lineNumber": 43
+        },
+        {
+          "caller": "runUninstall",
+          "callee": "console.log",
+          "lineNumber": 44
+        },
+        {
+          "caller": "main",
+          "callee": "process.argv.includes",
+          "lineNumber": 48
+        },
+        {
+          "caller": "main",
+          "callee": "process.argv.includes",
+          "lineNumber": 50
+        },
+        {
+          "caller": "main",
+          "callee": "process.argv.includes",
+          "lineNumber": 50
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 51
+        },
+        {
+          "caller": "main",
+          "callee": "runUninstall",
+          "lineNumber": 64
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 104,
+      "nonEmptyLines": 99,
+      "functions": [
+        {
+          "name": "loadConfig",
+          "startLine": 65,
+          "endLine": 104,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "loadConfig",
+          "line": 65,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadConfig",
+          "callee": "schema.parse",
+          "lineNumber": 66
+        },
+        {
+          "caller": "loadConfig",
+          "callee": "console.warn",
+          "lineNumber": 73
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/history.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 93,
+      "nonEmptyLines": 84,
+      "functions": [
+        {
+          "name": "summarizeToolArgs",
+          "startLine": 4,
+          "endLine": 9,
+          "params": [
+            "tool",
+            "input"
+          ]
+        },
+        {
+          "name": "messageToCards",
+          "startLine": 11,
+          "endLine": 69,
+          "params": [
+            "sessionId",
+            "msg"
+          ]
+        },
+        {
+          "name": "reconstructHistory",
+          "startLine": 78,
+          "endLine": 93,
+          "params": [
+            "client",
+            "sessionId",
+            "limit"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "summarizeToolArgs",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "messageToCards",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "reconstructHistory",
+          "line": 78,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "summarizeToolArgs",
+          "callee": "(input?.command ?? '').slice",
+          "lineNumber": 5
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "textParts.push",
+          "lineNumber": 21
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "Date.now",
+          "lineNumber": 24
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "textParts.join",
+          "lineNumber": 28
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "blocks.push",
+          "lineNumber": 37
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "blocks.push",
+          "lineNumber": 41
+        },
+        {
+          "caller": "messageToCards",
+          "callee": "summarizeToolArgs",
+          "lineNumber": 44
+        },
+        {
+          "caller": "reconstructHistory",
+          "callee": "client.session.messages",
+          "lineNumber": 83
+        },
+        {
+          "caller": "reconstructHistory",
+          "callee": "messages.slice",
+          "lineNumber": 87
+        },
+        {
+          "caller": "reconstructHistory",
+          "callee": "cards.push",
+          "lineNumber": 90
+        },
+        {
+          "caller": "reconstructHistory",
+          "callee": "messageToCards",
+          "lineNumber": 90
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/state.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 120,
+      "nonEmptyLines": 113,
+      "functions": [
+        {
+          "name": "createFileBackedState",
+          "startLine": 36,
+          "endLine": 109,
+          "params": [
+            "path"
+          ]
+        },
+        {
+          "name": "load",
+          "startLine": 111,
+          "endLine": 120,
+          "params": [
+            "path"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createFileBackedState",
+          "line": 36,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createFileBackedState",
+          "callee": "load",
+          "lineNumber": 37
+        },
+        {
+          "caller": "persist",
+          "callee": "clearTimeout",
+          "lineNumber": 44
+        },
+        {
+          "caller": "persist",
+          "callee": "setTimeout",
+          "lineNumber": 45
+        },
+        {
+          "caller": "persist",
+          "callee": "mkdirSync",
+          "lineNumber": 47
+        },
+        {
+          "caller": "persist",
+          "callee": "dirname",
+          "lineNumber": 47
+        },
+        {
+          "caller": "persist",
+          "callee": "writeFileSync",
+          "lineNumber": 49
+        },
+        {
+          "caller": "persist",
+          "callee": "JSON.stringify",
+          "lineNumber": 49
+        },
+        {
+          "caller": "persist",
+          "callee": "renameSync",
+          "lineNumber": 50
+        },
+        {
+          "caller": "persist",
+          "callee": "log.warn",
+          "lineNumber": 52
+        },
+        {
+          "caller": "persist",
+          "callee": "resolve",
+          "lineNumber": 55
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 65
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 71
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 77
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 83
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 89
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 95
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "aborts.get",
+          "lineNumber": 97
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "aborts.delete",
+          "lineNumber": 99
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "aborts.set",
+          "lineNumber": 100
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "sessionCosts.get",
+          "lineNumber": 102
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "sessionCosts.delete",
+          "lineNumber": 104
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "sessionCosts.set",
+          "lineNumber": 105
+        },
+        {
+          "caller": "createFileBackedState",
+          "callee": "persist",
+          "lineNumber": 107
+        },
+        {
+          "caller": "load",
+          "callee": "existsSync",
+          "lineNumber": 112
+        },
+        {
+          "caller": "load",
+          "callee": "readFileSync",
+          "lineNumber": 114
+        },
+        {
+          "caller": "load",
+          "callee": "JSON.parse",
+          "lineNumber": 115
+        },
+        {
+          "caller": "load",
+          "callee": "log.warn",
+          "lineNumber": 117
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/stream-accumulator.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 136,
+      "nonEmptyLines": 120,
+      "functions": [
+        {
+          "name": "createStreamAccumulator",
+          "startLine": 40,
+          "endLine": 136,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createStreamAccumulator",
+          "line": 40,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "summarizeArgs",
+          "callee": "input.cmd.slice",
+          "lineNumber": 48
+        },
+        {
+          "caller": "summarizeArgs",
+          "callee": "Object.keys",
+          "lineNumber": 50
+        },
+        {
+          "caller": "summarizeArgs",
+          "callee": "String",
+          "lineNumber": 52
+        },
+        {
+          "caller": "summarizeArgs",
+          "callee": "first.slice",
+          "lineNumber": 53
+        },
+        {
+          "caller": "upsert",
+          "callee": "index.get",
+          "lineNumber": 57
+        },
+        {
+          "caller": "upsert",
+          "callee": "order.push",
+          "lineNumber": 61
+        },
+        {
+          "caller": "upsert",
+          "callee": "index.set",
+          "lineNumber": 62
+        },
+        {
+          "caller": "upsert",
+          "callee": "blocks.push",
+          "lineNumber": 63
+        },
+        {
+          "caller": "toContentBlocks",
+          "callee": "result.push",
+          "lineNumber": 70
+        },
+        {
+          "caller": "toContentBlocks",
+          "callee": "result.push",
+          "lineNumber": 71
+        },
+        {
+          "caller": "update",
+          "callee": "index.has",
+          "lineNumber": 85
+        },
+        {
+          "caller": "update",
+          "callee": "index.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "update",
+          "callee": "index.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "update",
+          "callee": "upsert",
+          "lineNumber": 88
+        },
+        {
+          "caller": "update",
+          "callee": "upsert",
+          "lineNumber": 97
+        },
+        {
+          "caller": "update",
+          "callee": "summarizeArgs",
+          "lineNumber": 102
+        },
+        {
+          "caller": "update",
+          "callee": "upsert",
+          "lineNumber": 108
+        },
+        {
+          "caller": "update",
+          "callee": "toContentBlocks",
+          "lineNumber": 111
+        },
+        {
+          "caller": "finalize",
+          "callee": "toContentBlocks",
+          "lineNumber": 115
+        },
+        {
+          "caller": "getTools",
+          "callee": "blocks.filter(b => b.type === 'tool').map",
+          "lineNumber": 127
+        },
+        {
+          "caller": "getTools",
+          "callee": "blocks.filter",
+          "lineNumber": 127
+        },
+        {
+          "caller": "reset",
+          "callee": "index.clear",
+          "lineNumber": 133
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/tui-sync.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 48,
+      "functions": [
+        {
+          "name": "startTuiSync",
+          "startLine": 15,
+          "endLine": 53,
+          "params": [
+            "deps"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "startTuiSync",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "startTuiSync",
+          "callee": "deps.eventStream.onAny",
+          "lineNumber": 18
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "deps.state.setTuiSelectedSession",
+          "lineNumber": 31
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "setInterval",
+          "lineNumber": 37
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "deps.state.getTuiSelectedSession",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "deps.client.session.get",
+          "lineNumber": 41
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "deps.state.setCurrentAgent",
+          "lineNumber": 43
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "log.debug",
+          "lineNumber": 45
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "unsub",
+          "lineNumber": 50
+        },
+        {
+          "caller": "startTuiSync",
+          "callee": "clearInterval",
+          "lineNumber": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/core/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 28,
+      "nonEmptyLines": 25,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 99,
+      "functions": [
+        {
+          "name": "waitForHealth",
+          "startLine": 17,
+          "endLine": 29,
+          "params": [
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "runBot",
+          "startLine": 31,
+          "endLine": 108,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "runBot",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "waitForHealth",
+          "callee": "checkHealth",
+          "lineNumber": 21
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "log.info",
+          "lineNumber": 22
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "log.warn",
+          "lineNumber": 25
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "setTimeout",
+          "lineNumber": 26
+        },
+        {
+          "caller": "runBot",
+          "callee": "loadConfig",
+          "lineNumber": 32
+        },
+        {
+          "caller": "runBot",
+          "callee": "log.info",
+          "lineNumber": 33
+        },
+        {
+          "caller": "runBot",
+          "callee": "waitForHealth",
+          "lineNumber": 34
+        },
+        {
+          "caller": "runBot",
+          "callee": "getClient",
+          "lineNumber": 36
+        },
+        {
+          "caller": "runBot",
+          "callee": "eventStream.start",
+          "lineNumber": 38
+        },
+        {
+          "caller": "runBot",
+          "callee": "createFileBackedState",
+          "lineNumber": 40
+        },
+        {
+          "caller": "runBot",
+          "callee": "createCardBus",
+          "lineNumber": 41
+        },
+        {
+          "caller": "runBot",
+          "callee": "createTelegramTransport",
+          "lineNumber": 47
+        },
+        {
+          "caller": "runBot",
+          "callee": "createWebTransport",
+          "lineNumber": 59
+        },
+        {
+          "caller": "runBot",
+          "callee": "transports.push",
+          "lineNumber": 73
+        },
+        {
+          "caller": "runBot",
+          "callee": "createRelay",
+          "lineNumber": 76
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.onMessage",
+          "lineNumber": 87
+        },
+        {
+          "caller": "runBot",
+          "callee": "startTuiSync",
+          "lineNumber": 90
+        },
+        {
+          "caller": "runBot",
+          "callee": "startPushNotifications",
+          "lineNumber": 92
+        },
+        {
+          "caller": "runBot",
+          "callee": "process.once",
+          "lineNumber": 98
+        },
+        {
+          "caller": "runBot",
+          "callee": "eventStream.stop",
+          "lineNumber": 99
+        },
+        {
+          "caller": "runBot",
+          "callee": "stopSync",
+          "lineNumber": 99
+        },
+        {
+          "caller": "runBot",
+          "callee": "stopPush.stop",
+          "lineNumber": 99
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.stop().catch",
+          "lineNumber": 100
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.stop",
+          "lineNumber": 100
+        },
+        {
+          "caller": "runBot",
+          "callee": "process.once",
+          "lineNumber": 102
+        },
+        {
+          "caller": "runBot",
+          "callee": "eventStream.stop",
+          "lineNumber": 103
+        },
+        {
+          "caller": "runBot",
+          "callee": "stopSync",
+          "lineNumber": 103
+        },
+        {
+          "caller": "runBot",
+          "callee": "stopPush.stop",
+          "lineNumber": 103
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.stop().catch",
+          "lineNumber": 104
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.stop",
+          "lineNumber": 104
+        },
+        {
+          "caller": "runBot",
+          "callee": "Promise.all",
+          "lineNumber": 107
+        },
+        {
+          "caller": "runBot",
+          "callee": "transports.map",
+          "lineNumber": 107
+        },
+        {
+          "caller": "runBot",
+          "callee": "t.start",
+          "lineNumber": 107
+        }
+      ],
+      "metrics": {
+        "importCount": 12,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    }
+  ]
+}

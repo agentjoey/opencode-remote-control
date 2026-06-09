@@ -1,0 +1,767 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/transport/web/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/transport/web/index.ts",
+      "summary": "Factory for the Web (Hono + ws) transport: serves the SPA, exposes REST routes for sessions/messages/diff/todo/context/abort/approval/version, upgrades WebSocket connections, and bridges the CardBus to connected clients.",
+      "tags": [
+        "transport",
+        "hono",
+        "websocket",
+        "spa",
+        "factory",
+        "lifecycle"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/transport/web/index.ts:createWebTransport",
+      "type": "function",
+      "name": "createWebTransport",
+      "filePath": "src/transport/web/index.ts",
+      "lineRange": [
+        34,
+        126
+      ],
+      "summary": "Builds a Hono app, wires all REST routes, mounts the SPA static directory, upgrades WebSocket clients through a JWT-validated handshake, attaches them to the WsHub, and exposes start/stop/onMessage for the transport contract.",
+      "tags": [
+        "transport",
+        "hono",
+        "websocket",
+        "spa",
+        "factory",
+        "lifecycle"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/transport/web/routes/abort.ts",
+      "type": "file",
+      "name": "abort.ts",
+      "filePath": "src/transport/web/routes/abort.ts",
+      "summary": "HTTP route handler for POST /api/abort that aborts the active generation for the requested session by triggering its stored AbortController.",
+      "tags": [
+        "api-handler",
+        "abort",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/abort.ts:registerAbort",
+      "type": "function",
+      "name": "registerAbort",
+      "filePath": "src/transport/web/routes/abort.ts",
+      "lineRange": [
+        4,
+        11
+      ],
+      "summary": "Registers the POST /api/abort endpoint on the Hono app, aborting the session's active AbortController on request.",
+      "tags": [
+        "api-handler",
+        "abort",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/abort.ts:POST-/api/abort",
+      "type": "endpoint",
+      "name": "POST-/api/abort",
+      "filePath": "src/transport/web/routes/abort.ts",
+      "summary": "Aborts the in-flight generation for a given session id.",
+      "tags": [
+        "api",
+        "http",
+        "abort",
+        "post"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/approval.ts",
+      "type": "file",
+      "name": "approval.ts",
+      "filePath": "src/transport/web/routes/approval.ts",
+      "summary": "HTTP route handler for POST /api/approval that forwards a permission response (once/always/reject) to the opencode SDK.",
+      "tags": [
+        "api-handler",
+        "approval",
+        "permission",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/approval.ts:registerApproval",
+      "type": "function",
+      "name": "registerApproval",
+      "filePath": "src/transport/web/routes/approval.ts",
+      "lineRange": [
+        4,
+        13
+      ],
+      "summary": "Registers the POST /api/approval endpoint on the Hono app, forwarding the decision to the opencode SDK's postSessionIdPermissionsPermissionId call.",
+      "tags": [
+        "api-handler",
+        "approval",
+        "permission",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/approval.ts:POST-/api/approval",
+      "type": "endpoint",
+      "name": "POST-/api/approval",
+      "filePath": "src/transport/web/routes/approval.ts",
+      "summary": "Submits a permission decision (allow once, always allow, or reject) for a pending opencode permission request.",
+      "tags": [
+        "api",
+        "http",
+        "approval",
+        "permission",
+        "post"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/context.ts",
+      "type": "file",
+      "name": "context.ts",
+      "filePath": "src/transport/web/routes/context.ts",
+      "summary": "HTTP route handler for GET /api/session/:id/context that returns session metadata (agent, model, tokens, cost) plus the next agent/model that will be used.",
+      "tags": [
+        "api-handler",
+        "context",
+        "session",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/context.ts:registerContext",
+      "type": "function",
+      "name": "registerContext",
+      "filePath": "src/transport/web/routes/context.ts",
+      "lineRange": [
+        5,
+        20
+      ],
+      "summary": "Registers the GET /api/session/:id/context endpoint, returning session info merged with state-tracked next agent/model/cost.",
+      "tags": [
+        "api-handler",
+        "context",
+        "session",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/context.ts:GET-/api/session/:id/context",
+      "type": "endpoint",
+      "name": "GET-/api/session/:id/context",
+      "filePath": "src/transport/web/routes/context.ts",
+      "summary": "Returns agent, model, token count, and cost for a session along with the queued next agent and model.",
+      "tags": [
+        "api",
+        "http",
+        "session",
+        "context",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/diff.ts",
+      "type": "file",
+      "name": "diff.ts",
+      "filePath": "src/transport/web/routes/diff.ts",
+      "summary": "HTTP route handler for GET /api/session/:id/diff that returns the pending file diff for a session via the opencode SDK.",
+      "tags": [
+        "api-handler",
+        "diff",
+        "session",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/diff.ts:registerDiff",
+      "type": "function",
+      "name": "registerDiff",
+      "filePath": "src/transport/web/routes/diff.ts",
+      "lineRange": [
+        4,
+        10
+      ],
+      "summary": "Registers the GET /api/session/:id/diff endpoint, returning the session's pending diff payload from the opencode SDK.",
+      "tags": [
+        "api-handler",
+        "diff",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/diff.ts:GET-/api/session/:id/diff",
+      "type": "endpoint",
+      "name": "GET-/api/session/:id/diff",
+      "filePath": "src/transport/web/routes/diff.ts",
+      "summary": "Returns the file diffs that the session has produced but not yet committed.",
+      "tags": [
+        "api",
+        "http",
+        "diff",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/message.ts",
+      "type": "file",
+      "name": "message.ts",
+      "filePath": "src/transport/web/routes/message.ts",
+      "summary": "HTTP route handler for POST /api/message that accepts a chat message from the authenticated web user and forwards it to the bot's onMessage handler.",
+      "tags": [
+        "api-handler",
+        "message",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/message.ts:registerMessage",
+      "type": "function",
+      "name": "registerMessage",
+      "filePath": "src/transport/web/routes/message.ts",
+      "lineRange": [
+        4,
+        20
+      ],
+      "summary": "Registers the POST /api/message endpoint, packaging the request into an IncomingMessage and invoking the transport's onMessage callback.",
+      "tags": [
+        "api-handler",
+        "message",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/message.ts:POST-/api/message",
+      "type": "endpoint",
+      "name": "POST-/api/message",
+      "filePath": "src/transport/web/routes/message.ts",
+      "summary": "Accepts a text message from the web PWA and feeds it into the bot pipeline for the authenticated user.",
+      "tags": [
+        "api",
+        "http",
+        "message",
+        "post"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/session.ts",
+      "type": "file",
+      "name": "session.ts",
+      "filePath": "src/transport/web/routes/session.ts",
+      "summary": "HTTP route handler for GET /api/session/:id that returns the reconstructed chat history (cards) for a session, with an optional message limit.",
+      "tags": [
+        "api-handler",
+        "session",
+        "history",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/session.ts:registerSession",
+      "type": "function",
+      "name": "registerSession",
+      "filePath": "src/transport/web/routes/session.ts",
+      "lineRange": [
+        5,
+        13
+      ],
+      "summary": "Registers the GET /api/session/:id endpoint, returning the reconstructed card history (optionally capped by a limit query param).",
+      "tags": [
+        "api-handler",
+        "session",
+        "history",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/session.ts:GET-/api/session/:id",
+      "type": "endpoint",
+      "name": "GET-/api/session/:id",
+      "filePath": "src/transport/web/routes/session.ts",
+      "summary": "Returns the chat-card history for a session, capped by an optional ?limit= query parameter.",
+      "tags": [
+        "api",
+        "http",
+        "session",
+        "history",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/sessions.ts",
+      "type": "file",
+      "name": "sessions.ts",
+      "filePath": "src/transport/web/routes/sessions.ts",
+      "summary": "HTTP route handler for GET /api/sessions that returns a sorted list of session summaries (id, title, agent, model, cost, lastActiveAt, unread).",
+      "tags": [
+        "api-handler",
+        "sessions",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/sessions.ts:registerSessions",
+      "type": "function",
+      "name": "registerSessions",
+      "filePath": "src/transport/web/routes/sessions.ts",
+      "lineRange": [
+        6,
+        11
+      ],
+      "summary": "Registers the GET /api/sessions endpoint, returning session summaries via fetchSessionSummaries.",
+      "tags": [
+        "api-handler",
+        "sessions",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/sessions.ts:GET-/api/sessions",
+      "type": "endpoint",
+      "name": "GET-/api/sessions",
+      "filePath": "src/transport/web/routes/sessions.ts",
+      "summary": "Returns the list of session summaries shown in the web PWA's session sidebar.",
+      "tags": [
+        "api",
+        "http",
+        "sessions",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/todo.ts",
+      "type": "file",
+      "name": "todo.ts",
+      "filePath": "src/transport/web/routes/todo.ts",
+      "summary": "HTTP route handler for GET /api/session/:id/todo that returns the opencode session todo list.",
+      "tags": [
+        "api-handler",
+        "todo",
+        "session",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/todo.ts:registerTodo",
+      "type": "function",
+      "name": "registerTodo",
+      "filePath": "src/transport/web/routes/todo.ts",
+      "lineRange": [
+        4,
+        10
+      ],
+      "summary": "Registers the GET /api/session/:id/todo endpoint, returning the session's todo array from the opencode SDK.",
+      "tags": [
+        "api-handler",
+        "todo",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/todo.ts:GET-/api/session/:id/todo",
+      "type": "endpoint",
+      "name": "GET-/api/session/:id/todo",
+      "filePath": "src/transport/web/routes/todo.ts",
+      "summary": "Returns the todo list associated with a session.",
+      "tags": [
+        "api",
+        "http",
+        "todo",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/routes/version.ts",
+      "type": "file",
+      "name": "version.ts",
+      "filePath": "src/transport/web/routes/version.ts",
+      "summary": "HTTP route handler for GET /api/version that returns build version info (from utils/version) as JSON.",
+      "tags": [
+        "api-handler",
+        "version",
+        "hono",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/routes/version.ts:registerVersion",
+      "type": "function",
+      "name": "registerVersion",
+      "filePath": "src/transport/web/routes/version.ts",
+      "lineRange": [
+        4,
+        6
+      ],
+      "summary": "Registers the GET /api/version endpoint, returning getVersionInfo() output.",
+      "tags": [
+        "api-handler",
+        "version",
+        "hono"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "endpoint:src/transport/web/routes/version.ts:GET-/api/version",
+      "type": "endpoint",
+      "name": "GET-/api/version",
+      "filePath": "src/transport/web/routes/version.ts",
+      "summary": "Returns the build/version metadata used by the web PWA and /version bot command.",
+      "tags": [
+        "api",
+        "http",
+        "version",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/session-summary.ts",
+      "type": "file",
+      "name": "session-summary.ts",
+      "filePath": "src/transport/web/session-summary.ts",
+      "summary": "Helper that fetches the opencode session list and turns it into the SessionSummary[] shape used by the web PWA and the WsHub handshake.",
+      "tags": [
+        "helper",
+        "session",
+        "summary",
+        "sorting"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/session-summary.ts:fetchSessionSummaries",
+      "type": "function",
+      "name": "fetchSessionSummaries",
+      "filePath": "src/transport/web/session-summary.ts",
+      "lineRange": [
+        14,
+        32
+      ],
+      "summary": "Calls client.session.list() and maps the result into SessionSummary records, preferring sessions that have a tracked cost, sorted by recency.",
+      "tags": [
+        "helper",
+        "session",
+        "summary"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/transport/web/ws-hub.ts",
+      "type": "file",
+      "name": "ws-hub.ts",
+      "filePath": "src/transport/web/ws-hub.ts",
+      "summary": "Per-connection WebSocket hub for the web PWA. Subscribes to the CardBus and forwards live cards to connected clients, handling ping/pong and per-session subscription messages.",
+      "tags": [
+        "websocket",
+        "hub",
+        "card-bus",
+        "broadcast"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/web/ws-hub.ts:createWsHub",
+      "type": "function",
+      "name": "createWsHub",
+      "filePath": "src/transport/web/ws-hub.ts",
+      "lineRange": [
+        21,
+        56
+      ],
+      "summary": "Returns a WsHub implementation that tracks connected sockets, forwards CardBus cards to subscribed clients, and handles ping/pong and subscribe messages on attach/detach.",
+      "tags": [
+        "websocket",
+        "hub",
+        "broadcast",
+        "card-bus"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/transport/web/index.ts",
+      "target": "function:src/transport/web/index.ts:createWebTransport",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/index.ts",
+      "target": "function:src/transport/web/index.ts:createWebTransport",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/web/routes/abort.ts",
+      "target": "function:src/transport/web/routes/abort.ts:registerAbort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/abort.ts",
+      "target": "function:src/transport/web/routes/abort.ts:registerAbort",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/abort.ts:registerAbort",
+      "target": "endpoint:src/transport/web/routes/abort.ts:POST-/api/abort",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/approval.ts",
+      "target": "function:src/transport/web/routes/approval.ts:registerApproval",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/approval.ts",
+      "target": "function:src/transport/web/routes/approval.ts:registerApproval",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/approval.ts:registerApproval",
+      "target": "endpoint:src/transport/web/routes/approval.ts:POST-/api/approval",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/context.ts",
+      "target": "function:src/transport/web/routes/context.ts:registerContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/context.ts",
+      "target": "function:src/transport/web/routes/context.ts:registerContext",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/context.ts:registerContext",
+      "target": "endpoint:src/transport/web/routes/context.ts:GET-/api/session/:id/context",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/diff.ts",
+      "target": "function:src/transport/web/routes/diff.ts:registerDiff",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/diff.ts",
+      "target": "function:src/transport/web/routes/diff.ts:registerDiff",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/diff.ts:registerDiff",
+      "target": "endpoint:src/transport/web/routes/diff.ts:GET-/api/session/:id/diff",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/message.ts",
+      "target": "function:src/transport/web/routes/message.ts:registerMessage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/message.ts",
+      "target": "function:src/transport/web/routes/message.ts:registerMessage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/message.ts:registerMessage",
+      "target": "endpoint:src/transport/web/routes/message.ts:POST-/api/message",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/session.ts",
+      "target": "function:src/transport/web/routes/session.ts:registerSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/session.ts",
+      "target": "function:src/transport/web/routes/session.ts:registerSession",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/session.ts:registerSession",
+      "target": "endpoint:src/transport/web/routes/session.ts:GET-/api/session/:id",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/sessions.ts",
+      "target": "function:src/transport/web/routes/sessions.ts:registerSessions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/sessions.ts",
+      "target": "function:src/transport/web/routes/sessions.ts:registerSessions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/sessions.ts:registerSessions",
+      "target": "endpoint:src/transport/web/routes/sessions.ts:GET-/api/sessions",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/todo.ts",
+      "target": "function:src/transport/web/routes/todo.ts:registerTodo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/todo.ts",
+      "target": "function:src/transport/web/routes/todo.ts:registerTodo",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/todo.ts:registerTodo",
+      "target": "endpoint:src/transport/web/routes/todo.ts:GET-/api/session/:id/todo",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/routes/version.ts",
+      "target": "function:src/transport/web/routes/version.ts:registerVersion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/routes/version.ts",
+      "target": "function:src/transport/web/routes/version.ts:registerVersion",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/transport/web/routes/version.ts:registerVersion",
+      "target": "endpoint:src/transport/web/routes/version.ts:GET-/api/version",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/transport/web/session-summary.ts",
+      "target": "function:src/transport/web/session-summary.ts:fetchSessionSummaries",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/session-summary.ts",
+      "target": "function:src/transport/web/session-summary.ts:fetchSessionSummaries",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/web/ws-hub.ts",
+      "target": "function:src/transport/web/ws-hub.ts:createWsHub",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/transport/web/ws-hub.ts",
+      "target": "function:src/transport/web/ws-hub.ts:createWsHub",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/web/index.ts",
+      "target": "file:tests/unit/web/transport.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/web/ws-hub.ts",
+      "target": "file:tests/unit/web/ws-hub.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

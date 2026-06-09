@@ -6,15 +6,21 @@ export function registerMessage(
   onMessage: (msg: IncomingMessage) => Promise<void>,
 ) {
   app.post('/api/message', async (c) => {
-    const body = await c.req.json() as { sessionId?: string; text: string }
+    const body = await c.req.json().catch(() => ({})) as { sessionId?: string; text?: string; clientId?: string }
+    if (typeof body.text !== 'string' || body.text.trim() === '') {
+      return c.json({ error: 'text required' }, 400)
+    }
     const user = c.get('user') as { email: string; sub: string }
+    // Use the client-supplied id so the echoed user card carries the same id as
+    // the optimistic card the UI already inserted — they reconcile (no dupe).
+    const messageId = typeof body.clientId === 'string' && body.clientId ? body.clientId : `web_${Date.now()}`
     const msg: IncomingMessage = {
       userId: user.sub ?? user.email,
       chatId: `web:${user.email}`,
       text: body.text,
-      messageId: `web_${Date.now()}`,
+      messageId,
     }
     void onMessage(msg)
-    return c.json({ messageId: msg.messageId })
+    return c.json({ messageId })
   })
 }

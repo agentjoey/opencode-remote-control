@@ -39,18 +39,18 @@ describe('verifyUpgradeJwt', () => {
     expect(user).toEqual({ email: 'u@example.com', sub: '123' })
   })
 
-  it('dev bypass works on loopback host', async () => {
+  it('dev bypass works for a loopback socket peer', async () => {
     const user = await verifyUpgradeJwt(
-      { headers: {} },
-      { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: '127.0.0.1' },
+      { headers: {}, socket: { remoteAddress: '127.0.0.1' } },
+      { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' },
     )
     expect(user).toEqual({ email: 'dev@local', sub: 'dev' })
   })
 
-  it('dev bypass ignored on non-loopback host', async () => {
+  it('dev bypass ignored when socket peer is remote', async () => {
     const user = await verifyUpgradeJwt(
-      { headers: {} },
-      { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: 'example.com' },
+      { headers: {}, socket: { remoteAddress: '10.0.0.5' } },
+      { team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' },
     )
     expect(user).toBeNull()
   })

@@ -1,0 +1,169 @@
+{
+  "nodes": [
+    {
+      "id": "config:.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "Template environment file documenting 26 runtime variables for the bot, covering Telegram auth, opencode server URL, streaming/throttling, logging, persistent state, launcher, and the optional Web transport (PWA, port, static root, Cloudflare Access JWT).",
+      "tags": ["configuration", "environment", "telegram", "web", "runtime"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:CHANGELOG.md",
+      "type": "document",
+      "name": "CHANGELOG.md",
+      "filePath": "CHANGELOG.md",
+      "summary": "Version history of the project covering releases from v0.1.0 (2026-05-14) through v0.6.0-rc.1 (2026-05-31), organized into Added / Changed / Fixed / Deprecated / Removed sections per release.",
+      "tags": ["documentation", "changelog", "release-notes", "versioning"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:CONTRIBUTING.md",
+      "type": "document",
+      "name": "CONTRIBUTING.md",
+      "filePath": "CONTRIBUTING.md",
+      "summary": "Contributor guide covering getting started, development workflow, testing, code style, instructions for adding a new transport, and pull request process.",
+      "tags": ["documentation", "contributing", "development", "guidelines"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Primary project documentation describing the sidecar bot that controls opencode from Telegram and a Web PWA, including architecture diagram, quick start, multi-transport model, security model, and environment variable reference.",
+      "tags": ["documentation", "entry-point", "overview", "architecture"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:SECURITY.md",
+      "type": "document",
+      "name": "SECURITY.md",
+      "filePath": "SECURITY.md",
+      "summary": "Security policy documenting response targets and the scope of supported vulnerability disclosures.",
+      "tags": ["documentation", "security", "policy"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:config.json",
+      "type": "config",
+      "name": "config.json",
+      "filePath": "config.json",
+      "summary": "opencode server configuration that pins the default model to deepseek/deepseek-v4-pro and references the upstream opencode config JSON schema.",
+      "tags": ["configuration", "opencode", "model"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "TypeScript compiler configuration targeting ES2022 with Bundler module resolution, strict mode, source maps, and an include set limited to src/**/*.",
+      "tags": ["configuration", "typescript", "build-system"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:vitest.config.ts",
+      "type": "config",
+      "name": "vitest.config.ts",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest test runner configuration that discovers tests/**/*.test.ts, excludes the integration directory, applies a 10s timeout, and uses the verbose reporter.",
+      "tags": ["configuration", "testing", "vitest"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:tsconfig.json",
+      "type": "configures",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.json",
+      "type": "configures",
+      "target": "file:src/transport/telegram.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:vitest.config.ts",
+      "type": "configures",
+      "target": "file:tests/unit/bot.test.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:.env.example",
+      "type": "configures",
+      "target": "file:src/config/env.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:config.json",
+      "type": "configures",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:README.md",
+      "type": "documents",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "type": "documents",
+      "target": "file:src/transport/telegram.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "type": "documents",
+      "target": "file:src/transport/web.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "type": "related",
+      "target": "config:.env.example",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CHANGELOG.md",
+      "type": "documents",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CONTRIBUTING.md",
+      "type": "documents",
+      "target": "file:src/transport/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CONTRIBUTING.md",
+      "type": "documents",
+      "target": "file:tests/unit/bot.test.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:SECURITY.md",
+      "type": "related",
+      "target": "file:src/transport/telegram.ts",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

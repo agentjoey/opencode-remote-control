@@ -1,0 +1,1379 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/utils/logger.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 29,
+      "functions": [
+        {
+          "name": "currentLevel",
+          "startLine": 5,
+          "endLine": 8,
+          "params": []
+        },
+        {
+          "name": "format",
+          "startLine": 10,
+          "endLine": 16,
+          "params": [
+            "level",
+            "mod",
+            "msg",
+            "extra"
+          ]
+        },
+        {
+          "name": "createLogger",
+          "startLine": 18,
+          "endLine": 33,
+          "params": [
+            "mod"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createLogger",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "currentLevel",
+          "callee": "(process.env.LOG_LEVEL ?? 'warn').toLowerCase",
+          "lineNumber": 6
+        },
+        {
+          "caller": "format",
+          "callee": "new Date().toISOString",
+          "lineNumber": 11
+        },
+        {
+          "caller": "format",
+          "callee": "extra.map((e) => (e instanceof Error ? e.stack ?? e.message : JSON.stringify(e))).join",
+          "lineNumber": 13
+        },
+        {
+          "caller": "format",
+          "callee": "extra.map",
+          "lineNumber": 13
+        },
+        {
+          "caller": "format",
+          "callee": "JSON.stringify",
+          "lineNumber": 13
+        },
+        {
+          "caller": "format",
+          "callee": "level.toUpperCase",
+          "lineNumber": 15
+        },
+        {
+          "caller": "createLogger",
+          "callee": "currentLevel",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createLogger",
+          "callee": "console.log",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createLogger",
+          "callee": "format",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createLogger",
+          "callee": "currentLevel",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createLogger",
+          "callee": "console.log",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createLogger",
+          "callee": "format",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createLogger",
+          "callee": "currentLevel",
+          "lineNumber": 27
+        },
+        {
+          "caller": "createLogger",
+          "callee": "console.warn",
+          "lineNumber": 27
+        },
+        {
+          "caller": "createLogger",
+          "callee": "format",
+          "lineNumber": 27
+        },
+        {
+          "caller": "createLogger",
+          "callee": "currentLevel",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createLogger",
+          "callee": "console.error",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createLogger",
+          "callee": "format",
+          "lineNumber": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/utils/markdown.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 150,
+      "nonEmptyLines": 124,
+      "functions": [
+        {
+          "name": "escapeMarkdownV2",
+          "startLine": 3,
+          "endLine": 5,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "escHtml",
+          "startLine": 7,
+          "endLine": 9,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "markdownToTelegramHtml",
+          "startLine": 16,
+          "endLine": 87,
+          "params": [
+            "md"
+          ]
+        },
+        {
+          "name": "processInline",
+          "startLine": 89,
+          "endLine": 118,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "chunkMessage",
+          "startLine": 120,
+          "endLine": 150,
+          "params": [
+            "text",
+            "maxLength"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "escapeMarkdownV2",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "markdownToTelegramHtml",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "chunkMessage",
+          "line": 120,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "escapeMarkdownV2",
+          "callee": "text.replace",
+          "lineNumber": 4
+        },
+        {
+          "caller": "escHtml",
+          "callee": "s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 8
+        },
+        {
+          "caller": "escHtml",
+          "callee": "s.replace(/&/g, '&amp;').replace",
+          "lineNumber": 8
+        },
+        {
+          "caller": "escHtml",
+          "callee": "s.replace",
+          "lineNumber": 8
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "md.split",
+          "lineNumber": 17
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.match",
+          "lineNumber": 25
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.startsWith",
+          "lineNumber": 33
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "escHtml",
+          "lineNumber": 34
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 35
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "escHtml",
+          "lineNumber": 35
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "fenceLines.join",
+          "lineNumber": 35
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "fenceLines.push",
+          "lineNumber": 40
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "/^(---+|\\*\\*\\*+|___+)\\s*$/.test",
+          "lineNumber": 46
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 47
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.match",
+          "lineNumber": 52
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 54
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "processInline",
+          "lineNumber": 54
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.startsWith",
+          "lineNumber": 59
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 60
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "processInline",
+          "lineNumber": 60
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.slice",
+          "lineNumber": 60
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "/^[*\\-] /.test",
+          "lineNumber": 65
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 66
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "processInline",
+          "lineNumber": 66
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.slice",
+          "lineNumber": 66
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "line.match",
+          "lineNumber": 71
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 73
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "processInline",
+          "lineNumber": 73
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 77
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "processInline",
+          "lineNumber": 77
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "escHtml",
+          "lineNumber": 82
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.push",
+          "lineNumber": 83
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "escHtml",
+          "lineNumber": 83
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "fenceLines.join",
+          "lineNumber": 83
+        },
+        {
+          "caller": "markdownToTelegramHtml",
+          "callee": "out.join",
+          "lineNumber": 86
+        },
+        {
+          "caller": "ph",
+          "callee": "stash.push",
+          "lineNumber": 91
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 96
+        },
+        {
+          "caller": "processInline",
+          "callee": "ph",
+          "lineNumber": 96
+        },
+        {
+          "caller": "processInline",
+          "callee": "escHtml",
+          "lineNumber": 96
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 99
+        },
+        {
+          "caller": "processInline",
+          "callee": "ph",
+          "lineNumber": 100
+        },
+        {
+          "caller": "processInline",
+          "callee": "escHtml",
+          "lineNumber": 100
+        },
+        {
+          "caller": "processInline",
+          "callee": "escHtml",
+          "lineNumber": 100
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 103
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 106
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 107
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 111
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 114
+        },
+        {
+          "caller": "processInline",
+          "callee": "s.replace",
+          "lineNumber": 117
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "text.split",
+          "lineNumber": 126
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "chunks.push",
+          "lineNumber": 130
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "chunks.push",
+          "lineNumber": 134
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "line.slice",
+          "lineNumber": 134
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "chunks.push",
+          "lineNumber": 141
+        },
+        {
+          "caller": "chunkMessage",
+          "callee": "chunks.push",
+          "lineNumber": 148
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/utils/version.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 43,
+      "functions": [
+        {
+          "name": "getGitCommit",
+          "startLine": 11,
+          "endLine": 17,
+          "params": []
+        },
+        {
+          "name": "formatUptime",
+          "startLine": 21,
+          "endLine": 30,
+          "params": [
+            "ms"
+          ]
+        },
+        {
+          "name": "getVersionInfo",
+          "startLine": 41,
+          "endLine": 50,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getVersionInfo",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getGitCommit",
+          "callee": "execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim",
+          "lineNumber": 13
+        },
+        {
+          "caller": "getGitCommit",
+          "callee": "execSync",
+          "lineNumber": 13
+        },
+        {
+          "caller": "formatUptime",
+          "callee": "Math.floor",
+          "lineNumber": 22
+        },
+        {
+          "caller": "formatUptime",
+          "callee": "Math.floor",
+          "lineNumber": 23
+        },
+        {
+          "caller": "formatUptime",
+          "callee": "Math.floor",
+          "lineNumber": 24
+        },
+        {
+          "caller": "formatUptime",
+          "callee": "Math.floor",
+          "lineNumber": 25
+        },
+        {
+          "caller": "getVersionInfo",
+          "callee": "formatUptime",
+          "lineNumber": 45
+        },
+        {
+          "caller": "getVersionInfo",
+          "callee": "Date.now",
+          "lineNumber": 45
+        },
+        {
+          "caller": "getVersionInfo",
+          "callee": "Date.now",
+          "lineNumber": 46
+        },
+        {
+          "caller": "getVersionInfo",
+          "callee": "new Date(START_TIME).toISOString",
+          "lineNumber": 48
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/approval.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 271,
+      "nonEmptyLines": 226,
+      "functions": [
+        {
+          "name": "flush",
+          "startLine": 14,
+          "endLine": 14,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "flush",
+          "callee": "setTimeout",
+          "lineNumber": 14
+        },
+        {
+          "caller": "emit",
+          "callee": "emitter.listeners('*').forEach",
+          "lineNumber": 134
+        },
+        {
+          "caller": "emit",
+          "callee": "emitter.listeners",
+          "lineNumber": 134
+        },
+        {
+          "caller": "emit",
+          "callee": "fn",
+          "lineNumber": 135
+        },
+        {
+          "caller": "emitAndWait",
+          "callee": "emit",
+          "lineNumber": 141
+        },
+        {
+          "caller": "emitAndWait",
+          "callee": "vi.waitFor",
+          "lineNumber": 142
+        },
+        {
+          "caller": "emitAndWait",
+          "callee": "expect(sentMessages).toHaveLength",
+          "lineNumber": 142
+        },
+        {
+          "caller": "emitAndWait",
+          "callee": "expect",
+          "lineNumber": 142
+        },
+        {
+          "caller": "emitAndWait",
+          "callee": "flush",
+          "lineNumber": 143
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/config.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 76,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/event-stream.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 162,
+      "nonEmptyLines": 136,
+      "functions": [
+        {
+          "name": "fakeClient",
+          "startLine": 5,
+          "endLine": 15,
+          "params": [
+            "events"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeClient",
+          "callee": "(async function* () {\n          for (const e of events) yield e\n        })",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/history.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 98,
+      "nonEmptyLines": 90,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/init-wizard.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 58,
+      "nonEmptyLines": 51,
+      "callGraph": [
+        {
+          "caller": "makeDeps",
+          "callee": "files.set",
+          "lineNumber": 14
+        },
+        {
+          "caller": "makeDeps",
+          "callee": "files.has",
+          "lineNumber": 16
+        },
+        {
+          "caller": "makeDeps",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 17
+        },
+        {
+          "caller": "makeDeps",
+          "callee": "vi.fn",
+          "lineNumber": 17
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/markdown.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 40,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/opencode-client.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 32,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/plugin-entry.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 279,
+      "nonEmptyLines": 234,
+      "functions": [
+        {
+          "name": "fakeCardBus",
+          "startLine": 59,
+          "endLine": 68,
+          "params": []
+        },
+        {
+          "name": "fakeState",
+          "startLine": 70,
+          "endLine": 92,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeCardBus",
+          "callee": "vi.fn",
+          "lineNumber": 62
+        },
+        {
+          "caller": "fakeCardBus",
+          "callee": "vi.fn",
+          "lineNumber": 63
+        },
+        {
+          "caller": "fakeCardBus",
+          "callee": "subs.push",
+          "lineNumber": 63
+        },
+        {
+          "caller": "fakeCardBus",
+          "callee": "vi.fn",
+          "lineNumber": 64
+        },
+        {
+          "caller": "fakeCardBus",
+          "callee": "vi.fn().mockReturnValue",
+          "lineNumber": 65
+        },
+        {
+          "caller": "fakeCardBus",
+          "callee": "vi.fn",
+          "lineNumber": 65
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 74
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 75
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 76
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 77
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 78
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 79
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 80
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 82
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 83
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 84
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 85
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 86
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 87
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 88
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 89
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 90
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 90
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/reply.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 74,
+      "functions": [
+        {
+          "name": "fakeCtx",
+          "startLine": 4,
+          "endLine": 13,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 8
+        },
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn",
+          "lineNumber": 8
+        },
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 11
+        },
+        {
+          "caller": "fakeCtx",
+          "callee": "vi.fn",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/spawn.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 45,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/state.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 59,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/stream-accumulator.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 109,
+      "nonEmptyLines": 94,
+      "functions": [
+        {
+          "name": "textPart",
+          "startLine": 4,
+          "endLine": 5,
+          "params": [
+            "id",
+            "text"
+          ]
+        },
+        {
+          "name": "toolPart",
+          "startLine": 7,
+          "endLine": 8,
+          "params": [
+            "id",
+            "tool",
+            "args",
+            "status"
+          ]
+        },
+        {
+          "name": "reasoningPart",
+          "startLine": 10,
+          "endLine": 11,
+          "params": [
+            "id",
+            "text"
+          ]
+        },
+        {
+          "name": "blockText",
+          "startLine": 13,
+          "endLine": 13,
+          "params": [
+            "b"
+          ]
+        },
+        {
+          "name": "blockTool",
+          "startLine": 14,
+          "endLine": 14,
+          "params": [
+            "b"
+          ]
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/submit.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "fakeClient",
+          "startLine": 4,
+          "endLine": 10,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 7
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn",
+          "lineNumber": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/telegram-render.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 35,
+      "nonEmptyLines": 31,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/tri-end-coordination.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 245,
+      "nonEmptyLines": 197,
+      "functions": [
+        {
+          "name": "fakeBot",
+          "startLine": 15,
+          "endLine": 28,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 19
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.sent.push",
+          "lineNumber": 20
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 23
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "this.edits.push",
+          "lineNumber": 24
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "String",
+          "lineNumber": 24
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fakeBot",
+          "callee": "vi.fn",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/transport.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 25,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/ws-hub.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 53,
+      "functions": [
+        {
+          "name": "fakeWs",
+          "startLine": 5,
+          "endLine": 14,
+          "params": []
+        },
+        {
+          "name": "fakeClient",
+          "startLine": 16,
+          "endLine": 22,
+          "params": []
+        },
+        {
+          "name": "fakeState",
+          "startLine": 24,
+          "endLine": 28,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeWs",
+          "callee": "vi.fn",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeWs",
+          "callee": "sent.push",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeWs",
+          "callee": "JSON.parse",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeWs",
+          "callee": "vi.fn",
+          "lineNumber": 11
+        },
+        {
+          "caller": "fakeWs",
+          "callee": "vi.fn",
+          "lineNumber": 12
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 19
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn",
+          "lineNumber": 19
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn().mockReturnValue",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "vitest.config.ts",
+      "language": "typescript",
+      "fileCategory": "config",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/extension/background.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 27,
+      "functions": [
+        {
+          "name": "formatSelection",
+          "startLine": 17,
+          "endLine": 29,
+          "params": [
+            "info",
+            "tab"
+          ]
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/extension/popup.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 24,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/extension/sidepanel-entry.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 7,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 34,
+      "nonEmptyLines": 34,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "private",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 14
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 29
+        },
+        {
+          "heading": "type",
+          "level": 1,
+          "line": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    }
+  ]
+}

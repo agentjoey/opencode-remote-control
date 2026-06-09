@@ -1,0 +1,368 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [
+    "docs/QUICKSTART.md",
+    "docs/RELEASE.md"
+  ],
+  "results": [
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 314,
+      "nonEmptyLines": 257,
+      "sections": [
+        {
+          "heading": "Architecture",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Deployment models",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "Plugin mode (v0.6.0+, recommended)",
+          "level": 3,
+          "line": 10
+        },
+        {
+          "heading": "Sidecar mode (legacy, v0.1–v0.5.7)",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "File tree (Phase 5 / v0.5.5+)",
+          "level": 2,
+          "line": 37
+        },
+        {
+          "heading": "How a message flows",
+          "level": 2,
+          "line": 94
+        },
+        {
+          "heading": "State and persistence",
+          "level": 2,
+          "line": 149
+        },
+        {
+          "heading": "Configuration",
+          "level": 2,
+          "line": 167
+        },
+        {
+          "heading": "Transport contract",
+          "level": 2,
+          "line": 186
+        },
+        {
+          "heading": "Why we use `session.prompt()` instead of TUI inject",
+          "level": 2,
+          "line": 245
+        },
+        {
+          "heading": "Adding a new transport",
+          "level": 2,
+          "line": 271
+        },
+        {
+          "heading": "Comparison with related projects",
+          "level": 2,
+          "line": 288
+        },
+        {
+          "heading": "History — Phase 1/2 architecture (deprecated)",
+          "level": 2,
+          "line": 303
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "docs/COMPARISON_IM_HUB.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 227,
+      "nonEmptyLines": 176,
+      "sections": [
+        {
+          "heading": "竞品对比: im-hub vs opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. 基本信息",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "2. 定位差异",
+          "level": 2,
+          "line": 22
+        },
+        {
+          "heading": "3. 架构对比",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "im-hub opencode 集成分析",
+          "level": 3,
+          "line": 44
+        },
+        {
+          "heading": "4. 功能矩阵",
+          "level": 2,
+          "line": 68
+        },
+        {
+          "heading": "IM 通道",
+          "level": 3,
+          "line": 70
+        },
+        {
+          "heading": "Agent 后端",
+          "level": 3,
+          "line": 80
+        },
+        {
+          "heading": "Web UI",
+          "level": 3,
+          "line": 90
+        },
+        {
+          "heading": "核心功能",
+          "level": 3,
+          "line": 105
+        },
+        {
+          "heading": "5. 代码质量对比",
+          "level": 2,
+          "line": 125
+        },
+        {
+          "heading": "6. 依赖对比",
+          "level": 2,
+          "line": 139
+        },
+        {
+          "heading": "7. 路线图对比",
+          "level": 2,
+          "line": 157
+        },
+        {
+          "heading": "im-hub 路线图",
+          "level": 3,
+          "line": 159
+        },
+        {
+          "heading": "opencode-remote-control 已完成版本",
+          "level": 3,
+          "line": 168
+        },
+        {
+          "heading": "待规划 (Next Phase)",
+          "level": 3,
+          "line": 178
+        },
+        {
+          "heading": "8. 各自优势",
+          "level": 2,
+          "line": 188
+        },
+        {
+          "heading": "im-hub 的核心优势",
+          "level": 3,
+          "line": 190
+        },
+        {
+          "heading": "opencode-remote-control 的核心优势",
+          "level": 3,
+          "line": 198
+        },
+        {
+          "heading": "9. 战略建议",
+          "level": 2,
+          "line": 209
+        },
+        {
+          "heading": "潜在改进方向",
+          "level": 3,
+          "line": 218
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 21
+      }
+    },
+    {
+      "path": "docs/OPS.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 313,
+      "nonEmptyLines": 236,
+      "sections": [
+        {
+          "heading": "Operations Guide",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "服务全景",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "进程结构（ocrc）",
+          "level": 2,
+          "line": 37
+        },
+        {
+          "heading": "服务状态速查",
+          "level": 2,
+          "line": 49
+        },
+        {
+          "heading": "ocrc Telegram Bot",
+          "level": 2,
+          "line": 63
+        },
+        {
+          "heading": "重启（代码变更后的标准流程）",
+          "level": 3,
+          "line": 65
+        },
+        {
+          "heading": "查看状态",
+          "level": 3,
+          "line": 76
+        },
+        {
+          "heading": "日志",
+          "level": 3,
+          "line": 83
+        },
+        {
+          "heading": "安装 / 卸载 plist",
+          "level": 3,
+          "line": 90
+        },
+        {
+          "heading": "opencode（手动管理）",
+          "level": 2,
+          "line": 108
+        },
+        {
+          "heading": "启动",
+          "level": 3,
+          "line": 110
+        },
+        {
+          "heading": "检查",
+          "level": 3,
+          "line": 123
+        },
+        {
+          "heading": "关闭",
+          "level": 3,
+          "line": 140
+        },
+        {
+          "heading": "P021 FutuTrade",
+          "level": 2,
+          "line": 149
+        },
+        {
+          "heading": "Cloudflare Tunnel（home-mac）",
+          "level": 2,
+          "line": 170
+        },
+        {
+          "heading": "代码变更后\"需要重启什么\"",
+          "level": 2,
+          "line": 195
+        },
+        {
+          "heading": "构建 & 测试",
+          "level": 2,
+          "line": 208
+        },
+        {
+          "heading": "环境变量（.env，勿 commit）",
+          "level": 2,
+          "line": 220
+        },
+        {
+          "heading": "Changelog",
+          "level": 2,
+          "line": 245
+        },
+        {
+          "heading": "v0.5.7 (2026-05-21)",
+          "level": 3,
+          "line": 247
+        },
+        {
+          "heading": "v0.5.6 (2026-05-20)",
+          "level": 3,
+          "line": 258
+        },
+        {
+          "heading": "v0.5.5 (2026-05-17)",
+          "level": 3,
+          "line": 263
+        },
+        {
+          "heading": "v0.5.4 (2026-05-17)",
+          "level": 3,
+          "line": 279
+        },
+        {
+          "heading": "v0.5.3 (2026-05-17)",
+          "level": 3,
+          "line": 282
+        },
+        {
+          "heading": "v0.5.2 (2026-05-17)",
+          "level": 3,
+          "line": 285
+        },
+        {
+          "heading": "v0.5.1 (2026-05-16)",
+          "level": 3,
+          "line": 288
+        },
+        {
+          "heading": "v0.5.0 (2026-05-16)",
+          "level": 3,
+          "line": 291
+        },
+        {
+          "heading": "诊断速查",
+          "level": 2,
+          "line": 296
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 28
+      }
+    }
+  ]
+}

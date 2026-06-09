@@ -1,0 +1,208 @@
+{
+  "nodes": [
+    {
+      "id": "document:.agent/sprints/sprint-001.md",
+      "type": "document",
+      "name": "sprint-001.md",
+      "filePath": ".agent/sprints/sprint-001.md",
+      "summary": "Sprint 001 plan defining the MVP scope: deliver a Telegram sidecar relay bot launched via launchd, executing Tasks 0-14 of the opencode-remote-control design plan with TDD for core utils, config, opencode client/event-stream/tui-bridge, and bot reply handlers.",
+      "tags": ["documentation", "sprint-plan", "mvp", "tdd", "telegram-bot"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:.agent/sprints/sprint-002.md",
+      "type": "document",
+      "name": "sprint-002.md",
+      "filePath": ".agent/sprints/sprint-002.md",
+      "summary": "Sprint 2 retrospective for Phase 2: upgrades all slash commands to card UX, adds /files, /agent, /model, /session commands, introduces the registerCallbacks() architecture, and ships streaming output via message.part.delta accumulation with STREAM_OUTPUT env toggle.",
+      "tags": ["documentation", "sprint-plan", "phase-2", "command-cards", "streaming"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:.agent/sprints/sprint-003.md",
+      "type": "document",
+      "name": "sprint-003.md",
+      "filePath": ".agent/sprints/sprint-003.md",
+      "summary": "Sprint 3 stability retrospective covering v0.5.6 fixes (delta accumulation, finalize error handling, TCP timeouts, 429 retry caps, push.ts race, info retry) and v0.5.7 removal of Telegram streaming push to eliminate editMessageText failures, plus thinking-card sessionId race and empty-text overwrite guards.",
+      "tags": ["documentation", "sprint-plan", "stability", "bugfix", "streaming-removal"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/utils/markdown.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/utils/logger.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/opencode/client.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/transport/telegram/handlers.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:src/transport/telegram/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:.agent/sprints/sprint-002.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-001.md",
+      "target": "file:.agent/sprints/sprint-003.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/transport/telegram/handlers.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/transport/telegram/handlers/info-commands.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/transport/telegram/reply-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/transport/telegram/render.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:src/opencode/client.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-002.md",
+      "target": "file:.agent/sprints/sprint-003.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/transport/telegram/renderer.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/transport/telegram/render.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/core/stream-accumulator.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/core/push.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/sprints/sprint-003.md",
+      "target": "file:src/transport/telegram/handlers.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

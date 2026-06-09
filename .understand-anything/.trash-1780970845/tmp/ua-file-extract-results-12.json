@@ -1,0 +1,1672 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 10,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 553,
+      "nonEmptyLines": 453,
+      "sections": [
+        {
+          "heading": "opencode-remote-control — 设计文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. 项目目标与背景",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "上一代失败教训",
+          "level": 3,
+          "line": 19
+        },
+        {
+          "heading": "2. 架构总览",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "进程拓扑",
+          "level": 3,
+          "line": 36
+        },
+        {
+          "heading": "核心约束",
+          "level": 3,
+          "line": 58
+        },
+        {
+          "heading": "与原项目的差异",
+          "level": 3,
+          "line": 70
+        },
+        {
+          "heading": "3. 组件与文件布局",
+          "level": 2,
+          "line": 83
+        },
+        {
+          "heading": "文件结构",
+          "level": 3,
+          "line": 85
+        },
+        {
+          "heading": "模块职责矩阵",
+          "level": 3,
+          "line": 130
+        },
+        {
+          "heading": "依赖",
+          "level": 3,
+          "line": 141
+        },
+        {
+          "heading": "配置文件",
+          "level": 3,
+          "line": 162
+        },
+        {
+          "heading": "4. 数据流",
+          "level": 2,
+          "line": 187
+        },
+        {
+          "heading": "4.1 用户发消息 → 流式回复",
+          "level": 3,
+          "line": 189
+        },
+        {
+          "heading": "4.2 `tuiBridge.submit()` 实现",
+          "level": 3,
+          "line": 212
+        },
+        {
+          "heading": "4.3 `eventStream` 实现",
+          "level": 3,
+          "line": 246
+        },
+        {
+          "heading": "4.4 Approval 推送（双向）",
+          "level": 3,
+          "line": 299
+        },
+        {
+          "heading": "4.5 流式编辑节流",
+          "level": 3,
+          "line": 349
+        },
+        {
+          "heading": "4.6 命令清单（Phase 1）",
+          "level": 3,
+          "line": 355
+        },
+        {
+          "heading": "5. 错误处理",
+          "level": 2,
+          "line": 372
+        },
+        {
+          "heading": "5.1 失败矩阵",
+          "level": 3,
+          "line": 374
+        },
+        {
+          "heading": "5.2 设计原则",
+          "level": 3,
+          "line": 390
+        },
+        {
+          "heading": "5.3 Graceful shutdown",
+          "level": 3,
+          "line": 397
+        },
+        {
+          "heading": "5.4 日志",
+          "level": 3,
+          "line": 406
+        },
+        {
+          "heading": "6. 测试策略",
+          "level": 2,
+          "line": 415
+        },
+        {
+          "heading": "6.1 三层",
+          "level": 3,
+          "line": 417
+        },
+        {
+          "heading": "6.2 单元测试清单",
+          "level": 3,
+          "line": 425
+        },
+        {
+          "heading": "6.3 MVP 验收清单（手测）",
+          "level": 3,
+          "line": 450
+        },
+        {
+          "heading": "6.4 不做的事",
+          "level": 3,
+          "line": 469
+        },
+        {
+          "heading": "7. 部署",
+          "level": 2,
+          "line": 477
+        },
+        {
+          "heading": "7.1 launchd 模板",
+          "level": 3,
+          "line": 479
+        },
+        {
+          "heading": "7.2 安装",
+          "level": 3,
+          "line": 512
+        },
+        {
+          "heading": "7.3 升级",
+          "level": 3,
+          "line": 523
+        },
+        {
+          "heading": "8. Phase 2 候选（不在本 spec 范围）",
+          "level": 2,
+          "line": 534
+        },
+        {
+          "heading": "9. 验收口径",
+          "level": 2,
+          "line": 546
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 35
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-15-opensource-roadmap.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 256,
+      "nonEmptyLines": 195,
+      "sections": [
+        {
+          "heading": "Roadmap — opencode-remote-control (Open Source)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Vision",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Positioning",
+          "level": 2,
+          "line": 10
+        },
+        {
+          "heading": "Milestones",
+          "level": 2,
+          "line": 19
+        },
+        {
+          "heading": "M0 — Now (2026-05-15)",
+          "level": 3,
+          "line": 21
+        },
+        {
+          "heading": "M1 — Ship Phase 2 (2 weeks)",
+          "level": 3,
+          "line": 26
+        },
+        {
+          "heading": "M2 — Open source prep (3–4 weeks)",
+          "level": 3,
+          "line": 39
+        },
+        {
+          "heading": "Architecture refactor",
+          "level": 4,
+          "line": 42
+        },
+        {
+          "heading": "Security & licensing",
+          "level": 4,
+          "line": 75
+        },
+        {
+          "heading": "Documentation",
+          "level": 4,
+          "line": 82
+        },
+        {
+          "heading": "CI / repo hygiene",
+          "level": 4,
+          "line": 95
+        },
+        {
+          "heading": "M3 — v1.0 Public release",
+          "level": 3,
+          "line": 107
+        },
+        {
+          "heading": "M4 — Web transport (8 weeks, large) ⬆️ prioritized",
+          "level": 3,
+          "line": 126
+        },
+        {
+          "heading": "M5 — Discord transport (4 weeks) ↓ deferred",
+          "level": 3,
+          "line": 148
+        },
+        {
+          "heading": "M6 — Feishu transport (4 weeks) ↓ deferred",
+          "level": 3,
+          "line": 169
+        },
+        {
+          "heading": "M7+ — Ecosystem (only if traction)",
+          "level": 3,
+          "line": 183
+        },
+        {
+          "heading": "Non-goals (forever)",
+          "level": 2,
+          "line": 196
+        },
+        {
+          "heading": "Decision points",
+          "level": 2,
+          "line": 205
+        },
+        {
+          "heading": "Risks & mitigations",
+          "level": 2,
+          "line": 218
+        },
+        {
+          "heading": "Success metrics",
+          "level": 2,
+          "line": 231
+        },
+        {
+          "heading": "Suggested timeline (best case)",
+          "level": 2,
+          "line": 243
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 21
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 517,
+      "nonEmptyLines": 390,
+      "sections": [
+        {
+          "heading": "Phase 2 Design Spec — opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Current architecture (Phase 1 baseline)",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "UX design principles (apply to every command)",
+          "level": 2,
+          "line": 37
+        },
+        {
+          "heading": "Feature 1: Live streaming output",
+          "level": 2,
+          "line": 65
+        },
+        {
+          "heading": "What it does",
+          "level": 3,
+          "line": 67
+        },
+        {
+          "heading": "How opencode SSE works",
+          "level": 3,
+          "line": 72
+        },
+        {
+          "heading": "Implementation",
+          "level": 3,
+          "line": 86
+        },
+        {
+          "heading": "Feature 2: /files command",
+          "level": 2,
+          "line": 140
+        },
+        {
+          "heading": "Card design",
+          "level": 3,
+          "line": 142
+        },
+        {
+          "heading": "Implementation",
+          "level": 3,
+          "line": 159
+        },
+        {
+          "heading": "Feature 3: /agent command",
+          "level": 2,
+          "line": 224
+        },
+        {
+          "heading": "Card design — list view",
+          "level": 3,
+          "line": 226
+        },
+        {
+          "heading": "Card design — after switch",
+          "level": 3,
+          "line": 241
+        },
+        {
+          "heading": "API",
+          "level": 3,
+          "line": 252
+        },
+        {
+          "heading": "Implementation",
+          "level": 3,
+          "line": 262
+        },
+        {
+          "heading": "Feature 4: /model command",
+          "level": 2,
+          "line": 314
+        },
+        {
+          "heading": "Card design — list view",
+          "level": 3,
+          "line": 316
+        },
+        {
+          "heading": "API",
+          "level": 3,
+          "line": 332
+        },
+        {
+          "heading": "Implementation",
+          "level": 3,
+          "line": 346
+        },
+        {
+          "heading": "Feature 5: /session command (pin to session)",
+          "level": 2,
+          "line": 354
+        },
+        {
+          "heading": "Card design — /sessions (enhanced existing command)",
+          "level": 3,
+          "line": 356
+        },
+        {
+          "heading": "/session command (new — no-arg = show pinned, arg = pin directly)",
+          "level": 3,
+          "line": 372
+        },
+        {
+          "heading": "Implementation",
+          "level": 3,
+          "line": 385
+        },
+        {
+          "heading": "Enhance existing commands",
+          "level": 2,
+          "line": 439
+        },
+        {
+          "heading": "/status — new card design",
+          "level": 3,
+          "line": 441
+        },
+        {
+          "heading": "/start and /help — new card design",
+          "level": 3,
+          "line": 454
+        },
+        {
+          "heading": "Callback handler architecture",
+          "level": 2,
+          "line": 479
+        },
+        {
+          "heading": "Implementation order (recommended)",
+          "level": 2,
+          "line": 495
+        },
+        {
+          "heading": "Definition of done",
+          "level": 2,
+          "line": 510
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 30
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 336,
+      "nonEmptyLines": 267,
+      "sections": [
+        {
+          "heading": "Architecture Comparison — Plan A (Hybrid Plugin) vs Plan B (External Bot)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Background — May 2026 ecosystem snapshot",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "What the SDK and Plugin docs actually say",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "SDK recommendations",
+          "level": 3,
+          "line": 32
+        },
+        {
+          "heading": "Plugin docs reality",
+          "level": 3,
+          "line": 58
+        },
+        {
+          "heading": "Plan A — Hybrid Plugin + Sidecar",
+          "level": 2,
+          "line": 80
+        },
+        {
+          "heading": "Architecture",
+          "level": 3,
+          "line": 82
+        },
+        {
+          "heading": "Dependencies (Plan A)",
+          "level": 3,
+          "line": 110
+        },
+        {
+          "heading": "Install story (Plan A)",
+          "level": 3,
+          "line": 119
+        },
+        {
+          "heading": "Pros (Plan A)",
+          "level": 3,
+          "line": 136
+        },
+        {
+          "heading": "Cons (Plan A)",
+          "level": 3,
+          "line": 147
+        },
+        {
+          "heading": "Risk-feasibility verdict (Plan A)",
+          "level": 3,
+          "line": 162
+        },
+        {
+          "heading": "Plan B — External Bot + Web, aligned with SDK",
+          "level": 2,
+          "line": 174
+        },
+        {
+          "heading": "Architecture",
+          "level": 3,
+          "line": 176
+        },
+        {
+          "heading": "Dependencies (Plan B)",
+          "level": 3,
+          "line": 209
+        },
+        {
+          "heading": "Install story (Plan B)",
+          "level": 3,
+          "line": 219
+        },
+        {
+          "heading": "Pros (Plan B)",
+          "level": 3,
+          "line": 230
+        },
+        {
+          "heading": "Cons (Plan B)",
+          "level": 3,
+          "line": 243
+        },
+        {
+          "heading": "Risk-feasibility verdict (Plan B)",
+          "level": 3,
+          "line": 254
+        },
+        {
+          "heading": "Decision matrix",
+          "level": 2,
+          "line": 262
+        },
+        {
+          "heading": "Recommended path: Plan B with strategic differentiation",
+          "level": 2,
+          "line": 284
+        },
+        {
+          "heading": "Differentiating positioning vs grinev/OpenChamber",
+          "level": 3,
+          "line": 286
+        },
+        {
+          "heading": "Concrete revised plan (replaces Phase 3 + Phase 4 as written)",
+          "level": 3,
+          "line": 303
+        },
+        {
+          "heading": "Open question for user",
+          "level": 3,
+          "line": 330
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 24
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 515,
+      "nonEmptyLines": 409,
+      "sections": [
+        {
+          "heading": "Phase 3 Design Spec — opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "What the research changed",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "Current architecture (Phase 2 baseline)",
+          "level": 2,
+          "line": 46
+        },
+        {
+          "heading": "Section 1 — File tree after refactor",
+          "level": 2,
+          "line": 72
+        },
+        {
+          "heading": "Section 2 — SDK-native message submission (central change)",
+          "level": 2,
+          "line": 114
+        },
+        {
+          "heading": "Current path (deprecated)",
+          "level": 3,
+          "line": 116
+        },
+        {
+          "heading": "New path",
+          "level": 3,
+          "line": 132
+        },
+        {
+          "heading": "TUI visibility option",
+          "level": 3,
+          "line": 163
+        },
+        {
+          "heading": "Why this fixes /agent and /model",
+          "level": 3,
+          "line": 178
+        },
+        {
+          "heading": "Migration steps",
+          "level": 3,
+          "line": 188
+        },
+        {
+          "heading": "Section 3 — Transport interface",
+          "level": 2,
+          "line": 205
+        },
+        {
+          "heading": "Section 4 — Core relay",
+          "level": 2,
+          "line": 270
+        },
+        {
+          "heading": "Section 5 — Persistent state",
+          "level": 2,
+          "line": 322
+        },
+        {
+          "heading": "Section 6 — Telegram transport implementation",
+          "level": 2,
+          "line": 356
+        },
+        {
+          "heading": "Section 7 — Stability work",
+          "level": 2,
+          "line": 377
+        },
+        {
+          "heading": "Section 8 — OSS prep",
+          "level": 2,
+          "line": 390
+        },
+        {
+          "heading": "LICENSE — MIT (year 2026)",
+          "level": 3,
+          "line": 392
+        },
+        {
+          "heading": "SECURITY.md",
+          "level": 3,
+          "line": 394
+        },
+        {
+          "heading": "README.md (rewrite)",
+          "level": 3,
+          "line": 403
+        },
+        {
+          "heading": "docs/ARCHITECTURE.md",
+          "level": 3,
+          "line": 419
+        },
+        {
+          "heading": "docs/transports/telegram.md",
+          "level": 3,
+          "line": 423
+        },
+        {
+          "heading": "docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+          "level": 3,
+          "line": 427
+        },
+        {
+          "heading": "CI — `.github/workflows/ci.yml`",
+          "level": 3,
+          "line": 432
+        },
+        {
+          "heading": "Issue + PR templates — standard",
+          "level": 3,
+          "line": 449
+        },
+        {
+          "heading": "Section 9 — Implementation order",
+          "level": 2,
+          "line": 453
+        },
+        {
+          "heading": "Section 10 — Definition of done",
+          "level": 2,
+          "line": 478
+        },
+        {
+          "heading": "Risks",
+          "level": 2,
+          "line": 495
+        },
+        {
+          "heading": "Open questions (carry to user before tag)",
+          "level": 2,
+          "line": 507
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 29
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 500,
+      "nonEmptyLines": 375,
+      "sections": [
+        {
+          "heading": "Phase 4 Design Spec — Productization & TUI Parity",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Positioning vs cc-connect (9.4k★), OpenChamber (4.3k★), RichardAtCT/claude-code-telegram (2.6k★), grinev (643★)",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "Pain points recap (from user)",
+          "level": 2,
+          "line": 52
+        },
+        {
+          "heading": "Pain 1 — Startup complexity",
+          "level": 3,
+          "line": 54
+        },
+        {
+          "heading": "Pain 2 — TUI/Bot information asymmetry",
+          "level": 3,
+          "line": 59
+        },
+        {
+          "heading": "Pain 3 — Bot commands diverge from TUI",
+          "level": 3,
+          "line": 66
+        },
+        {
+          "heading": "Track A — Single-command launcher",
+          "level": 2,
+          "line": 74
+        },
+        {
+          "heading": "Behavior",
+          "level": 3,
+          "line": 76
+        },
+        {
+          "heading": "Why spawn opencode (vs. require user to start it)",
+          "level": 3,
+          "line": 99
+        },
+        {
+          "heading": "File changes",
+          "level": 3,
+          "line": 108
+        },
+        {
+          "heading": "Configuration (new env)",
+          "level": 3,
+          "line": 120
+        },
+        {
+          "heading": "Acceptance",
+          "level": 3,
+          "line": 129
+        },
+        {
+          "heading": "Out of scope for Track A",
+          "level": 3,
+          "line": 139
+        },
+        {
+          "heading": "Track B — Information parity",
+          "level": 2,
+          "line": 148
+        },
+        {
+          "heading": "B.1 — `/diff [N]`",
+          "level": 3,
+          "line": 150
+        },
+        {
+          "heading": "B.2 — `/todo`",
+          "level": 3,
+          "line": 175
+        },
+        {
+          "heading": "B.3 — `/context`",
+          "level": 3,
+          "line": 187
+        },
+        {
+          "heading": "B.4 — Inline tool-call rendering",
+          "level": 3,
+          "line": 203
+        },
+        {
+          "heading": "B.5 — Selective push notifications",
+          "level": 3,
+          "line": 234
+        },
+        {
+          "heading": "File changes for Track B",
+          "level": 3,
+          "line": 247
+        },
+        {
+          "heading": "Acceptance",
+          "level": 3,
+          "line": 255
+        },
+        {
+          "heading": "Track C — Two-way state sync",
+          "level": 2,
+          "line": 265
+        },
+        {
+          "heading": "C.1 — Subscribe to TUI-state events",
+          "level": 3,
+          "line": 267
+        },
+        {
+          "heading": "C.2 — Bot-initiated changes propagate to TUI",
+          "level": 3,
+          "line": 288
+        },
+        {
+          "heading": "C.3 — `/status` reflects observed TUI state",
+          "level": 3,
+          "line": 299
+        },
+        {
+          "heading": "File changes for Track C",
+          "level": 3,
+          "line": 310
+        },
+        {
+          "heading": "Acceptance",
+          "level": 3,
+          "line": 318
+        },
+        {
+          "heading": "Track D — Competitive-borrowed UX (from research)",
+          "level": 2,
+          "line": 328
+        },
+        {
+          "heading": "D.1 — Inline Stop button (borrowed from RichardAtCT)",
+          "level": 3,
+          "line": 333
+        },
+        {
+          "heading": "D.2 — Cost & token tracking surfaced everywhere",
+          "level": 3,
+          "line": 353
+        },
+        {
+          "heading": "D.3 — Multi-user allowlist (do before public release)",
+          "level": 3,
+          "line": 369
+        },
+        {
+          "heading": "D.4 — npm publish + setup wizard ergonomics",
+          "level": 3,
+          "line": 385
+        },
+        {
+          "heading": "File changes for Track D",
+          "level": 3,
+          "line": 409
+        },
+        {
+          "heading": "Acceptance",
+          "level": 3,
+          "line": 420
+        },
+        {
+          "heading": "Implementation order (within Phase 4)",
+          "level": 2,
+          "line": 430
+        },
+        {
+          "heading": "Definition of done",
+          "level": 2,
+          "line": 457
+        },
+        {
+          "heading": "Risks",
+          "level": 2,
+          "line": 479
+        },
+        {
+          "heading": "Out of scope (defer to later)",
+          "level": 2,
+          "line": 492
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 39
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 1010,
+      "nonEmptyLines": 802,
+      "sections": [
+        {
+          "heading": "Phase 5 — Web UI + Streaming Overflow Fix (Design Spec)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Decisions (locked)",
+          "level": 2,
+          "line": 17
+        },
+        {
+          "heading": "Non-goals (Phase 5)",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "Section 1 — Architecture",
+          "level": 2,
+          "line": 40
+        },
+        {
+          "heading": "Section 2 — `StructuredCard` Data Model",
+          "level": 2,
+          "line": 84
+        },
+        {
+          "heading": "Section 3 — Telegram Streaming Overflow Strategy",
+          "level": 2,
+          "line": 128
+        },
+        {
+          "heading": "3.1 Data layer fix",
+          "level": 3,
+          "line": 133
+        },
+        {
+          "heading": "3.2 Budget allocation per Telegram chunk",
+          "level": 3,
+          "line": 138
+        },
+        {
+          "heading": "3.3 Progressive collapse (within a chunk)",
+          "level": 3,
+          "line": 152
+        },
+        {
+          "heading": "3.4 Live multi-message pagination",
+          "level": 3,
+          "line": 171
+        },
+        {
+          "heading": "3.5 Adaptive throttling",
+          "level": 3,
+          "line": 206
+        },
+        {
+          "heading": "3.6 Edge cases",
+          "level": 3,
+          "line": 217
+        },
+        {
+          "heading": "3.7 Web rendering",
+          "level": 3,
+          "line": 227
+        },
+        {
+          "heading": "Section 4 — Web Transport (server side)",
+          "level": 2,
+          "line": 237
+        },
+        {
+          "heading": "4.1 File layout",
+          "level": 3,
+          "line": 239
+        },
+        {
+          "heading": "4.2 Startup",
+          "level": 3,
+          "line": 261
+        },
+        {
+          "heading": "4.3 WebSocket protocol",
+          "level": 3,
+          "line": 274
+        },
+        {
+          "heading": "4.4 REST endpoints",
+          "level": 3,
+          "line": 309
+        },
+        {
+          "heading": "4.5 History replay path",
+          "level": 3,
+          "line": 323
+        },
+        {
+          "heading": "4.6 Heartbeat & reconnect",
+          "level": 3,
+          "line": 330
+        },
+        {
+          "heading": "Section 5 — Web Frontend (SvelteKit shared codebase)",
+          "level": 2,
+          "line": 341
+        },
+        {
+          "heading": "5.1 Layout",
+          "level": 3,
+          "line": 343
+        },
+        {
+          "heading": "5.2 Desktop layout",
+          "level": 3,
+          "line": 392
+        },
+        {
+          "heading": "5.3 Streaming render",
+          "level": 3,
+          "line": 416
+        },
+        {
+          "heading": "5.4 Agent / model selectors (cross-transport)",
+          "level": 3,
+          "line": 423
+        },
+        {
+          "heading": "5.5 Approval modal",
+          "level": 3,
+          "line": 430
+        },
+        {
+          "heading": "5.6 PWA manifest",
+          "level": 3,
+          "line": 436
+        },
+        {
+          "heading": "5.7 Theming",
+          "level": 3,
+          "line": 456
+        },
+        {
+          "heading": "Section 6 — Chrome Extension",
+          "level": 2,
+          "line": 462
+        },
+        {
+          "heading": "6.1 Manifest V3",
+          "level": 3,
+          "line": 464
+        },
+        {
+          "heading": "6.2 First-run config",
+          "level": 3,
+          "line": 480
+        },
+        {
+          "heading": "6.3 Side panel = shared SvelteKit app",
+          "level": 3,
+          "line": 493
+        },
+        {
+          "heading": "6.4 Context menu",
+          "level": 3,
+          "line": 507
+        },
+        {
+          "heading": "6.5 Prompt template",
+          "level": 3,
+          "line": 531
+        },
+        {
+          "heading": "6.6 Distribution",
+          "level": 3,
+          "line": 547
+        },
+        {
+          "heading": "Section 7 — Cloudflare Access Auth",
+          "level": 2,
+          "line": 555
+        },
+        {
+          "heading": "7.1 User-side configuration",
+          "level": 3,
+          "line": 557
+        },
+        {
+          "heading": "7.2 Middleware",
+          "level": 3,
+          "line": 569
+        },
+        {
+          "heading": "7.3 WebSocket auth",
+          "level": 3,
+          "line": 602
+        },
+        {
+          "heading": "7.4 Dev bypass",
+          "level": 3,
+          "line": 608
+        },
+        {
+          "heading": "Section 8 — Relay Refactor",
+          "level": 2,
+          "line": 619
+        },
+        {
+          "heading": "8.1 Layered design",
+          "level": 3,
+          "line": 621
+        },
+        {
+          "heading": "8.2 `CardBus`",
+          "level": 3,
+          "line": 627
+        },
+        {
+          "heading": "8.3 Relay responsibilities (revised)",
+          "level": 3,
+          "line": 647
+        },
+        {
+          "heading": "8.4 Transport interface (revised)",
+          "level": 3,
+          "line": 672
+        },
+        {
+          "heading": "8.5 Telegram session renderer",
+          "level": 3,
+          "line": 704
+        },
+        {
+          "heading": "8.6 History reconstruction",
+          "level": 3,
+          "line": 734
+        },
+        {
+          "heading": "8.7 Backwards compatibility",
+          "level": 3,
+          "line": 756
+        },
+        {
+          "heading": "Section 9 — Error Handling",
+          "level": 2,
+          "line": 767
+        },
+        {
+          "heading": "9.1 Layer table",
+          "level": 3,
+          "line": 769
+        },
+        {
+          "heading": "9.2 Telegram render errors",
+          "level": 3,
+          "line": 780
+        },
+        {
+          "heading": "9.3 Web error UX",
+          "level": 3,
+          "line": 787
+        },
+        {
+          "heading": "Section 10 — Testing",
+          "level": 2,
+          "line": 796
+        },
+        {
+          "heading": "10.0 Preserve existing tests during refactor",
+          "level": 3,
+          "line": 798
+        },
+        {
+          "heading": "10.1 New unit tests",
+          "level": 3,
+          "line": 811
+        },
+        {
+          "heading": "10.2 Integration tests",
+          "level": 3,
+          "line": 835
+        },
+        {
+          "heading": "10.3 Svelte unit tests",
+          "level": 3,
+          "line": 844
+        },
+        {
+          "heading": "10.4 Playwright E2E",
+          "level": 3,
+          "line": 856
+        },
+        {
+          "heading": "Section 11 — Files & Environment",
+          "level": 2,
+          "line": 868
+        },
+        {
+          "heading": "11.1 New / modified files (overview)",
+          "level": 3,
+          "line": 870
+        },
+        {
+          "heading": "11.2 New dependencies",
+          "level": 3,
+          "line": 902
+        },
+        {
+          "heading": "11.3 New env vars",
+          "level": 3,
+          "line": 914
+        },
+        {
+          "heading": "Section 12 — Build / Deploy / CI",
+          "level": 2,
+          "line": 936
+        },
+        {
+          "heading": "12.1 Top-level scripts",
+          "level": 3,
+          "line": 938
+        },
+        {
+          "heading": "12.2 CI updates",
+          "level": 3,
+          "line": 953
+        },
+        {
+          "heading": "12.3 Release artifacts",
+          "level": 3,
+          "line": 966
+        },
+        {
+          "heading": "12.4 Roadmap update",
+          "level": 3,
+          "line": 975
+        },
+        {
+          "heading": "Phase 4.5 — OSS Prep Wrap-up (precedes Phase 5)",
+          "level": 2,
+          "line": 984
+        },
+        {
+          "heading": "Success Criteria",
+          "level": 2,
+          "line": 997
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 70
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 211,
+      "nonEmptyLines": 174,
+      "sections": [
+        {
+          "heading": "Phase 5 — Web UI (High-Level Outline)",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "Why a Web transport (positioning)",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Picture (wireframe)",
+          "level": 2,
+          "line": 31
+        },
+        {
+          "heading": "Desktop",
+          "level": 3,
+          "line": 33
+        },
+        {
+          "heading": "Mobile",
+          "level": 3,
+          "line": 55
+        },
+        {
+          "heading": "Chrome Extension (side panel)",
+          "level": 3,
+          "line": 78
+        },
+        {
+          "heading": "Form-factor matrix",
+          "level": 2,
+          "line": 105
+        },
+        {
+          "heading": "Stack (preliminary, finalize in Phase 5 brainstorm)",
+          "level": 2,
+          "line": 123
+        },
+        {
+          "heading": "Auth flow (concrete)",
+          "level": 2,
+          "line": 136
+        },
+        {
+          "heading": "Capabilities surface",
+          "level": 2,
+          "line": 150
+        },
+        {
+          "heading": "What Phase 5 implementation involves (not detailed here)",
+          "level": 2,
+          "line": 164
+        },
+        {
+          "heading": "Shared Web codebase",
+          "level": 3,
+          "line": 166
+        },
+        {
+          "heading": "Chrome Extension specifics",
+          "level": 3,
+          "line": 179
+        },
+        {
+          "heading": "Out of scope for Phase 5",
+          "level": 2,
+          "line": 186
+        },
+        {
+          "heading": "What Phase 5 teaches the Phase 3 Transport interface",
+          "level": 2,
+          "line": 197
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 16
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 333,
+      "nonEmptyLines": 256,
+      "sections": [
+        {
+          "heading": "流式架构优化方案 v1.1 — 实施完成",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "0. SDK 事件模型摸底",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "SDK 定义的 Part 类型（已全部列入生成类型）",
+          "level": 3,
+          "line": 11
+        },
+        {
+          "heading": "关键发现 1：无 `message.part.delta` 事件",
+          "level": 3,
+          "line": 35
+        },
+        {
+          "heading": "关键发现 2：SDK 已有 ReasoningPart = Thinking",
+          "level": 3,
+          "line": 54
+        },
+        {
+          "heading": "关键发现 3：ToolPart 状态值是 `completed` 非 `done`",
+          "level": 3,
+          "line": 67
+        },
+        {
+          "heading": "关键发现 4：SDK 有 StepStartPart / StepFinishPart",
+          "level": 3,
+          "line": 86
+        },
+        {
+          "heading": "关键发现 5：Part 的顺序由 id 和下发顺序共同决定",
+          "level": 3,
+          "line": 100
+        },
+        {
+          "heading": "关键发现 6：ToolPart 结构完整",
+          "level": 3,
+          "line": 104
+        },
+        {
+          "heading": "1. 优化方向逐个对照",
+          "level": 2,
+          "line": 120
+        },
+        {
+          "heading": "1.1 结构化内容块（Blocks with Index）",
+          "level": 3,
+          "line": 122
+        },
+        {
+          "heading": "1.2 分离 Thinking 与 Text",
+          "level": 3,
+          "line": 146
+        },
+        {
+          "heading": "1.3 流式 JSON 解析",
+          "level": 3,
+          "line": 163
+        },
+        {
+          "heading": "1.4 SDK 式累积器",
+          "level": 3,
+          "line": 171
+        },
+        {
+          "heading": "1.5 Ping 心跳",
+          "level": 3,
+          "line": 200
+        },
+        {
+          "heading": "2. 优先级重排序（修正后）",
+          "level": 2,
+          "line": 223
+        },
+        {
+          "heading": "3. Sprint 实施计划（修正版）",
+          "level": 2,
+          "line": 236
+        },
+        {
+          "heading": "Sprint 1A：Stream Accumulator（P0）",
+          "level": 3,
+          "line": 238
+        },
+        {
+          "heading": "Sprint 1B：Reasoning / Ping（P1，可并行）",
+          "level": 3,
+          "line": 250
+        },
+        {
+          "heading": "Sprint 2：Content Blocks（P2，基于 #4）",
+          "level": 3,
+          "line": 261
+        },
+        {
+          "heading": "4. 代码改动清单（预估）",
+          "level": 2,
+          "line": 267
+        },
+        {
+          "heading": "5. 决策记录",
+          "level": 2,
+          "line": 284
+        },
+        {
+          "heading": "6. 实施记录",
+          "level": 2,
+          "line": 297
+        },
+        {
+          "heading": "v0.5.6 (2026-05-20)",
+          "level": 3,
+          "line": 305
+        },
+        {
+          "heading": "v0.5.7 (2026-05-21)",
+          "level": 3,
+          "line": 322
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 25
+      }
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 276,
+      "nonEmptyLines": 228,
+      "sections": [
+        {
+          "heading": "Phase 6 Design Spec — Plugin Registry Migration",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Goal",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "对比",
+          "level": 3,
+          "line": 11
+        },
+        {
+          "heading": "前提：Plugin API 能力确认",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Section 1 — 文件树变更",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "Section 2 — Plugin 入口设计",
+          "level": 2,
+          "line": 67
+        },
+        {
+          "heading": "Section 3 — 配置迁移",
+          "level": 2,
+          "line": 180
+        },
+        {
+          "heading": "Section 4 — Relay 适配变化",
+          "level": 2,
+          "line": 218
+        },
+        {
+          "heading": "Section 5 — CLI 安装流程",
+          "level": 2,
+          "line": 233
+        },
+        {
+          "heading": "Section 6 — 向后兼容",
+          "level": 2,
+          "line": 252
+        },
+        {
+          "heading": "Section 7 — 风险 & 缓解",
+          "level": 2,
+          "line": 259
+        },
+        {
+          "heading": "竞品参考",
+          "level": 2,
+          "line": 270
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 12
+      }
+    }
+  ]
+}

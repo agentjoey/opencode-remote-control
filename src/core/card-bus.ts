@@ -10,12 +10,17 @@ export interface CardBus {
   subscribe(sessionId: string, fn: (card: StructuredCard) => void): () => void
   subscribeAll(fn: (card: StructuredCard) => void): () => void
   recent(sessionId: string, limit?: number): StructuredCard[]
+  /** Current max sequence number assigned for a session (0 if none). */
+  currentSeq(sessionId: string): number
+  /** Drop the buffer + subscribers for a deleted session (frees memory). */
+  drop(sessionId: string): void
 }
 
 export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
   const perSession = new Map<string, Set<(c: StructuredCard) => void>>()
   const all = new Set<(c: StructuredCard) => void>()
   const buffers = new Map<string, StructuredCard[]>()
+  const seqCounters = new Map<string, number>()
 
   function sessionIdOf(c: StructuredCard): string | undefined {
     return 'sessionId' in c ? c.sessionId : undefined
@@ -31,7 +36,15 @@ export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
   return {
     publish(card) {
       const sid = sessionIdOf(card)
-      log.info(`cardBus.publish: kind=${card.kind} sessionId=${sid ?? 'none'}, allSubscribers=${all.size}, perSession=${sid ? perSession.get(sid)?.size ?? 0 : 0}`)
+      // Stamp a per-session monotonic seq + a stable id (callers may pre-set id
+      // for streaming/assistant so the UI upserts the turn in place).
+      if (sid) {
+        const next = (seqCounters.get(sid) ?? 0) + 1
+        seqCounters.set(sid, next)
+        card.seq = next
+      }
+      if (!card.id) card.id = `${card.kind}:${card.seq ?? Date.now()}`
+      log.debug(`cardBus.publish: kind=${card.kind} id=${card.id} seq=${card.seq ?? '-'} sessionId=${sid ?? 'none'}`)
       if (sid) {
         const buf = buffers.get(sid) ?? []
         buf.push(card)
@@ -54,6 +67,14 @@ export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
     recent(sessionId, limit = bufferSize) {
       const buf = buffers.get(sessionId) ?? []
       return buf.slice(-limit)
+    },
+    currentSeq(sessionId) {
+      return seqCounters.get(sessionId) ?? 0
+    },
+    drop(sessionId) {
+      buffers.delete(sessionId)
+      perSession.delete(sessionId)
+      seqCounters.delete(sessionId)
     },
   }
 }

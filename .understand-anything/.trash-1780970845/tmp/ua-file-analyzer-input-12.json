@@ -1,0 +1,27 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md", "language": "markdown", "sizeLines": 553, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-15-opensource-roadmap.md", "language": "markdown", "sizeLines": 256, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-15-phase2-design.md", "language": "markdown", "sizeLines": 517, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-16-architecture-comparison.md", "language": "markdown", "sizeLines": 336, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-16-phase3-design.md", "language": "markdown", "sizeLines": 515, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-16-phase4-productization-design.md", "language": "markdown", "sizeLines": 500, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-16-phase5-design.md", "language": "markdown", "sizeLines": 1010, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md", "language": "markdown", "sizeLines": 211, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-19-streaming-optimization.md", "language": "markdown", "sizeLines": 333, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md", "language": "markdown", "sizeLines": 276, "fileCategory": "docs"}
+  ],
+  "batchImportData": {
+    "docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md": [],
+    "docs/superpowers/specs/2026-05-15-opensource-roadmap.md": [],
+    "docs/superpowers/specs/2026-05-15-phase2-design.md": [],
+    "docs/superpowers/specs/2026-05-16-architecture-comparison.md": [],
+    "docs/superpowers/specs/2026-05-16-phase3-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase4-productization-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase5-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md": [],
+    "docs/superpowers/specs/2026-05-19-streaming-optimization.md": [],
+    "docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md": []
+  }
+}

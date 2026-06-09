@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "docs/reviews/2026-05-17-phase5-sprint-plan.md", "language": "markdown", "sizeLines": 200, "fileCategory": "docs"},
+    {"path": "docs/reviews/2026-05-17-phase5-web-code-review.md", "language": "markdown", "sizeLines": 228, "fileCategory": "docs"},
+    {"path": "docs/reviews/2026-05-17-phase5-work-items.md", "language": "markdown", "sizeLines": 227, "fileCategory": "docs"}
+  ],
+  "batchImportData": {
+    "docs/reviews/2026-05-17-phase5-sprint-plan.md": [],
+    "docs/reviews/2026-05-17-phase5-web-code-review.md": [],
+    "docs/reviews/2026-05-17-phase5-work-items.md": []
+  }
+}

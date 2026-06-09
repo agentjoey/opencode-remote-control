@@ -1,0 +1,679 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/utils/logger.ts",
+      "type": "file",
+      "name": "logger.ts",
+      "filePath": "src/utils/logger.ts",
+      "summary": "Level-based logger factory emitting timestamped, prefixed lines to stdout/stderr, gated by the LOG_LEVEL env var.",
+      "tags": ["utility", "logging", "factory", "runtime"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/utils/logger.ts:createLogger",
+      "type": "function",
+      "name": "createLogger",
+      "filePath": "src/utils/logger.ts",
+      "lineRange": [18, 33],
+      "summary": "Builds a per-module logger object with debug/info/warn/error methods that respect the global LOG_LEVEL threshold.",
+      "tags": ["factory", "logging", "module-pattern"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/utils/markdown.ts",
+      "type": "file",
+      "name": "markdown.ts",
+      "filePath": "src/utils/markdown.ts",
+      "summary": "Markdown→Telegram-HTML converter plus MarkdownV2 escaper and message chunker, used by the Telegram transport renderer.",
+      "tags": ["utility", "markdown", "telegram", "serialization", "html"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/utils/markdown.ts:markdownToTelegramHtml",
+      "type": "function",
+      "name": "markdownToTelegramHtml",
+      "filePath": "src/utils/markdown.ts",
+      "lineRange": [16, 87],
+      "summary": "Line-driven Markdown parser that emits Telegram-compatible HTML for headings, lists, blockquotes, fences, and rules.",
+      "tags": ["markdown", "parser", "telegram", "html"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/utils/markdown.ts:processInline",
+      "type": "function",
+      "name": "processInline",
+      "filePath": "src/utils/markdown.ts",
+      "lineRange": [89, 118],
+      "summary": "Stash-and-restore transformer that converts inline Markdown (code, links, bold, italic, strikethrough) into HTML entities, protecting placeholders from later passes.",
+      "tags": ["markdown", "transformation", "regex", "html"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/utils/markdown.ts:chunkMessage",
+      "type": "function",
+      "name": "chunkMessage",
+      "filePath": "src/utils/markdown.ts",
+      "lineRange": [120, 150],
+      "summary": "Splits a long text into Telegram-sized chunks (default 4000 chars), preserving line boundaries and hard-splitting oversized lines.",
+      "tags": ["utility", "chunking", "telegram"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/utils/version.ts",
+      "type": "file",
+      "name": "version.ts",
+      "filePath": "src/utils/version.ts",
+      "summary": "Build/runtime version reporter that reads the package version, captures the current git commit, and formats process uptime for diagnostics.",
+      "tags": ["utility", "diagnostics", "runtime", "versioning"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/utils/version.ts:getVersionInfo",
+      "type": "function",
+      "name": "getVersionInfo",
+      "filePath": "src/utils/version.ts",
+      "lineRange": [41, 50],
+      "summary": "Returns a VersionInfo object (version, commit, uptime, Node version, start timestamp) for /status and diagnostics commands.",
+      "tags": ["diagnostics", "versioning", "runtime"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/utils/version.ts:formatUptime",
+      "type": "function",
+      "name": "formatUptime",
+      "filePath": "src/utils/version.ts",
+      "lineRange": [21, 30],
+      "summary": "Renders a millisecond duration as a human-readable d/h/m/s string with cascading units.",
+      "tags": ["utility", "formatting", "duration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/approval.test.ts",
+      "type": "file",
+      "name": "approval.test.ts",
+      "filePath": "tests/unit/approval.test.ts",
+      "summary": "Vitest suite exercising the Telegram permission/approval handler, verifying that EventStream permission prompts reach the bot, are edited on response, and call the opencode API.",
+      "tags": ["test", "approval", "telegram", "event-stream", "vitest"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:tests/unit/config.test.ts",
+      "type": "file",
+      "name": "config.test.ts",
+      "filePath": "tests/unit/config.test.ts",
+      "summary": "Vitest suite covering loadConfig defaults, env overrides, validation errors, and migration of legacy keys for the opencode-remote-control config module.",
+      "tags": ["test", "config", "validation", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/event-stream.test.ts",
+      "type": "file",
+      "name": "event-stream.test.ts",
+      "filePath": "tests/unit/event-stream.test.ts",
+      "summary": "Vitest suite verifying that EventStream consumes opencode SSE events in order, fans them out to subscribers, and handles cancellation.",
+      "tags": ["test", "event-stream", "sse", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/history.test.ts",
+      "type": "file",
+      "name": "history.test.ts",
+      "filePath": "tests/unit/history.test.ts",
+      "summary": "Vitest suite for the history module: summarizeToolArgs, messageToCards, and reconstructHistory produce correct card projections from opencode message history.",
+      "tags": ["test", "history", "card-projection", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/init-wizard.test.ts",
+      "type": "file",
+      "name": "init-wizard.test.ts",
+      "filePath": "tests/unit/init-wizard.test.ts",
+      "summary": "Vitest suite for the interactive init wizard, asserting that runInitWizard writes .env, respects existing files, and tests the connection.",
+      "tags": ["test", "init-wizard", "cli", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/markdown.test.ts",
+      "type": "file",
+      "name": "markdown.test.ts",
+      "filePath": "tests/unit/markdown.test.ts",
+      "summary": "Vitest suite for the markdown utility, covering MarkdownV2 escaping, HTML conversion, and chunkMessage boundary behaviour.",
+      "tags": ["test", "markdown", "utility", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/opencode-client.test.ts",
+      "type": "file",
+      "name": "opencode-client.test.ts",
+      "filePath": "tests/unit/opencode-client.test.ts",
+      "summary": "Vitest suite for the opencode HTTP client, validating getClient/health-check wiring and the typed client surface.",
+      "tags": ["test", "opencode-client", "http", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/plugin-entry.test.ts",
+      "type": "file",
+      "name": "plugin-entry.test.ts",
+      "filePath": "tests/unit/plugin-entry.test.ts",
+      "summary": "Vitest suite for the OpenCode plugin entry point, asserting that remoteControlPlugin wires transports, relay, polling, and disposes cleanly.",
+      "tags": ["test", "plugin", "entry-point", "lifecycle", "vitest"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:tests/unit/reply.test.ts",
+      "type": "file",
+      "name": "reply.test.ts",
+      "filePath": "tests/unit/reply.test.ts",
+      "summary": "Vitest suite for the Telegram reply-stream module, verifying that the createReplyStream wrapper fans tokens to the bot and supports cancellation.",
+      "tags": ["test", "telegram", "reply-stream", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/spawn.test.ts",
+      "type": "file",
+      "name": "spawn.test.ts",
+      "filePath": "tests/unit/spawn.test.ts",
+      "summary": "Vitest suite for the createSupervisor launcher, checking restart/backoff behaviour when the opencode process dies.",
+      "tags": ["test", "launcher", "supervisor", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/state.test.ts",
+      "type": "file",
+      "name": "state.test.ts",
+      "filePath": "tests/unit/state.test.ts",
+      "summary": "Vitest suite for createFileBackedState, asserting that conversation state persists, round-trips, and isolates sessions.",
+      "tags": ["test", "state", "persistence", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/stream-accumulator.test.ts",
+      "type": "file",
+      "name": "stream-accumulator.test.ts",
+      "filePath": "tests/unit/stream-accumulator.test.ts",
+      "summary": "Vitest suite for the stream accumulator, verifying that incremental text/tool/reasoning parts merge into coherent blocks and emit on session end.",
+      "tags": ["test", "stream-accumulator", "streaming", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/submit.test.ts",
+      "type": "file",
+      "name": "submit.test.ts",
+      "filePath": "tests/unit/submit.test.ts",
+      "summary": "Vitest suite for submitPrompt, asserting that user prompts are dispatched to the opencode client with the correct session/agent context.",
+      "tags": ["test", "submit", "opencode", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/telegram-render.test.ts",
+      "type": "file",
+      "name": "telegram-render.test.ts",
+      "filePath": "tests/unit/telegram-render.test.ts",
+      "summary": "Vitest suite for the Telegram card renderer, checking that StructuredCards become MarkdownV2-safe message text.",
+      "tags": ["test", "telegram", "render", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/tri-end-coordination.test.ts",
+      "type": "file",
+      "name": "tri-end-coordination.test.ts",
+      "filePath": "tests/unit/tri-end-coordination.test.ts",
+      "summary": "Vitest suite for tri-end coordination (TUI ↔ Telegram ↔ Web), validating that CardBus fan-out delivers assistant/user cards to every subscriber and that the approval flow works end-to-end.",
+      "tags": ["test", "card-bus", "coordination", "fan-out", "vitest"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:tests/unit/web/transport.test.ts",
+      "type": "file",
+      "name": "transport.test.ts",
+      "filePath": "tests/unit/web/transport.test.ts",
+      "summary": "Vitest suite for the web transport entry point, asserting that createWebTransport wires the card bus, state, and HTTP/WS handlers.",
+      "tags": ["test", "web-transport", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/unit/web/ws-hub.test.ts",
+      "type": "file",
+      "name": "ws-hub.test.ts",
+      "filePath": "tests/unit/web/ws-hub.test.ts",
+      "summary": "Vitest suite for the WebSocket hub, verifying per-connection subscription, message routing through the card bus, and disconnect cleanup.",
+      "tags": ["test", "ws-hub", "websocket", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:vitest.config.ts",
+      "type": "config",
+      "name": "vitest.config.ts",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest configuration that scopes test discovery to tests/**/*.test.ts, excludes integration tests, and sets a 10s timeout with the verbose reporter.",
+      "tags": ["configuration", "testing", "vitest", "build-system"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/extension/background.ts",
+      "type": "file",
+      "name": "background.ts",
+      "filePath": "web/extension/background.ts",
+      "summary": "Chrome extension background script that registers a 'Send to opencode' context menu and forwards the selected text or link to the side panel via a runtime message.",
+      "tags": ["chrome-extension", "background", "context-menu", "side-panel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/extension/background.ts:formatSelection",
+      "type": "function",
+      "name": "formatSelection",
+      "filePath": "web/extension/background.ts",
+      "lineRange": [17, 29],
+      "summary": "Builds the prompt payload string for a context-menu click, distinguishing links, page URL with selected text, and bare page references.",
+      "tags": ["chrome-extension", "formatting", "context-menu"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/extension/popup.ts",
+      "type": "file",
+      "name": "popup.ts",
+      "filePath": "web/extension/popup.ts",
+      "summary": "Chrome extension popup that reads the bot URL from chrome.storage.local, validates user input, and saves it for the side panel to consume.",
+      "tags": ["chrome-extension", "popup", "storage", "ui"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/extension/sidepanel-entry.ts",
+      "type": "file",
+      "name": "sidepanel-entry.ts",
+      "filePath": "web/extension/sidepanel-entry.ts",
+      "summary": "Side panel bootstrap that mounts the Svelte App component into the #app element when the panel DOM is available.",
+      "tags": ["chrome-extension", "side-panel", "svelte", "entry-point"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:web/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "web/package.json",
+      "summary": "Web sub-project manifest for the PWA + Chrome extension, declaring Svelte 5 / Vite / Vitest / Playwright tooling and runtime deps on marked and dompurify.",
+      "tags": ["configuration", "package-manifest", "svelte", "vite", "pwa"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/utils/logger.ts",
+      "target": "function:src/utils/logger.ts:createLogger",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/logger.ts",
+      "target": "function:src/utils/logger.ts:createLogger",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:markdownToTelegramHtml",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:markdownToTelegramHtml",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:processInline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:chunkMessage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:chunkMessage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:processInline",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "function:src/utils/markdown.ts:escHtml",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/version.ts",
+      "target": "function:src/utils/version.ts:getVersionInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/version.ts",
+      "target": "function:src/utils/version.ts:getVersionInfo",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/utils/version.ts",
+      "target": "function:src/utils/version.ts:formatUptime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/utils/version.ts",
+      "target": "function:src/utils/version.ts:formatUptime",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/unit/config.test.ts",
+      "target": "file:src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/config.ts",
+      "target": "file:tests/unit/config.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/event-stream.test.ts",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "file:tests/unit/event-stream.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/history.test.ts",
+      "target": "file:src/core/history.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "target": "file:tests/unit/history.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/markdown.test.ts",
+      "target": "file:src/utils/markdown.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/utils/markdown.ts",
+      "target": "file:tests/unit/markdown.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/opencode-client.test.ts",
+      "target": "file:src/opencode/client.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/opencode/client.ts",
+      "target": "file:tests/unit/opencode-client.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/reply.test.ts",
+      "target": "file:src/transport/telegram/reply-stream.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/transport/telegram/reply-stream.ts",
+      "target": "file:tests/unit/reply.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/spawn.test.ts",
+      "target": "file:src/launcher/spawn.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/launcher/spawn.ts",
+      "target": "file:tests/unit/spawn.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/state.test.ts",
+      "target": "file:src/core/state.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/state.ts",
+      "target": "file:tests/unit/state.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/stream-accumulator.test.ts",
+      "target": "file:src/core/stream-accumulator.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/stream-accumulator.ts",
+      "target": "file:tests/unit/stream-accumulator.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/submit.test.ts",
+      "target": "file:src/opencode/submit.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/opencode/submit.ts",
+      "target": "file:tests/unit/submit.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/telegram-render.test.ts",
+      "target": "file:src/transport/telegram/render.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/transport/telegram/render.ts",
+      "target": "file:tests/unit/telegram-render.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/web/transport.test.ts",
+      "target": "file:src/transport/web/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/transport/web/index.ts",
+      "target": "file:tests/unit/web/transport.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/web/ws-hub.test.ts",
+      "target": "file:src/core/card-bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/card-bus.ts",
+      "target": "file:tests/unit/web/ws-hub.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/unit/web/ws-hub.test.ts",
+      "target": "file:src/transport/web/ws-hub.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/transport/web/ws-hub.ts",
+      "target": "file:tests/unit/web/ws-hub.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/telegram/handlers.ts",
+      "target": "file:tests/unit/approval.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/opencode/event-stream.ts",
+      "target": "file:tests/unit/approval.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/cli/init.ts",
+      "target": "file:tests/unit/init-wizard.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/plugin/entry.ts",
+      "target": "file:tests/unit/plugin-entry.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/core/card-bus.ts",
+      "target": "file:tests/unit/tri-end-coordination.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "file:tests/unit/tri-end-coordination.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/telegram/renderer.ts",
+      "target": "file:tests/unit/tri-end-coordination.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:web/extension/sidepanel-entry.ts",
+      "target": "file:web/src/extension/App.svelte",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/extension/background.ts",
+      "target": "function:web/extension/background.ts:formatSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "config:vitest.config.ts",
+      "target": "file:src/index.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:web/package.json",
+      "target": "file:web/extension/background.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:web/package.json",
+      "target": "file:web/extension/popup.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:web/package.json",
+      "target": "file:web/extension/sidepanel-entry.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

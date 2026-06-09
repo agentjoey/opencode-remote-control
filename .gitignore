@@ -4,7 +4,7 @@ dist/
 *.log
 .DS_Store
 .vitest-cache/
-# opencode workspace config (local model selection)
+# opencode workspace config (local model selection + plugin secrets)
 config.json
 .opencode/
 # runtime persisted state (sessionId / agent / model selection)

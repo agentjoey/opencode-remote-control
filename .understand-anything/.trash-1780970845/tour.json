@@ -1,0 +1,62 @@
+[
+  {
+    "order": 1,
+    "title": "Project Overview",
+    "description": "Start with the README to understand the project's purpose: a sidecar bot and web PWA that remote-control a local opencode session from Telegram and a browser. The README lays out the multi-transport model, security model, and the architecture diagram that frames every later stop on this tour.",
+    "nodeIds": ["document:README.md", "config:tsconfig.json", "config:vitest.config.ts"]
+  },
+  {
+    "order": 2,
+    "title": "Application Entry Point",
+    "description": "src/index.ts is the highest fan-in node in the codebase and the bootstrap for both the legacy sidecar and the plugin-mode launch. It waits for the opencode health check, builds the event stream, file-backed state, and CardBus, then starts every transport. This is the bird's-eye view of the runtime topology.",
+    "nodeIds": ["file:src/index.ts", "file:src/plugin/entry.ts"]
+  },
+  {
+    "order": 3,
+    "title": "Configuration & CLI",
+    "description": "Configuration flows through a Zod-validated loader (src/config.ts) that turns process.env into a strongly-typed Config. The CLI surface (src/cli/index.ts) dispatches init/install/uninstall subcommands, with src/cli/install.ts registering the plugin in the opencode config and src/cli/init.ts running the interactive setup wizard that writes the starter .env.",
+    "nodeIds": ["file:src/config.ts", "file:src/cli/index.ts", "file:src/cli/install.ts", "config:.env.example"]
+  },
+  {
+    "order": 4,
+    "title": "OpenCode Integration",
+    "description": "The OpenCode integration layer wraps the SDK so the rest of the codebase can talk to a clean interface. src/opencode/client.ts holds the singleton SDK client plus a health check, src/opencode/event-stream.ts is a reconnecting SSE reader with per-session back-pressure, and src/opencode/submit.ts wraps session.promptAsync with AbortSignal support.",
+    "nodeIds": ["file:src/opencode/client.ts", "file:src/opencode/event-stream.ts", "file:src/opencode/submit.ts"]
+  },
+  {
+    "order": 5,
+    "title": "Core Runtime: CardBus, Relay, State",
+    "description": "The transport-agnostic core keeps the domain logic out of Telegram and HTTP. src/core/card-bus.ts is the in-memory pub/sub bus that fans structured cards out to every subscriber, src/core/relay.ts routes incoming chat messages to the right opencode session and streams replies back, and src/core/state.ts persists last/pinned session, next agent/model, and per-session cost to disk with debounced atomic writes.",
+    "nodeIds": ["file:src/core/card-bus.ts", "file:src/core/relay.ts", "file:src/core/state.ts", "file:src/core/types.ts"]
+  },
+  {
+    "order": 6,
+    "title": "Telegram Transport",
+    "description": "The Telegram transport turns structured cards into HTML messages and inline keyboards. src/transport/telegram/index.ts is the factory that wires authorization, command registration, and approval flow; src/transport/telegram/handlers.ts registers all slash commands and permission callbacks; src/transport/telegram/renderer.ts paginates long replies and collapses tool calls to fit Telegram's 4096-char limit.",
+    "nodeIds": ["file:src/transport/telegram/index.ts", "file:src/transport/telegram/handlers.ts", "file:src/transport/telegram/renderer.ts", "file:src/transport/interface.ts"]
+  },
+  {
+    "order": 7,
+    "title": "Web Transport (HTTP + WebSocket)",
+    "description": "The web transport exposes the same CardBus over REST and a WebSocket. src/transport/web/server.ts wires Cloudflare Access JWT auth, request logging, and every route group; src/transport/web/index.ts is the factory that serves the SPA and bridges live cards; src/transport/web/ws-hub.ts is the per-connection hub that subscribes clients to the bus with ping/pong liveness.",
+    "nodeIds": ["file:src/transport/web/server.ts", "file:src/transport/web/index.ts", "file:src/transport/web/ws-hub.ts", "file:src/transport/web/middleware/cf-access.ts"]
+  },
+  {
+    "order": 8,
+    "title": "Web UI (PWA)",
+    "description": "The PWA is a SvelteKit 5 client that talks to the web transport over WebSocket. web/src/routes/+page.svelte is the root view, web/src/lib/stores/connection.ts tracks the socket status (offline/connected/reconnecting), and web/src/lib/ws/client.ts implements exponential-backoff reconnect with application-level ping/pong. web/static/manifest.webmanifest makes the app installable.",
+    "nodeIds": ["file:web/src/routes/+page.svelte", "file:web/src/lib/stores/connection.ts", "file:web/src/lib/ws/client.ts", "file:web/static/manifest.webmanifest", "file:web/svelte.config.js"]
+  },
+  {
+    "order": 9,
+    "title": "Browser Extension",
+    "description": "The Chrome MV3 extension puts the same PWA into a side panel. web/extension/manifest.json declares sidePanel, contextMenus, and a module background worker; web/extension/sidepanel.html mounts the Svelte app via an ES module entry; web/extension/background.ts registers the 'Send to opencode' context menu that forwards selected text to the side panel.",
+    "nodeIds": ["config:web/extension/manifest.json", "file:web/extension/sidepanel.html", "file:web/extension/background.ts", "file:web/extension/sidepanel-entry.ts"]
+  },
+  {
+    "order": 10,
+    "title": "Architecture Deep-Dive",
+    "description": "Close the tour with the architectural reference that ties everything together. docs/ARCHITECTURE.md walks the src/ tree (core, opencode, transport, utils), the end-to-end message flow from Telegram/Web through the relay to the CardBus, state persistence, configuration, the Transport contract, and the recipe for adding a new transport — a great starting point for any contributor.",
+    "nodeIds": ["document:docs/ARCHITECTURE.md", "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md", "document:docs/OPS.md"]
+  }
+]

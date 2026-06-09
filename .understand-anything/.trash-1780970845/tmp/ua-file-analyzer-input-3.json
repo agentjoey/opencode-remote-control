@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "src/transport/web/middleware/cf-access.ts", "language": "typescript", "sizeLines": 118, "fileCategory": "code"},
+    {"path": "tests/unit/web/cf-access-host-spoof.test.ts", "language": "typescript", "sizeLines": 90, "fileCategory": "code"},
+    {"path": "tests/unit/web/cf-access.test.ts", "language": "typescript", "sizeLines": 210, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "src/transport/web/middleware/cf-access.ts": [],
+    "tests/unit/web/cf-access-host-spoof.test.ts": [],
+    "tests/unit/web/cf-access.test.ts": []
+  }
+}

@@ -20,38 +20,37 @@ describe('init wizard', () => {
     return { deps, outputs }
   }
 
-  it('writes .env with token, user id, and spawn=true', async () => {
+  it('writes .env with token and user id', async () => {
     const files = new Map<string, string>()
-    const { deps } = makeDeps(['my-token-123', '987654321', 'Y'], files)
+    const { deps } = makeDeps(['my-token-123', '987654321'], files)
     await runInitWizard(deps)
 
     const env = files.get('/test/.env')
     expect(env).toBeDefined()
     expect(env).toContain('TELEGRAM_BOT_TOKEN=my-token-123')
     expect(env).toContain('ALLOWED_USER_IDS=987654321')
-    expect(env).toContain('SPAWN_OPENCODE=true')
     expect(env).toContain('OPENCODE_BASE_URL=http://localhost:4096')
   })
 
-  it('sets SPAWN_OPENCODE=false when user answers n', async () => {
+  it('does not include SPAWN_OPENCODE in generated .env', async () => {
     const files = new Map<string, string>()
-    const { deps } = makeDeps(['tok', '123', 'n'], files)
+    const { deps } = makeDeps(['tok', '123'], files)
     await runInitWizard(deps)
 
     const env = files.get('/test/.env')
-    expect(env).toContain('SPAWN_OPENCODE=false')
+    expect(env).not.toContain('SPAWN_OPENCODE')
   })
 
   it('calls testConnection with the token', async () => {
     const files = new Map<string, string>()
-    const { deps } = makeDeps(['tok', '123', 'Y'], files)
+    const { deps } = makeDeps(['tok', '123'], files)
     await runInitWizard(deps)
     expect(deps.testConnection).toHaveBeenCalledWith('tok')
   })
 
   it('overwrites existing .env when user confirms', async () => {
     const files = new Map<string, string>([['/test/.env', 'OLD=1']])
-    const { deps } = makeDeps(['tok', '123', 'Y', 'y'], files)
+    const { deps } = makeDeps(['tok', '123', 'y'], files)
     await runInitWizard(deps)
     expect(files.get('/test/.env')).toContain('TELEGRAM_BOT_TOKEN=tok')
   })

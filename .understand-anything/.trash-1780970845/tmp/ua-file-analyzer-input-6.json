@@ -1,0 +1,7 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": ".github/workflows/ci.yml", "language": "yaml", "sizeLines": 15, "fileCategory": "infra"}
+  ],
+  "batchImportData": {".github/workflows/ci.yml": []}
+}

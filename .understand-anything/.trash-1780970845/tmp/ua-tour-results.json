@@ -1,0 +1,1738 @@
+{
+  "scriptCompleted": true,
+  "entryPointCandidates": [
+    {
+      "id": "document:README.md",
+      "score": 9,
+      "name": "README.md",
+      "summary": "Primary project documentation describing the sidecar bot that controls opencode from Telegram and a Web PWA, including architecture diagram, quick start, multi-transport model, security model, and environment variable reference.",
+      "type": "document"
+    },
+    {
+      "id": "document:CHANGELOG.md",
+      "score": 4,
+      "name": "CHANGELOG.md",
+      "summary": "Version history of the project covering releases from v0.1.0 (2026-05-14) through v0.6.0-rc.1 (2026-05-31), organized into Added / Changed / Fixed / Deprecated / Removed sections per release.",
+      "type": "document"
+    },
+    {
+      "id": "document:CONTRIBUTING.md",
+      "score": 4,
+      "name": "CONTRIBUTING.md",
+      "summary": "Contributor guide covering getting started, development workflow, testing, code style, instructions for adding a new transport, and pull request process.",
+      "type": "document"
+    },
+    {
+      "id": "document:SECURITY.md",
+      "score": 4,
+      "name": "SECURITY.md",
+      "summary": "Security policy documenting response targets and the scope of supported vulnerability disclosures.",
+      "type": "document"
+    },
+    {
+      "id": "file:src/cli/index.ts",
+      "score": 4,
+      "name": "index.ts",
+      "summary": "CLI entry point that dispatches the subcommand: `init` runs the setup wizard, `install` / `uninstall` mutate the opencode config, `install-svc` prints the launchd hint, and the default starts the launcher.",
+      "type": "file"
+    }
+  ],
+  "fanInRanking": [
+    {
+      "id": "file:src/index.ts",
+      "fanIn": 18,
+      "name": "index.ts"
+    },
+    {
+      "id": "file:src/core/relay.ts",
+      "fanIn": 12,
+      "name": "relay.ts"
+    },
+    {
+      "id": "file:src/config.ts",
+      "fanIn": 10,
+      "name": "config.ts"
+    },
+    {
+      "id": "file:src/core/stream-accumulator.ts",
+      "fanIn": 8,
+      "name": "stream-accumulator.ts"
+    },
+    {
+      "id": "file:src/opencode/event-stream.ts",
+      "fanIn": 7,
+      "name": "event-stream.ts"
+    },
+    {
+      "id": "file:src/core/card-bus.ts",
+      "fanIn": 6,
+      "name": "card-bus.ts"
+    },
+    {
+      "id": "file:src/core/state.ts",
+      "fanIn": 6,
+      "name": "state.ts"
+    },
+    {
+      "id": "file:src/core/history.ts",
+      "fanIn": 5,
+      "name": "history.ts"
+    },
+    {
+      "id": "file:src/opencode/client.ts",
+      "fanIn": 5,
+      "name": "client.ts"
+    },
+    {
+      "id": "file:src/opencode/submit.ts",
+      "fanIn": 5,
+      "name": "submit.ts"
+    },
+    {
+      "id": "file:src/transport/telegram/handlers.ts",
+      "fanIn": 5,
+      "name": "handlers.ts"
+    },
+    {
+      "id": "file:src/transport/telegram/renderer.ts",
+      "fanIn": 4,
+      "name": "renderer.ts"
+    },
+    {
+      "id": "file:src/core/tui-sync.ts",
+      "fanIn": 4,
+      "name": "tui-sync.ts"
+    },
+    {
+      "id": "file:src/transport/interface.ts",
+      "fanIn": 4,
+      "name": "interface.ts"
+    },
+    {
+      "id": "file:src/core/push.ts",
+      "fanIn": 3,
+      "name": "push.ts"
+    },
+    {
+      "id": "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt",
+      "fanIn": 3,
+      "name": "verifyUpgradeJwt"
+    },
+    {
+      "id": "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware",
+      "fanIn": 3,
+      "name": "cfAccessMiddleware"
+    },
+    {
+      "id": "file:src/transport/web/server.ts",
+      "fanIn": 3,
+      "name": "server.ts"
+    },
+    {
+      "id": "function:src/transport/web/server.ts:buildServer",
+      "fanIn": 3,
+      "name": "buildServer"
+    },
+    {
+      "id": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "fanIn": 3,
+      "name": "ai.opencode.remote-control.telegram.plist"
+    }
+  ],
+  "fanOutRanking": [
+    {
+      "id": "document:docs/ARCHITECTURE.md",
+      "fanOut": 12,
+      "name": "ARCHITECTURE.md"
+    },
+    {
+      "id": "file:src/transport/telegram/handlers.ts",
+      "fanOut": 12,
+      "name": "handlers.ts"
+    },
+    {
+      "id": "file:src/core/relay.ts",
+      "fanOut": 10,
+      "name": "relay.ts"
+    },
+    {
+      "id": "document:.agent/sprints/sprint-001.md",
+      "fanOut": 8,
+      "name": "sprint-001.md"
+    },
+    {
+      "id": "file:src/index.ts",
+      "fanOut": 8,
+      "name": "index.ts"
+    },
+    {
+      "id": "file:src/transport/telegram/renderer.ts",
+      "fanOut": 7,
+      "name": "renderer.ts"
+    },
+    {
+      "id": "file:src/transport/web/middleware/cf-access.ts",
+      "fanOut": 7,
+      "name": "cf-access.ts"
+    },
+    {
+      "id": "file:src/utils/markdown.ts",
+      "fanOut": 7,
+      "name": "markdown.ts"
+    },
+    {
+      "id": "document:.agent/sprints/sprint-002.md",
+      "fanOut": 6,
+      "name": "sprint-002.md"
+    },
+    {
+      "id": "document:.agent/sprints/sprint-003.md",
+      "fanOut": 6,
+      "name": "sprint-003.md"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "fanOut": 6,
+      "name": "2026-05-15-opencode-remote-control.md"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "fanOut": 6,
+      "name": "2026-05-16-phase3-implementation-plan.md"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "fanOut": 6,
+      "name": "2026-05-16-phase4-implementation-plan.md"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "fanOut": 6,
+      "name": "2026-05-31-phase6-plugin-migration.md"
+    },
+    {
+      "id": "file:src/core/history.ts",
+      "fanOut": 6,
+      "name": "history.ts"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "fanOut": 5,
+      "name": "2026-05-16-phase5-implementation-plan.md"
+    },
+    {
+      "id": "file:src/cli/install.ts",
+      "fanOut": 5,
+      "name": "install.ts"
+    },
+    {
+      "id": "file:src/opencode/client.ts",
+      "fanOut": 5,
+      "name": "client.ts"
+    },
+    {
+      "id": "file:src/core/card-bus.ts",
+      "fanOut": 4,
+      "name": "card-bus.ts"
+    },
+    {
+      "id": "file:src/core/push.ts",
+      "fanOut": 4,
+      "name": "push.ts"
+    }
+  ],
+  "bfsTraversal": {
+    "startNode": "file:src/cli/index.ts",
+    "order": [
+      "file:src/cli/index.ts"
+    ],
+    "depthMap": {
+      "file:src/cli/index.ts": 0
+    },
+    "byDepth": {
+      "0": [
+        "file:src/cli/index.ts"
+      ]
+    }
+  },
+  "nonCodeFiles": {
+    "documentation": [
+      {
+        "id": "document:.agent/sprints/sprint-001.md",
+        "name": "sprint-001.md",
+        "summary": "Sprint 001 plan defining the MVP scope: deliver a Telegram sidecar relay bot launched via launchd, executing Tasks 0-14 of the opencode-remote-control design plan with TDD for core utils, config, opencode client/event-stream/tui-bridge, and bot reply handlers."
+      },
+      {
+        "id": "document:.agent/sprints/sprint-002.md",
+        "name": "sprint-002.md",
+        "summary": "Sprint 2 retrospective for Phase 2: upgrades all slash commands to card UX, adds /files, /agent, /model, /session commands, introduces the registerCallbacks() architecture, and ships streaming output via message.part.delta accumulation with STREAM_OUTPUT env toggle."
+      },
+      {
+        "id": "document:.agent/sprints/sprint-003.md",
+        "name": "sprint-003.md",
+        "summary": "Sprint 3 stability retrospective covering v0.5.6 fixes (delta accumulation, finalize error handling, TCP timeouts, 429 retry caps, push.ts race, info retry) and v0.5.7 removal of Telegram streaming push to eliminate editMessageText failures, plus thinking-card sessionId race and empty-text overwrite guards."
+      },
+      {
+        "id": "document:CHANGELOG.md",
+        "name": "CHANGELOG.md",
+        "summary": "Version history of the project covering releases from v0.1.0 (2026-05-14) through v0.6.0-rc.1 (2026-05-31), organized into Added / Changed / Fixed / Deprecated / Removed sections per release."
+      },
+      {
+        "id": "document:CONTRIBUTING.md",
+        "name": "CONTRIBUTING.md",
+        "summary": "Contributor guide covering getting started, development workflow, testing, code style, instructions for adding a new transport, and pull request process."
+      },
+      {
+        "id": "document:README.md",
+        "name": "README.md",
+        "summary": "Primary project documentation describing the sidecar bot that controls opencode from Telegram and a Web PWA, including architecture diagram, quick start, multi-transport model, security model, and environment variable reference."
+      },
+      {
+        "id": "document:SECURITY.md",
+        "name": "SECURITY.md",
+        "summary": "Security policy documenting response targets and the scope of supported vulnerability disclosures."
+      },
+      {
+        "id": "document:docs/ARCHITECTURE.md",
+        "name": "ARCHITECTURE.md",
+        "summary": "Plain-language architectural reference for opencode-remote-control covering Plugin vs Sidecar deployment modes, the src/ file tree (core, opencode, transport, utils), the end-to-end message flow from Telegram/Web through relay to CardBus, state persistence, configuration, the Transport contract, and guidance for adding new transports."
+      },
+      {
+        "id": "document:docs/COMPARISON_IM_HUB.md",
+        "name": "COMPARISON_IM_HUB.md",
+        "summary": "Competitive analysis (dated 2026-06-08, written in Chinese) comparing im-hub v0.2.12 against opencode-remote-control v0.5.7 across positioning, architecture, IM channels, agent backends, Web UI, features, code quality, dependencies, and roadmaps, with strategic recommendations and potential improvements to borrow from im-hub."
+      },
+      {
+        "id": "document:docs/OPS.md",
+        "name": "OPS.md",
+        "summary": "Operations runbook for the host machine covering the service landscape (ocrc, opencode, P021 FutuTrade, Cloudflare Tunnel, infrastructure gateways), launchd management for the Telegram bot, manual opencode serve/attach lifecycle, port and health-check commands, restart matrix after code changes, env var reference, and a per-version changelog from v0.5.0 through v0.5.7."
+      },
+      {
+        "id": "document:docs/QUICKSTART.md",
+        "name": "QUICKSTART.md",
+        "summary": "Quickstart documentation file listed in the project batch manifest but not present on disk; intended to provide a short getting-started guide for opencode-remote-control."
+      },
+      {
+        "id": "document:docs/RELEASE.md",
+        "name": "RELEASE.md",
+        "summary": "Release process documentation file listed in the project batch manifest but not present on disk; intended to describe the version publishing workflow for opencode-remote-control."
+      },
+      {
+        "id": "document:docs/reviews/2026-05-17-phase5-sprint-plan.md",
+        "name": "2026-05-17-phase5-sprint-plan.md",
+        "summary": "Phase 5 Web sprint plan (v0.5.4 → v0.5.5) that schedules 13 work items across P0/P1/P2 priorities over ~11 hours, including a newly discovered Web UI main-thread hang fix and validation checklist."
+      },
+      {
+        "id": "document:docs/reviews/2026-05-17-phase5-web-code-review.md",
+        "name": "2026-05-17-phase5-web-code-review.md",
+        "summary": "Comprehensive Phase 5 Web code review report (v0.5.3) covering type system, transport, frontend components, core, extension, and API layers, finding 7 Important issues and 6 Suggestions with security audit and test coverage analysis."
+      },
+      {
+        "id": "document:docs/reviews/2026-05-17-phase5-work-items.md",
+        "name": "2026-05-17-phase5-work-items.md",
+        "summary": "Phase 5 Web work items tracker derived from the 2026-05-17 code review, listing 12 prioritized tasks (P0/P1/P2) with locations, current state, goals, and time estimates."
+      },
+      {
+        "id": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+        "name": "2026-05-15-opencode-remote-control.md",
+        "summary": "Phase 1 (v0.1) implementation plan for the initial sidecar Telegram bot that relays messages to a running opencode TUI session, streams responses back, and surfaces tool-approval prompts as inline-keyboard buttons. Defines the bootstrap tasks: project scaffold, utilities, config, opencode client + SSE event stream, TUI bridge, reply stream, chat/approval/commands handlers, bot wiring, live integration test, and launchd deployment."
+      },
+      {
+        "id": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+        "name": "2026-05-16-phase3-implementation-plan.md",
+        "summary": "Phase 3 plan migrating to SDK-native `client.session.prompt()` submission, introducing the channel-agnostic `Transport` abstraction that splits `src/bot/` into `src/core/` (relay + state) and `src/transport/telegram/` (Telegram-specific transport). Adds file-backed persistent `SessionState`, finishes stability, and prepares the project for OSS publication with LICENSE, SECURITY.md, public README, transport docs, and GitHub Actions CI."
+      },
+      {
+        "id": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+        "name": "2026-05-16-phase4-implementation-plan.md",
+        "summary": "Phase 4 plan productizing startup with a single-command launcher (subprocess lifecycle + launchd plist), closing the TUI/bot information gap with `/diff`, `/todo`, `/context`, inline tool-call rendering, and selective push notifications. Adds competitor-borrowed UX (inline Stop button, cost footer, multi-user allowlist) plus an npx `init` wizard for publish-readiness."
+      },
+      {
+        "id": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+        "name": "2026-05-16-phase5-implementation-plan.md",
+        "summary": "Phase 5 plan shipping v0.5.0 with a Web transport (PWA + Chrome Extension via Cloudflare Tunnel + Access) on top of a relay refactor that publishes transport-agnostic `StructuredCard`s through a `CardBus` to fix Telegram's long-thinking truncation. Introduces a Hono HTTP/WebSocket server, SvelteKit 5 frontend, CF Access JWT middleware, Chrome Manifest V3 extension, and Playwright E2E coverage."
+      },
+      {
+        "id": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+        "name": "2026-05-31-phase6-plugin-migration.md",
+        "summary": "Phase 6 plan migrating opencode-remote-control from a standalone sidecar to the openCode Plugin Registry: a single `npx install` and the plugin auto-starts with opencode. Adds the `@opencode-ai/plugin` entry point, adapts the relay and transports to consume the opencode event hook instead of `EventStream`, ships `install`/`uninstall` CLI commands, and preserves the legacy `src/index.ts` entry for backward compatibility."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+        "name": "2026-05-15-opencode-remote-control-design.md",
+        "summary": "Phase 1 design spec defining the project goal, process topology, file layout, data flow for Telegram message submission, error handling, and launchd deployment for the local opencode remote-control."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-15-opensource-roadmap.md",
+        "name": "2026-05-15-opensource-roadmap.md",
+        "summary": "Open-source release roadmap with vision, positioning, milestones (M0–M7+), non-goals, decision points, and success metrics for taking the project public after Phase 2."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-15-phase2-design.md",
+        "name": "2026-05-15-phase2-design.md",
+        "summary": "Phase 2 spec covering live streaming output via opencode SSE plus five new Telegram card commands (/files, /agent, /model, /session) with implementation details and UX principles."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+        "name": "2026-05-16-architecture-comparison.md",
+        "summary": "Decision document comparing Plan A (Hybrid Plugin + Sidecar) versus Plan B (External Bot + Web aligned with SDK), culminating in a recommended path with strategic differentiation from competitor projects."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-16-phase3-design.md",
+        "name": "2026-05-16-phase3-design.md",
+        "summary": "Phase 3 spec detailing SDK-native message submission migration, transport interface design, core relay, persistent state, Telegram transport implementation, and open-source prep tasks."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+        "name": "2026-05-16-phase4-productization-design.md",
+        "summary": "Phase 4 productization spec covering single-command launcher, information parity with the TUI (/diff, /todo, /context), two-way state sync, and competitive UX improvements (Stop button, cost tracking, npm publish)."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+        "name": "2026-05-16-phase5-design.md",
+        "summary": "Comprehensive Phase 5 spec for the Web UI transport and Telegram streaming overflow fix, covering the StructuredCard model, CardBus relay refactor, SvelteKit frontend, Chrome extension, and Cloudflare Access auth."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+        "name": "2026-05-16-phase5-web-ui-outline.md",
+        "summary": "High-level outline of the Phase 5 Web UI covering wireframes for desktop/mobile/Chrome side panel, form-factor matrix, preliminary stack, auth flow, and capabilities surface."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+        "name": "2026-05-19-streaming-optimization.md",
+        "summary": "Streaming architecture optimization v1.1 documenting SDK event model findings, content-block design, thinking/text separation, stream accumulator, ping heartbeats, and an executed sprint plan."
+      },
+      {
+        "id": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+        "name": "2026-05-31-phase6-plugin-migration-design.md",
+        "summary": "Phase 6 design spec for migrating the project into the opencode plugin registry, covering file tree changes, plugin entry design, configuration migration, relay adaptation, CLI install flow, and backward compatibility."
+      },
+      {
+        "id": "document:.agent/BACKLOG.md",
+        "name": "BACKLOG.md",
+        "summary": "Product backlog tracking unprioritized work for opencode-remote-control, organized by HIGH / MED / LOW / research priority with completed-sprint history."
+      },
+      {
+        "id": "document:.agent/CURRENT.md",
+        "name": "CURRENT.md",
+        "summary": "Current status snapshot for the v0.6.0-rc.1 release, summarising the plugin-registry migration, test counts, and key architectural decisions."
+      },
+      {
+        "id": "document:.github/ISSUE_TEMPLATE/bug.md",
+        "name": "bug.md",
+        "summary": "GitHub issue template for bug reports, capturing reproduction steps, expected behavior, environment details (OS, Node, opencode, transport), and log snippets."
+      },
+      {
+        "id": "document:.github/ISSUE_TEMPLATE/feature.md",
+        "name": "feature.md",
+        "summary": "GitHub issue template for feature requests, prompting the problem statement, proposed solution, considered alternatives, and additional context."
+      },
+      {
+        "id": "document:.github/PULL_REQUEST_TEMPLATE.md",
+        "name": "PULL_REQUEST_TEMPLATE.md",
+        "summary": "PR template with Summary, Details, Testing, and a Checklist section requiring `npm test`, `tsc --noEmit`, new tests, and updated docs."
+      },
+      {
+        "id": "document:docs/superpowers/phase5-acceptance.md",
+        "name": "phase5-acceptance.md",
+        "summary": "Phase 5 acceptance checklist documenting the 133 root + 4 web tests passing, 35 completed tasks (StructuredCard, CardBus, Web PWA, Chrome MV3), known issues, and the v0.5.0 release tag command."
+      },
+      {
+        "id": "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+        "name": "CONTRIBUTING-NEW-TRANSPORT.md",
+        "summary": "Step-by-step guide for adding a new channel transport: the `Transport`/`ChannelCapabilities`/`Card` interfaces, a 7-step recipe (directory, factory, loader, env vars, tests, docs, README), and a skeleton example."
+      },
+      {
+        "id": "document:docs/transports/telegram.md",
+        "name": "telegram.md",
+        "summary": "Telegram transport setup guide: bot creation with @BotFather, user ID discovery, .env configuration, launch instructions, four common-error recipes, and the launchd install snippet."
+      }
+    ],
+    "infrastructure": [
+      {
+        "id": "pipeline:.github/workflows/ci.yml",
+        "name": "ci.yml",
+        "summary": "GitHub Actions CI workflow that runs on push and pull_request events to type-check, test, and build the TypeScript plugin and its companion Svelte web PWA on Node 20.",
+        "type": "pipeline"
+      }
+    ],
+    "data": [
+      {
+        "id": "endpoint:src/transport/web/routes/abort.ts:POST-/api/abort",
+        "name": "POST-/api/abort",
+        "summary": "Aborts the in-flight generation for a given session id.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/approval.ts:POST-/api/approval",
+        "name": "POST-/api/approval",
+        "summary": "Submits a permission decision (allow once, always allow, or reject) for a pending opencode permission request.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/context.ts:GET-/api/session/:id/context",
+        "name": "GET-/api/session/:id/context",
+        "summary": "Returns agent, model, token count, and cost for a session along with the queued next agent and model.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/diff.ts:GET-/api/session/:id/diff",
+        "name": "GET-/api/session/:id/diff",
+        "summary": "Returns the file diffs that the session has produced but not yet committed.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/message.ts:POST-/api/message",
+        "name": "POST-/api/message",
+        "summary": "Accepts a text message from the web PWA and feeds it into the bot pipeline for the authenticated user.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/session.ts:GET-/api/session/:id",
+        "name": "GET-/api/session/:id",
+        "summary": "Returns the chat-card history for a session, capped by an optional ?limit= query parameter.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/sessions.ts:GET-/api/sessions",
+        "name": "GET-/api/sessions",
+        "summary": "Returns the list of session summaries shown in the web PWA's session sidebar.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/todo.ts:GET-/api/session/:id/todo",
+        "name": "GET-/api/session/:id/todo",
+        "summary": "Returns the todo list associated with a session.",
+        "type": "endpoint"
+      },
+      {
+        "id": "endpoint:src/transport/web/routes/version.ts:GET-/api/version",
+        "name": "GET-/api/version",
+        "summary": "Returns the build/version metadata used by the web PWA and /version bot command.",
+        "type": "endpoint"
+      }
+    ],
+    "config": [
+      {
+        "id": "config:.env.example",
+        "name": ".env.example",
+        "summary": "Template environment file documenting 26 runtime variables for the bot, covering Telegram auth, opencode server URL, streaming/throttling, logging, persistent state, launcher, and the optional Web transport (PWA, port, static root, Cloudflare Access JWT)."
+      },
+      {
+        "id": "config:config.json",
+        "name": "config.json",
+        "summary": "opencode server configuration that pins the default model to deepseek/deepseek-v4-pro and references the upstream opencode config JSON schema."
+      },
+      {
+        "id": "config:tsconfig.json",
+        "name": "tsconfig.json",
+        "summary": "TypeScript compiler configuration targeting ES2022 with Bundler module resolution, strict mode, source maps, and an include set limited to src/**/*."
+      },
+      {
+        "id": "config:vitest.config.ts",
+        "name": "vitest.config.ts",
+        "summary": "Vitest configuration that scopes test discovery to tests/**/*.test.ts, excludes integration tests, and sets a 10s timeout with the verbose reporter."
+      },
+      {
+        "id": "config:web/extension/manifest.json",
+        "name": "manifest.json",
+        "summary": "Chrome MV3 manifest for the opencode-remote-control browser extension, declaring permissions (sidePanel, contextMenus, storage, activeTab), a module background service worker, the side panel surface, the toolbar action popup, icons, and a content security policy restricting scripts to self and connections to https endpoints."
+      },
+      {
+        "id": "config:.github/dependabot.yml",
+        "name": "dependabot.yml",
+        "summary": "Dependabot v2 configuration enabling weekly npm dependency updates with a 10-PR limit and the `dependencies` label applied via `chore(deps)` commit messages."
+      },
+      {
+        "id": "config:deploy/ai.opencode.remote-control.telegram.plist",
+        "name": "ai.opencode.remote-control.telegram.plist",
+        "summary": "macOS launchd plist that keeps the Telegram transport running under `dist/launcher/index.js` with `KeepAlive` enabled, logs to `/tmp/opencode-remote-control-telegram.{log,err}`, and a 10-second restart throttle."
+      },
+      {
+        "id": "config:web/package.json",
+        "name": "package.json",
+        "summary": "Web sub-project manifest for the PWA + Chrome extension, declaring Svelte 5 / Vite / Vitest / Playwright tooling and runtime deps on marked and dompurify."
+      },
+      {
+        "id": "config:web/tsconfig.json",
+        "name": "tsconfig.json",
+        "summary": "TypeScript compiler configuration for the web app that extends the SvelteKit-generated tsconfig, enables strict mode with bundler resolution, allows JS/JSON, and pulls in vitest globals; covers src and tests."
+      }
+    ]
+  },
+  "clusters": [],
+  "layers": {
+    "count": 9,
+    "list": [
+      {
+        "id": "layer:entry-points",
+        "name": "Entry Points & Configuration",
+        "description": "Process entry points, CLI command surface, plugin host bootstrap, launcher, and project configuration files (env, tsconfig, vitest, web workspace, plugin manifest, Dependabot)."
+      },
+      {
+        "id": "layer:core-runtime",
+        "name": "Core Runtime",
+        "description": "Transport-agnostic domain logic — card-bus message bus, relay, push notifications, conversation history, session state, stream accumulator, TUI sync, and shared core types."
+      },
+      {
+        "id": "layer:opencode-integration",
+        "name": "OpenCode Integration",
+        "description": "Adapter layer to the OpenCode SDK — HTTP client, server-sent event stream reader, and message submission wrapper consumed by transports and the plugin host."
+      },
+      {
+        "id": "layer:transport-telegram",
+        "name": "Transport: Telegram",
+        "description": "Telegraf-based Telegram bot transport — index bootstrap, command/info handlers, render and reply-stream modules, the shared card renderer, and the TransportInterface contract that keeps the core runtime transport-agnostic."
+      },
+      {
+        "id": "layer:transport-web",
+        "name": "Transport: Web",
+        "description": "Hono HTTP/WebSocket transport — server bootstrap, ws-hub, session-summary aggregation, CF-Access middleware, and REST routes for sessions, messages, approval, abort, diff, todo, context, and version."
+      },
+      {
+        "id": "layer:web-ui",
+        "name": "Web UI (PWA + Extension)",
+        "description": "Client-side PWA — SvelteKit pages, connection store, WebSocket client, build configs, manifest, plus the browser-extension popup/sidepanel/background surfaces and their HTML shells."
+      },
+      {
+        "id": "layer:tests",
+        "name": "Tests (Unit + Integration + E2E)",
+        "description": "All test suites — Vitest unit tests for core runtime, transports, CLI/init wizard, OpenCode client, integration tests for Telegram overflow and tri-end coordination, and the PWA end-to-end happy-path spec."
+      },
+      {
+        "id": "layer:infrastructure",
+        "name": "Infrastructure & CI/CD",
+        "description": "Operational tooling — macOS launchd plist, install/uninstall shell scripts, Telegraf patch script, and the GitHub Actions CI workflow plus Dependabot config."
+      },
+      {
+        "id": "layer:documentation",
+        "name": "Documentation",
+        "description": "Project documentation — top-level README/CHANGELOG/CONTRIBUTING/SECURITY, GitHub issue and PR templates, sprint notes/backlog, and the docs/ tree of architecture, ops, transport, and design specs."
+      }
+    ]
+  },
+  "nodeSummaryIndex": {
+    "file:src/core/card-bus.ts": {
+      "name": "card-bus.ts",
+      "type": "file",
+      "summary": "In-memory pub/sub bus for structured cards with per-session subscription sets, a global subscriber list, and a bounded per-session recent-buffer for replay."
+    },
+    "file:src/core/push.ts": {
+      "name": "push.ts",
+      "type": "file",
+      "summary": "Push notification layer that subscribes to the opencode event stream and publishes session-finished and test-failure info cards to the CardBus, with hourly rate limits and per-session cooldowns."
+    },
+    "file:src/core/relay.ts": {
+      "name": "relay.ts",
+      "type": "file",
+      "summary": "Core message relay that routes incoming chat messages to the right opencode session (TUI, pinned, last-used, or fallback) and streams assistant responses back via the CardBus, supporting both sidecar SSE and Plugin event-hook modes."
+    },
+    "function:src/core/card-bus.ts:createCardBus": {
+      "name": "createCardBus",
+      "type": "function",
+      "summary": "Factory that returns a CardBus implementation: per-session and global subscriber sets, a bounded per-session card buffer, and safe publisher dispatch that isolates subscriber errors."
+    },
+    "function:src/core/push.ts:startPushNotifications": {
+      "name": "startPushNotifications",
+      "type": "function",
+      "summary": "Wires an event handler that tracks session busy/idle transitions and bash-tool output, enforces hourly and per-session cooldown rate limits, fetches a final assistant summary, and publishes info cards to the CardBus."
+    },
+    "function:src/core/relay.ts:createRelay": {
+      "name": "createRelay",
+      "type": "function",
+      "summary": "Factory that returns a relay callable plus a handleEvent dispatcher. Routes incoming messages to a session, streams response blocks from the SSE loop or Plugin event hook, and publishes final assistant cards with cost and token metadata."
+    },
+    "function:src/core/relay.ts:isNetworkError": {
+      "name": "isNetworkError",
+      "type": "function",
+      "summary": "Heuristically detects retryable network errors by lowercasing the error message and matching common fetch/Node socket failure substrings."
+    },
+    "function:src/core/relay.ts:submitWithRetry": {
+      "name": "submitWithRetry",
+      "type": "function",
+      "summary": "Wraps submitPrompt with up to 5 attempts and exponential backoff, retrying only on network-class errors and honoring AbortSignal cancellation."
+    },
+    "function:src/core/relay.ts:delayOrAbort": {
+      "name": "delayOrAbort",
+      "type": "function",
+      "summary": "Promise-based sleep that resolves after a given delay or rejects with 'aborted' when the supplied AbortSignal fires."
+    },
+    "function:src/core/relay.ts:waitForBusySession": {
+      "name": "waitForBusySession",
+      "type": "function",
+      "summary": "Subscribes to the EventStream and resolves with the first session ID that transitions to busy, returning undefined on timeout or abort."
+    },
+    "function:src/core/relay.ts:selectTuiSession": {
+      "name": "selectTuiSession",
+      "type": "function",
+      "summary": "Best-effort POST to /tui/select-session via raw fetch to navigate the opencode TUI to a given session, with a 2s hard timeout and silent failure."
+    },
+    "function:src/core/relay.ts:pickSessionFallback": {
+      "name": "pickSessionFallback",
+      "type": "function",
+      "summary": "Lists opencode sessions and returns the most recently active one (by time.updated, falling back to time.created) when no pinned or last-used session is available."
+    },
+    "file:src/transport/telegram/renderer.ts": {
+      "name": "renderer.ts",
+      "type": "file",
+      "summary": "Telegram transport renderer that turns structured cards (thinking/assistant/error/info) into paginated HTML Telegram messages, with markdown chunking, tool-call collapsing, and a per-message timeout safeguard against stuck TCP connections."
+    },
+    "class:src/transport/telegram/renderer.ts:TelegramSessionRenderer": {
+      "name": "TelegramSessionRenderer",
+      "type": "class",
+      "summary": "Session-scoped renderer that dispatches incoming StructuredCard events to the right Telegram message flow: thinking placeholders, multi-chunk final answers with footer, error notices, and retried info/help messages."
+    },
+    "function:src/transport/telegram/renderer.ts:splitMarkdown": {
+      "name": "splitMarkdown",
+      "type": "function",
+      "summary": "Splits a markdown string into chunks of at most perChunk characters, preferring paragraph then single-line boundaries near the target so chunks stay readable."
+    },
+    "function:src/transport/telegram/renderer.ts:collapseTools": {
+      "name": "collapseTools",
+      "type": "function",
+      "summary": "Collapses long tool-call lists into a small head/tail window with a synthetic __more__ placeholder, keeping all currently-running tools and a couple of completed ones at the head and tail."
+    },
+    "function:src/transport/telegram/renderer.ts:finalize": {
+      "name": "finalize",
+      "type": "function",
+      "summary": "Deletes the thinking placeholder, splits the assistant markdown into paginated chunks, renders each chunk (with tools on the first piece and a meta footer on the last), and falls back to a 3800-char last-resort send on failure."
+    },
+    "function:src/transport/telegram/renderer.ts:sendInfo": {
+      "name": "sendInfo",
+      "type": "function",
+      "summary": "Renders an info card (title + sections of body markdown) as a single HTML Telegram message and retries up to 3 times with 2s backoff on transient network errors (ECONNRESET/ETIMEDOUT)."
+    },
+    "function:src/transport/telegram/renderer.ts:renderChunkBody": {
+      "name": "renderChunkBody",
+      "type": "function",
+      "summary": "Composes the per-chunk HTML body: a collapsed tool-call list, the converted markdown body, and an optional meta footer separated by a horizontal rule on the final chunk."
+    },
+    "file:tests/integration/telegram-overflow.test.ts": {
+      "name": "telegram-overflow.test.ts",
+      "type": "file",
+      "summary": "Integration test asserting that a 15000+ char assistant answer is paginated into at least three Telegram messages and that the cost footer lands on the last message."
+    },
+    "file:tests/unit/telegram/overflow.test.ts": {
+      "name": "overflow.test.ts",
+      "type": "file",
+      "summary": "Unit test asserting that TelegramSessionRenderer paginates a long final answer into multiple sent messages, with the cost footer attached to the last one."
+    },
+    "file:src/transport/web/middleware/cf-access.ts": {
+      "name": "cf-access.ts",
+      "type": "file",
+      "summary": "Hono middleware and standalone helper for verifying Cloudflare Access JWTs on the web transport, with a loopback-only dev bypass that uses the socket remote address to prevent Host header spoofing."
+    },
+    "function:src/transport/web/middleware/cf-access.ts:extractJwt": {
+      "name": "extractJwt",
+      "type": "function",
+      "summary": "Pulls the Cloudflare Access JWT from the `cf-access-jwt-assertion` header, the `cf_access_jwt` query parameter, or the `CF_Authorization` cookie, in that order."
+    },
+    "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt": {
+      "name": "verifyUpgradeJwt",
+      "type": "function",
+      "summary": "Exported helper that verifies a Cloudflare Access JWT for WebSocket upgrade requests, honoring the loopback dev bypass and returning `{ email, sub }` on success or `null` on failure."
+    },
+    "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware": {
+      "name": "cfAccessMiddleware",
+      "type": "function",
+      "summary": "Exported Hono middleware factory that authenticates requests with a prebuilt Cloudflare Access JWKS, sets the verified user on the context, short-circuits on missing/invalid tokens with 401, and applies the loopback dev bypass."
+    },
+    "file:tests/unit/web/cf-access-host-spoof.test.ts": {
+      "name": "cf-access-host-spoof.test.ts",
+      "type": "file",
+      "summary": "Vitest suite that exercises `verifyUpgradeJwt` to confirm dev-bypass decisions are driven by `socket.remoteAddress` rather than the client-supplied Host header, plus coverage for IPv4, IPv6, and IPv4-mapped loopback addresses."
+    },
+    "file:tests/unit/web/cf-access.test.ts": {
+      "name": "cf-access.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for `cfAccessMiddleware` covering the missing-token, valid-JWT, invalid-JWT, loopback dev bypass, and non-loopback dev bypass cases using mocked `jose` calls."
+    },
+    "file:src/transport/web/server.ts": {
+      "name": "server.ts",
+      "type": "file",
+      "summary": "Constructs the Hono HTTP server for the web transport, wiring Cloudflare Access authentication, request logging middleware, the /api/me identity endpoint, and all REST route groups (sessions, messages, abort, diff, todo, context, approval, version)."
+    },
+    "function:src/transport/web/server.ts:buildServer": {
+      "name": "buildServer",
+      "type": "function",
+      "summary": "Factory that assembles and returns a configured Hono app: installs timing/logging middleware on /api/*, applies CF Access auth, exposes /api/me, then registers all route groups and returns the app."
+    },
+    "file:tests/unit/web/routes.test.ts": {
+      "name": "routes.test.ts",
+      "type": "file",
+      "summary": "Vitest suite exercising the web transport's REST routes (/api/sessions, /api/session/:id, /api/message, /api/abort, /api/session/:id/diff, /api/session/:id/context, /api/approval) with fake state and an opencode client."
+    },
+    "function:tests/unit/web/routes.test.ts:fakeState": {
+      "name": "fakeState",
+      "type": "function",
+      "summary": "Test helper that builds a minimal SessionState double seeded with two session costs and a stubbed abort controller for 'ses_a'."
+    },
+    "function:tests/unit/web/routes.test.ts:fakeClient": {
+      "name": "fakeClient",
+      "type": "function",
+      "summary": "Test helper that returns a vi.fn-backed OpencodeClient double with stubbed session.list, session.messages, and session.promptAsync responses."
+    },
+    "function:tests/unit/web/routes.test.ts:baseOpts": {
+      "name": "baseOpts",
+      "type": "function",
+      "summary": "Test helper that returns a complete BuildServerOpts with a dev-bypass CF Access config and stubbed card bus / ws hub for use by individual test cases."
+    },
+    "file:tests/unit/web/server.test.ts": {
+      "name": "server.test.ts",
+      "type": "file",
+      "summary": "Vitest suite focused on buildServer itself, verifying the /api/me endpoint returns the dev-bypass user in dev mode and returns 401 when auth is enforced."
+    },
+    "file:web/src/lib/stores/connection.ts": {
+      "name": "connection.ts",
+      "type": "file",
+      "summary": "Defines a Svelte writable store tracking the WebSocket connection status (offline, connected, or reconnecting) used across the web PWA."
+    },
+    "file:web/src/lib/ws/client.test.ts": {
+      "name": "client.test.ts",
+      "type": "file",
+      "summary": "Vitest test suite for the WebSocket client factory, using a FakeWebSocket stub to verify message dispatch and subscribe sending behavior."
+    },
+    "class:web/src/lib/ws/client.test.ts:FakeWebSocket": {
+      "name": "FakeWebSocket",
+      "type": "class",
+      "summary": "In-memory WebSocket stub used in tests, tracking each instance and simulating the open transition via setTimeout so the client factory can be exercised synchronously."
+    },
+    "file:web/src/lib/ws/client.ts": {
+      "name": "client.ts",
+      "type": "file",
+      "summary": "Implements a resilient WebSocket client factory with exponential reconnect backoff, application-level ping/pong liveness checks, and Svelte store status updates."
+    },
+    "function:web/src/lib/ws/client.ts:createWsClient": {
+      "name": "createWsClient",
+      "type": "function",
+      "summary": "Factory that returns a resilient WebSocket client: it auto-connects, schedules periodic pings, reconnects with a bounded backoff schedule, and exposes send/close controls to the caller."
+    },
+    "pipeline:.github/workflows/ci.yml": {
+      "name": "ci.yml",
+      "type": "pipeline",
+      "summary": "GitHub Actions CI workflow that runs on push and pull_request events to type-check, test, and build the TypeScript plugin and its companion Svelte web PWA on Node 20."
+    },
+    "document:.agent/sprints/sprint-001.md": {
+      "name": "sprint-001.md",
+      "type": "document",
+      "summary": "Sprint 001 plan defining the MVP scope: deliver a Telegram sidecar relay bot launched via launchd, executing Tasks 0-14 of the opencode-remote-control design plan with TDD for core utils, config, opencode client/event-stream/tui-bridge, and bot reply handlers."
+    },
+    "document:.agent/sprints/sprint-002.md": {
+      "name": "sprint-002.md",
+      "type": "document",
+      "summary": "Sprint 2 retrospective for Phase 2: upgrades all slash commands to card UX, adds /files, /agent, /model, /session commands, introduces the registerCallbacks() architecture, and ships streaming output via message.part.delta accumulation with STREAM_OUTPUT env toggle."
+    },
+    "document:.agent/sprints/sprint-003.md": {
+      "name": "sprint-003.md",
+      "type": "document",
+      "summary": "Sprint 3 stability retrospective covering v0.5.6 fixes (delta accumulation, finalize error handling, TCP timeouts, 429 retry caps, push.ts race, info retry) and v0.5.7 removal of Telegram streaming push to eliminate editMessageText failures, plus thinking-card sessionId race and empty-text overwrite guards."
+    },
+    "config:.env.example": {
+      "name": ".env.example",
+      "type": "config",
+      "summary": "Template environment file documenting 26 runtime variables for the bot, covering Telegram auth, opencode server URL, streaming/throttling, logging, persistent state, launcher, and the optional Web transport (PWA, port, static root, Cloudflare Access JWT)."
+    },
+    "document:CHANGELOG.md": {
+      "name": "CHANGELOG.md",
+      "type": "document",
+      "summary": "Version history of the project covering releases from v0.1.0 (2026-05-14) through v0.6.0-rc.1 (2026-05-31), organized into Added / Changed / Fixed / Deprecated / Removed sections per release."
+    },
+    "document:CONTRIBUTING.md": {
+      "name": "CONTRIBUTING.md",
+      "type": "document",
+      "summary": "Contributor guide covering getting started, development workflow, testing, code style, instructions for adding a new transport, and pull request process."
+    },
+    "document:README.md": {
+      "name": "README.md",
+      "type": "document",
+      "summary": "Primary project documentation describing the sidecar bot that controls opencode from Telegram and a Web PWA, including architecture diagram, quick start, multi-transport model, security model, and environment variable reference."
+    },
+    "document:SECURITY.md": {
+      "name": "SECURITY.md",
+      "type": "document",
+      "summary": "Security policy documenting response targets and the scope of supported vulnerability disclosures."
+    },
+    "config:config.json": {
+      "name": "config.json",
+      "type": "config",
+      "summary": "opencode server configuration that pins the default model to deepseek/deepseek-v4-pro and references the upstream opencode config JSON schema."
+    },
+    "config:tsconfig.json": {
+      "name": "tsconfig.json",
+      "type": "config",
+      "summary": "TypeScript compiler configuration targeting ES2022 with Bundler module resolution, strict mode, source maps, and an include set limited to src/**/*."
+    },
+    "config:vitest.config.ts": {
+      "name": "vitest.config.ts",
+      "type": "config",
+      "summary": "Vitest configuration that scopes test discovery to tests/**/*.test.ts, excludes integration tests, and sets a 10s timeout with the verbose reporter."
+    },
+    "document:docs/ARCHITECTURE.md": {
+      "name": "ARCHITECTURE.md",
+      "type": "document",
+      "summary": "Plain-language architectural reference for opencode-remote-control covering Plugin vs Sidecar deployment modes, the src/ file tree (core, opencode, transport, utils), the end-to-end message flow from Telegram/Web through relay to CardBus, state persistence, configuration, the Transport contract, and guidance for adding new transports."
+    },
+    "document:docs/COMPARISON_IM_HUB.md": {
+      "name": "COMPARISON_IM_HUB.md",
+      "type": "document",
+      "summary": "Competitive analysis (dated 2026-06-08, written in Chinese) comparing im-hub v0.2.12 against opencode-remote-control v0.5.7 across positioning, architecture, IM channels, agent backends, Web UI, features, code quality, dependencies, and roadmaps, with strategic recommendations and potential improvements to borrow from im-hub."
+    },
+    "document:docs/OPS.md": {
+      "name": "OPS.md",
+      "type": "document",
+      "summary": "Operations runbook for the host machine covering the service landscape (ocrc, opencode, P021 FutuTrade, Cloudflare Tunnel, infrastructure gateways), launchd management for the Telegram bot, manual opencode serve/attach lifecycle, port and health-check commands, restart matrix after code changes, env var reference, and a per-version changelog from v0.5.0 through v0.5.7."
+    },
+    "document:docs/QUICKSTART.md": {
+      "name": "QUICKSTART.md",
+      "type": "document",
+      "summary": "Quickstart documentation file listed in the project batch manifest but not present on disk; intended to provide a short getting-started guide for opencode-remote-control."
+    },
+    "document:docs/RELEASE.md": {
+      "name": "RELEASE.md",
+      "type": "document",
+      "summary": "Release process documentation file listed in the project batch manifest but not present on disk; intended to describe the version publishing workflow for opencode-remote-control."
+    },
+    "document:docs/reviews/2026-05-17-phase5-sprint-plan.md": {
+      "name": "2026-05-17-phase5-sprint-plan.md",
+      "type": "document",
+      "summary": "Phase 5 Web sprint plan (v0.5.4 → v0.5.5) that schedules 13 work items across P0/P1/P2 priorities over ~11 hours, including a newly discovered Web UI main-thread hang fix and validation checklist."
+    },
+    "document:docs/reviews/2026-05-17-phase5-web-code-review.md": {
+      "name": "2026-05-17-phase5-web-code-review.md",
+      "type": "document",
+      "summary": "Comprehensive Phase 5 Web code review report (v0.5.3) covering type system, transport, frontend components, core, extension, and API layers, finding 7 Important issues and 6 Suggestions with security audit and test coverage analysis."
+    },
+    "document:docs/reviews/2026-05-17-phase5-work-items.md": {
+      "name": "2026-05-17-phase5-work-items.md",
+      "type": "document",
+      "summary": "Phase 5 Web work items tracker derived from the 2026-05-17 code review, listing 12 prioritized tasks (P0/P1/P2) with locations, current state, goals, and time estimates."
+    },
+    "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md": {
+      "name": "2026-05-15-opencode-remote-control.md",
+      "type": "document",
+      "summary": "Phase 1 (v0.1) implementation plan for the initial sidecar Telegram bot that relays messages to a running opencode TUI session, streams responses back, and surfaces tool-approval prompts as inline-keyboard buttons. Defines the bootstrap tasks: project scaffold, utilities, config, opencode client + SSE event stream, TUI bridge, reply stream, chat/approval/commands handlers, bot wiring, live integration test, and launchd deployment."
+    },
+    "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md": {
+      "name": "2026-05-16-phase3-implementation-plan.md",
+      "type": "document",
+      "summary": "Phase 3 plan migrating to SDK-native `client.session.prompt()` submission, introducing the channel-agnostic `Transport` abstraction that splits `src/bot/` into `src/core/` (relay + state) and `src/transport/telegram/` (Telegram-specific transport). Adds file-backed persistent `SessionState`, finishes stability, and prepares the project for OSS publication with LICENSE, SECURITY.md, public README, transport docs, and GitHub Actions CI."
+    },
+    "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md": {
+      "name": "2026-05-16-phase4-implementation-plan.md",
+      "type": "document",
+      "summary": "Phase 4 plan productizing startup with a single-command launcher (subprocess lifecycle + launchd plist), closing the TUI/bot information gap with `/diff`, `/todo`, `/context`, inline tool-call rendering, and selective push notifications. Adds competitor-borrowed UX (inline Stop button, cost footer, multi-user allowlist) plus an npx `init` wizard for publish-readiness."
+    },
+    "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md": {
+      "name": "2026-05-16-phase5-implementation-plan.md",
+      "type": "document",
+      "summary": "Phase 5 plan shipping v0.5.0 with a Web transport (PWA + Chrome Extension via Cloudflare Tunnel + Access) on top of a relay refactor that publishes transport-agnostic `StructuredCard`s through a `CardBus` to fix Telegram's long-thinking truncation. Introduces a Hono HTTP/WebSocket server, SvelteKit 5 frontend, CF Access JWT middleware, Chrome Manifest V3 extension, and Playwright E2E coverage."
+    },
+    "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md": {
+      "name": "2026-05-31-phase6-plugin-migration.md",
+      "type": "document",
+      "summary": "Phase 6 plan migrating opencode-remote-control from a standalone sidecar to the openCode Plugin Registry: a single `npx install` and the plugin auto-starts with opencode. Adds the `@opencode-ai/plugin` entry point, adapts the relay and transports to consume the opencode event hook instead of `EventStream`, ships `install`/`uninstall` CLI commands, and preserves the legacy `src/index.ts` entry for backward compatibility."
+    },
+    "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md": {
+      "name": "2026-05-15-opencode-remote-control-design.md",
+      "type": "document",
+      "summary": "Phase 1 design spec defining the project goal, process topology, file layout, data flow for Telegram message submission, error handling, and launchd deployment for the local opencode remote-control."
+    },
+    "document:docs/superpowers/specs/2026-05-15-opensource-roadmap.md": {
+      "name": "2026-05-15-opensource-roadmap.md",
+      "type": "document",
+      "summary": "Open-source release roadmap with vision, positioning, milestones (M0–M7+), non-goals, decision points, and success metrics for taking the project public after Phase 2."
+    },
+    "document:docs/superpowers/specs/2026-05-15-phase2-design.md": {
+      "name": "2026-05-15-phase2-design.md",
+      "type": "document",
+      "summary": "Phase 2 spec covering live streaming output via opencode SSE plus five new Telegram card commands (/files, /agent, /model, /session) with implementation details and UX principles."
+    },
+    "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md": {
+      "name": "2026-05-16-architecture-comparison.md",
+      "type": "document",
+      "summary": "Decision document comparing Plan A (Hybrid Plugin + Sidecar) versus Plan B (External Bot + Web aligned with SDK), culminating in a recommended path with strategic differentiation from competitor projects."
+    },
+    "document:docs/superpowers/specs/2026-05-16-phase3-design.md": {
+      "name": "2026-05-16-phase3-design.md",
+      "type": "document",
+      "summary": "Phase 3 spec detailing SDK-native message submission migration, transport interface design, core relay, persistent state, Telegram transport implementation, and open-source prep tasks."
+    },
+    "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md": {
+      "name": "2026-05-16-phase4-productization-design.md",
+      "type": "document",
+      "summary": "Phase 4 productization spec covering single-command launcher, information parity with the TUI (/diff, /todo, /context), two-way state sync, and competitive UX improvements (Stop button, cost tracking, npm publish)."
+    },
+    "document:docs/superpowers/specs/2026-05-16-phase5-design.md": {
+      "name": "2026-05-16-phase5-design.md",
+      "type": "document",
+      "summary": "Comprehensive Phase 5 spec for the Web UI transport and Telegram streaming overflow fix, covering the StructuredCard model, CardBus relay refactor, SvelteKit frontend, Chrome extension, and Cloudflare Access auth."
+    },
+    "document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md": {
+      "name": "2026-05-16-phase5-web-ui-outline.md",
+      "type": "document",
+      "summary": "High-level outline of the Phase 5 Web UI covering wireframes for desktop/mobile/Chrome side panel, form-factor matrix, preliminary stack, auth flow, and capabilities surface."
+    },
+    "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md": {
+      "name": "2026-05-19-streaming-optimization.md",
+      "type": "document",
+      "summary": "Streaming architecture optimization v1.1 documenting SDK event model findings, content-block design, thinking/text separation, stream accumulator, ping heartbeats, and an executed sprint plan."
+    },
+    "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md": {
+      "name": "2026-05-31-phase6-plugin-migration-design.md",
+      "type": "document",
+      "summary": "Phase 6 design spec for migrating the project into the opencode plugin registry, covering file tree changes, plugin entry design, configuration migration, relay adaptation, CLI install flow, and backward compatibility."
+    },
+    "config:web/extension/manifest.json": {
+      "name": "manifest.json",
+      "type": "config",
+      "summary": "Chrome MV3 manifest for the opencode-remote-control browser extension, declaring permissions (sidePanel, contextMenus, storage, activeTab), a module background service worker, the side panel surface, the toolbar action popup, icons, and a content security policy restricting scripts to self and connections to https endpoints."
+    },
+    "file:web/extension/popup.html": {
+      "name": "popup.html",
+      "type": "file",
+      "summary": "Toolbar popup page rendered when the extension's action icon is clicked, providing a dark-themed Bot URL input and a Connect button that delegates to ./popup.js."
+    },
+    "file:web/extension/sidepanel.html": {
+      "name": "sidepanel.html",
+      "type": "file",
+      "summary": "Full-height side panel host page that mounts a #app container and bootstraps the main UI by loading ./sidepanel-entry.js as an ES module."
+    },
+    "document:.agent/BACKLOG.md": {
+      "name": "BACKLOG.md",
+      "type": "document",
+      "summary": "Product backlog tracking unprioritized work for opencode-remote-control, organized by HIGH / MED / LOW / research priority with completed-sprint history."
+    },
+    "document:.agent/CURRENT.md": {
+      "name": "CURRENT.md",
+      "type": "document",
+      "summary": "Current status snapshot for the v0.6.0-rc.1 release, summarising the plugin-registry migration, test counts, and key architectural decisions."
+    },
+    "config:.github/dependabot.yml": {
+      "name": "dependabot.yml",
+      "type": "config",
+      "summary": "Dependabot v2 configuration enabling weekly npm dependency updates with a 10-PR limit and the `dependencies` label applied via `chore(deps)` commit messages."
+    },
+    "document:.github/ISSUE_TEMPLATE/bug.md": {
+      "name": "bug.md",
+      "type": "document",
+      "summary": "GitHub issue template for bug reports, capturing reproduction steps, expected behavior, environment details (OS, Node, opencode, transport), and log snippets."
+    },
+    "document:.github/ISSUE_TEMPLATE/feature.md": {
+      "name": "feature.md",
+      "type": "document",
+      "summary": "GitHub issue template for feature requests, prompting the problem statement, proposed solution, considered alternatives, and additional context."
+    },
+    "document:.github/PULL_REQUEST_TEMPLATE.md": {
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "type": "document",
+      "summary": "PR template with Summary, Details, Testing, and a Checklist section requiring `npm test`, `tsc --noEmit`, new tests, and updated docs."
+    },
+    "file:.understand-anything/.understandignore": {
+      "name": ".understandignore",
+      "type": "file",
+      "summary": "Understand-Anything ignore file using .gitignore-style globs, currently empty (all sample patterns are commented out) so the project remains fully analyzable."
+    },
+    "config:deploy/ai.opencode.remote-control.telegram.plist": {
+      "name": "ai.opencode.remote-control.telegram.plist",
+      "type": "config",
+      "summary": "macOS launchd plist that keeps the Telegram transport running under `dist/launcher/index.js` with `KeepAlive` enabled, logs to `/tmp/opencode-remote-control-telegram.{log,err}`, and a 10-second restart throttle."
+    },
+    "document:docs/superpowers/phase5-acceptance.md": {
+      "name": "phase5-acceptance.md",
+      "type": "document",
+      "summary": "Phase 5 acceptance checklist documenting the 133 root + 4 web tests passing, 35 completed tasks (StructuredCard, CardBus, Web PWA, Chrome MV3), known issues, and the v0.5.0 release tag command."
+    },
+    "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md": {
+      "name": "CONTRIBUTING-NEW-TRANSPORT.md",
+      "type": "document",
+      "summary": "Step-by-step guide for adding a new channel transport: the `Transport`/`ChannelCapabilities`/`Card` interfaces, a 7-step recipe (directory, factory, loader, env vars, tests, docs, README), and a skeleton example."
+    },
+    "document:docs/transports/telegram.md": {
+      "name": "telegram.md",
+      "type": "document",
+      "summary": "Telegram transport setup guide: bot creation with @BotFather, user ID discovery, .env configuration, launch instructions, four common-error recipes, and the launchd install snippet."
+    },
+    "file:scripts/install-launchd.sh": {
+      "name": "install-launchd.sh",
+      "type": "file",
+      "summary": "macOS installer that validates `node` and `opencode` on PATH, builds the dist if missing, substitutes the project directory into the plist template, and bootstraps the LaunchAgent."
+    },
+    "file:scripts/patch-telegraf.cjs": {
+      "name": "patch-telegraf.cjs",
+      "type": "file",
+      "summary": "CommonJS patch script that rewrites Telegraf's `redactToken` helper to survive Bun's readonly `Error.message` property via a `try`/defineProperty fallback."
+    },
+    "file:scripts/uninstall.sh": {
+      "name": "uninstall.sh",
+      "type": "file",
+      "summary": "macOS uninstaller that bootouts the LaunchAgent and removes the plist from `~/Library/LaunchAgents/`."
+    },
+    "file:src/cli/index.ts": {
+      "name": "index.ts",
+      "type": "file",
+      "summary": "CLI entry point that dispatches the subcommand: `init` runs the setup wizard, `install` / `uninstall` mutate the opencode config, `install-svc` prints the launchd hint, and the default starts the launcher."
+    },
+    "file:src/cli/init.ts": {
+      "name": "init.ts",
+      "type": "file",
+      "summary": "Interactive setup wizard that prompts for Telegram bot token and user ID, validates the bot via Telegram's `getMe` API, and writes a starter `.env` file with sane defaults."
+    },
+    "file:src/cli/install.ts": {
+      "name": "install.ts",
+      "type": "file",
+      "summary": "CLI install command that registers `opencode-remote-control` in the global `~/.config/opencode/opencode.json` (or project `opencode.json` with `--local`) as a plugin tuple with token/IDs/web options."
+    },
+    "file:src/cli/uninstall.ts": {
+      "name": "uninstall.ts",
+      "type": "file",
+      "summary": "CLI uninstall command that filters out the opencode-remote-control plugin entry from the opencode config JSON, deleting the `plugin` key entirely when empty."
+    },
+    "file:src/config.ts": {
+      "name": "config.ts",
+      "type": "file",
+      "summary": "Zod-validated runtime configuration loader that parses process.env into a strongly-typed `Config` covering Telegram, opencode, web, CF Access, and chunking tunables."
+    },
+    "file:src/core/history.ts": {
+      "name": "history.ts",
+      "type": "file",
+      "summary": "History reconstruction that converts opencode SDK messages into `StructuredCard[]` (tail-N window of 50 by default) and provides a tool-arg summarizer for the bash/read/edit/grep toolset."
+    },
+    "file:src/core/state.ts": {
+      "name": "state.ts",
+      "type": "file",
+      "summary": "File-backed session state store with debounced atomic-rename persistence, providing typed get/set accessors for last/pinned session, next agent/model, TUI selection, current agent, abort controllers, and per-session cost."
+    },
+    "file:src/core/stream-accumulator.ts": {
+      "name": "stream-accumulator.ts",
+      "type": "file",
+      "summary": "Streaming-part accumulator that deduplicates and orders SDK `EventMessagePartUpdated` events into an ordered `ContentBlock[]`, filtering out empty-text overwrites and reasoning-only blocks from the public output."
+    },
+    "file:src/core/tui-sync.ts": {
+      "name": "tui-sync.ts",
+      "type": "file",
+      "summary": "TUI session synchroniser that listens to `tui.session.select` events to update the state's `tuiSelectedSession` and polls the selected session every 5s to refresh the current agent name."
+    },
+    "file:src/core/types.ts": {
+      "name": "types.ts",
+      "type": "file",
+      "summary": "Shared core types: `Card`, `Button`, `IncomingMessage`, and `ChannelCapabilities` — the channel-agnostic vocabulary consumed by transports and the relay."
+    },
+    "file:src/index.ts": {
+      "name": "index.ts",
+      "type": "file",
+      "summary": "Plugin/launcher entry point: waits for the opencode health check, builds the event stream, file-backed state, card bus, telegram (and optional web) transports, and the relay; wires SIGINT/SIGTERM shutdown."
+    },
+    "function:src/index.ts:waitForHealth": {
+      "name": "waitForHealth",
+      "type": "function",
+      "summary": "Polls the opencode `/health` endpoint with a 3-attempt backoff (2s/4s/8s) before throwing if the server never becomes reachable."
+    },
+    "function:src/index.ts:runBot": {
+      "name": "runBot",
+      "type": "function",
+      "summary": "Async orchestrator exported as the plugin/launcher entry: composes config, health, client, event stream, state, card bus, telegram (+ optional web) transports, relay, TUI sync, and push notifications, with graceful SIGINT/SIGTERM shutdown."
+    },
+    "function:src/cli/index.ts:main": {
+      "name": "main",
+      "type": "function",
+      "summary": "CLI dispatcher that reads `process.argv[2]` and routes to `init`, `install-svc`, `install`, `uninstall`, or the default launcher import."
+    },
+    "function:src/cli/init.ts:runInitWizard": {
+      "name": "runInitWizard",
+      "type": "function",
+      "summary": "Interactive setup wizard that prompts for Telegram token, user ID, and spawn preference, validates the token against `getMe`, and writes a starter `.env` file with overwrite confirmation."
+    },
+    "function:src/cli/install.ts:runInstall": {
+      "name": "runInstall",
+      "type": "function",
+      "summary": "Installs/updates the `opencode-remote-control` plugin entry in the chosen opencode config file, interactively prompting for TELEGRAM_BOT_TOKEN, ALLOWED_USER_IDS, and web toggle (or reusing prior config under `--yes`)."
+    },
+    "function:src/cli/install.ts:main": {
+      "name": "main",
+      "type": "function",
+      "summary": "Parses `--local` / `--yes` / `--help` argv flags and delegates to `runInstall`; prints a usage banner when `--help` is supplied."
+    },
+    "function:src/cli/uninstall.ts:runUninstall": {
+      "name": "runUninstall",
+      "type": "function",
+      "summary": "Removes any `opencode-remote-control` plugin entry from the targeted opencode config, deleting the `plugin` key entirely when the list becomes empty."
+    },
+    "function:src/cli/uninstall.ts:main": {
+      "name": "main",
+      "type": "function",
+      "summary": "Parses `--local` / `--help` flags and delegates to `runUninstall`, printing a usage banner when help is requested."
+    },
+    "function:src/config.ts:loadConfig": {
+      "name": "loadConfig",
+      "type": "function",
+      "summary": "Parses `process.env` through the zod schema, normalises `ALLOWED_USER_IDS`/`ALLOWED_USER_ID` (with a deprecation warning), enforces at least one allowed ID, and returns the strongly-typed `Config`."
+    },
+    "function:src/core/history.ts:messageToCards": {
+      "name": "messageToCards",
+      "type": "function",
+      "summary": "Converts a single opencode SDK message (user or assistant role) into one or more `StructuredCard`s, assembling text and tool blocks and extracting assistant metadata (agent, model, cost, tokens)."
+    },
+    "function:src/core/history.ts:reconstructHistory": {
+      "name": "reconstructHistory",
+      "type": "function",
+      "summary": "Fetches messages for a session via the opencode client, tails to `limit` (default 50) to bound client-side rendering cost, and maps each message through `messageToCards`."
+    },
+    "function:src/core/state.ts:createFileBackedState": {
+      "name": "createFileBackedState",
+      "type": "function",
+      "summary": "Factory that returns a `SessionState` interface backed by an in-memory cache plus 100ms-debounced atomic-rename persistence, with maps for active abort controllers and per-session cost."
+    },
+    "function:src/core/stream-accumulator.ts:createStreamAccumulator": {
+      "name": "createStreamAccumulator",
+      "type": "function",
+      "summary": "Factory returning a stream-accumulator object with `update`/`finalize`/`getText`/`getTools`/`reset` methods that deduplicate SDK Part updates by id, preserve insertion order, and emit ordered `ContentBlock[]` output."
+    },
+    "function:src/core/tui-sync.ts:startTuiSync": {
+      "name": "startTuiSync",
+      "type": "function",
+      "summary": "Subscribes to the event stream and updates `tuiSelectedSession` from explicit TUI navigation events, then polls the selected session every 5s to refresh the current agent name; returns a cleanup disposer."
+    },
+    "file:src/transport/web/index.ts": {
+      "name": "index.ts",
+      "type": "file",
+      "summary": "Factory for the Web (Hono + ws) transport: serves the SPA, exposes REST routes for sessions/messages/diff/todo/context/abort/approval/version, upgrades WebSocket connections, and bridges the CardBus to connected clients."
+    },
+    "function:src/transport/web/index.ts:createWebTransport": {
+      "name": "createWebTransport",
+      "type": "function",
+      "summary": "Builds a Hono app, wires all REST routes, mounts the SPA static directory, upgrades WebSocket clients through a JWT-validated handshake, attaches them to the WsHub, and exposes start/stop/onMessage for the transport contract."
+    },
+    "file:src/transport/web/routes/abort.ts": {
+      "name": "abort.ts",
+      "type": "file",
+      "summary": "HTTP route handler for POST /api/abort that aborts the active generation for the requested session by triggering its stored AbortController."
+    },
+    "function:src/transport/web/routes/abort.ts:registerAbort": {
+      "name": "registerAbort",
+      "type": "function",
+      "summary": "Registers the POST /api/abort endpoint on the Hono app, aborting the session's active AbortController on request."
+    },
+    "endpoint:src/transport/web/routes/abort.ts:POST-/api/abort": {
+      "name": "POST-/api/abort",
+      "type": "endpoint",
+      "summary": "Aborts the in-flight generation for a given session id."
+    },
+    "file:src/transport/web/routes/approval.ts": {
+      "name": "approval.ts",
+      "type": "file",
+      "summary": "HTTP route handler for POST /api/approval that forwards a permission response (once/always/reject) to the opencode SDK."
+    },
+    "function:src/transport/web/routes/approval.ts:registerApproval": {
+      "name": "registerApproval",
+      "type": "function",
+      "summary": "Registers the POST /api/approval endpoint on the Hono app, forwarding the decision to the opencode SDK's postSessionIdPermissionsPermissionId call."
+    },
+    "endpoint:src/transport/web/routes/approval.ts:POST-/api/approval": {
+      "name": "POST-/api/approval",
+      "type": "endpoint",
+      "summary": "Submits a permission decision (allow once, always allow, or reject) for a pending opencode permission request."
+    },
+    "file:src/transport/web/routes/context.ts": {
+      "name": "context.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/session/:id/context that returns session metadata (agent, model, tokens, cost) plus the next agent/model that will be used."
+    },
+    "function:src/transport/web/routes/context.ts:registerContext": {
+      "name": "registerContext",
+      "type": "function",
+      "summary": "Registers the GET /api/session/:id/context endpoint, returning session info merged with state-tracked next agent/model/cost."
+    },
+    "endpoint:src/transport/web/routes/context.ts:GET-/api/session/:id/context": {
+      "name": "GET-/api/session/:id/context",
+      "type": "endpoint",
+      "summary": "Returns agent, model, token count, and cost for a session along with the queued next agent and model."
+    },
+    "file:src/transport/web/routes/diff.ts": {
+      "name": "diff.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/session/:id/diff that returns the pending file diff for a session via the opencode SDK."
+    },
+    "function:src/transport/web/routes/diff.ts:registerDiff": {
+      "name": "registerDiff",
+      "type": "function",
+      "summary": "Registers the GET /api/session/:id/diff endpoint, returning the session's pending diff payload from the opencode SDK."
+    },
+    "endpoint:src/transport/web/routes/diff.ts:GET-/api/session/:id/diff": {
+      "name": "GET-/api/session/:id/diff",
+      "type": "endpoint",
+      "summary": "Returns the file diffs that the session has produced but not yet committed."
+    },
+    "file:src/transport/web/routes/message.ts": {
+      "name": "message.ts",
+      "type": "file",
+      "summary": "HTTP route handler for POST /api/message that accepts a chat message from the authenticated web user and forwards it to the bot's onMessage handler."
+    },
+    "function:src/transport/web/routes/message.ts:registerMessage": {
+      "name": "registerMessage",
+      "type": "function",
+      "summary": "Registers the POST /api/message endpoint, packaging the request into an IncomingMessage and invoking the transport's onMessage callback."
+    },
+    "endpoint:src/transport/web/routes/message.ts:POST-/api/message": {
+      "name": "POST-/api/message",
+      "type": "endpoint",
+      "summary": "Accepts a text message from the web PWA and feeds it into the bot pipeline for the authenticated user."
+    },
+    "file:src/transport/web/routes/session.ts": {
+      "name": "session.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/session/:id that returns the reconstructed chat history (cards) for a session, with an optional message limit."
+    },
+    "function:src/transport/web/routes/session.ts:registerSession": {
+      "name": "registerSession",
+      "type": "function",
+      "summary": "Registers the GET /api/session/:id endpoint, returning the reconstructed card history (optionally capped by a limit query param)."
+    },
+    "endpoint:src/transport/web/routes/session.ts:GET-/api/session/:id": {
+      "name": "GET-/api/session/:id",
+      "type": "endpoint",
+      "summary": "Returns the chat-card history for a session, capped by an optional ?limit= query parameter."
+    },
+    "file:src/transport/web/routes/sessions.ts": {
+      "name": "sessions.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/sessions that returns a sorted list of session summaries (id, title, agent, model, cost, lastActiveAt, unread)."
+    },
+    "function:src/transport/web/routes/sessions.ts:registerSessions": {
+      "name": "registerSessions",
+      "type": "function",
+      "summary": "Registers the GET /api/sessions endpoint, returning session summaries via fetchSessionSummaries."
+    },
+    "endpoint:src/transport/web/routes/sessions.ts:GET-/api/sessions": {
+      "name": "GET-/api/sessions",
+      "type": "endpoint",
+      "summary": "Returns the list of session summaries shown in the web PWA's session sidebar."
+    },
+    "file:src/transport/web/routes/todo.ts": {
+      "name": "todo.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/session/:id/todo that returns the opencode session todo list."
+    },
+    "function:src/transport/web/routes/todo.ts:registerTodo": {
+      "name": "registerTodo",
+      "type": "function",
+      "summary": "Registers the GET /api/session/:id/todo endpoint, returning the session's todo array from the opencode SDK."
+    },
+    "endpoint:src/transport/web/routes/todo.ts:GET-/api/session/:id/todo": {
+      "name": "GET-/api/session/:id/todo",
+      "type": "endpoint",
+      "summary": "Returns the todo list associated with a session."
+    },
+    "file:src/transport/web/routes/version.ts": {
+      "name": "version.ts",
+      "type": "file",
+      "summary": "HTTP route handler for GET /api/version that returns build version info (from utils/version) as JSON."
+    },
+    "function:src/transport/web/routes/version.ts:registerVersion": {
+      "name": "registerVersion",
+      "type": "function",
+      "summary": "Registers the GET /api/version endpoint, returning getVersionInfo() output."
+    },
+    "endpoint:src/transport/web/routes/version.ts:GET-/api/version": {
+      "name": "GET-/api/version",
+      "type": "endpoint",
+      "summary": "Returns the build/version metadata used by the web PWA and /version bot command."
+    },
+    "file:src/transport/web/session-summary.ts": {
+      "name": "session-summary.ts",
+      "type": "file",
+      "summary": "Helper that fetches the opencode session list and turns it into the SessionSummary[] shape used by the web PWA and the WsHub handshake."
+    },
+    "function:src/transport/web/session-summary.ts:fetchSessionSummaries": {
+      "name": "fetchSessionSummaries",
+      "type": "function",
+      "summary": "Calls client.session.list() and maps the result into SessionSummary records, preferring sessions that have a tracked cost, sorted by recency."
+    },
+    "file:src/transport/web/ws-hub.ts": {
+      "name": "ws-hub.ts",
+      "type": "file",
+      "summary": "Per-connection WebSocket hub for the web PWA. Subscribes to the CardBus and forwards live cards to connected clients, handling ping/pong and per-session subscription messages."
+    },
+    "function:src/transport/web/ws-hub.ts:createWsHub": {
+      "name": "createWsHub",
+      "type": "function",
+      "summary": "Returns a WsHub implementation that tracks connected sockets, forwards CardBus cards to subscribed clients, and handles ping/pong and subscribe messages on attach/detach."
+    },
+    "file:src/launcher/index.ts": {
+      "name": "index.ts",
+      "type": "file",
+      "summary": "Launcher entry point that optionally spawns an opencode server, waits for it to become healthy, then starts the remote-control bot. Handles SIGINT/SIGTERM for graceful shutdown."
+    },
+    "function:src/launcher/index.ts:waitForHealth": {
+      "name": "waitForHealth",
+      "type": "function",
+      "summary": "Polls the opencode HTTP health endpoint until it reports healthy or the timeout elapses, polling once per second."
+    },
+    "function:src/launcher/index.ts:main": {
+      "name": "main",
+      "type": "function",
+      "summary": "Top-level launcher coroutine: loads config, spawns opencode if needed, waits for health, wires shutdown signal handlers, and invokes the bot runner."
+    },
+    "file:src/launcher/spawn.ts": {
+      "name": "spawn.ts",
+      "type": "file",
+      "summary": "Factory for a child-process supervisor that auto-restarts a spawned process with exponential backoff and forwards child stdout/stderr to a log file."
+    },
+    "function:src/launcher/spawn.ts:createSupervisor": {
+      "name": "createSupervisor",
+      "type": "function",
+      "summary": "Creates a Supervisor handle around a child process. On exit, reschedules a new spawn using a configurable backoff schedule, with SIGTERM followed by SIGKILL on stop."
+    },
+    "file:src/opencode/client.ts": {
+      "name": "client.ts",
+      "type": "file",
+      "summary": "Singleton wrapper around the @opencode-ai/sdk client plus a simple HTTP health check used at startup to confirm the opencode server is responsive."
+    },
+    "function:src/opencode/client.ts:getClient": {
+      "name": "getClient",
+      "type": "function",
+      "summary": "Returns the memoized OpencodeClient instance for the given base URL, creating it on first call."
+    },
+    "function:src/opencode/client.ts:checkHealth": {
+      "name": "checkHealth",
+      "type": "function",
+      "summary": "Fetches /global/health from the opencode server and returns whether it reports healthy, swallowing network errors as false."
+    },
+    "file:src/opencode/event-stream.ts": {
+      "name": "event-stream.ts",
+      "type": "file",
+      "summary": "Reconnecting SSE wrapper around the opencode event stream. Per-session subscriber queues back-pressure events, emits synthetic idle/busy events after reconnects, and enforces a heartbeat timeout."
+    },
+    "class:src/opencode/event-stream.ts:EventStream": {
+      "name": "EventStream",
+      "type": "class",
+      "summary": "Manages a long-lived subscription to opencode's Server-Sent Events feed, including reconnect with exponential backoff, heartbeat-driven forced reconnects, and per-session async iterators that queue events for consumers."
+    },
+    "file:src/opencode/submit.ts": {
+      "name": "submit.ts",
+      "type": "file",
+      "summary": "Thin wrapper around the opencode session.promptAsync SDK call that builds the request body and supports cancellation through an AbortSignal."
+    },
+    "function:src/opencode/submit.ts:submitPrompt": {
+      "name": "submitPrompt",
+      "type": "function",
+      "summary": "Sends a free-form text prompt (optionally with agent/model overrides) to a session via the async SDK, respecting the caller's AbortSignal."
+    },
+    "file:src/plugin/config.ts": {
+      "name": "config.ts",
+      "type": "file",
+      "summary": "Loads plugin configuration from .env files and plugin options, validating required values like the Telegram bot token and allowed user IDs."
+    },
+    "function:src/plugin/config.ts:loadPluginConfig": {
+      "name": "loadPluginConfig",
+      "type": "function",
+      "summary": "Reads the .env chain (CWD, project dir, config dir), merges plugin options, and returns a fully-typed PluginConfig with all Telegram, web, state, and timing settings."
+    },
+    "file:src/plugin/entry.ts": {
+      "name": "entry.ts",
+      "type": "file",
+      "summary": "OpenCode plugin entry point. Loads config, wires the CardBus and file-backed state, instantiates the Telegram and/or Web transports, starts push notifications, and forwards plugin events (TUI selection, permissions, tool execution) to the transports."
+    },
+    "function:src/plugin/entry.ts:remoteControlPlugin": {
+      "name": "remoteControlPlugin",
+      "type": "function",
+      "summary": "Implements the OpenCode plugin contract: bootstraps state, configures transports, registers permission and TUI event handlers, polls the TUI-selected session, and returns a cleanup hook for shutdown."
+    },
+    "file:src/transport/interface.ts": {
+      "name": "interface.ts",
+      "type": "file",
+      "summary": "TypeScript interface definitions for the Transport abstraction and its startup dependencies (CardBus, SessionState)."
+    },
+    "file:src/transport/telegram/handlers.ts": {
+      "name": "handlers.ts",
+      "type": "file",
+      "summary": "Registers all Telegram bot commands and callback actions (status, sessions, session pinning, files, diff, todo, context, agent/model selection, abort, version, help) and wires permission-request approval flows from opencode events to inline keyboards."
+    },
+    "function:src/transport/telegram/handlers.ts:hasHttpApi": {
+      "name": "hasHttpApi",
+      "type": "function",
+      "summary": "Returns whether the opencode base URL looks like an HTTP/HTTPS endpoint (used to gate SDK-free HTTP probes)."
+    },
+    "function:src/transport/telegram/handlers.ts:checkHealth": {
+      "name": "checkHealth",
+      "type": "function",
+      "summary": "Probes the opencode /global/health endpoint directly via fetch, returning whether the server is healthy."
+    },
+    "function:src/transport/telegram/handlers.ts:fetchUserAgents": {
+      "name": "fetchUserAgents",
+      "type": "function",
+      "summary": "Fetches the opencode /config HTTP endpoint and returns the list of configured agents with their model identifiers."
+    },
+    "function:src/transport/telegram/handlers.ts:parseAgentModel": {
+      "name": "parseAgentModel",
+      "type": "function",
+      "summary": "Parses a 'providerID/modelID' string into separate provider and model identifiers used for setting the next model."
+    },
+    "function:src/transport/telegram/handlers.ts:shortPath": {
+      "name": "shortPath",
+      "type": "function",
+      "summary": "Trims an absolute file path to its last 3 components for compact display in Telegram messages."
+    },
+    "function:src/transport/telegram/handlers.ts:buildStatusCard": {
+      "name": "buildStatusCard",
+      "type": "function",
+      "summary": "Assembles the rich /status card with health, total cost, current/TUI/pinned session ids, current and next agent/model, plus inline keyboard buttons for navigation."
+    },
+    "function:src/transport/telegram/handlers.ts:registerHandlers": {
+      "name": "registerHandlers",
+      "type": "function",
+      "summary": "Bulk registration of all Telegram bot commands (/start, /status, /sessions, /session, /files, /diff, /todo, /context, /agent, /model, /current, /abort, /version, /help) and all inline-keyboard callback actions."
+    },
+    "function:src/transport/telegram/handlers.ts:setupApproval": {
+      "name": "setupApproval",
+      "type": "function",
+      "summary": "Subscribes to the EventStream for permission-request events, posts an approval card with Allow/Allow-Always/Reject inline buttons, and resolves the request when the user responds."
+    },
+    "function:src/transport/telegram/handlers.ts:labelFor": {
+      "name": "labelFor",
+      "type": "function",
+      "summary": "Maps a permission response ('once' / 'always' / 'reject') to a human-readable label used in the Telegram message footer."
+    },
+    "file:src/transport/telegram/handlers/info-commands.ts": {
+      "name": "info-commands.ts",
+      "type": "file",
+      "summary": "Read-only Telegram commands (/diff, /todo, /context) that pull data from the opencode HTTP API or SDK and format it as inline Telegram replies."
+    },
+    "function:src/transport/telegram/handlers/info-commands.ts:registerInfoCommands": {
+      "name": "registerInfoCommands",
+      "type": "function",
+      "summary": "Registers the /diff, /todo, and /context commands on the Telegram bot, fetching data from the opencode HTTP API and formatting it into readable messages."
+    },
+    "file:src/transport/telegram/index.ts": {
+      "name": "index.ts",
+      "type": "file",
+      "summary": "Factory for the Telegram transport: configures authorization middleware, message handling, command registration, approval flow, card rendering per chat, and a long-running telegraf bot."
+    },
+    "function:src/transport/telegram/index.ts:createTelegramTransport": {
+      "name": "createTelegramTransport",
+      "type": "function",
+      "summary": "Builds a Transport backed by a Telegraf bot: enforces allowed-user-id checks, wires message and command handlers, runs the approval flow, manages per-chat renderers, launches the bot, and exposes start/stop/send/onMessage/onButtonClick."
+    },
+    "file:src/transport/telegram/render.ts": {
+      "name": "render.ts",
+      "type": "file",
+      "summary": "Converts a generic structured Card into a Telegram message (HTML-formatted text plus an inline keyboard) respecting Telegram's 4096-char limit."
+    },
+    "function:src/transport/telegram/render.ts:cardToTelegram": {
+      "name": "cardToTelegram",
+      "type": "function",
+      "summary": "Renders a Card as Telegram HTML text with an optional inline_keyboard, truncating output to fit Telegram's 4000-char message body limit."
+    },
+    "file:src/transport/telegram/reply-stream.ts": {
+      "name": "reply-stream.ts",
+      "type": "file",
+      "summary": "Helpers for progressively editing a Telegram 'thinking' status message and then chunking the final response across multiple reply messages."
+    },
+    "function:src/transport/telegram/reply-stream.ts:createReplyStream": {
+      "name": "createReplyStream",
+      "type": "function",
+      "summary": "Creates a ReplyStream object with throttled update() that edits an existing Telegram message and finalize() that replaces the status message with the final response, chunked for size limits."
+    },
+    "file:src/utils/logger.ts": {
+      "name": "logger.ts",
+      "type": "file",
+      "summary": "Level-based logger factory emitting timestamped, prefixed lines to stdout/stderr, gated by the LOG_LEVEL env var."
+    },
+    "function:src/utils/logger.ts:createLogger": {
+      "name": "createLogger",
+      "type": "function",
+      "summary": "Builds a per-module logger object with debug/info/warn/error methods that respect the global LOG_LEVEL threshold."
+    },
+    "file:src/utils/markdown.ts": {
+      "name": "markdown.ts",
+      "type": "file",
+      "summary": "Markdown→Telegram-HTML converter plus MarkdownV2 escaper and message chunker, used by the Telegram transport renderer."
+    },
+    "function:src/utils/markdown.ts:markdownToTelegramHtml": {
+      "name": "markdownToTelegramHtml",
+      "type": "function",
+      "summary": "Line-driven Markdown parser that emits Telegram-compatible HTML for headings, lists, blockquotes, fences, and rules."
+    },
+    "function:src/utils/markdown.ts:processInline": {
+      "name": "processInline",
+      "type": "function",
+      "summary": "Stash-and-restore transformer that converts inline Markdown (code, links, bold, italic, strikethrough) into HTML entities, protecting placeholders from later passes."
+    },
+    "function:src/utils/markdown.ts:chunkMessage": {
+      "name": "chunkMessage",
+      "type": "function",
+      "summary": "Splits a long text into Telegram-sized chunks (default 4000 chars), preserving line boundaries and hard-splitting oversized lines."
+    },
+    "file:src/utils/version.ts": {
+      "name": "version.ts",
+      "type": "file",
+      "summary": "Build/runtime version reporter that reads the package version, captures the current git commit, and formats process uptime for diagnostics."
+    },
+    "function:src/utils/version.ts:getVersionInfo": {
+      "name": "getVersionInfo",
+      "type": "function",
+      "summary": "Returns a VersionInfo object (version, commit, uptime, Node version, start timestamp) for /status and diagnostics commands."
+    },
+    "function:src/utils/version.ts:formatUptime": {
+      "name": "formatUptime",
+      "type": "function",
+      "summary": "Renders a millisecond duration as a human-readable d/h/m/s string with cascading units."
+    },
+    "file:tests/unit/approval.test.ts": {
+      "name": "approval.test.ts",
+      "type": "file",
+      "summary": "Vitest suite exercising the Telegram permission/approval handler, verifying that EventStream permission prompts reach the bot, are edited on response, and call the opencode API."
+    },
+    "file:tests/unit/config.test.ts": {
+      "name": "config.test.ts",
+      "type": "file",
+      "summary": "Vitest suite covering loadConfig defaults, env overrides, validation errors, and migration of legacy keys for the opencode-remote-control config module."
+    },
+    "file:tests/unit/event-stream.test.ts": {
+      "name": "event-stream.test.ts",
+      "type": "file",
+      "summary": "Vitest suite verifying that EventStream consumes opencode SSE events in order, fans them out to subscribers, and handles cancellation."
+    },
+    "file:tests/unit/history.test.ts": {
+      "name": "history.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the history module: summarizeToolArgs, messageToCards, and reconstructHistory produce correct card projections from opencode message history."
+    },
+    "file:tests/unit/init-wizard.test.ts": {
+      "name": "init-wizard.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the interactive init wizard, asserting that runInitWizard writes .env, respects existing files, and tests the connection."
+    },
+    "file:tests/unit/markdown.test.ts": {
+      "name": "markdown.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the markdown utility, covering MarkdownV2 escaping, HTML conversion, and chunkMessage boundary behaviour."
+    },
+    "file:tests/unit/opencode-client.test.ts": {
+      "name": "opencode-client.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the opencode HTTP client, validating getClient/health-check wiring and the typed client surface."
+    },
+    "file:tests/unit/plugin-entry.test.ts": {
+      "name": "plugin-entry.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the OpenCode plugin entry point, asserting that remoteControlPlugin wires transports, relay, polling, and disposes cleanly."
+    },
+    "file:tests/unit/reply.test.ts": {
+      "name": "reply.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the Telegram reply-stream module, verifying that the createReplyStream wrapper fans tokens to the bot and supports cancellation."
+    },
+    "file:tests/unit/spawn.test.ts": {
+      "name": "spawn.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the createSupervisor launcher, checking restart/backoff behaviour when the opencode process dies."
+    },
+    "file:tests/unit/state.test.ts": {
+      "name": "state.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for createFileBackedState, asserting that conversation state persists, round-trips, and isolates sessions."
+    },
+    "file:tests/unit/stream-accumulator.test.ts": {
+      "name": "stream-accumulator.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the stream accumulator, verifying that incremental text/tool/reasoning parts merge into coherent blocks and emit on session end."
+    },
+    "file:tests/unit/submit.test.ts": {
+      "name": "submit.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for submitPrompt, asserting that user prompts are dispatched to the opencode client with the correct session/agent context."
+    },
+    "file:tests/unit/telegram-render.test.ts": {
+      "name": "telegram-render.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the Telegram card renderer, checking that StructuredCards become MarkdownV2-safe message text."
+    },
+    "file:tests/unit/tri-end-coordination.test.ts": {
+      "name": "tri-end-coordination.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for tri-end coordination (TUI ↔ Telegram ↔ Web), validating that CardBus fan-out delivers assistant/user cards to every subscriber and that the approval flow works end-to-end."
+    },
+    "file:tests/unit/web/transport.test.ts": {
+      "name": "transport.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the web transport entry point, asserting that createWebTransport wires the card bus, state, and HTTP/WS handlers."
+    },
+    "file:tests/unit/web/ws-hub.test.ts": {
+      "name": "ws-hub.test.ts",
+      "type": "file",
+      "summary": "Vitest suite for the WebSocket hub, verifying per-connection subscription, message routing through the card bus, and disconnect cleanup."
+    },
+    "file:web/extension/background.ts": {
+      "name": "background.ts",
+      "type": "file",
+      "summary": "Chrome extension background script that registers a 'Send to opencode' context menu and forwards the selected text or link to the side panel via a runtime message."
+    },
+    "function:web/extension/background.ts:formatSelection": {
+      "name": "formatSelection",
+      "type": "function",
+      "summary": "Builds the prompt payload string for a context-menu click, distinguishing links, page URL with selected text, and bare page references."
+    },
+    "file:web/extension/popup.ts": {
+      "name": "popup.ts",
+      "type": "file",
+      "summary": "Chrome extension popup that reads the bot URL from chrome.storage.local, validates user input, and saves it for the side panel to consume."
+    },
+    "file:web/extension/sidepanel-entry.ts": {
+      "name": "sidepanel-entry.ts",
+      "type": "file",
+      "summary": "Side panel bootstrap that mounts the Svelte App component into the #app element when the panel DOM is available."
+    },
+    "config:web/package.json": {
+      "name": "package.json",
+      "type": "config",
+      "summary": "Web sub-project manifest for the PWA + Chrome extension, declaring Svelte 5 / Vite / Vitest / Playwright tooling and runtime deps on marked and dompurify."
+    },
+    "file:web/src/routes/+layout.ts": {
+      "name": "+layout.ts",
+      "type": "file",
+      "summary": "SvelteKit root layout configuration that disables SSR and prerendering and enforces trailing slashes on all routes, forcing the app to behave as a client-side single-page application served from static files."
+    },
+    "file:web/src/routes/+page.svelte": {
+      "name": "+page.svelte",
+      "type": "file",
+      "summary": "Root SvelteKit route component rendering a centered 'No active session' placeholder when no chat session is active; serves as the default landing view for the web PWA."
+    },
+    "file:web/static/manifest.webmanifest": {
+      "name": "manifest.webmanifest",
+      "type": "file",
+      "summary": "Progressive Web App manifest declaring the opencode-remote-control installable app with standalone display, dark theme colors, and 192/512 px icons for the home screen."
+    },
+    "file:web/svelte.config.js": {
+      "name": "svelte.config.js",
+      "type": "file",
+      "summary": "SvelteKit configuration that wires up Vite preprocessing, the static adapter with an index.html fallback (SPA mode), empty prerender entries, and a $shared alias pointing at the ../src/core module."
+    },
+    "file:web/tests/e2e/happy-path.spec.ts": {
+      "name": "happy-path.spec.ts",
+      "type": "file",
+      "summary": "Playwright end-to-end test placeholder for the full happy path (dev login bypass → session select → prompt send → streaming). Currently marked test.skip because it requires a live bot, mocked opencode, and headless Chrome to be set up manually."
+    },
+    "config:web/tsconfig.json": {
+      "name": "tsconfig.json",
+      "type": "config",
+      "summary": "TypeScript compiler configuration for the web app that extends the SvelteKit-generated tsconfig, enables strict mode with bundler resolution, allows JS/JSON, and pulls in vitest globals; covers src and tests."
+    },
+    "file:web/vite.config.ts": {
+      "name": "vite.config.ts",
+      "type": "file",
+      "summary": "Vite configuration for the SvelteKit PWA build target: enables the sveltekit plugin, configures vitest with a jsdom environment and unit-test glob, and forces the browser resolve condition so the SvelteKit build emits the web client."
+    },
+    "file:web/vite.extension.config.ts": {
+      "name": "vite.extension.config.ts",
+      "type": "file",
+      "summary": "Separate Vite configuration for building the browser extension target (distinct from the PWA vite.config.ts): bundles background, sidepanel, and popup entries to extension-dist, runs Svelte in client-only mode, and uses a custom plugin to copy the manifest, HTML shells, and icons into the output directory."
+    },
+    "function:web/vite.extension.config.ts:extensionManifestPlugin": {
+      "name": "extensionManifestPlugin",
+      "type": "function",
+      "summary": "Custom Rollup/Vite plugin (writeBundle hook) that synchronizes the version field from the root package.json into extension/manifest.json, writes it to extension-dist, and copies the sidepanel/popup HTML shells plus the 16/32/128 px icon set into the build output."
+    }
+  },
+  "totalNodes": 224,
+  "totalEdges": 335
+}

@@ -2,10 +2,9 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { CardBus } from './card-bus.js'
 import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
-import type { EventStream } from '../opencode/event-stream.js'
-import type { StructuredCard } from './structured-card.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import { submitPrompt } from '../opencode/submit.js'
+import { sessionIdOf, errorMessageOf, type OcEvent } from './opencode-events.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
@@ -13,13 +12,11 @@ const log = createLogger('relay')
 export interface RelayDeps {
   cardBus: CardBus
   client: OpencodeClient
-  eventStream: EventStream
   state: SessionState
   chatTimeoutMs: number
   tuiVisible: boolean
-  /** opencode server base URL — used for raw HTTP calls (e.g. /tui/select-session)
-   * that SDK v1 does not yet expose as a typed method. */
-  baseUrl: string
+  /** opencode server base URL — used to navigate the TUI when tuiVisible. */
+  baseUrl?: string
 }
 
 const SUBMIT_MAX_RETRIES = 5
@@ -70,46 +67,20 @@ function delayOrAbort(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-function formatK(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
-}
-
-async function waitForBusySession(eventStream: EventStream, signal: AbortSignal, timeoutMs: number): Promise<string | undefined> {
-  return new Promise<string | undefined>((resolve) => {
-    let done = false
-    const finish = (sid: string | undefined) => {
-      if (done) return
-      done = true
-      clearTimeout(timer)
-      if (typeof unsub === 'function') unsub()
-      resolve(sid)
-    }
-    const timer = setTimeout(() => finish(undefined), timeoutMs)
-    const unsub = eventStream.onAny((rawEvent) => {
-      const e = rawEvent as { type?: string; properties?: any }
-      const p = e?.properties
-      if (e.type === 'session.status' && p?.status?.type === 'busy') {
-        const sid = typeof p?.sessionID === 'string' ? p.sessionID : undefined
-        if (sid) finish(sid)
-      }
-    })
-    signal.addEventListener('abort', () => finish(undefined), { once: true })
-  })
-}
-
 /**
  * Navigate the TUI to a specific session via POST /tui/select-session.
  * SDK v1 does not expose this as a typed method, so use raw fetch.
  * Best-effort: failures (TUI not attached, opencode unreachable) are non-fatal.
  */
-async function selectTuiSession(baseUrl: string, sessionID: string, signal?: AbortSignal): Promise<void> {
+async function selectTuiSession(baseUrl: string | undefined, sessionID: string, signal?: AbortSignal): Promise<void> {
+  if (!baseUrl) return
   try {
+    const normalized = baseUrl.replace(/\/+$/, '')
     const timeoutSignal = AbortSignal.timeout(2000)
     const combinedSignal = signal
       ? AbortSignal.any([signal, timeoutSignal])
       : timeoutSignal
-    const res = await fetch(`${baseUrl}/tui/select-session`, {
+    const res = await fetch(`${normalized}/tui/select-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionID }),
@@ -123,230 +94,122 @@ async function selectTuiSession(baseUrl: string, sessionID: string, signal?: Abo
   }
 }
 
+async function sessionExists(client: OpencodeClient, id: string): Promise<boolean> {
+  try {
+    const res = await client.session.get({ path: { id } })
+    return !!res.data
+  } catch {
+    return false
+  }
+}
+
 async function pickSessionFallback(client: OpencodeClient): Promise<string> {
   const res = await client.session.list()
-  const sessions = (res.data ?? []) as Array<{ id: string; time?: { created?: number; updated?: number } }>
+  const sessions = (res.data ?? []) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
   // Sort by time.updated (most recently active) rather than time.created (newest).
-  // The TUI is typically working in the most recently active session, not the newest one.
-  const sorted = [...sessions].sort((a, b) =>
-    (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
-  )
+  // Prefer root sessions (no parentID) over child/subagent sessions to avoid
+  // accidentally connecting to a completed subagent session.
+  const sorted = [...sessions].sort((a, b) => {
+    const aIsChild = !!a.parentID
+    const bIsChild = !!b.parentID
+    // Root sessions come before child sessions
+    if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
+    // Within same type, sort by most recent activity
+    return (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
+  })
   return sorted[0].id
 }
 
+/** Per-session state for Plugin mode where response comes via handleEvent instead of SSE loop. */
+interface PluginSessionCtx {
+  sessionId: string
+  /** Stable card id shared by this turn's streaming updates and final assistant. */
+  cardId: string
+  acc: ReturnType<typeof createStreamAccumulator>
+  assistantMessageId?: string
+  processedPartIds: Set<string>
+  partTextAcc: Map<string, string>
+  signal: AbortSignal
+  timer: ReturnType<typeof setTimeout>
+}
+
 export function createRelay(deps: RelayDeps) {
-  return async function handleIncoming(msg: IncomingMessage): Promise<void> {
+  /** Plugin mode: per-session response contexts. Only used when eventStream is undefined. */
+  const pluginSessions = new Map<string, PluginSessionCtx>()
+
+  function cleanupPluginSession(sessionId: string) {
+    const ctx = pluginSessions.get(sessionId)
+    if (ctx) {
+      clearTimeout(ctx.timer)
+      pluginSessions.delete(sessionId)
+    }
+  }
+
+  const relay = async function handleIncoming(msg: IncomingMessage): Promise<void> {
     const ac = new AbortController()
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
 
-    // Declared outside try so catch/finally can reference it.
     let sessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
-    // Register abort early so callers can abort before session is resolved.
     deps.state.setActiveAbort(sessionId, ac)
 
     try {
       const nextAgent = deps.state.getNextAgent()
       const nextModel = deps.state.getNextModel()
 
-      // Strategy 1: Submit via TUI — TUI knows its own current session.
-      // Only used when: no override (tui.submitPrompt cannot carry per-message
-      // overrides), no pin, AND tuiVisible (user wants TUI to drive routing).
-      let resolvedId: string | undefined
-      const hasOverrides = !!(nextAgent || nextModel)
-
-      if (!hasOverrides && !deps.state.getPinnedSessionId() && deps.tuiVisible) {
-        try {
-          await deps.client.tui.appendPrompt({ body: { text: msg.text } } as any)
-          await (deps.client.tui as any).submitPrompt()
-          log.info('submitted via TUI, waiting for busy session…')
-          resolvedId = await waitForBusySession(deps.eventStream, ac.signal, 4000)
-          if (resolvedId) {
-            log.info(`TUI routed to session=${resolvedId.slice(-8)}`)
-          } else {
-            log.warn('TUI submit succeeded but no busy event within 4s, falling back')
-          }
-        } catch (err) {
-          log.warn(`TUI submit failed: ${(err as Error).message}, falling back to direct API`)
-        }
+      const pinnedSession = deps.state.getPinnedSessionId()
+      const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
+      const lastSession = deps.state.getLastSessionId()
+      // A persisted target (pinned/tui/last) may point at a deleted session —
+      // validate it before submitting, otherwise submitWithRetry burns 5 retries
+      // against a 404. A fresh pickSessionFallback() result is trusted as-is.
+      let resolvedId = pinnedSession ?? tuiSession ?? lastSession
+      if (resolvedId && !(await sessionExists(deps.client, resolvedId))) {
+        log.warn(`target session ${resolvedId.slice(-8)} no longer exists, falling back to newest`)
+        resolvedId = undefined
       }
-
-      // Strategy 2: Direct API submission (pinned > last > most-recently-active fallback).
-      // When tuiVisible, first navigate the TUI to this session via /tui/select-session
-      // so the conversation appears in the TUI window (the bot drives, TUI mirrors).
-      if (!resolvedId) {
-        const pinnedSession = deps.state.getPinnedSessionId()
-        const lastSession = deps.state.getLastSessionId()
-        resolvedId = pinnedSession ?? lastSession ?? await pickSessionFallback(deps.client)
-        log.info(`submitting directly to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
-        if (deps.tuiVisible) {
-          await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
-        }
-        await submitWithRetry(deps.client, {
-          text: msg.text,
-          sessionId: resolvedId,
-          agent: nextAgent,
-          model: nextModel,
-          signal: ac.signal,
-        })
+      if (!resolvedId) resolvedId = await pickSessionFallback(deps.client)
+      log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+      if (deps.tuiVisible) {
+        await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
       }
+      await submitWithRetry(deps.client, {
+        text: msg.text,
+        sessionId: resolvedId,
+        agent: nextAgent,
+        model: nextModel,
+        signal: ac.signal,
+      })
 
       sessionId = resolvedId
       deps.state.setLastSessionId(sessionId)
       deps.state.setActiveAbort(sessionId, ac)
 
-      // Publish thinking + user cards now that sessionId is known
+      // Publish thinking + user cards now that sessionId is known. The user card
+      // id is derived from the incoming messageId so a web client's optimistic
+      // user card (same id) reconciles in place instead of duplicating.
       deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
-      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
+      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now(), id: `user:${msg.messageId}` })
 
-      let assistantMessageId: string | undefined
-      const acc = createStreamAccumulator()
-      const processedPartIds = new Set<string>()
-      // Track accumulated text per partId for delta events (deltas are incremental, not full text)
-      const partTextAcc = new Map<string, string>()
-
-      for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
-        const e = ev as { type: string; properties: any }
-        const p = e.properties
-
-        log.debug(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
-
-        if (e.type === 'session.idle') {
-          log.info('session idle, breaking')
-          break
-        }
-        if (e.type === 'session.status' && p?.status?.type === 'idle') {
-          log.info('session status idle, breaking')
-          break
-        }
-        if (e.type === 'session.error') {
-          const err = p?.error
-          const msg = err?.data?.message ?? err?.message ?? err?.name ?? 'session error'
-          throw new Error(msg)
-        }
-
-        if (e.type === 'message.part.updated') {
-          const part = p?.part
-          if (!part) {
-            log.info('message.part.updated with no part')
-            continue
-          }
-
-          if (!assistantMessageId && typeof part.messageID === 'string') {
-            assistantMessageId = part.messageID
-            log.info(`assistantMessageId set: ${assistantMessageId}`)
-          }
-
-          const partId = typeof part.id === 'string' ? part.id : undefined
-          // SDK parts always have an id, but test mocks may omit it.
-          // Fall back to a synthetic key so tool dedup still works in tests.
-          const effectiveId = partId ?? `${part.type ?? 'unknown'}:${JSON.stringify(part.state?.input ?? {}).slice(0, 60)}`
-
-          // Build PartInput from the SDK part object
-          const input: PartInput = {
-            id: effectiveId,
-            type: part.type,
-            text: part.text,
-            tool: part.tool,
-            state: part.state,
-          }
-          const isNewPart = partId ? !processedPartIds.has(partId) : true
-          if (partId && isNewPart) processedPartIds.add(partId)
-
-          // Accumulator handles dedup by partId — same id overwrites previous
-          const blocks = acc.update([input])
-
-          if (part.type === 'text') {
-            if (typeof p.delta === 'string') {
-              log.info(`delta received (${p.delta.length} chars): "${p.delta.slice(0, 50)}..."`)
-            } else if (isNewPart && typeof part.text === 'string') {
-              log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
-              // Record the full text as the delta baseline for this part
-              if (partId) partTextAcc.set(partId, part.text)
-            } else {
-              log.info(`text part ignored - delta: ${typeof p.delta}, text: ${typeof part.text}, isNew: ${isNewPart}`)
-            }
-          }
-
-          if (part.type === 'reasoning' && typeof part.text === 'string') {
-            // think-stream temporarily disabled — reasoning is internal-only
-            // deps.cardBus.publish({ kind: 'think-stream', sessionId, thinkingText: part.text })
-          }
-
-          deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
-        }
-
-        if (e.type === 'message.part.delta') {
-          if (!assistantMessageId && typeof p?.messageID === 'string') {
-            assistantMessageId = p.messageID
-          }
-          const partId = p?.partID as string | undefined
-          const field = p?.field as string | undefined
-          const delta = p?.delta as string | undefined
-          if (partId && field === 'text' && typeof delta === 'string') {
-            // Deltas are incremental — append to accumulated full text
-            const prev = partTextAcc.get(partId) ?? ''
-            const fullText = prev + delta
-            partTextAcc.set(partId, fullText)
-            const blocks = acc.update([{ id: partId, type: 'text', text: fullText }])
-            deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
-          }
-        }
+      // The response arrives asynchronously via handleEvent() (opencode plugin
+      // event hook). Store per-session context and return; finalization happens
+      // on session.idle. Clean up the ctx + abort if this run is cancelled.
+      cleanupPluginSession(sessionId)
+      const ctx: PluginSessionCtx = {
+        sessionId,
+        cardId: `turn:${sessionId}:${Date.now()}`,
+        acc: createStreamAccumulator(),
+        processedPartIds: new Set(),
+        partTextAcc: new Map(),
+        signal: ac.signal,
+        timer,
       }
-
-      log.info(`SSE stream ended. assistantMessageId: ${assistantMessageId ?? 'none'}`)
-
-      let blocks = acc.finalize()
-      if (blocks.length === 0 && assistantMessageId) {
-        try {
-          const mres = await deps.client.session.message({ path: { id: sessionId, messageID: assistantMessageId } })
-          const m = (mres.data ?? {}) as any
-          const parts = m.parts ?? []
-          for (const part of parts) {
-            if (part.type === 'text' && typeof part.text === 'string') {
-              blocks.push({ type: 'text', text: part.text })
-            }
-            if (part.type === 'tool' && typeof part.tool === 'string') {
-              const rawStatus = part.state?.status ?? 'running'
-              blocks.push({
-                type: 'tool',
-                tool: part.tool,
-                args: String(part.state?.input?.cmd ?? part.state?.input ?? '').slice(0, 60),
-                status: rawStatus === 'error' ? 'error' : rawStatus === 'done' || rawStatus === 'completed' ? 'done' : 'running',
-              })
-            }
-          }
-        } catch (err) {
-          log.info('fallback fetch message failed', (err as Error).message)
-        }
-      }
-
-      const meta: { agent?: string; model?: string; cost?: number; tokens?: { input: number; output: number } } = {}
-      try {
-        const sres = await deps.client.session.get({ path: { id: sessionId } })
-        const s = (sres.data ?? {}) as any
-        const cost = typeof s.cost === 'number' ? s.cost : undefined
-        const tok = s.tokens
-        const tin = typeof tok?.input === 'number' ? tok.input : undefined
-        const tout = typeof tok?.output === 'number' ? tok.output : undefined
-        if (cost !== undefined) {
-          deps.state.setSessionCost(sessionId, cost)
-          meta.cost = cost
-        }
-        if (tin !== undefined && tout !== undefined) {
-          meta.tokens = { input: tin, output: tout }
-        }
-        if (s.agent?.name) meta.agent = s.agent.name
-        if (typeof s.model === 'string') meta.model = s.model.split('/').pop() ?? s.model
-      } catch {
-        // meta is optional
-      }
-
-      if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]
-
-      log.info(`relay: publishing assistant card for ${sessionId}, blocks=${blocks.length}`)
-      deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta })
-      log.info(`relay: assistant card published for ${sessionId}`)
+      pluginSessions.set(sessionId, ctx)
+      ac.signal.addEventListener('abort', () => {
+        cleanupPluginSession(sessionId)
+        deps.state.setActiveAbort(sessionId, undefined)
+      }, { once: true })
+      return
     } catch (err) {
       const e = err as Error
       if (ac.signal.aborted) {
@@ -355,9 +218,202 @@ export function createRelay(deps: RelayDeps) {
         log.warn('relay error', e.message)
         deps.cardBus.publish({ kind: 'error', sessionId, message: e.message })
       }
-    } finally {
       clearTimeout(timer)
       deps.state.setActiveAbort(sessionId, undefined)
     }
   }
+
+  async function publishAssistantCard(params: {
+    sessionId: string
+    acc: ReturnType<typeof createStreamAccumulator>
+    assistantMessageId?: string
+    /** Shared turn id so the final card upserts the streaming card in place. */
+    cardId?: string
+  }): Promise<void> {
+    const { sessionId, acc, cardId } = params
+    let { assistantMessageId } = params
+
+    let blocks = acc.finalize()
+    if (blocks.length === 0 && assistantMessageId) {
+      try {
+        const mres = await deps.client.session.message({ path: { id: sessionId, messageID: assistantMessageId } })
+        const m = (mres.data ?? {}) as any
+        const parts = m.parts ?? []
+        for (const part of parts) {
+          if (part.type === 'text' && typeof part.text === 'string') {
+            blocks.push({ type: 'text', text: part.text })
+          }
+          if (part.type === 'tool' && typeof part.tool === 'string') {
+            const rawStatus = part.state?.status ?? 'running'
+            blocks.push({
+              type: 'tool',
+              tool: part.tool,
+              args: String(part.state?.input?.cmd ?? part.state?.input ?? '').slice(0, 60),
+              status: rawStatus === 'error' ? 'error' : rawStatus === 'done' || rawStatus === 'completed' ? 'done' : 'running',
+            })
+          }
+        }
+      } catch (err) {
+        log.info('fallback fetch message failed', (err as Error).message)
+      }
+    }
+
+    const meta: { agent?: string; model?: string; cost?: number; tokens?: { input: number; output: number } } = {}
+    try {
+      const sres = await deps.client.session.get({ path: { id: sessionId } })
+      const s = (sres.data ?? {}) as any
+      const cost = typeof s.cost === 'number' ? s.cost : undefined
+      const tok = s.tokens
+      const tin = typeof tok?.input === 'number' ? tok.input : undefined
+      const tout = typeof tok?.output === 'number' ? tok.output : undefined
+      if (cost !== undefined) {
+        deps.state.setSessionCost(sessionId, cost)
+        meta.cost = cost
+      }
+      if (tin !== undefined && tout !== undefined) {
+        meta.tokens = { input: tin, output: tout }
+      }
+      if (s.agent?.name) meta.agent = s.agent.name
+      if (typeof s.model === 'string') meta.model = s.model.split('/').pop() ?? s.model
+    } catch {
+      // meta is optional
+    }
+
+    if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]
+
+    log.info(`relay: publishing assistant card for ${sessionId}, blocks=${blocks.length}`)
+    deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta, id: cardId })
+    // Mark delivery so the push engine doesn't also fire a "Session finished"
+    // notification for a session the user just watched complete.
+    deps.state.markAssistantDelivered(sessionId)
+  }
+
+  /**
+   * handleEvent — opencode plugin event dispatch.
+   * Receives individual events from the opencode plugin event hook and drives
+   * streaming/finalization for the in-flight session (message.part.updated,
+   * message.part.delta, session.idle, session.error).
+   */
+  relay.handleEvent = async function handleEvent(raw: OcEvent) {
+    const eventType = raw.type
+    if (!eventType) return
+
+    const p = raw.properties ?? {}
+
+    {
+      const sid = sessionIdOf(raw)
+      const ctx = sid ? pluginSessions.get(sid) : undefined
+
+      if (eventType === 'message.part.updated') {
+        const part = p?.part
+        if (part && ctx) {
+          if (!ctx.assistantMessageId && typeof part.messageID === 'string') {
+            ctx.assistantMessageId = part.messageID
+          }
+
+          const partId = typeof part.id === 'string' ? part.id : undefined
+          const effectiveId = partId ?? `${part.type ?? 'unknown'}:${JSON.stringify(part.state?.input ?? {}).slice(0, 60)}`
+
+          const isNewPart = partId ? !ctx.processedPartIds.has(partId) : true
+          if (partId && isNewPart) ctx.processedPartIds.add(partId)
+
+          const input: PartInput = {
+            id: effectiveId,
+            type: part.type ?? 'unknown',
+            text: part.text,
+            tool: part.tool,
+            state: part.state,
+          }
+          const blocks = ctx.acc.update([input])
+
+          if (part.type === 'text') {
+            if (isNewPart && typeof part.text === 'string' && partId) {
+              ctx.partTextAcc.set(partId, part.text)
+            }
+          }
+
+          if (!ctx.signal.aborted) {
+            deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
+          }
+        }
+        return
+      }
+
+      if (eventType === 'message.part.delta') {
+        if (ctx) {
+          const partId = p?.partID as string | undefined
+          const field = p?.field as string | undefined
+          const delta = p?.delta as string | undefined
+          if (partId && field === 'text' && typeof delta === 'string') {
+            const prev = ctx.partTextAcc.get(partId) ?? ''
+            const fullText = prev + delta
+            ctx.partTextAcc.set(partId, fullText)
+            if (!ctx.signal.aborted) {
+              const blocks = ctx.acc.update([{ id: partId, type: 'text', text: fullText }])
+              deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
+            }
+          }
+          if (!ctx.assistantMessageId && typeof p?.messageID === 'string') {
+            ctx.assistantMessageId = p.messageID
+          }
+        }
+        return
+      }
+
+      if (eventType === 'session.idle') {
+        if (ctx) {
+          log.info(`[plugin] session idle: ${ctx.sessionId.slice(-8)}, finalizing`)
+          // Capture acc/msgId locally: cleanupPluginSession() runs synchronously
+          // below, and a new message for the same session would install a fresh
+          // ctx with a fresh accumulator — so this deferred finalize must read
+          // the snapshot it captured, not pluginSessions.get(sid).
+          const sid = ctx.sessionId
+          const acc = ctx.acc
+          const msgId = ctx.assistantMessageId
+          const cardId = ctx.cardId
+          // Defer SDK calls to next tick to avoid blocking the event hook
+          setTimeout(async () => {
+            try {
+              await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId, cardId })
+            } catch (err) {
+              log.error(`[plugin] publishAssistantCard failed`, err as Error)
+            }
+          }, 0)
+          cleanupPluginSession(ctx.sessionId)
+          deps.state.setActiveAbort(ctx.sessionId, undefined)
+        } else if (sid) {
+          log.info(`[plugin] session idle (no ctx): ${sid.slice(-8)}`)
+          deps.cardBus.publish({ kind: 'status', sessionId: sid, fields: { status: 'idle' } })
+        }
+        return
+      }
+
+      if (eventType === 'session.error') {
+        if (ctx) {
+          const errMsg = errorMessageOf(p)
+          log.warn(`[plugin] session error: ${errMsg}`)
+          deps.cardBus.publish({ kind: 'error', sessionId: ctx.sessionId, message: errMsg })
+          cleanupPluginSession(ctx.sessionId)
+          deps.state.setActiveAbort(ctx.sessionId, undefined)
+        } else {
+          const errMsg = errorMessageOf(p)
+          const fallbackSid = sid || 'unknown'
+          log.warn(`[plugin] session error (no ctx): ${String(errMsg)}`)
+          deps.cardBus.publish({ kind: 'error', sessionId: fallbackSid, message: String(errMsg) })
+        }
+        return
+      }
+
+      // message.updated — debug-trace only; finalization is driven by session.idle
+      if (eventType === 'message.updated') {
+        const info = p?.info
+        if (info?.sessionID && !sid) {
+          log.debug(`[plugin] message.updated session=${info.sessionID.slice(-8)}`)
+        }
+        return
+      }
+    }
+  }
+
+  return relay
 }

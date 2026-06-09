@@ -27,7 +27,19 @@ export type ContentBlock =
   | { type: 'text'; text: string }
   | { type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' }
 
-export type StructuredCard =
+/**
+ * Identity stamped by CardBus.publish (callers don't set these):
+ * - `id`: stable per logical card. Streaming updates and the final assistant
+ *   card of one turn share an id, so the UI upserts in place instead of
+ *   appending. CardBus fills `kind:seq` for cards that don't carry one.
+ * - `seq`: monotonic per session — used for ordering, dedupe, and replay-since.
+ */
+export interface CardMeta {
+  id?: string
+  seq?: number
+}
+
+export type StructuredCard = CardMeta & (
   | { kind: 'thinking';     sessionId: string;  showStop: boolean }
   | { kind: 'think-stream'; sessionId: string;  thinkingText: string }
   | { kind: 'streaming';    sessionId: string;  blocks: ContentBlock[] }
@@ -37,3 +49,4 @@ export type StructuredCard =
   | { kind: 'status';       sessionId: string;  fields: Record<string, string>; buttons?: Button[][] }
   | { kind: 'info';         title: string;      sections: InfoSection[]; sessionId?: string }
   | { kind: 'approval';     sessionId: string;  title: string;  args: unknown;  requestId: string }
+)

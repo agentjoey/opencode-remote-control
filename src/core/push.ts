@@ -1,20 +1,25 @@
-import type { EventStream } from '../opencode/event-stream.js'
 import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
+import type { SessionState } from '../core/state.js'
+import type { OcEvent } from '../core/opencode-events.js'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('push')
 
+/** Skip the "Session finished" push if the relay delivered the result this recently. */
+const RELAY_DELIVERY_DEDUP_MS = 60_000
+
 export interface PushDeps {
-  eventStream: EventStream
   cardBus: CardBus
   client: OpencodeClient
+  /** Used to suppress duplicate notifications for sessions the relay just delivered. */
+  state?: SessionState
   testFailuresEnabled?: boolean
   maxPerHour?: number
 }
 
-export function startPushNotifications(deps: PushDeps): () => void {
+export function startPushNotifications(deps: PushDeps) {
   const hourCap = deps.maxPerHour ?? 10
   const sessionCooldownMs = 5 * 60 * 1000
   const recentPushes: number[] = []
@@ -72,8 +77,8 @@ export function startPushNotifications(deps: PushDeps): () => void {
     }
   }
 
-  const unsub = deps.eventStream.onAny(async (raw) => {
-    const e = raw as { type: string; properties?: any }
+  const handler = async (raw: OcEvent) => {
+    const e = raw
     const p = e.properties
     const sid =
       (typeof p?.sessionID === 'string' && p.sessionID) ||
@@ -88,18 +93,17 @@ export function startPushNotifications(deps: PushDeps): () => void {
     } else if (e.type === 'session.idle' || (e.type === 'session.status' && p?.status?.type === 'idle')) {
       const start = busySince.get(sid)
       busySince.delete(sid)
-      // If the session was already busy when this listener started (e.g. bot
-      // restart mid-session), busySince is empty. Fall back to recording
-      // engagement time as a conservative estimate — the session was at least
-      // running since the bot's first contact with it.
       const effectiveStart = start ?? engagedAt.get(sid) ?? Date.now()
       const duration = Date.now() - effectiveStart
       const lastEngaged = engagedAt.get(sid) ?? 0
       const engagedRecently = Date.now() - lastEngaged < 12 * 60 * 60 * 1000
-      if (duration > 60_000 && engagedRecently && canPush(sid)) {
+      // If the relay already delivered this session's result to the user
+      // (foreground bot/web message), don't also push a "Session finished" card.
+      const deliveredAt = deps.state?.getAssistantDeliveredAt(sid)
+      const justDelivered = deliveredAt !== undefined && Date.now() - deliveredAt < RELAY_DELIVERY_DEDUP_MS
+      if (duration > 60_000 && engagedRecently && !justDelivered && canPush(sid)) {
         recordPush(sid)
         let summary = await fetchSummary(sid)
-        // If fetch raced with opencode's persistence, wait and retry once
         if (!summary) {
           log.info(`push: first fetch empty for ${sid.slice(-8)}, retrying in 3s`)
           await new Promise(r => setTimeout(r, 3000))
@@ -133,7 +137,18 @@ export function startPushNotifications(deps: PushDeps): () => void {
         }
       }
     }
-  })
+  }
 
-  return () => { unsub?.() }
+  return {
+    /** Feed events from the opencode plugin event hook. */
+    handleEvent: handler,
+    /** No-op retained for symmetry with the plugin lifecycle. */
+    stop: () => {},
+    /** Lightweight counters for the rc-status diagnostic tool. */
+    stats: () => {
+      const now = Date.now()
+      while (recentPushes.length && now - recentPushes[0] > 60 * 60 * 1000) recentPushes.shift()
+      return { pushesLastHour: recentPushes.length, trackedSessions: lastSessionPush.size }
+    },
+  }
 }
