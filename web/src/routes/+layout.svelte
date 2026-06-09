@@ -9,11 +9,20 @@
   import { connection } from '$lib/stores/connection.js'
   import SessionList from '$lib/components/SessionList.svelte'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
+  import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import ApprovalModal from '$lib/components/ApprovalModal.svelte'
   import type { StructuredCard } from '$lib/api/types.js'
 
   let email = ''
   let wsClient: ReturnType<typeof createWsClient> | null = null
+  // PWA install affordance (Chromium fires beforeinstallprompt when installable).
+  let installEvent: any = null
+  async function install() {
+    if (!installEvent) return
+    installEvent.prompt()
+    await installEvent.userChoice
+    installEvent = null
+  }
   // FIFO queue — multiple approvals can be in flight; show them one at a time.
   let approvalQueue: StructuredCard[] = []
   $: pendingApproval = approvalQueue[0] ?? null
@@ -71,7 +80,11 @@
     // afterNavigate doesn't fire for the first page load — handle it here.
     loadSession($page.params.sessionId)
 
+    const onBeforeInstall = (e: Event) => { e.preventDefault(); installEvent = e }
+    window.addEventListener('beforeinstallprompt', onBeforeInstall)
+
     return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall)
       wsClient?.close()
     }
   })
@@ -88,8 +101,12 @@
   <header>
     <span class="brand">ocrc</span>
     <ConnectionBadge />
+    {#if installEvent}
+      <button class="install" on:click={install}>Install</button>
+    {/if}
     <span class="email">{email}</span>
   </header>
+  <OfflineBanner />
 
   <div class="body">
     <SessionList activeId={$page.params.sessionId} />
@@ -135,6 +152,17 @@
     font-size: 0.85em;
     color: #888;
   }
+  .install {
+    margin-left: auto;
+    background: #1e3a8a;
+    color: #fff;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 0.8em;
+    cursor: pointer;
+  }
+  .install + .email { margin-left: 8px; }
   .body {
     display: flex;
     flex: 1;

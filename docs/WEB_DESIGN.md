@@ -142,12 +142,20 @@ extension fills it in once B5 is decided).
 
 ### B6 — PWA polish
 
-- **Offline shell + install**: service worker caching the app skeleton;
-  `beforeinstallprompt` install affordance.
-- **Connection UX**: a reconnecting/offline banner on top of `ConnectionBadge`.
-- **Web Push** *(needs VAPID config — gated)*: mirror Telegram's "Session
-  finished" push to subscribed PWAs. SW `push` handler + `/api/push/subscribe` +
-  VAPID keys in config. Implemented behind a config gate; no-op until keys set.
+- **Offline shell + install** *(done)*: a SvelteKit `service-worker.ts` —
+  content-hashed build assets cache-first, HTML/navigations network-first with a
+  cached offline fallback, `/api` + `/ws` never touched. This is the safe shape
+  (the old SW was removed for stale-script bugs; network-first HTML + version-
+  named cache cleanup prevents that). Manifest is now linked in `app.html` and
+  the SW makes the app installable; `beforeinstallprompt` drives an Install
+  button.
+- **Connection UX** *(done)*: an `OfflineBanner` (reconnecting/offline) above the
+  app, complementing `ConnectionBadge`.
+- **Web Push** *(TBD — needs VAPID config, parked with B5)*: mirror Telegram's
+  "Session finished" push to subscribed PWAs. Requires a SW `push` handler,
+  `/api/push/subscribe`, and VAPID keys in plugin config. Not wired yet — it
+  would be a no-op (or worse, broken) without keys, so it's deferred rather than
+  half-shipped.
 
 ---
 
