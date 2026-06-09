@@ -185,9 +185,11 @@ export function createRelay(deps: RelayDeps) {
       deps.state.setLastSessionId(sessionId)
       deps.state.setActiveAbort(sessionId, ac)
 
-      // Publish thinking + user cards now that sessionId is known
+      // Publish thinking + user cards now that sessionId is known. The user card
+      // id is derived from the incoming messageId so a web client's optimistic
+      // user card (same id) reconciles in place instead of duplicating.
       deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
-      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
+      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now(), id: `user:${msg.messageId}` })
 
       // The response arrives asynchronously via handleEvent() (opencode plugin
       // event hook). Store per-session context and return; finalization happens

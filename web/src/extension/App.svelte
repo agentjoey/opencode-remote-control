@@ -3,7 +3,6 @@
   import { getBotUrl } from '../lib/adapters/extension.js'
   import { setBaseUrl, api } from '../lib/api/client.js'
   import { createWsClient } from '../lib/ws/client.js'
-  import { connection } from '../lib/stores/connection.js'
   import { sessionList, feeds, cardsOf, upsertCard, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
   import SessionList from '../lib/components/SessionList.svelte'
@@ -27,7 +26,10 @@
       .catch(console.warn)
   }
 
-  onMount(async () => {
+  onMount(() => {
+    // Async setup runs in an inner IIFE so onMount can return a *synchronous*
+    // cleanup (Svelte rejects an async onMount that resolves to a cleanup fn).
+    void (async () => {
     try {
       botUrl = await getBotUrl()
       setBaseUrl(botUrl)
@@ -57,6 +59,7 @@
     } catch (err) {
       error = String(err)
     }
+    })()
 
     const listener = (msg: any) => {
       if (msg?.type === 'inject-prompt') {
@@ -68,16 +71,6 @@
   })
 
   $: currentCards = $activeSession ? cardsOf($feeds[$activeSession]) : []
-
-  function onSend(text: string) {
-    if (!$activeSession) return
-    fetch(`${botUrl}/api/message`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ sessionId: $activeSession, text }),
-    }).catch(console.error)
-  }
 
   $: if (scrollEl && currentCards.length) {
     setTimeout(() => { scrollEl.scrollTop = scrollEl.scrollHeight }, 50)
@@ -98,7 +91,7 @@
   <div class="app">
     <header>
       <span class="logo">ocrc</span>
-      <ConnectionBadge status={$connection} />
+      <ConnectionBadge />
     </header>
     <div class="body">
       <aside>
@@ -110,7 +103,9 @@
             <Card {card} />
           {/each}
         </div>
-        <Composer on:send={(e) => onSend(e.detail)} />
+        {#if $activeSession}
+          <Composer sessionId={$activeSession} />
+        {/if}
       </main>
     </div>
   </div>

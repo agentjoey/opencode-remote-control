@@ -14,7 +14,9 @@
 
   let email = ''
   let wsClient: ReturnType<typeof createWsClient> | null = null
-  let pendingApproval: StructuredCard | null = null
+  // FIFO queue — multiple approvals can be in flight; show them one at a time.
+  let approvalQueue: StructuredCard[] = []
+  $: pendingApproval = approvalQueue[0] ?? null
   let lastLoaded: string | null = null
 
   function loadSession(id: string | undefined) {
@@ -52,7 +54,10 @@
         if (msg.type === 'card' && msg.card) {
           upsertCard(msg.card)
           if (msg.card.kind === 'approval') {
-            pendingApproval = msg.card
+            // de-dupe by requestId, then enqueue
+            if (!approvalQueue.some((c) => (c as any).requestId === msg.card.requestId)) {
+              approvalQueue = [...approvalQueue, msg.card]
+            }
           }
         }
         // hello (on connect) and sessions (live updates) both carry the list.
@@ -94,7 +99,7 @@
   </div>
 
   {#if pendingApproval && pendingApproval.kind === 'approval'}
-    <ApprovalModal card={pendingApproval} onClose={() => (pendingApproval = null)} />
+    <ApprovalModal card={pendingApproval} onClose={() => (approvalQueue = approvalQueue.slice(1))} />
   {/if}
 </div>
 

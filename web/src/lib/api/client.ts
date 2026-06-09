@@ -30,7 +30,7 @@ export const api = {
   diff: (id: string) => jsonGet<any[]>(`/api/session/${id}/diff`),
   todo: (id: string) => jsonGet<any[]>(`/api/session/${id}/todo`),
   context: (id: string) => jsonGet<{ sessionId: string; agent?: string; model?: string; tokens?: any; cost?: number; nextAgent?: string; nextModel?: any }>(`/api/session/${id}/context`),
-  sendMessage: (body: { sessionId?: string; text: string }) => jsonPost<{ messageId: string }>('/api/message', body),
+  sendMessage: (body: { sessionId?: string; text: string; clientId?: string }) => jsonPost<{ messageId: string }>('/api/message', body),
   abort: (sessionId: string) => jsonPost<{ ok: boolean }>('/api/abort', { sessionId }),
   approve: (sessionId: string, requestId: string, decision: 'once' | 'always' | 'reject') =>
     jsonPost<{ ok: boolean }>('/api/approval', { sessionId, requestId, decision }),
