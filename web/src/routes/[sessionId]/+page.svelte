@@ -8,7 +8,7 @@
   let scrollEl: HTMLDivElement
   let lastSeen = ''
 
-  $: sessionId = $page.params.sessionId
+  $: sessionId = $page.params.sessionId ?? ''
   $: feed = $feeds[sessionId]
   $: cards = cardsOf(feed)
   // lastSeq increments on every card (including streaming upserts), so this

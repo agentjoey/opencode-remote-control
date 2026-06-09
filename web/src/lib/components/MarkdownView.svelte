@@ -1,33 +1,35 @@
 <script lang="ts">
-  import { marked } from 'marked'
-  import DOMPurify from 'dompurify'
+  import { onDestroy } from 'svelte'
+  import { renderMarkdown } from '../markdown/sanitize.js'
 
   export let src: string
+  /** Streaming cards set this so re-parses coalesce to one per animation frame. */
+  export let throttle = false
 
-  // Cap markdown rendering at 20k chars — anything longer is shown as raw text.
-  // Some assistant outputs (long extraction tasks, JSON blobs) blow up marked's
-  // tokenizer and freeze the main thread for 5+ seconds.
-  const MAX_MARKDOWN_LEN = 20_000
+  let html = ''
+  let lastApplied: string | undefined
+  let raf = 0
+  let pending = ''
 
-  function escapeHtml(s: string): string {
-    return s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+  function apply(text: string) {
+    if (text === lastApplied) return // memoize — skip re-parse of unchanged text
+    lastApplied = text
+    html = renderMarkdown(text)
   }
 
-  function render(text: string): string {
-    if (text.length > MAX_MARKDOWN_LEN) {
-      return `<pre class="raw">${escapeHtml(text)}</pre>`
+  function schedule(text: string) {
+    if (!throttle || typeof requestAnimationFrame === 'undefined') {
+      apply(text)
+      return
     }
-    try {
-      return DOMPurify.sanitize(marked.parse(text, { async: false }) as string)
-    } catch {
-      return `<pre class="raw">${escapeHtml(text)}</pre>`
-    }
+    pending = text
+    if (raf) return
+    raf = requestAnimationFrame(() => { raf = 0; apply(pending) })
   }
 
-  $: html = render(src)
+  $: schedule(src)
+
+  onDestroy(() => { if (raf) cancelAnimationFrame(raf) })
 </script>
 
 <div class="md">{@html html}</div>

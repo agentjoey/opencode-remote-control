@@ -74,7 +74,7 @@
   // afterNavigate runs after each client-side navigation completes,
   // so it never collides with the navigation's own page-store updates
   // (which used to cause an effect-update loop in the previous design).
-  afterNavigate((nav: { to: { params: Record<string, string> } | null }) => {
+  afterNavigate((nav) => {
     loadSession(nav.to?.params?.sessionId)
   })
 </script>
