@@ -78,7 +78,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
   // Push notifications — plugin mode (event-driven instead of EventStream)
   const push = startPushNotifications({ cardBus, client: ctx.client })
 
-  // Poll the TUI-selected session to keep current agent in sync (plugin mode equivalent of tui-sync)
+  // Poll the TUI-selected session to keep the current agent in sync.
   const pollTimer = setInterval(async () => {
     const sid = state.getTuiSelectedSession()
     if (!sid) return

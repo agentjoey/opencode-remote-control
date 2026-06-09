@@ -27,10 +27,9 @@
 Install once: `npx opencode-remote-control install`
 Then: `opencode` — bot auto-starts, no extra terminal, no launchd.
 
-### Sidecar mode (legacy, v0.1–v0.5.7)
-
-Same architecture as below. Set `RC_MODE=legacy` to opt out of Plugin mode
-and run the standalone Node.js process.
+> **v0.6.0:** the standalone sidecar / `EventStream` SSE path was removed. The
+> plugin runs in-process and consumes the opencode plugin **event hook**
+> directly (`relay.handleEvent`). There is no `RC_MODE=legacy` anymore.
 
 ---
 
@@ -53,10 +52,7 @@ src/
                                  v0.5.7: 3s retry on fetchSummary empty (opencode persistence race)
 
   opencode/                      ← opencode-facing
-    client.ts                    SDK client factory + health check
-    event-stream.ts              persistent SSE subscriber + 30s heartbeat reconnect
-    submit.ts                    client.session.prompt wrapper
-    tui-bridge.ts                tui.appendPrompt mirror (deprecated path)
+    submit.ts                    client.session.promptAsync wrapper
 
   transport/                     ← user-facing
     interface.ts                 Transport contract (revised: start({cardBus,state}))
@@ -65,7 +61,6 @@ src/
       handlers.ts                slash commands + button callbacks
       renderer.ts                TelegramSessionRenderer: send-only (no edit/streaming v0.5.7)
                                  sendTimed() wraps all sendMessage with 10s TCP hang timeout
-      render.ts                  legacy card→Telegram HTML (non-streaming cards)
     web/
       index.ts                   createWebTransport()
       server.ts                  Hono HTTP + static
@@ -74,8 +69,10 @@ src/
       routes/*.ts                /api/* REST endpoints
 
   utils/
-  config.ts                      zod env schema (WEB_* variables)
-  index.ts                       starts all enabled transports
+  plugin/
+    entry.ts                     plugin entrypoint — wires transports, relay, push, event hook
+    config.ts                    plugin config (env + opencode.json plugin options)
+  index.ts                       re-exports the plugin
 
 web/                             ← SvelteKit PWA + Chrome Extension
   src/
@@ -166,20 +163,22 @@ The bot keeps minimal state, persisted across restarts in `data/state.json`:
 
 ## Configuration
 
-`src/config.ts` validates env vars via zod:
+`src/plugin/config.ts` resolves config from opencode.json plugin options and
+env vars (`.env` is auto-loaded):
 
 | Var | Default | Purpose |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | — (required) | Telegram bot token from @BotFather |
-| `ALLOWED_USER_ID` | — (required) | Single allowed Telegram user id |
-| `OPENCODE_BASE_URL` | `http://localhost:4096` | opencode server location |
-| `TRANSPORT` | `telegram` | Active transport (Phase 5: `telegram,web`) |
-| `EDIT_THROTTLE_MS` | `1000` | Min interval between transport.edit calls (**Telegram: unused since v0.5.7 — Telegram no longer edits messages**) |
+| `ALLOWED_USER_IDS` | — (required) | Comma-separated allowed Telegram user ids |
+| `WEB_ENABLED` | `false` | Enable the Web/PWA transport |
+| `WEB_HOST` | `127.0.0.1` | Web bind address |
+| `WEB_PORT` | `7081` | Web port |
+| `WEB_CF_ACCESS_TEAM` / `_AUD` | — | Cloudflare Access team + audience for JWT verification |
+| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass CF Access **only for a loopback socket peer**. Off by default — a loopback bind is not safe behind a tunnel |
 | `CHAT_TIMEOUT_MS` | `600000` | Per-message timeout |
-| `STREAM_OUTPUT` | `true` | Streaming on/off (**Telegram: unused since v0.5.7 — Telegram always delivers final result only; Web: still used**) |
-| `TUI_VISIBLE` | `false` | Mirror prompts to TUI via appendPrompt |
+| `TUI_VISIBLE` | `true` | Navigate the TUI to the target session via `/tui/select-session` |
 | `STATE_PATH` | `./data/state.json` | Persistent state location |
-| `LOG_LEVEL` | `info` | debug \| info \| warn \| error |
+| `TG_CHUNK_SOFT_LIMIT` | `3500` | Telegram message pagination soft limit |
 
 ---
 

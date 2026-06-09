@@ -2,7 +2,6 @@ import type { Telegraf, Context } from 'telegraf'
 import { Markup } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { SessionState } from '../../core/state.js'
-import type { EventStream } from '../../opencode/event-stream.js'
 import type { CardBus } from '../../core/card-bus.js'
 import { createLogger } from '../../utils/logger.js'
 import { getVersionInfo } from '../../utils/version.js'
@@ -17,11 +16,9 @@ export interface HandlersDeps {
   chatId: number
   isGenerating: () => boolean
   abortGeneration: () => void
-  /** opencode server base URL — required for legacy mode, optional for Plugin mode. */
+  /** opencode server base URL (in-process plugin server). */
   baseUrl?: string
-  /** EventStream — required for legacy mode, optional for Plugin mode. */
-  eventStream?: EventStream
-  /** Shared pending-approval map so both sidecar and plugin mode use the same store. */
+  /** Shared pending-approval map. */
   pendingApprovals: Map<string, PendingApproval>
   /** CardBus — optional, available after transport start. */
   cardBus?: CardBus
@@ -835,111 +832,3 @@ export interface PendingApproval {
 }
 
 export type ApprovalResponse = 'once' | 'always' | 'reject'
-
-export function setupApproval(
-  deps: HandlersDeps,
-  pending: Map<string, PendingApproval>,
-): void {
-
-  const offUpdated = deps.eventStream!.onAny(async (rawEvent: unknown) => {
-    const ev = rawEvent as { type: string; properties: any }
-    if (ev.type?.startsWith('permission.')) {
-      log.info(`permission event: type=${ev.type} id=${ev.properties?.id} sessionID=${ev.properties?.sessionID}`)
-    }
-    // Support both v1 (permission.updated) and v2 (permission.asked) event types
-    if (ev.type !== 'permission.updated' && ev.type !== 'permission.asked') return
-
-    const permId = ev.properties?.id as string | undefined
-    const title = (ev.properties?.title as string | undefined)
-      ?? (ev.properties?.permission as string | undefined)
-      ?? 'Unknown operation'
-    const sessionId = ev.properties?.sessionID as string | undefined
-    if (!permId || !sessionId) {
-      log.warn(`${ev.type} missing id or sessionID`, ev.properties)
-      return
-    }
-
-    const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const text = `⚠️  <b>Permission Required</b>\n\n<code>${escaped}</code>`
-    const keyboard = {
-      ...Markup.inlineKeyboard([
-        [
-          Markup.button.callback('✅ Once', `approve:once:${permId}`),
-          Markup.button.callback('🔓 Always', `approve:always:${permId}`),
-          Markup.button.callback('❌ Reject', `approve:reject:${permId}`),
-        ],
-      ]),
-      parse_mode: 'HTML' as const,
-    }
-
-    try {
-      const msg = await deps.bot.telegram.sendMessage(deps.chatId, text, keyboard)
-      pending.set(permId, {
-        sessionId,
-        permissionId: permId,
-        messageId: msg.message_id,
-        title,
-      })
-      log.info(`approval card sent permId=${permId}`)
-    } catch (err) {
-      log.error('failed to send approval card', err as Error)
-    }
-
-    // Publish to CardBus so Web UI can also show the approval modal
-    try {
-      deps.cardBus?.publish({
-        kind: 'approval',
-        sessionId,
-        title,
-        args: ev.properties?.args ?? ev.properties?.permission ?? {},
-        requestId: permId,
-      })
-    } catch (err) {
-      log.warn('failed to publish approval card', err as Error)
-    }
-  })
-
-  const offReplied = deps.eventStream!.onAny(async (rawEvent: unknown) => {
-    const ev = rawEvent as { type: string; properties: any }
-    if (ev.type !== 'permission.replied') return
-
-    // v1 uses permissionID, v2 uses requestID
-    const permId = (ev.properties?.permissionID as string | undefined)
-      ?? (ev.properties?.requestID as string | undefined)
-    const response = ev.properties?.response as string | undefined
-      ?? ev.properties?.reply as string | undefined
-    if (!permId) return
-
-    const p = pending.get(permId)
-    if (!p) return
-
-    pending.delete(permId)
-    try {
-        const display = labelFor(response)
-        await deps.bot.telegram.editMessageText(
-          deps.chatId,
-          p.messageId,
-          undefined,
-          `${display} (from TUI)\n\n${p.title}`,
-          { parse_mode: 'HTML' },
-        )
-    } catch (err) {
-      log.warn(`couldn't update card after TUI reply: ${(err as Error).message}`)
-    }
-  })
-
-  // Store cleanup on bot stop (best effort)
-  ;(deps.bot as any)._approvalCleanup = () => {
-    offUpdated()
-    offReplied()
-  }
-}
-
-function labelFor(response?: string): string {
-  switch (response) {
-    case 'once':   return '✅ Allowed (once)'
-    case 'always': return '🔓 Always Allowed'
-    case 'reject': return '❌ Rejected'
-    default:       return response ?? 'Handled'
-  }
-}

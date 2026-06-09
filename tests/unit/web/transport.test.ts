@@ -5,7 +5,7 @@ describe('createWebTransport', () => {
   it('exposes name + capabilities.streaming=true', () => {
     const t = createWebTransport({
       host: '127.0.0.1', port: 7081,
-      client: {} as any, eventStream: {} as any,
+      client: {} as any,
       cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
       staticRoot: '/tmp/nonexistent',
       cacheSize: 100,
@@ -17,7 +17,7 @@ describe('createWebTransport', () => {
   it('throws on start if static root missing', async () => {
     const t = createWebTransport({
       host: '127.0.0.1', port: 0,
-      client: {} as any, eventStream: {} as any,
+      client: {} as any,
       cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
       staticRoot: '/tmp/definitely-not-here-xyz',
       cacheSize: 100,

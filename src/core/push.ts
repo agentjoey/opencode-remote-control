@@ -1,4 +1,3 @@
-import type { EventStream } from '../opencode/event-stream.js'
 import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
 import type { OpencodeClient } from '@opencode-ai/sdk'
@@ -7,8 +6,6 @@ import { createLogger } from '../utils/logger.js'
 const log = createLogger('push')
 
 export interface PushDeps {
-  /** EventStream — required for sidecar mode. */
-  eventStream?: EventStream
   cardBus: CardBus
   client: OpencodeClient
   testFailuresEnabled?: boolean
@@ -131,13 +128,10 @@ export function startPushNotifications(deps: PushDeps) {
     }
   }
 
-  // Sidecar mode: listen to EventStream
-  const unsub = deps.eventStream?.onAny(handler)
-
   return {
-    /** Plugin mode: feed events from the opencode event hook. */
+    /** Feed events from the opencode plugin event hook. */
     handleEvent: handler,
-    /** Stop the event stream listener (sidecar mode). */
-    stop: () => { unsub?.() },
+    /** No-op retained for symmetry with the plugin lifecycle. */
+    stop: () => {},
   }
 }

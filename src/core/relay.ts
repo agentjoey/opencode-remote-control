@@ -2,8 +2,6 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { CardBus } from './card-bus.js'
 import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
-import type { EventStream } from '../opencode/event-stream.js'
-import type { StructuredCard } from './structured-card.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import { submitPrompt } from '../opencode/submit.js'
 import { createLogger } from '../utils/logger.js'
@@ -16,9 +14,7 @@ export interface RelayDeps {
   state: SessionState
   chatTimeoutMs: number
   tuiVisible: boolean
-  /** EventStream — required for legacy sidecar mode, optional for Plugin mode. */
-  eventStream?: EventStream
-  /** opencode server base URL — required for TUI sync in legacy sidecar mode, unused in Plugin mode. */
+  /** opencode server base URL — used to navigate the TUI when tuiVisible. */
   baseUrl?: string
 }
 
@@ -67,35 +63,6 @@ function delayOrAbort(ms: number, signal?: AbortSignal): Promise<void> {
     }, ms)
     const onAbort = () => { clearTimeout(t); reject(new Error('aborted')) }
     signal.addEventListener('abort', onAbort, { once: true })
-  })
-}
-
-function formatK(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
-}
-
-async function waitForBusySession(eventStream: EventStream | undefined, signal: AbortSignal, timeoutMs: number): Promise<string | undefined> {
-  if (!eventStream) return undefined
-  return new Promise<string | undefined>((resolve) => {
-    let done = false
-    const finish = (sid: string | undefined) => {
-      if (done) return
-      done = true
-      clearTimeout(timer)
-      if (typeof unsub === 'function') unsub()
-      resolve(sid)
-    }
-    const timer = setTimeout(() => finish(undefined), timeoutMs)
-    const unsub = eventStream.onAny((rawEvent) => {
-      const e = rawEvent as { type?: string; properties?: any }
-      const p = e?.properties
-      if (e.type === 'session.status' && p?.status?.type === 'busy') {
-        const sid = typeof p?.sessionID === 'string' ? p.sessionID : undefined
-        if (sid) finish(sid)
-      }
-    })
-    signal.addEventListener('abort', () => finish(undefined), { once: true })
   })
 }
 
@@ -187,42 +154,21 @@ export function createRelay(deps: RelayDeps) {
       const nextAgent = deps.state.getNextAgent()
       const nextModel = deps.state.getNextModel()
 
-      let resolvedId: string | undefined
-      const hasOverrides = !!(nextAgent || nextModel)
-
-      if (!hasOverrides && !deps.state.getPinnedSessionId() && deps.tuiVisible && deps.eventStream) {
-        try {
-          await deps.client.tui.appendPrompt({ body: { text: msg.text } } as any)
-          await (deps.client.tui as any).submitPrompt()
-          log.info('submitted via TUI, waiting for busy session…')
-          resolvedId = await waitForBusySession(deps.eventStream, ac.signal, 4000)
-          if (resolvedId) {
-            log.info(`TUI routed to session=${resolvedId.slice(-8)}`)
-          } else {
-            log.warn('TUI submit succeeded but no busy event within 4s, falling back')
-          }
-        } catch (err) {
-          log.warn(`TUI submit failed: ${(err as Error).message}, falling back to direct API`)
-        }
+      const pinnedSession = deps.state.getPinnedSessionId()
+      const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
+      const lastSession = deps.state.getLastSessionId()
+      const resolvedId = pinnedSession ?? tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
+      log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+      if (deps.tuiVisible) {
+        await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
       }
-
-      if (!resolvedId) {
-        const pinnedSession = deps.state.getPinnedSessionId()
-        const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
-        const lastSession = deps.state.getLastSessionId()
-        resolvedId = pinnedSession ?? tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
-        log.info(`submitting directly to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
-        if (deps.tuiVisible) {
-          await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
-        }
-        await submitWithRetry(deps.client, {
-          text: msg.text,
-          sessionId: resolvedId,
-          agent: nextAgent,
-          model: nextModel,
-          signal: ac.signal,
-        })
-      }
+      await submitWithRetry(deps.client, {
+        text: msg.text,
+        sessionId: resolvedId,
+        agent: nextAgent,
+        model: nextModel,
+        signal: ac.signal,
+      })
 
       sessionId = resolvedId
       deps.state.setLastSessionId(sessionId)
@@ -232,113 +178,24 @@ export function createRelay(deps: RelayDeps) {
       deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
       deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now() })
 
-      // Plugin mode: response arrives via handleEvent(). Store context and return.
-      if (!deps.eventStream) {
-        cleanupPluginSession(sessionId)
-        const ctx: PluginSessionCtx = {
-          sessionId,
-          acc: createStreamAccumulator(),
-          processedPartIds: new Set(),
-          partTextAcc: new Map(),
-          signal: ac.signal,
-          timer,
-        }
-        pluginSessions.set(sessionId, ctx)
-        return
-      }
-
-      // Sidecar mode: process response via SSE loop
-      let assistantMessageId: string | undefined
-      const acc = createStreamAccumulator()
-      const processedPartIds = new Set<string>()
-      const partTextAcc = new Map<string, string>()
-
-      for await (const ev of deps.eventStream.session(sessionId, ac.signal)) {
-        const e = ev as { type: string; properties: any }
-        const p = e.properties
-
-        log.debug(`SSE event: ${e.type}`, JSON.stringify(p).slice(0, 500))
-
-        if (e.type === 'session.idle') {
-          log.info('session idle, breaking')
-          break
-        }
-        if (e.type === 'session.status' && p?.status?.type === 'idle') {
-          log.info('session status idle, breaking')
-          break
-        }
-        if (e.type === 'session.error') {
-          const err = p?.error
-          const errMsg = err?.data?.message ?? err?.message ?? err?.name ?? 'session error'
-          throw new Error(errMsg)
-        }
-
-        if (e.type === 'message.part.updated') {
-          const part = p?.part
-          if (!part) {
-            log.info('message.part.updated with no part')
-            continue
-          }
-
-          if (!assistantMessageId && typeof part.messageID === 'string') {
-            assistantMessageId = part.messageID
-            log.info(`assistantMessageId set: ${assistantMessageId}`)
-          }
-
-          const partId = typeof part.id === 'string' ? part.id : undefined
-          const effectiveId = partId ?? `${part.type ?? 'unknown'}:${JSON.stringify(part.state?.input ?? {}).slice(0, 60)}`
-
-          const input: PartInput = {
-            id: effectiveId,
-            type: part.type,
-            text: part.text,
-            tool: part.tool,
-            state: part.state,
-          }
-          const isNewPart = partId ? !processedPartIds.has(partId) : true
-          if (partId && isNewPart) processedPartIds.add(partId)
-
-          const blocks = acc.update([input])
-
-          if (part.type === 'text') {
-            if (typeof p.delta === 'string') {
-              log.info(`delta received (${p.delta.length} chars): "${p.delta.slice(0, 50)}..."`)
-            } else if (isNewPart && typeof part.text === 'string') {
-              log.info(`full text received (${part.text.length} chars): "${part.text.slice(0, 50)}..."`)
-              if (partId) partTextAcc.set(partId, part.text)
-            } else {
-              log.info(`text part ignored - delta: ${typeof p.delta}, text: ${typeof part.text}, isNew: ${isNewPart}`)
-            }
-          }
-
-          deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
-        }
-
-        if (e.type === 'message.part.delta') {
-          if (!assistantMessageId && typeof p?.messageID === 'string') {
-            assistantMessageId = p.messageID
-          }
-          const partId = p?.partID as string | undefined
-          const field = p?.field as string | undefined
-          const delta = p?.delta as string | undefined
-          if (partId && field === 'text' && typeof delta === 'string') {
-            const prev = partTextAcc.get(partId) ?? ''
-            const fullText = prev + delta
-            partTextAcc.set(partId, fullText)
-            const blocks = acc.update([{ id: partId, type: 'text', text: fullText }])
-            deps.cardBus.publish({ kind: 'streaming', sessionId, blocks })
-          }
-        }
-      }
-
-      await publishAssistantCard({
+      // The response arrives asynchronously via handleEvent() (opencode plugin
+      // event hook). Store per-session context and return; finalization happens
+      // on session.idle. Clean up the ctx + abort if this run is cancelled.
+      cleanupPluginSession(sessionId)
+      const ctx: PluginSessionCtx = {
         sessionId,
-        acc,
-        assistantMessageId,
-      })
-
-      clearTimeout(timer)
-      deps.state.setActiveAbort(sessionId, undefined)
+        acc: createStreamAccumulator(),
+        processedPartIds: new Set(),
+        partTextAcc: new Map(),
+        signal: ac.signal,
+        timer,
+      }
+      pluginSessions.set(sessionId, ctx)
+      ac.signal.addEventListener('abort', () => {
+        cleanupPluginSession(sessionId)
+        deps.state.setActiveAbort(sessionId, undefined)
+      }, { once: true })
+      return
     } catch (err) {
       const e = err as Error
       if (ac.signal.aborted) {
@@ -414,10 +271,10 @@ export function createRelay(deps: RelayDeps) {
   }
 
   /**
-   * handleEvent — Plugin mode event dispatch.
-   * Receives individual events from the opencode Plugin event hook.
-   * In Plugin mode (eventStream undefined), this handles streaming events
-   * that would otherwise be processed by the SSE loop in sidecar mode.
+   * handleEvent — opencode plugin event dispatch.
+   * Receives individual events from the opencode plugin event hook and drives
+   * streaming/finalization for the in-flight session (message.part.updated,
+   * message.part.delta, session.idle, session.error).
    */
   relay.handleEvent = async function handleEvent(raw: { type?: string; properties?: any; [key: string]: any }) {
     const eventType = raw.type
@@ -425,8 +282,7 @@ export function createRelay(deps: RelayDeps) {
 
     const p = raw.properties ?? {}
 
-    // Plugin mode streaming: process message.part.updated and message.part.delta
-    if (!deps.eventStream) {
+    {
       const sid = extractSessionID(raw)
       const ctx = sid ? pluginSessions.get(sid) : undefined
 
@@ -525,7 +381,7 @@ export function createRelay(deps: RelayDeps) {
         return
       }
 
-      // message.updated — track assistantMessageId when part context is missing
+      // message.updated — debug-trace only; finalization is driven by session.idle
       if (eventType === 'message.updated') {
         const info = p?.info
         if (info?.sessionID && !sid) {
@@ -533,40 +389,6 @@ export function createRelay(deps: RelayDeps) {
         }
         return
       }
-    }
-
-    // Sidecar mode or events that don't need Plugin streaming handling
-    switch (eventType) {
-      case 'session.idle': {
-        const sid = p?.sessionID ?? p?.sessionId
-        if (sid) {
-          log.info(`[plugin] session idle: ${sid.slice(-8)}`)
-          deps.cardBus.publish({ kind: 'status', sessionId: sid, fields: { status: 'idle' } })
-        }
-        break
-      }
-      case 'session.error': {
-        const sid = p?.sessionID ?? p?.sessionId
-        const errMsg = p?.error?.message ?? p?.error ?? p?.message ?? 'session error'
-        const sessionId = sid || 'unknown'
-        log.warn(`[plugin] session error: ${String(errMsg)}`)
-        deps.cardBus.publish({ kind: 'error', sessionId, message: String(errMsg) })
-        break
-      }
-      case 'message.updated': {
-        const info = p?.info
-        const sid = info?.sessionID
-        if (!sid) break
-        log.debug(`[plugin] message.updated session=${sid.slice(-8)}`)
-        break
-      }
-      case 'permission.asked':
-      case 'permission.replied':
-      case 'command.executed':
-        // These are forwarded but handled by Transport handlers directly.
-        break
-      default:
-        log.debug(`[plugin] unhandled event: ${eventType}`)
     }
   }
 

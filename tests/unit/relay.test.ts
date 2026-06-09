@@ -26,14 +26,6 @@ function fakeClient() {
   } as any
 }
 
-function fakeEventStream(events: any[] = []) {
-  return {
-    session: async function* () { for (const e of events) yield e },
-    onAny: vi.fn().mockReturnValue(() => {}),
-    setStatusChecker: vi.fn(),
-  } as any
-}
-
 function fakeState() {
   let sid: string | undefined = 'ses_test'
   let agent: string | undefined
@@ -64,7 +56,7 @@ function fakeState() {
 }
 
 describe('createRelay', () => {
-  it('publishes thinking + user + assistant sequence', async () => {
+  it('publishes thinking + user cards after submit, no assistant card until idle', async () => {
     const cardBus = createCardBus()
     const cards: StructuredCard[] = []
     cardBus.subscribeAll((c) => cards.push(c))
@@ -72,7 +64,6 @@ describe('createRelay', () => {
     const relay = createRelay({
       cardBus,
       client: fakeClient(),
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
@@ -82,88 +73,24 @@ describe('createRelay', () => {
 
     expect(cards.some(c => c.kind === 'thinking')).toBe(true)
     expect(cards.some(c => c.kind === 'user' && (c as any).text === 'hi')).toBe(true)
-    expect(cards.some(c => c.kind === 'assistant')).toBe(true)
+    // assistant is published asynchronously via handleEvent on session.idle
+    expect(cards.some(c => c.kind === 'assistant')).toBe(false)
   })
 
-  it('publishes streaming card with merged tools', async () => {
-    const cardBus = createCardBus()
-    const cards: StructuredCard[] = []
-    cardBus.subscribeAll((c) => cards.push(c))
-
-    const relay = createRelay({
-      cardBus,
-      client: fakeClient(),
-      eventStream: fakeEventStream([
-        { type: 'message.part.updated', properties: { messageID: 'm1', part: { id: 't1', type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } } } },
-        { type: 'session.idle', properties: {} },
-      ]),
-      state: fakeState(),
-      chatTimeoutMs: 5000,
-      tuiVisible: false,
-      baseUrl: 'http://localhost:4096',
-    })
-    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
-
-    const streaming = cards.filter(c => c.kind === 'streaming')
-    expect(streaming.length).toBeGreaterThan(0)
-    expect((streaming[streaming.length - 1] as any).blocks.some((b: any) => b.type === 'tool' && b.tool === 'bash')).toBe(true)
-  })
-
-  it('publishes error card on session.error', async () => {
-    const cardBus = createCardBus()
-    const cards: StructuredCard[] = []
-    cardBus.subscribeAll((c) => cards.push(c))
-
-    const relay = createRelay({
-      cardBus,
-      client: fakeClient(),
-      eventStream: fakeEventStream([
-        { type: 'session.error', properties: { error: { message: 'boom' } } },
-      ]),
-      state: fakeState(),
-      chatTimeoutMs: 5000,
-      tuiVisible: false,
-      baseUrl: 'http://localhost:4096',
-    })
-    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
-
-    expect(cards.some(c => c.kind === 'error' && (c as any).message === 'boom')).toBe(true)
-  })
-
-  it('submits via TUI when tuiVisible and no overrides and no pin (auto session detection)', async () => {
-    const client = fakeClient()
-    const relay = createRelay({
-      cardBus: createCardBus(),
-      client,
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
-      state: fakeState(),
-      chatTimeoutMs: 5000,
-      tuiVisible: true,
-      baseUrl: 'http://localhost:4096',
-    })
-    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.tui.appendPrompt).toHaveBeenCalledWith({ body: { text: 'hi' } })
-    expect(client.tui.submitPrompt).toHaveBeenCalled()
-  })
-
-  it('does NOT call TUI when session is pinned (uses direct API even with tuiVisible)', async () => {
+  it('navigates the TUI via /tui/select-session when tuiVisible', async () => {
     const client = fakeClient()
     const state = fakeState()
     state.getPinnedSessionId = () => 'ses_pinned'
     const relay = createRelay({
       cardBus: createCardBus(),
       client,
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state,
       chatTimeoutMs: 5000,
       tuiVisible: true,
       baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(client.tui.appendPrompt).not.toHaveBeenCalled()
-    expect(client.tui.submitPrompt).not.toHaveBeenCalled()
     expect(client.session.promptAsync).toHaveBeenCalled()
-    // With tuiVisible=true, Strategy 2 should also call /tui/select-session
     expect((globalThis.fetch as any)).toHaveBeenCalledWith(
       'http://localhost:4096/tui/select-session',
       expect.objectContaining({ method: 'POST' }),
@@ -183,7 +110,6 @@ describe('createRelay', () => {
     const relay = createRelay({
       cardBus: createCardBus(),
       client,
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state,
       chatTimeoutMs: 120000,
       tuiVisible: false,
@@ -206,7 +132,6 @@ describe('createRelay', () => {
     const relay = createRelay({
       cardBus,
       client,
-      eventStream: fakeEventStream([]),
       state,
       chatTimeoutMs: 120000,
       tuiVisible: false,
@@ -231,7 +156,6 @@ describe('createRelay', () => {
     const relay = createRelay({
       cardBus,
       client,
-      eventStream: fakeEventStream([]),
       state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
@@ -255,7 +179,6 @@ describe('createRelay', () => {
     const relay = createRelay({
       cardBus: createCardBus(),
       client,
-      eventStream: fakeEventStream([]),
       state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
@@ -269,28 +192,30 @@ describe('createRelay', () => {
     expect(client.session.promptAsync).toHaveBeenCalledTimes(1)
   })
 
-  it('registers abort controller in state during run', async () => {
+  it('registers abort controller during run, clears it on idle', async () => {
     const state = fakeState()
     state.getPinnedSessionId = () => 'ses_test'
     const relay = createRelay({
       cardBus: createCardBus(),
       client: fakeClient(),
-      eventStream: fakeEventStream([{ type: 'session.idle', properties: {} }]),
       state,
       chatTimeoutMs: 5000,
       tuiVisible: false,
       baseUrl: 'http://localhost:4096',
     })
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })
-    expect(state.setActiveAbort).toHaveBeenCalledTimes(3)
-    expect(state.setActiveAbort).toHaveBeenNthCalledWith(1, 'ses_test', expect.any(AbortController))
-    expect(state.setActiveAbort).toHaveBeenNthCalledWith(2, 'ses_test', expect.any(AbortController))
-    expect(state.setActiveAbort).toHaveBeenNthCalledWith(3, 'ses_test', undefined)
+    // registered with an AbortController while in flight
+    expect(state.setActiveAbort).toHaveBeenCalledWith('ses_test', expect.any(AbortController))
+    expect(state.getActiveAbort('ses_test')).toBeInstanceOf(AbortController)
+    // session idle clears it
+    await relay.handleEvent({ type: 'session.idle', properties: { sessionID: 'ses_test' } })
+    expect(state.setActiveAbort).toHaveBeenCalledWith('ses_test', undefined)
+    expect(state.getActiveAbort('ses_test')).toBeUndefined()
   })
 
-  // ── Plugin mode tests (eventStream = undefined) ──
+  // ── Streaming + finalization via the plugin event hook ──
 
-  describe('Plugin mode (no eventStream)', () => {
+  describe('plugin event hook', () => {
     it('publishes thinking + user cards and returns without assistant card', async () => {
       const cardBus = createCardBus()
       const cards: StructuredCard[] = []
@@ -301,7 +226,6 @@ describe('createRelay', () => {
       const relay = createRelay({
         cardBus,
         client: fakeClient(),
-        // no eventStream → Plugin mode
         state,
         chatTimeoutMs: 5000,
         tuiVisible: false,
@@ -311,7 +235,6 @@ describe('createRelay', () => {
 
       expect(cards.some(c => c.kind === 'thinking')).toBe(true)
       expect(cards.some(c => c.kind === 'user' && (c as any).text === 'plugin test')).toBe(true)
-      // In Plugin mode, assistant is NOT published synchronously — handleEvent handles it later
       expect(cards.some(c => c.kind === 'assistant')).toBe(false)
       expect(cards.some(c => c.kind === 'error')).toBe(false)
     })
@@ -333,7 +256,6 @@ describe('createRelay', () => {
       })
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p2' })
 
-      // Simulate SDK event hook
       await relay.handleEvent({
         type: 'message.part.updated',
         properties: {
@@ -403,7 +325,6 @@ describe('createRelay', () => {
       })
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p4' })
 
-      // Clear thinking/user cards for clean verification
       cards.length = 0
 
       await relay.handleEvent({
@@ -433,7 +354,6 @@ describe('createRelay', () => {
       })
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p5' })
 
-      // First: full text part to establish partId
       await relay.handleEvent({
         type: 'message.part.updated',
         properties: {
@@ -441,8 +361,6 @@ describe('createRelay', () => {
           part: { id: 'd1', type: 'text', text: 'Hello' },
         },
       })
-
-      // Deltas append to existing text
       await relay.handleEvent({
         type: 'message.part.delta',
         properties: { partID: 'd1', field: 'text', delta: ' world', sessionID: 'ses_plugin' },
@@ -451,13 +369,10 @@ describe('createRelay', () => {
         type: 'message.part.delta',
         properties: { partID: 'd1', field: 'text', delta: '!', sessionID: 'ses_plugin' },
       })
-
       await relay.handleEvent({
         type: 'session.idle',
         properties: { sessionID: 'ses_plugin' },
       })
-
-      // publishAssistantCard is deferred via setTimeout(0); wait for it
       await new Promise((r) => setTimeout(r, 10))
 
       const assistantCard = cards.find(c => c.kind === 'assistant') as any
@@ -465,7 +380,7 @@ describe('createRelay', () => {
       expect(assistantCard.blocks.some((b: any) => b.type === 'text' && b.text === 'Hello world!')).toBe(true)
     })
 
-    it('handles tool updates in Plugin mode', async () => {
+    it('deduplicates tools by part.id on repeated tool updates', async () => {
       const cardBus = createCardBus()
       const cards: StructuredCard[] = []
       cardBus.subscribeAll((c) => cards.push(c))
@@ -480,62 +395,26 @@ describe('createRelay', () => {
         tuiVisible: false,
         baseUrl: 'http://localhost:4096',
       })
-      await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p6' })
+      await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'p6' })
 
       await relay.handleEvent({
         type: 'message.part.updated',
-        properties: {
-          sessionID: 'ses_plugin',
-          part: { id: 'tool1', type: 'tool', tool: 'bash', state: { input: { cmd: 'ls -la' }, status: 'running' } },
-        },
+        properties: { sessionID: 'ses_plugin', part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'running' } } },
       })
       await relay.handleEvent({
         type: 'message.part.updated',
-        properties: {
-          sessionID: 'ses_plugin',
-          part: { id: 'tool1', type: 'tool', tool: 'bash', state: { input: { cmd: 'ls -la' }, status: 'done' } },
-        },
+        properties: { sessionID: 'ses_plugin', part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'done' } } },
       })
       await relay.handleEvent({
         type: 'session.idle',
         properties: { sessionID: 'ses_plugin' },
       })
-
-      // publishAssistantCard is deferred via setTimeout(0); wait for it
       await new Promise((r) => setTimeout(r, 10))
 
-      const assistantCard = cards.find(c => c.kind === 'assistant') as any
-      expect(assistantCard).toBeDefined()
-      const toolBlocks = assistantCard.blocks.filter((b: any) => b.type === 'tool')
-      expect(toolBlocks.length).toBe(1)
-      expect(toolBlocks[0].status).toBe('done')
+      const final = cards.find(c => c.kind === 'assistant') as any
+      const bashBlocks = final.blocks.filter((b: any) => b.type === 'tool' && b.tool === 'bash')
+      expect(bashBlocks.length).toBe(1)
+      expect(bashBlocks[0].status).toBe('done')
     })
-  })
-
-  it('deduplicates tools by part.id on repeated tool updates', async () => {
-    const cardBus = createCardBus()
-    const cards: StructuredCard[] = []
-    cardBus.subscribeAll((c) => cards.push(c))
-
-    const relay = createRelay({
-      cardBus,
-      client: fakeClient(),
-      eventStream: fakeEventStream([
-        { type: 'message.part.updated', properties: { part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'running' } } } },
-        { type: 'message.part.updated', properties: { part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'done' } } } },
-        { type: 'session.idle', properties: {} },
-      ]),
-      state: fakeState(),
-      chatTimeoutMs: 5000,
-      tuiVisible: false,
-      baseUrl: 'http://localhost:4096',
-    })
-    await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'msg' })
-
-    // Should NOT have 2 bash entries — only 1 (updated from running to done)
-    const final = cards.find(c => c.kind === 'assistant') as any
-    const bashBlocks = final.blocks.filter((b: any) => b.type === 'tool' && b.tool === 'bash')
-    expect(bashBlocks.length).toBe(1)
-    expect(bashBlocks[0].status).toBe('done')
   })
 })

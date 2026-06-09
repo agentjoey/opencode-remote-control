@@ -4,10 +4,9 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { SessionState } from '../../core/state.js'
-import type { EventStream } from '../../opencode/event-stream.js'
 import type { CardBus } from '../../core/card-bus.js'
 import { TelegramSessionRenderer } from './renderer.js'
-import { registerHandlers, setupApproval } from './handlers.js'
+import { registerHandlers } from './handlers.js'
 import type { PendingApproval, ApprovalResponse } from './handlers.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -18,10 +17,8 @@ export interface TelegramConfig {
   allowedUserIds: number[]
   client: OpencodeClient
   state: SessionState
-  /** opencode server base URL — required for legacy sidecar mode, optional for Plugin mode. */
+  /** opencode server base URL (in-process plugin server). */
   baseUrl?: string
-  /** EventStream — required for legacy sidecar mode, optional for Plugin mode. */
-  eventStream?: EventStream
   /** Project directory where opencode.json lives. */
   opencodeProject?: string
   /** Telegram chunk soft limit for message pagination (default 3500). */
@@ -101,7 +98,6 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     client: cfg.client,
     baseUrl: cfg.baseUrl ?? '',
     state: cfg.state,
-    eventStream: cfg.eventStream as EventStream,
     chatId: cfg.allowedUserIds[0],
     isGenerating: () => isGenerating,
     abortGeneration,
@@ -145,25 +141,6 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       const { cardBus } = deps
       cardBusRef = cardBus
       const chatId = String(cfg.allowedUserIds[0])
-
-      // Wire approval eventStream listener (sidecar mode only)
-      if (cfg.eventStream) {
-        setupApproval(
-          {
-            bot,
-            client: cfg.client,
-            baseUrl: cfg.baseUrl ?? '',
-            state: cfg.state,
-            eventStream: cfg.eventStream,
-            chatId: cfg.allowedUserIds[0],
-            isGenerating: () => isGenerating,
-            abortGeneration,
-            pendingApprovals,
-            cardBus,
-          },
-          pendingApprovals,
-        )
-      }
 
       cardBus.subscribeAll((card) => {
         if ('sessionId' in card && card.sessionId) {
