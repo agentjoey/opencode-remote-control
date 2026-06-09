@@ -20,6 +20,15 @@ function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+/** Strip HTML tags and unescape entities — used for the plain-text send fallback. */
+function stripTags(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
 /** Wrap a promise with a 10s timeout to prevent hanging on stuck TCP connections. */
 async function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
   const result = await Promise.race([
@@ -42,25 +51,36 @@ function metaFooter(meta: AssistantMeta): string {
   return parts.join('  ·  ')
 }
 
-function findBoundary(md: string, near: number): number {
-  const para = md.lastIndexOf('\n\n', near)
-  if (para >= near - 500 && para > 0) return para + 2
-  const line = md.lastIndexOf('\n', near)
-  if (line >= near - 200 && line > 0) return line + 1
-  return near
+/** Hard-split a single line that is itself longer than perChunk. */
+function hardWrap(line: string, perChunk: number): string[] {
+  if (line.length <= perChunk) return [line]
+  const parts: string[] = []
+  for (let i = 0; i < line.length; i += perChunk) parts.push(line.slice(i, i + perChunk))
+  return parts
 }
 
-function splitMarkdown(md: string, perChunk: number): string[] {
+/**
+ * Split markdown into chunks under perChunk, breaking only at line boundaries.
+ * Breaking at line boundaries (never mid-line) avoids splitting an inline bold
+ * or code token across two messages, which renders as unbalanced HTML and trips
+ * Telegram's "can't parse entities" 400. A fenced code block smaller than
+ * perChunk stays intact; one larger than perChunk is broken (each chunk is
+ * still valid HTML — markdownToTelegramHtml closes a dangling fence).
+ */
+export function splitMarkdown(md: string, perChunk: number): string[] {
   const out: string[] = []
-  let pos = 0
-  while (pos < md.length) {
-    const remaining = md.slice(pos)
-    if (remaining.length <= perChunk) { out.push(remaining); break }
-    const cut = findBoundary(remaining, perChunk)
-    out.push(remaining.slice(0, cut))
-    pos += cut
+  let cur: string[] = []
+  let curLen = 0
+  const flush = () => { if (cur.length) { out.push(cur.join('\n')); cur = []; curLen = 0 } }
+  for (const rawLine of md.split('\n')) {
+    for (const line of hardWrap(rawLine, perChunk)) {
+      if (cur.length > 0 && curLen + line.length + 1 > perChunk) flush()
+      cur.push(line)
+      curLen += line.length + 1
+    }
   }
-  return out
+  flush()
+  return out.length ? out : ['']
 }
 
 function collapseTools(tools: ToolCall[]): ToolCall[] {
@@ -106,13 +126,23 @@ export class TelegramSessionRenderer {
     this.chunkSoftLimit = opts.chunkSoftLimit ?? Number(process.env.TG_CHUNK_SOFT_LIMIT ?? DEFAULT_CHUNK_SOFT_LIMIT)
   }
 
-  /** sendMessage with 10s timeout to prevent TCP hang. */
+  /**
+   * sendMessage with a 10s timeout to prevent TCP hang. If Telegram rejects the
+   * HTML (can't parse entities), retry once as plain text so the content is
+   * still delivered rather than silently dropped.
+   */
   private async sendTimed(text: string, extra?: Record<string, unknown>): Promise<{ message_id: number }> {
-    const result: { message_id: number } = await withTimeout(
-      this.bot.sendMessage(this.chatId, text, extra ?? {}),
-      'sendMessage',
-    )
-    return result
+    try {
+      return await withTimeout(this.bot.sendMessage(this.chatId, text, extra ?? {}), 'sendMessage')
+    } catch (err) {
+      const msg = (err as Error).message ?? ''
+      if (extra && 'parse_mode' in extra && /parse entities|parse_mode|unsupported start tag|can't find end/i.test(msg)) {
+        log.warn(`sendMessage HTML parse error, retrying as plain text: ${msg}`)
+        const { parse_mode, ...rest } = extra
+        return await withTimeout(this.bot.sendMessage(this.chatId, stripTags(text), rest), 'sendMessage(plain)')
+      }
+      throw err
+    }
   }
 
   async onCard(card: StructuredCard): Promise<void> {
