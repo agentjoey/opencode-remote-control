@@ -53,11 +53,16 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
   })
 
   let messageHandler: ((msg: IncomingMessage) => Promise<void>) | undefined
-  let isGenerating = false
-  let currentAbortController: AbortController | undefined
+  // "Generating" is derived from the relay's per-session abort registry, not a
+  // local flag. The relay returns immediately (the response arrives via the
+  // event hook), so a local flag would clear before generation finishes. The
+  // registry is set when a run starts and cleared on session.idle/error/abort.
+  const isGenerating = () => cfg.state.hasActiveGeneration()
 
+  /** Abort the in-flight generation for the bot's target session (pinned ?? last). */
   function abortGeneration() {
-    currentAbortController?.abort()
+    const sid = cfg.state.getPinnedSessionId() ?? cfg.state.getLastSessionId()
+    if (sid) cfg.state.getActiveAbort(sid)?.abort()
   }
 
   // Wire text handler
@@ -68,13 +73,10 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     if (m.text.startsWith('/')) return next()
     if (!messageHandler) return next()
 
-    if (isGenerating) {
+    if (isGenerating()) {
       void ctx.reply('Session is already generating. Wait for it or /abort.')
       return
     }
-
-    isGenerating = true
-    currentAbortController = new AbortController()
 
     const msg: IncomingMessage = {
       userId: String(ctx.from!.id),
@@ -83,13 +85,10 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       messageId: String(m.message_id),
     }
 
-    void messageHandler(msg).finally(() => {
-      isGenerating = false
-      currentAbortController = undefined
-    })
+    void messageHandler(msg)
   })
 
-  // Plugin-mode approval state (used when eventStream is unavailable)
+  // Plugin-mode approval state
   const pendingApprovals = new Map<string, PendingApproval>()
 
   // Register commands + callbacks
@@ -99,7 +98,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     baseUrl: cfg.baseUrl ?? '',
     state: cfg.state,
     chatId: cfg.allowedUserIds[0],
-    isGenerating: () => isGenerating,
+    isGenerating,
     abortGeneration,
     pendingApprovals,
     opencodeProject: cfg.opencodeProject,

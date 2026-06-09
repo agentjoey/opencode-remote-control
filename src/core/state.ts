@@ -28,6 +28,8 @@ export interface SessionState {
   setCurrentAgent(name: string | undefined): void
   getActiveAbort(sessionId: string): AbortController | undefined
   setActiveAbort(sessionId: string, ac: AbortController | undefined): void
+  /** True while any session has an in-flight generation (abort registered). */
+  hasActiveGeneration(): boolean
   getSessionCost(sessionId: string): number | undefined
   setSessionCost(sessionId: string, cost: number | undefined): void
   flush(): Promise<void>
@@ -99,6 +101,7 @@ export function createFileBackedState(path: string): SessionState {
       if (ac === undefined) aborts.delete(sid)
       else aborts.set(sid, ac)
     },
+    hasActiveGeneration: () => aborts.size > 0,
     getSessionCost: (sid) => sessionCosts.get(sid),
     setSessionCost: (sid, cost) => {
       if (cost === undefined) sessionCosts.delete(sid)

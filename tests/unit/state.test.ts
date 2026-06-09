@@ -63,4 +63,15 @@ describe('SessionState', () => {
     expect(b.getTuiSelectedSession()).toBe('ses_xyz')
     expect(b.getCurrentAgent()).toBe('build')
   })
+
+  it('tracks active generation via the abort registry', () => {
+    const s = createFileBackedState(join(dir, 'state.json'))
+    expect(s.hasActiveGeneration()).toBe(false)
+    const ac = new AbortController()
+    s.setActiveAbort('ses_1', ac)
+    expect(s.hasActiveGeneration()).toBe(true)
+    expect(s.getActiveAbort('ses_1')).toBe(ac)
+    s.setActiveAbort('ses_1', undefined)
+    expect(s.hasActiveGeneration()).toBe(false)
+  })
 })
