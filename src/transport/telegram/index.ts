@@ -187,10 +187,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
         let conflictCount = 0
         for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
           try {
-            await Promise.race([
-              bot.launch(),
-              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('bot.launch timeout (60s)')), 60_000)),
-            ])
+            await bot.launch()
             log.info('bot polling ended cleanly')
             return
           } catch (err) {
