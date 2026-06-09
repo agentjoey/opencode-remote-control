@@ -3,8 +3,7 @@
   import { getBotUrl } from '../lib/adapters/extension.js'
   import { setBaseUrl, api } from '../lib/api/client.js'
   import { createWsClient } from '../lib/ws/client.js'
-  import { connection } from '../lib/stores/connection.js'
-  import { sessionList, cardsBySession, appendCard, setHistory } from '../lib/stores/sessions.js'
+  import { sessionList, feeds, cardsOf, upsertCard, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
   import SessionList from '../lib/components/SessionList.svelte'
   import Card from '../lib/components/Card.svelte'
@@ -20,12 +19,17 @@
   function handleSelect(id: string) {
     activeSession.set(id)
     api.history(id)
-      .then((cards) => setHistory(id, cards))
+      .then(({ cards, lastSeq }) => {
+        setHistory(id, cards, lastSeq)
+        wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq: lastSeq })
+      })
       .catch(console.warn)
-    wsClient?.send({ type: 'subscribe', sessionId: id })
   }
 
-  onMount(async () => {
+  onMount(() => {
+    // Async setup runs in an inner IIFE so onMount can return a *synchronous*
+    // cleanup (Svelte rejects an async onMount that resolves to a cleanup fn).
+    void (async () => {
     try {
       botUrl = await getBotUrl()
       setBaseUrl(botUrl)
@@ -36,14 +40,15 @@
         onReconnect: () => {
           const id = $activeSession
           if (id) {
-            wsClient?.send({ type: 'subscribe', sessionId: id })
+            const sinceSeq = $feeds[id]?.lastSeq ?? 0
+            wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq })
           }
         },
         onMessage: (msg) => {
           if (msg.type === 'hello' && msg.sessions) {
             sessionList.set(msg.sessions)
           } else if (msg.type === 'card' && msg.card) {
-            appendCard(msg.card)
+            upsertCard(msg.card)
           } else if (msg.type === 'sessions' && msg.sessions) {
             sessionList.set(msg.sessions)
           }
@@ -54,6 +59,7 @@
     } catch (err) {
       error = String(err)
     }
+    })()
 
     const listener = (msg: any) => {
       if (msg?.type === 'inject-prompt') {
@@ -64,17 +70,7 @@
     return () => chrome.runtime.onMessage.removeListener(listener)
   })
 
-  $: currentCards = $activeSession ? ($cardsBySession[$activeSession] ?? []) : []
-
-  function onSend(text: string) {
-    if (!$activeSession) return
-    fetch(`${botUrl}/api/message`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ sessionId: $activeSession, text }),
-    }).catch(console.error)
-  }
+  $: currentCards = $activeSession ? cardsOf($feeds[$activeSession]) : []
 
   $: if (scrollEl && currentCards.length) {
     setTimeout(() => { scrollEl.scrollTop = scrollEl.scrollHeight }, 50)
@@ -95,7 +91,7 @@
   <div class="app">
     <header>
       <span class="logo">ocrc</span>
-      <ConnectionBadge status={$connection} />
+      <ConnectionBadge />
     </header>
     <div class="body">
       <aside>
@@ -103,11 +99,13 @@
       </aside>
       <main>
         <div class="cards" bind:this={scrollEl}>
-          {#each currentCards as card (card.kind + (card as any).sessionId + (card as any).ts)}
+          {#each currentCards as card (card.id)}
             <Card {card} />
           {/each}
         </div>
-        <Composer on:send={(e) => onSend(e.detail)} />
+        {#if $activeSession}
+          <Composer sessionId={$activeSession} />
+        {/if}
       </main>
     </div>
   </div>

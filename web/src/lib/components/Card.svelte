@@ -31,7 +31,7 @@
 {:else if card.kind === 'approval'}
   <!-- Approval rendered by +layout.svelte modal -->
 {:else}
-  <div class="card placeholder">[{card.kind}]</div>
+  <div class="card placeholder">[{(card as StructuredCard).kind}]</div>
 {/if}
 
 <style>

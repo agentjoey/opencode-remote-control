@@ -22,6 +22,7 @@ import { registerTodo } from './routes/todo.js'
 import { registerContext } from './routes/context.js'
 import { registerApproval } from './routes/approval.js'
 import { registerVersion } from './routes/version.js'
+import { registerLogs } from './routes/logs.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -54,7 +55,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
     return c.json({ email: user.email })
   })
   registerSessions(app, opts.client, opts.state)
-  registerSession(app, opts.client)
+  registerSession(app, opts.client, opts.cardBus)
   if (opts.onMessage) registerMessage(app, opts.onMessage)
   registerAbort(app, opts.state)
   registerDiff(app, opts.client)
@@ -62,5 +63,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerContext(app, opts.client, opts.state)
   registerApproval(app, opts.client)
   registerVersion(app)
+  registerLogs(app)
   return app
 }

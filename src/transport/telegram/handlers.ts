@@ -2,8 +2,7 @@ import type { Telegraf, Context } from 'telegraf'
 import { Markup } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { SessionState } from '../../core/state.js'
-import type { EventStream } from '../../opencode/event-stream.js'
-import { checkHealth } from '../../opencode/client.js'
+import type { CardBus } from '../../core/card-bus.js'
 import { createLogger } from '../../utils/logger.js'
 import { getVersionInfo } from '../../utils/version.js'
 import { registerInfoCommands } from './handlers/info-commands.js'
@@ -13,12 +12,18 @@ const log = createLogger('handlers')
 export interface HandlersDeps {
   bot: Telegraf
   client: OpencodeClient
-  baseUrl: string
   state: SessionState
-  eventStream: EventStream
   chatId: number
   isGenerating: () => boolean
   abortGeneration: () => void
+  /** opencode server base URL (in-process plugin server). */
+  baseUrl?: string
+  /** Shared pending-approval map. */
+  pendingApprovals: Map<string, PendingApproval>
+  /** CardBus — optional, available after transport start. */
+  cardBus?: CardBus
+  /** Project directory where opencode.json lives, used as `directory` query param for /config endpoints. */
+  opencodeProject?: string
 }
 
 interface AgentConfig {
@@ -27,8 +32,32 @@ interface AgentConfig {
   description: string
 }
 
-async function fetchUserAgents(baseUrl: string): Promise<AgentConfig[]> {
-  const res = await fetch(`${baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
+/** Returns true if the opencode HTTP API is reachable (has a baseUrl set). */
+function hasHttpApi(baseUrl?: string): baseUrl is string {
+  return !!(baseUrl && baseUrl.startsWith('http'))
+}
+
+/** Check health — always OK in plugin mode (in-process), or fetch /health endpoint. */
+async function checkHealth(baseUrl?: string): Promise<boolean> {
+  if (!hasHttpApi(baseUrl)) return true
+  try {
+    const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(3000) })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+async function fetchUserAgents(baseUrl?: string, directory?: string): Promise<AgentConfig[]> {
+  if (!hasHttpApi(baseUrl)) {
+    log.debug('fetchUserAgents: no baseUrl, returning empty')
+    return []
+  }
+  const params = new URLSearchParams()
+  if (directory) params.set('directory', directory)
+  const qs = params.toString()
+  const url = `${baseUrl}/config${qs ? `?${qs}` : ''}`
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
   if (!res.ok) throw new Error(`/config HTTP ${res.status}`)
   const data = (await res.json()) as {
     agent?: Record<string, { model?: string; description?: string }>
@@ -77,16 +106,24 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
   let busyCount = 0
   let totalSessions = 0
   let totalCost = 0
-  try {
-    const res = await fetch(`${deps.baseUrl}/session/status`)
-    const data = (await res.json()) as Record<string, { type: string }>
-    totalSessions = Object.keys(data).length
-    busyCount = Object.values(data).filter((s) => s.type === 'busy').length
-    for (const sid of Object.keys(data)) {
-      const c = deps.state.getSessionCost(sid)
-      if (c !== undefined) totalCost += c
-    }
-  } catch {}
+  if (hasHttpApi(deps.baseUrl)) {
+    try {
+      const res = await fetch(`${deps.baseUrl}/session/status`)
+      const data = (await res.json()) as Record<string, { type: string }>
+      totalSessions = Object.keys(data).length
+      busyCount = Object.values(data).filter((s) => s.type === 'busy').length
+      for (const sid of Object.keys(data)) {
+        const c = deps.state.getSessionCost(sid)
+        if (c !== undefined) totalCost += c
+      }
+    } catch {}
+  } else {
+    try {
+      const result = await deps.client.session.list()
+      const sessions = (result.data ?? []) as Array<{ id: string }>
+      totalSessions = sessions.length
+    } catch {}
+  }
   const pinnedSession = deps.state.getPinnedSessionId()
   const lastSession = deps.state.getLastSessionId()
   const tuiSession = deps.state.getTuiSelectedSession()
@@ -310,7 +347,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
       if (agents.length === 0) {
         await ctx.reply(
           '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
@@ -343,7 +380,14 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!hasHttpApi(deps.baseUrl)) {
+        await ctx.reply('Model listing requires opencode HTTP API. Use legacy sidecar mode for this command.', { parse_mode: 'HTML' })
+        return
+      }
+      const params = new URLSearchParams()
+      if (deps.opencodeProject) params.set('directory', deps.opencodeProject)
+      const qs = params.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs ? `?${qs}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`/config/providers HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -410,8 +454,10 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
     deps.abortGeneration()
     try {
-      const res = await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (hasHttpApi(deps.baseUrl)) {
+        const res = await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      }
       await ctx.reply(`<b>🛑 Aborted</b>\n\n<code>…${last.slice(-8)}</code>`, { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ Abort failed: ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -535,7 +581,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action('status:abort', async (ctx) => {
     deps.abortGeneration()
     const last = deps.state.getLastSessionId()
-    if (last) {
+    if (last && hasHttpApi(deps.baseUrl)) {
       try {
         await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
       } catch {}
@@ -557,7 +603,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     // user doesn't end up running a new agent against a stale /model override.
     let modelSuffix = ''
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
       const a = agents.find((x) => x.name === name)
       const parsed = a ? parseAgentModel(a.model) : undefined
       if (parsed) {
@@ -629,7 +675,14 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action(/^model:pick:(.+)$/, async (ctx) => {
     const providerID = ctx.match[1]
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!hasHttpApi(deps.baseUrl)) {
+        await ctx.answerCbQuery('Not available in plugin mode')
+        return
+      }
+      const params2 = new URLSearchParams()
+      if (deps.opencodeProject) params2.set('directory', deps.opencodeProject)
+      const qs2 = params2.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs2 ? `?${qs2}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -669,7 +722,14 @@ export function registerHandlers(deps: HandlersDeps): void {
   // Back to provider list
   deps.bot.action('model:back', async (ctx) => {
     try {
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      if (!hasHttpApi(deps.baseUrl)) {
+        await ctx.answerCbQuery('Not available in plugin mode')
+        return
+      }
+      const params3 = new URLSearchParams()
+      if (deps.opencodeProject) params3.set('directory', deps.opencodeProject)
+      const qs3 = params3.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs3 ? `?${qs3}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -724,79 +784,14 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   // ── Info commands (split to separate file) ──
-  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl, state: deps.state })
+  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl ?? '', state: deps.state })
 
-  // ── Approval handler ──
-  const pendingApprovals = new Map<string, PendingApproval>()
-  setupApproval(deps, pendingApprovals)
-}
-
-// ── Approval sub-module ──
-
-export interface PendingApproval {
-  sessionId: string
-  permissionId: string
-  messageId: number
-  title: string
-}
-
-export type ApprovalResponse = 'once' | 'always' | 'reject'
-
-export function setupApproval(
-  deps: HandlersDeps,
-  pending: Map<string, PendingApproval>,
-): void {
-
-  const offUpdated = deps.eventStream.onAny(async (rawEvent: unknown) => {
-    const ev = rawEvent as { type: string; properties: any }
-    if (ev.type?.startsWith('permission.')) {
-      log.info(`permission event: type=${ev.type} id=${ev.properties?.id} sessionID=${ev.properties?.sessionID}`)
-    }
-    // Support both v1 (permission.updated) and v2 (permission.asked) event types
-    if (ev.type !== 'permission.updated' && ev.type !== 'permission.asked') return
-
-    const permId = ev.properties?.id as string | undefined
-    const title = (ev.properties?.title as string | undefined)
-      ?? (ev.properties?.permission as string | undefined)
-      ?? 'Unknown operation'
-    const sessionId = ev.properties?.sessionID as string | undefined
-    if (!permId || !sessionId) {
-      log.warn(`${ev.type} missing id or sessionID`, ev.properties)
-      return
-    }
-
-    const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const text = `⚠️  <b>Permission Required</b>\n\n<code>${escaped}</code>`
-    const keyboard = {
-      ...Markup.inlineKeyboard([
-        [
-          Markup.button.callback('✅ Once', `approve:once:${permId}`),
-          Markup.button.callback('🔓 Always', `approve:always:${permId}`),
-          Markup.button.callback('❌ Reject', `approve:reject:${permId}`),
-        ],
-      ]),
-      parse_mode: 'HTML' as const,
-    }
-
-    try {
-      const msg = await deps.bot.telegram.sendMessage(deps.chatId, text, keyboard)
-      pending.set(permId, {
-        sessionId,
-        permissionId: permId,
-        messageId: msg.message_id,
-        title,
-      })
-      log.info(`approval card sent permId=${permId}`)
-    } catch (err) {
-      log.error('failed to send approval card', err as Error)
-    }
-  })
-
+  // ── Approval callbacks — always registered so buttons work in both modes ──
   deps.bot.action(/^approve:(once|always|reject):(.+)$/, async (ctx) => {
     const match = ctx.match as RegExpMatchArray
     const response = match[1] as ApprovalResponse
     const permId = match[2]
-    const p = pending.get(permId)
+    const p = deps.pendingApprovals.get(permId)
 
     if (!p) {
       await ctx.answerCbQuery('This request has already been handled.')
@@ -814,59 +809,26 @@ export function setupApproval(
       return
     }
 
-    pending.delete(permId)
+    deps.pendingApprovals.delete(permId)
 
     const labels: Record<ApprovalResponse, string> = {
-      once: '✅ Allowed (once)',
-      always: '🔓 Always Allowed',
-      reject: '❌ Rejected',
+      once: 'Allowed (once)',
+      always: 'Always Allowed',
+      reject: 'Rejected',
     }
     const display = labels[response]
     await ctx.editMessageText(`${display}\n\n${p.title}`, { parse_mode: 'HTML' }).catch(() => {})
     await ctx.answerCbQuery(display)
   })
-
-  const offReplied = deps.eventStream.onAny(async (rawEvent: unknown) => {
-    const ev = rawEvent as { type: string; properties: any }
-    if (ev.type !== 'permission.replied') return
-
-    // v1 uses permissionID, v2 uses requestID
-    const permId = (ev.properties?.permissionID as string | undefined)
-      ?? (ev.properties?.requestID as string | undefined)
-    const response = ev.properties?.response as string | undefined
-      ?? ev.properties?.reply as string | undefined
-    if (!permId) return
-
-    const p = pending.get(permId)
-    if (!p) return
-
-    pending.delete(permId)
-    try {
-        const display = labelFor(response)
-        await deps.bot.telegram.editMessageText(
-          deps.chatId,
-          p.messageId,
-          undefined,
-          `${display} (from TUI)\n\n${p.title}`,
-          { parse_mode: 'HTML' },
-        )
-    } catch (err) {
-      log.warn(`couldn't update card after TUI reply: ${(err as Error).message}`)
-    }
-  })
-
-  // Store cleanup on bot stop (best effort)
-  ;(deps.bot as any)._approvalCleanup = () => {
-    offUpdated()
-    offReplied()
-  }
 }
 
-function labelFor(response?: string): string {
-  switch (response) {
-    case 'once':   return '✅ Allowed (once)'
-    case 'always': return '🔓 Always Allowed'
-    case 'reject': return '❌ Rejected'
-    default:       return response ?? 'Handled'
-  }
+// ── Approval sub-module ──
+
+export interface PendingApproval {
+  sessionId: string
+  permissionId: string
+  messageId: number
+  title: string
 }
+
+export type ApprovalResponse = 'once' | 'always' | 'reject'

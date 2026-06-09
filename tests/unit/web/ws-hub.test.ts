@@ -56,4 +56,30 @@ describe('WsHub', () => {
     hub.handleClientMessage(ws as any, { type: 'ping' })
     expect(ws.sent.at(-1)).toEqual({ type: 'pong' })
   })
+
+  it('replays buffered cards with seq > sinceSeq on subscribe, then replayEnd', async () => {
+    const bus = createCardBus()
+    bus.publish({ kind: 'user', sessionId: 'ses_1', text: 'a', ts: 0 })       // seq 1
+    bus.publish({ kind: 'assistant', sessionId: 'ses_1', blocks: [], meta: {} }) // seq 2
+    bus.publish({ kind: 'assistant', sessionId: 'ses_1', blocks: [], meta: {} }) // seq 3
+
+    const hub = createWsHub({ cardBus: bus, client: fakeClient(), state: fakeState() })
+    const ws = fakeWs()
+    await hub.attach(ws as any, { email: 'u@x' } as any)
+    hub.handleClientMessage(ws as any, { type: 'subscribe', sessionId: 'ses_1', sinceSeq: 1 })
+
+    const replayed = ws.sent.filter((m: any) => m.type === 'card').map((m: any) => m.card.seq)
+    expect(replayed).toEqual([2, 3]) // seq 1 already in the client's snapshot
+    expect(ws.sent.at(-1)).toMatchObject({ type: 'replayEnd', sessionId: 'ses_1', lastSeq: 3 })
+  })
+
+  it('replays nothing when sinceSeq is current', async () => {
+    const bus = createCardBus()
+    bus.publish({ kind: 'user', sessionId: 'ses_1', text: 'a', ts: 0 }) // seq 1
+    const hub = createWsHub({ cardBus: bus, client: fakeClient(), state: fakeState() })
+    const ws = fakeWs()
+    await hub.attach(ws as any, { email: 'u@x' } as any)
+    hub.handleClientMessage(ws as any, { type: 'subscribe', sessionId: 'ses_1', sinceSeq: 1 })
+    expect(ws.sent.filter((m: any) => m.type === 'card').length).toBe(0)
+  })
 })

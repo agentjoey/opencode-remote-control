@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.6.0-rc.1 — 2026-05-31
+
+### Added
+- **Plugin Registry mode** — `npx opencode-remote-control install` deploys as
+  opencode plugin; Telegram bot + Web PWA auto-start with `opencode`
+- `src/plugin/entry.ts` — Plugin entry exporting `remoteControlPlugin: Plugin`
+- `src/plugin/config.ts` — Plugin-mode config loader (openCode env + process.env)
+- `src/cli/install.ts` — interactive/CI-friendly plugin installer (`--yes`, `--local`)
+- `src/cli/uninstall.ts` — remove plugin from opencode config
+- `rc-status` tool — status command visible in opencode TUI
+- `relay.handleEvent()` — event-hook compatible event dispatch for Plugin mode
+- `@opencode-ai/plugin` dependency
+- `package.json` exports `./plugin`, `./install`, `./uninstall`
+
+### Changed
+- Relay deps: `eventStream` and `baseUrl` are now optional (Plugin mode compatible)
+- Transport constructors: `baseUrl` and `eventStream` are now optional
+- `ARCHITECTURE.md` — Plugin mode as primary deployment, sidecar as legacy
+- `package.json` — removed `engines.node` restriction (Bun compatibility)
+
+### Deprecated
+- launchd deployment — replaced by Plugin auto-start
+- `src/launcher/` — opencode itself is the launcher in Plugin mode
+- `src/index.ts` legacy path — use `RC_MODE=legacy` to opt back in
+
 ## v0.5.7 — 2026-05-21
 
 ### Removed

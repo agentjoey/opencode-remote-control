@@ -41,27 +41,32 @@ function fakeClient() {
 const baseOpts = (state: any, client: any) => ({
   cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
   client, state,
-  cardBus: { publish: vi.fn(), subscribeAll: () => () => {} } as any,
+  cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
 })
 
+// dev bypass now requires a loopback socket peer (not opts.host), so every
+// request must present a 127.0.0.1 peer to pass cfAccessMiddleware.
+const LOOPBACK = { incoming: { socket: { remoteAddress: '127.0.0.1' } } }
+
 describe('web routes', () => {
   it('GET /api/sessions returns bot-touched sessions sorted by created desc', async () => {
     const app = buildServer(baseOpts(fakeState(), fakeClient()))
-    const res = await app.request('/api/sessions')
+    const res = await app.request('/api/sessions', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
     expect(body[0].id).toBe('ses_a')
     expect(body[0].cost).toBe(0.1)
   })
 
-  it('GET /api/session/:id returns history StructuredCards', async () => {
+  it('GET /api/session/:id returns history cards + lastSeq', async () => {
     const app = buildServer(baseOpts(fakeState(), fakeClient()))
-    const res = await app.request('/api/session/ses_a')
+    const res = await app.request('/api/session/ses_a', undefined, LOOPBACK)
     expect(res.status).toBe(200)
-    const body = await res.json() as any[]
-    expect(body[0].kind).toBe('user')
+    const body = await res.json() as { cards: any[]; lastSeq: number }
+    expect(body.cards[0].kind).toBe('user')
+    expect(body.lastSeq).toBe(7)
   })
 
   it('POST /api/message accepts a prompt', async () => {
@@ -73,7 +78,7 @@ describe('web routes', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sessionId: 'ses_a', text: 'go' }),
-    })
+    }, LOOPBACK)
     expect(res.status).toBe(200)
     expect(messageHandler).toHaveBeenCalled()
   })
@@ -87,7 +92,7 @@ describe('web routes', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sessionId: 'ses_a' }),
-    })
+    }, LOOPBACK)
     expect(res.status).toBe(200)
     expect(ac.abort).toHaveBeenCalled()
   })
@@ -100,7 +105,7 @@ describe('web routes', () => {
       },
     } as any
     const app = buildServer(baseOpts(fakeState(), client))
-    const res = await app.request('/api/session/ses_a/diff')
+    const res = await app.request('/api/session/ses_a/diff', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     expect((await res.json() as any[])[0].path).toBe('a.ts')
   })
@@ -116,7 +121,7 @@ describe('web routes', () => {
       },
     } as any
     const app = buildServer(baseOpts(fakeState(), client))
-    const res = await app.request('/api/session/ses_a/context')
+    const res = await app.request('/api/session/ses_a/context', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const ctx = await res.json() as any
     expect(ctx.agent).toBe('build')
@@ -131,7 +136,7 @@ describe('web routes', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sessionId: 'ses_a', requestId: 'r1', decision: 'once' }),
-    })
+    }, LOOPBACK)
     expect(res.status).toBe(200)
     expect(respond).toHaveBeenCalled()
   })

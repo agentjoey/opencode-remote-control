@@ -1,14 +1,30 @@
 {
   "name": "opencode-remote-control",
-  "version": "0.5.7",
-  "description": "Sidecar Telegram bot for remote-controlling a local opencode TUI session (umbrella project for future channels)",
+  "version": "0.6.0-rc.1",
+  "description": "OpenCode Plugin — remote-control your local opencode via Telegram + Web PWA. One npx install, auto-starts with opencode.",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/plugin/entry.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./plugin": {
+      "import": "./dist/plugin/entry.js",
+      "types": "./dist/plugin/entry.d.ts"
+    },
+    "./install": {
+      "import": "./dist/cli/install.js",
+      "types": "./dist/cli/install.d.ts"
+    },
+    "./uninstall": {
+      "import": "./dist/cli/uninstall.js",
+      "types": "./dist/cli/uninstall.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/cli/index.js",
-    "start:dev": "node dist/index.js",
+    "postinstall": "patch-package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -18,8 +34,14 @@
     "opencode-remote-control": "dist/cli/index.js",
     "oprc": "dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "bin",
+    "patches"
+  ],
   "dependencies": {
     "@hono/node-server": "^2.0.2",
+    "@opencode-ai/plugin": "^1.1.12",
     "@opencode-ai/sdk": "^1.14.0",
     "dotenv": "^16.4.5",
     "hono": "^4.12.19",
@@ -31,11 +53,9 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/ws": "^8.18.1",
+    "patch-package": "^8.0.1",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   }
 }

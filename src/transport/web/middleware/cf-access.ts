@@ -9,10 +9,21 @@ export interface CfAccessOpts {
   host?: string
 }
 
-function isLoopback(host?: string): boolean {
-  if (!host) return false
-  const h = host.split(':')[0]
-  return h === '127.0.0.1' || h === 'localhost' || h === '::1'
+function isLoopbackAddr(addr?: string): boolean {
+  if (!addr) return false
+  // Strip IPv6 prefix
+  const clean = addr.replace(/^::ffff:/, '').split('%')[0]
+  return clean === '127.0.0.1' || clean === '::1'
+}
+
+function remoteAddr(c: any): string | undefined {
+  try {
+    // Hono on Node.js / Bun: use raw request socket
+    const raw = c.env?.incoming ?? c.req?.raw
+    return raw?.socket?.remoteAddress as string | undefined
+  } catch {
+    return undefined
+  }
 }
 
 function extractJwt(headers: Record<string, string | string[] | undefined>, query?: string): string | undefined {
@@ -31,10 +42,13 @@ function extractJwt(headers: Record<string, string | string[] | undefined>, quer
 }
 
 export async function verifyUpgradeJwt(
-  req: { headers: Record<string, string | string[] | undefined>; url?: string },
+  req: { headers: Record<string, string | string[] | undefined>; url?: string; socket?: { remoteAddress?: string } },
   opts: CfAccessOpts,
 ): Promise<{ email: string; sub: string } | null> {
-  if (opts.devBypass && isLoopback(opts.host)) {
+  // Bypass only when the *actual peer* is loopback. opts.host (the server's own
+  // bind address) is not a safe signal: behind a tunnel the peer is 127.0.0.1
+  // while the real client is remote.
+  if (opts.devBypass && isLoopbackAddr(req.socket?.remoteAddress)) {
     return { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' }
   }
   const query = req.url ? req.url.split('?')[1] : undefined
@@ -58,8 +72,10 @@ export function cfAccessMiddleware(opts: CfAccessOpts): MiddlewareHandler {
   const jwks = createRemoteJWKSet(new URL(jwksUri))
 
   return async (c, next) => {
-    // Dev bypass
-    if (opts.devBypass && isLoopback(opts.host ?? c.req.header('host') ?? undefined)) {
+    const remoteAddrVal = remoteAddr(c)
+    // Dev bypass — only trust the actual socket peer, never opts.host (server's
+    // own bind) nor the client-supplied Host header.
+    if (opts.devBypass && isLoopbackAddr(remoteAddrVal)) {
       c.set('user', { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' })
       return next()
     }

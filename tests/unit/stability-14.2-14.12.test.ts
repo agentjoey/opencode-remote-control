@@ -15,14 +15,6 @@ function fakeClient() {
   } as any
 }
 
-function fakeEventStream(events: any[] = []) {
-  return {
-    session: async function* () { for (const e of events) yield e },
-    onAny: vi.fn(),
-    setStatusChecker: vi.fn(),
-  } as any
-}
-
 function fakeState() {
   const aborts = new Map<string, AbortController>()
   return {
@@ -61,9 +53,6 @@ describe('14.2 concurrent busy', () => {
     const relay = createRelay({
       cardBus,
       client: fakeClient(),
-      eventStream: fakeEventStream([
-        { type: 'session.idle', properties: {} },
-      ]),
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
