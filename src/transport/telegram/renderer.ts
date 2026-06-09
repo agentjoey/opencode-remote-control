@@ -182,20 +182,17 @@ export class TelegramSessionRenderer {
 
       const md = blocksToText(blocks)
       const tools = blocksToTools(blocks)
-      log.info(`finalize: md=${md.length} chars`)
 
       const PER_CHUNK = Math.floor((this.chunkSoftLimit - RESERVE_META) * RESERVE_ANSWER_FRAC)
       const pieces = splitMarkdown(md, PER_CHUNK)
-      log.info(`finalize: ${pieces.length} piece(s)`)
+      log.debug(`finalize: md=${md.length} chars, ${pieces.length} piece(s)`)
 
       for (let i = 0; i < pieces.length; i++) {
         const isLast = i === pieces.length - 1
         const body = this.renderChunkBody(pieces[i], i === 0 ? tools : [], isLast ? { meta } : {})
-        log.info(`finalize: piece ${i}/${pieces.length} sending len=${body.length}`)
-        const sent = await this.sendTimed(body, { parse_mode: 'HTML' })
-        log.info(`finalize: piece ${i} sent ${sent.message_id}`)
+        await this.sendTimed(body, { parse_mode: 'HTML' })
+        log.debug(`finalize: piece ${i + 1}/${pieces.length} sent (len=${body.length})`)
       }
-      log.info('finalize: all pieces done')
     } catch (err) {
       log.error('finalize: FATAL error, attempting last-resort send', (err as Error).message)
       try {

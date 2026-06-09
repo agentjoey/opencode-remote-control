@@ -75,8 +75,8 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       log.error('transport start failed', err as Error)
     })
 
-  // Push notifications — plugin mode (event-driven instead of EventStream)
-  const push = startPushNotifications({ cardBus, client: ctx.client })
+  // Push notifications — driven by the plugin event hook
+  const push = startPushNotifications({ cardBus, client: ctx.client, state })
 
   // Poll the TUI-selected session to keep the current agent in sync.
   const pollTimer = setInterval(async () => {

@@ -1,13 +1,19 @@
 import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
+import type { SessionState } from '../core/state.js'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('push')
 
+/** Skip the "Session finished" push if the relay delivered the result this recently. */
+const RELAY_DELIVERY_DEDUP_MS = 60_000
+
 export interface PushDeps {
   cardBus: CardBus
   client: OpencodeClient
+  /** Used to suppress duplicate notifications for sessions the relay just delivered. */
+  state?: SessionState
   testFailuresEnabled?: boolean
   maxPerHour?: number
 }
@@ -90,7 +96,11 @@ export function startPushNotifications(deps: PushDeps) {
       const duration = Date.now() - effectiveStart
       const lastEngaged = engagedAt.get(sid) ?? 0
       const engagedRecently = Date.now() - lastEngaged < 12 * 60 * 60 * 1000
-      if (duration > 60_000 && engagedRecently && canPush(sid)) {
+      // If the relay already delivered this session's result to the user
+      // (foreground bot/web message), don't also push a "Session finished" card.
+      const deliveredAt = deps.state?.getAssistantDeliveredAt(sid)
+      const justDelivered = deliveredAt !== undefined && Date.now() - deliveredAt < RELAY_DELIVERY_DEDUP_MS
+      if (duration > 60_000 && engagedRecently && !justDelivered && canPush(sid)) {
         recordPush(sid)
         let summary = await fetchSummary(sid)
         if (!summary) {

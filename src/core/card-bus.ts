@@ -31,7 +31,7 @@ export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
   return {
     publish(card) {
       const sid = sessionIdOf(card)
-      log.info(`cardBus.publish: kind=${card.kind} sessionId=${sid ?? 'none'}, allSubscribers=${all.size}, perSession=${sid ? perSession.get(sid)?.size ?? 0 : 0}`)
+      log.debug(`cardBus.publish: kind=${card.kind} sessionId=${sid ?? 'none'}, allSubscribers=${all.size}, perSession=${sid ? perSession.get(sid)?.size ?? 0 : 0}`)
       if (sid) {
         const buf = buffers.get(sid) ?? []
         buf.push(card)

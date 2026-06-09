@@ -267,7 +267,9 @@ export function createRelay(deps: RelayDeps) {
 
     log.info(`relay: publishing assistant card for ${sessionId}, blocks=${blocks.length}`)
     deps.cardBus.publish({ kind: 'assistant', sessionId, blocks, meta })
-    log.info(`relay: assistant card published for ${sessionId}`)
+    // Mark delivery so the push engine doesn't also fire a "Session finished"
+    // notification for a session the user just watched complete.
+    deps.state.markAssistantDelivered(sessionId)
   }
 
   /**
@@ -345,6 +347,10 @@ export function createRelay(deps: RelayDeps) {
       if (eventType === 'session.idle') {
         if (ctx) {
           log.info(`[plugin] session idle: ${ctx.sessionId.slice(-8)}, finalizing`)
+          // Capture acc/msgId locally: cleanupPluginSession() runs synchronously
+          // below, and a new message for the same session would install a fresh
+          // ctx with a fresh accumulator — so this deferred finalize must read
+          // the snapshot it captured, not pluginSessions.get(sid).
           const sid = ctx.sessionId
           const acc = ctx.acc
           const msgId = ctx.assistantMessageId

@@ -101,6 +101,22 @@ describe('startPushNotifications', () => {
     expect(cardBus.publish).toHaveBeenCalledTimes(1) // still 1
   })
 
+  it('skips "Session finished" when the relay just delivered the result', async () => {
+    const cb = fakeCardBus()
+    const state = {
+      getAssistantDeliveredAt: vi.fn((_sid: string) => Date.now()), // delivered just now
+    } as any
+    const p = startPushNotifications({ cardBus: cb as any as CardBus, client: fakeClient('hi') as any as OpencodeClient, state })
+
+    const sid = 'ses_dedup'
+    p.handleEvent({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
+    vi.advanceTimersByTime(70_000)
+    p.handleEvent({ type: 'session.idle', properties: { sessionID: sid } })
+    await vi.advanceTimersByTimeAsync(3100)
+
+    expect(cb.publish).not.toHaveBeenCalled()
+  })
+
   it('includes assistant message summary in session finish notification', async () => {
     const summary = '我们实现了分页修复，在 TelegramSessionRenderer 中添加了 chunkStartOffset 追踪。renderStreaming 现在从 offset 切片 markdownSrc…'
     const client = fakeClient(summary) as any as OpencodeClient
