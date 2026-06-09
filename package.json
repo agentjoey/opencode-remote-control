@@ -24,7 +24,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "postinstall": "node scripts/patch-telegraf.cjs",
+    "postinstall": "patch-package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,7 +36,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "patches"
   ],
   "dependencies": {
     "@hono/node-server": "^2.0.2",
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/ws": "^8.18.1",
+    "patch-package": "^8.0.1",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
