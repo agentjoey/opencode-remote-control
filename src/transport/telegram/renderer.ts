@@ -7,12 +7,13 @@ const log = createLogger('tg-renderer')
 
 const RESERVE_META = 200
 const RESERVE_ANSWER_FRAC = 0.7
-const CHUNK_SOFT_LIMIT = Number(process.env.TG_CHUNK_SOFT_LIMIT ?? 3500)
+const DEFAULT_CHUNK_SOFT_LIMIT = 3500
 
 interface RendererOpts {
   chatId: string
   sessionId: string
   bot: Telegram
+  chunkSoftLimit?: number
 }
 
 function escHtml(s: string): string {
@@ -96,11 +97,13 @@ export class TelegramSessionRenderer {
   private sessionId: string
   private bot: Telegram
   private thinkingMessageId?: string
+  private chunkSoftLimit: number
 
   constructor(opts: RendererOpts) {
     this.chatId = opts.chatId
     this.sessionId = opts.sessionId
     this.bot = opts.bot
+    this.chunkSoftLimit = opts.chunkSoftLimit ?? Number(process.env.TG_CHUNK_SOFT_LIMIT ?? DEFAULT_CHUNK_SOFT_LIMIT)
   }
 
   /** sendMessage with 10s timeout to prevent TCP hang. */
@@ -131,8 +134,12 @@ export class TelegramSessionRenderer {
   }
 
   private async startThinking(): Promise<void> {
-    const sent = await this.sendTimed('⏳  Working…', { parse_mode: 'HTML' })
-    this.thinkingMessageId = String(sent.message_id)
+    try {
+      const sent = await this.sendTimed('⏳  Working…', { parse_mode: 'HTML' })
+      this.thinkingMessageId = String(sent.message_id)
+    } catch (err) {
+      log.warn('startThinking: initial message failed, continuing without placeholder', (err as Error).message)
+    }
   }
 
   private async finalize(blocks: ContentBlock[], meta: AssistantMeta): Promise<void> {
@@ -147,7 +154,7 @@ export class TelegramSessionRenderer {
       const tools = blocksToTools(blocks)
       log.info(`finalize: md=${md.length} chars`)
 
-      const PER_CHUNK = Math.floor((CHUNK_SOFT_LIMIT - RESERVE_META) * RESERVE_ANSWER_FRAC)
+      const PER_CHUNK = Math.floor((this.chunkSoftLimit - RESERVE_META) * RESERVE_ANSWER_FRAC)
       const pieces = splitMarkdown(md, PER_CHUNK)
       log.info(`finalize: ${pieces.length} piece(s)`)
 

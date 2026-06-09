@@ -51,7 +51,8 @@ export async function verifyUpgradeJwt(
   req: { headers: Record<string, string | string[] | undefined>; url?: string; socket?: { remoteAddress?: string } },
   opts: CfAccessOpts,
 ): Promise<{ email: string; sub: string } | null> {
-  if (opts.devBypass && (isLoopbackAddr(req.socket?.remoteAddress) || isLoopback(opts.host))) {
+  const isLoop = isLoopbackAddr(req.socket?.remoteAddress) || isLoopback(opts.host)
+  if (opts.devBypass && isLoop) {
     return { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' }
   }
   const query = req.url ? req.url.split('?')[1] : undefined
@@ -75,8 +76,10 @@ export function cfAccessMiddleware(opts: CfAccessOpts): MiddlewareHandler {
   const jwks = createRemoteJWKSet(new URL(jwksUri))
 
   return async (c, next) => {
+    const remoteAddrVal = remoteAddr(c)
+    const isLoop = isLoopbackAddr(remoteAddrVal) || isLoopback(opts.host)
     // Dev bypass — use socket.remoteAddress, not the client-supplied Host header
-    if (opts.devBypass && (isLoopbackAddr(remoteAddr(c)) || isLoopback(opts.host))) {
+    if (opts.devBypass && isLoop) {
       c.set('user', { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' })
       return next()
     }

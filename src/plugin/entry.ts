@@ -22,13 +22,15 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
   const state = createFileBackedState(config.statePath)
   const cardBus = createCardBus()
 
+  const serverUrl = ctx.serverUrl.toString().replace(/\/+$/, '')
+
   const relay = createRelay({
     cardBus,
     client: ctx.client,
     state,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: config.tuiVisible,
-    baseUrl: config.baseUrl,
+    baseUrl: serverUrl,
   })
 
   const tgTransport = createTelegramTransport({
@@ -36,7 +38,8 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     allowedUserIds: config.allowedUserIds,
     client: ctx.client,
     state,
-    baseUrl: config.baseUrl,
+    baseUrl: serverUrl,
+    tgChunkSoftLimit: config.tgChunkSoftLimit,
   })
 
   const transports: Transport[] = [tgTransport]
@@ -86,7 +89,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     } catch {
       // best effort
     }
-  }, 5000)
+  }, 15000)
 
   return {
     event: async ({ event }) => {
@@ -103,7 +106,9 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           tgTransport.handlePluginPermissionEvent(event as any).catch((err) =>
             log.error('handlePluginPermissionEvent failed', err as Error),
           )
-          await relay.handleEvent(event)
+          try { await relay.handleEvent(event) } catch (err) {
+            log.error('relay.handleEvent failed', err as Error)
+          }
           break
         case 'tui.session.select': {
           const sid = (event as any)?.properties?.sessionID
@@ -125,7 +130,9 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         case 'message.part.removed':
         case 'message.removed':
         case 'command.executed':
-          await relay.handleEvent(event)
+          try { await relay.handleEvent(event) } catch (err) {
+            log.error('relay.handleEvent failed', err as Error)
+          }
           break
       }
     },

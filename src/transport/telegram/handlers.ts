@@ -25,6 +25,8 @@ export interface HandlersDeps {
   pendingApprovals: Map<string, PendingApproval>
   /** CardBus — optional, available after transport start. */
   cardBus?: CardBus
+  /** Project directory where opencode.json lives, used as `directory` query param for /config endpoints. */
+  opencodeProject?: string
 }
 
 interface AgentConfig {
@@ -49,12 +51,16 @@ async function checkHealth(baseUrl?: string): Promise<boolean> {
   }
 }
 
-async function fetchUserAgents(baseUrl?: string): Promise<AgentConfig[]> {
+async function fetchUserAgents(baseUrl?: string, directory?: string): Promise<AgentConfig[]> {
   if (!hasHttpApi(baseUrl)) {
     log.debug('fetchUserAgents: no baseUrl, returning empty')
     return []
   }
-  const res = await fetch(`${baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
+  const params = new URLSearchParams()
+  if (directory) params.set('directory', directory)
+  const qs = params.toString()
+  const url = `${baseUrl}/config${qs ? `?${qs}` : ''}`
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
   if (!res.ok) throw new Error(`/config HTTP ${res.status}`)
   const data = (await res.json()) as {
     agent?: Record<string, { model?: string; description?: string }>
@@ -344,7 +350,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
       if (agents.length === 0) {
         await ctx.reply(
           '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
@@ -381,7 +387,10 @@ export function registerHandlers(deps: HandlersDeps): void {
         await ctx.reply('Model listing requires opencode HTTP API. Use legacy sidecar mode for this command.', { parse_mode: 'HTML' })
         return
       }
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const params = new URLSearchParams()
+      if (deps.opencodeProject) params.set('directory', deps.opencodeProject)
+      const qs = params.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs ? `?${qs}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`/config/providers HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -597,7 +606,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     // user doesn't end up running a new agent against a stale /model override.
     let modelSuffix = ''
     try {
-      const agents = await fetchUserAgents(deps.baseUrl)
+      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
       const a = agents.find((x) => x.name === name)
       const parsed = a ? parseAgentModel(a.model) : undefined
       if (parsed) {
@@ -673,7 +682,10 @@ export function registerHandlers(deps: HandlersDeps): void {
         await ctx.answerCbQuery('Not available in plugin mode')
         return
       }
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const params2 = new URLSearchParams()
+      if (deps.opencodeProject) params2.set('directory', deps.opencodeProject)
+      const qs2 = params2.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs2 ? `?${qs2}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
@@ -717,7 +729,10 @@ export function registerHandlers(deps: HandlersDeps): void {
         await ctx.answerCbQuery('Not available in plugin mode')
         return
       }
-      const res = await fetch(`${deps.baseUrl}/config/providers`, { signal: AbortSignal.timeout(5000) })
+      const params3 = new URLSearchParams()
+      if (deps.opencodeProject) params3.set('directory', deps.opencodeProject)
+      const qs3 = params3.toString()
+      const res = await fetch(`${deps.baseUrl}/config/providers${qs3 ? `?${qs3}` : ''}`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = (await res.json()) as {
         providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>

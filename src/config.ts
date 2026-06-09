@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use plugin/config.ts loadPluginConfig() instead.
+ * Sidecar-mode config loader (Zod-validated process.env).
+ * Not used in Plugin mode.
+ */
 import { z } from 'zod'
 
 const schema = z.object({

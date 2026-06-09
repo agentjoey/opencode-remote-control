@@ -93,15 +93,19 @@ export async function runInstall(options: InstallOptions): Promise<void> {
     finalWeb = web.trim() || existingWeb
 
     rl.close()
+  } else {
+    finalToken = (existingOpts.telegramBotToken as string) ?? process.env.TELEGRAM_BOT_TOKEN ?? ''
+    finalIds = (existingOpts.allowedUserIds as string) ?? process.env.ALLOWED_USER_IDS ?? ''
+    finalWeb = (existingOpts.webEnabled as string) ?? process.env.WEB_ENABLED ?? 'false'
+  }
 
-    if (!finalToken) {
-      console.error('TELEGRAM_BOT_TOKEN is required.')
-      process.exit(1)
-    }
-    if (!finalIds) {
-      console.error('ALLOWED_USER_IDS is required.')
-      process.exit(1)
-    }
+  if (!finalToken) {
+    console.error('TELEGRAM_BOT_TOKEN is required.')
+    process.exit(1)
+  }
+  if (!finalIds) {
+    console.error('ALLOWED_USER_IDS is required.')
+    process.exit(1)
   }
 
   const pluginOpts: Record<string, unknown> = { ...existingOpts }

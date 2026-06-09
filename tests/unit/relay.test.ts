@@ -378,6 +378,9 @@ describe('createRelay', () => {
         properties: { sessionID: 'ses_plugin' },
       })
 
+      // publishAssistantCard is deferred via setTimeout(0); wait for it
+      await new Promise((r) => setTimeout(r, 10))
+
       const assistantCard = cards.find(c => c.kind === 'assistant') as any
       expect(assistantCard).toBeDefined()
       expect(assistantCard.blocks.some((b: any) => b.type === 'text' && b.text === 'response text')).toBe(true)
@@ -454,6 +457,9 @@ describe('createRelay', () => {
         properties: { sessionID: 'ses_plugin' },
       })
 
+      // publishAssistantCard is deferred via setTimeout(0); wait for it
+      await new Promise((r) => setTimeout(r, 10))
+
       const assistantCard = cards.find(c => c.kind === 'assistant') as any
       expect(assistantCard).toBeDefined()
       expect(assistantCard.blocks.some((b: any) => b.type === 'text' && b.text === 'Hello world!')).toBe(true)
@@ -494,6 +500,9 @@ describe('createRelay', () => {
         type: 'session.idle',
         properties: { sessionID: 'ses_plugin' },
       })
+
+      // publishAssistantCard is deferred via setTimeout(0); wait for it
+      await new Promise((r) => setTimeout(r, 10))
 
       const assistantCard = cards.find(c => c.kind === 'assistant') as any
       expect(assistantCard).toBeDefined()

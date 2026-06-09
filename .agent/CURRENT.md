@@ -1,7 +1,7 @@
 # Current Status — opencode-remote-control
 
 Version:        v0.6.0-rc.1
-Last Updated:   2026-05-31
+Last Updated:   2026-06-09
 
 ## Recent work (v0.5.7 → v0.6.0-rc.1)
 

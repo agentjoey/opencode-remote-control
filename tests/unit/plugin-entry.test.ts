@@ -131,6 +131,7 @@ describe('remoteControlPlugin', () => {
           messages: vi.fn().mockResolvedValue({ data: [] }),
         },
       },
+      serverUrl: new URL('http://localhost:4096'),
     }
 
     plug = await remoteControlPlugin(ctx, { telegramBotToken: '123:abc', allowedUserIds: '123456' })

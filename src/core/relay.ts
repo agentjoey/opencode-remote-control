@@ -107,11 +107,12 @@ async function waitForBusySession(eventStream: EventStream | undefined, signal: 
 async function selectTuiSession(baseUrl: string | undefined, sessionID: string, signal?: AbortSignal): Promise<void> {
   if (!baseUrl) return
   try {
+    const normalized = baseUrl.replace(/\/+$/, '')
     const timeoutSignal = AbortSignal.timeout(2000)
     const combinedSignal = signal
       ? AbortSignal.any([signal, timeoutSignal])
       : timeoutSignal
-    const res = await fetch(`${baseUrl}/tui/select-session`, {
+    const res = await fetch(`${normalized}/tui/select-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionID }),
@@ -127,13 +128,19 @@ async function selectTuiSession(baseUrl: string | undefined, sessionID: string, 
 
 async function pickSessionFallback(client: OpencodeClient): Promise<string> {
   const res = await client.session.list()
-  const sessions = (res.data ?? []) as Array<{ id: string; time?: { created?: number; updated?: number } }>
+  const sessions = (res.data ?? []) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
   // Sort by time.updated (most recently active) rather than time.created (newest).
-  // The TUI is typically working in the most recently active session, not the newest one.
-  const sorted = [...sessions].sort((a, b) =>
-    (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
-  )
+  // Prefer root sessions (no parentID) over child/subagent sessions to avoid
+  // accidentally connecting to a completed subagent session.
+  const sorted = [...sessions].sort((a, b) => {
+    const aIsChild = !!a.parentID
+    const bIsChild = !!b.parentID
+    // Root sessions come before child sessions
+    if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
+    // Within same type, sort by most recent activity
+    return (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
+  })
   return sorted[0].id
 }
 
@@ -201,8 +208,9 @@ export function createRelay(deps: RelayDeps) {
 
       if (!resolvedId) {
         const pinnedSession = deps.state.getPinnedSessionId()
+        const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
         const lastSession = deps.state.getLastSessionId()
-        resolvedId = pinnedSession ?? lastSession ?? await pickSessionFallback(deps.client)
+        resolvedId = pinnedSession ?? tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
         log.info(`submitting directly to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
         if (deps.tuiVisible) {
           await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
@@ -481,15 +489,17 @@ export function createRelay(deps: RelayDeps) {
       if (eventType === 'session.idle') {
         if (ctx) {
           log.info(`[plugin] session idle: ${ctx.sessionId.slice(-8)}, finalizing`)
-          try {
-            await publishAssistantCard({
-              sessionId: ctx.sessionId,
-              acc: ctx.acc,
-              assistantMessageId: ctx.assistantMessageId,
-            })
-          } catch (err) {
-            log.error(`[plugin] publishAssistantCard failed`, err as Error)
-          }
+          const sid = ctx.sessionId
+          const acc = ctx.acc
+          const msgId = ctx.assistantMessageId
+          // Defer SDK calls to next tick to avoid blocking the event hook
+          setTimeout(async () => {
+            try {
+              await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId })
+            } catch (err) {
+              log.error(`[plugin] publishAssistantCard failed`, err as Error)
+            }
+          }, 0)
           cleanupPluginSession(ctx.sessionId)
           deps.state.setActiveAbort(ctx.sessionId, undefined)
         } else if (sid) {
@@ -536,7 +546,7 @@ export function createRelay(deps: RelayDeps) {
         break
       }
       case 'session.error': {
-        const sid = p?.sessionID ?? p?.sessionId ?? p?.sessionID
+        const sid = p?.sessionID ?? p?.sessionId
         const errMsg = p?.error?.message ?? p?.error ?? p?.message ?? 'session error'
         const sessionId = sid || 'unknown'
         log.warn(`[plugin] session error: ${String(errMsg)}`)

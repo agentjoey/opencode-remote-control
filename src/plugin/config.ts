@@ -19,6 +19,7 @@ export interface PluginConfig {
   transport: string
   chatTimeoutMs: number
   baseUrl: string
+  tgChunkSoftLimit: number
 }
 
 function loadDotEnv(): void {
@@ -60,23 +61,30 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     throw new Error('ALLOWED_USER_IDS is required (comma-separated Telegram user IDs).')
   }
 
+  const webHost = env('WEB_HOST', options?.webHost as string) ?? '127.0.0.1'
+  const isLoopback = webHost === '127.0.0.1' || webHost === 'localhost' || webHost === '::1'
+
+  const devBypassExplicit = bool(options?.webCfAccessDevBypass as string)
+  const devBypassEnv = process.env.WEB_CF_ACCESS_DEV_BYPASS
+
   return {
     telegramBotToken: token,
     allowedUserIds: ids,
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
-    webHost: env('WEB_HOST', options?.webHost as string) ?? '127.0.0.1',
+    webHost,
     webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 7081),
     webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? 'web/dist',
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
     webCfAccessTeam: env('WEB_CF_ACCESS_TEAM', options?.webCfAccessTeam as string) ?? '',
     webCfAccessAud: env('WEB_CF_ACCESS_AUD', options?.webCfAccessAud as string) ?? '',
-    webCfAccessDevBypass: bool(options?.webCfAccessDevBypass as string) ?? process.env.WEB_CF_ACCESS_DEV_BYPASS === 'true',
+    webCfAccessDevBypass: devBypassExplicit ?? (devBypassEnv !== undefined ? devBypassEnv === 'true' : isLoopback),
     webCfAccessDevEmail: env('WEB_CF_ACCESS_DEV_EMAIL', options?.webCfAccessDevEmail as string) ?? 'dev@localhost',
     statePath: env('STATE_PATH', options?.statePath as string) ?? './data/state.json',
-    tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE === 'true',
+    tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE !== 'false',
     transport: env('TRANSPORT', options?.transport as string) ?? 'telegram',
     chatTimeoutMs: Number(options?.chatTimeoutMs ?? process.env.CHAT_TIMEOUT_MS ?? 600000),
-    baseUrl: env('OPENCODE_BASE_URL', options?.baseUrl as string) ?? 'http://localhost:4096',
+    baseUrl: env('OPENCODE_BASE_URL', options?.baseUrl as string) ?? '',
+    tgChunkSoftLimit: Number(options?.tgChunkSoftLimit ?? process.env.TG_CHUNK_SOFT_LIMIT ?? 3500),
   }
 }
 

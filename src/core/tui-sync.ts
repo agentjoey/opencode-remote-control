@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use inline polling in plugin/entry.ts instead.
+ * TUI session synchronization via EventStream — sidecar mode only.
+ * Not used in Plugin mode.
+ */
 import type { EventStream } from '../opencode/event-stream.js'
 import type { SessionState } from './state.js'
 import type { OpencodeClient } from '@opencode-ai/sdk'

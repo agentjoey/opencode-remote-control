@@ -22,6 +22,10 @@ export interface TelegramConfig {
   baseUrl?: string
   /** EventStream — required for legacy sidecar mode, optional for Plugin mode. */
   eventStream?: EventStream
+  /** Project directory where opencode.json lives. */
+  opencodeProject?: string
+  /** Telegram chunk soft limit for message pagination (default 3500). */
+  tgChunkSoftLimit?: number
 }
 
 const CAPS: ChannelCapabilities = {
@@ -102,6 +106,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     isGenerating: () => isGenerating,
     abortGeneration,
     pendingApprovals,
+    opencodeProject: cfg.opencodeProject,
   })
 
   // Error catch-all
@@ -116,7 +121,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
   function getRenderer(sessionId: string, chatId: string): TelegramSessionRenderer {
     let r = renderers.get(sessionId)
     if (!r) {
-      r = new TelegramSessionRenderer({ chatId, sessionId, bot: bot.telegram })
+      r = new TelegramSessionRenderer({ chatId, sessionId, bot: bot.telegram, chunkSoftLimit: cfg.tgChunkSoftLimit })
       renderers.set(sessionId, r)
     }
     return r
@@ -177,29 +182,41 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       let conflictCount = 0
       const MAX_CONFLICT = 8
       const MAX_RETRIES = 10
-      for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
-        try {
-          await bot.launch()
-          log.info('bot polling ended cleanly')
-          return
-        } catch (err) {
-          const e = err as { response?: { error_code?: number }; message?: string }
-          if (e?.response?.error_code === 409) {
-            if (++conflictCount >= MAX_CONFLICT) throw new Error('Telegram 409 persisted')
-            log.warn(`409 #${conflictCount}, retry in 5s`)
-            await new Promise((r) => setTimeout(r, 5000))
-          } else if (e?.response?.error_code === 401) {
-            log.error('bot token invalid (401), giving up')
+      while (true) {
+        let attempt = 0
+        let conflictCount = 0
+        for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
+          try {
+            await Promise.race([
+              bot.launch(),
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('bot.launch timeout (60s)')), 60_000)),
+            ])
+            log.info('bot polling ended cleanly')
             return
-          } else {
-            attempt += 1
-            const delay = Math.min(1000 * 2 ** attempt, 30000)
-            log.error(`bot.launch failed (attempt ${attempt}/${MAX_RETRIES})`, e?.message ?? err)
-            await new Promise((r) => setTimeout(r, delay))
+          } catch (err) {
+            const e = err as { response?: { error_code?: number }; message?: string }
+            if (e?.response?.error_code === 409) {
+              if (++conflictCount >= MAX_CONFLICT) throw new Error('Telegram 409 persisted')
+              log.warn(`409 #${conflictCount}, releasing stale lock and retrying`)
+              try { bot.stop('manual') } catch { /* bot may not have fully started */ }
+              try {
+                await bot.telegram.callApi('getUpdates', { offset: -1, timeout: 0, limit: 1 })
+              } catch { /* ignore — if this fails the next launch will tell us */ }
+              await new Promise((r) => setTimeout(r, 5000))
+            } else if (e?.response?.error_code === 401) {
+              log.error('bot token invalid (401), giving up')
+              return
+            } else {
+              attempt += 1
+              const delay = Math.min(1000 * 2 ** attempt, 30000)
+              log.error(`bot.launch failed (attempt ${attempt}/${MAX_RETRIES})`, e?.message ?? err)
+              await new Promise((r) => setTimeout(r, delay))
+            }
           }
         }
+        log.warn(`bot.launch: exhausted ${MAX_RETRIES} retries, restarting in 60s`)
+        await new Promise((r) => setTimeout(r, 60_000))
       }
-      log.error(`bot.launch: exhausted ${MAX_RETRIES} retries, giving up`)
     },
     async stop() {
       bot.stop('manual')

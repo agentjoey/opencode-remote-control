@@ -21,5 +21,15 @@
       "mode": "primary",
       "model": "deepseek/deepseek-v4-pro"
     }
-  }
+  },
+  "plugin": [
+    [
+      "opencode-remote-control",
+      {
+        "telegramBotToken": "",
+        "allowedUserIds": "",
+        "webEnabled": "false"
+      }
+    ]
+  ]
 }
