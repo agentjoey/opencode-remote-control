@@ -34,6 +34,8 @@ export interface SessionState {
   markAssistantDelivered(sessionId: string): void
   /** Epoch ms of the last relay-delivered assistant card for this session. */
   getAssistantDeliveredAt(sessionId: string): number | undefined
+  /** Free all in-memory per-session bookkeeping for a deleted session. */
+  dropSession(sessionId: string): void
   getSessionCost(sessionId: string): number | undefined
   setSessionCost(sessionId: string, cost: number | undefined): void
   flush(): Promise<void>
@@ -120,6 +122,17 @@ export function createFileBackedState(path: string): SessionState {
     hasActiveGeneration: () => aborts.size > 0,
     markAssistantDelivered: (sid) => { assistantDeliveredAt.set(sid, Date.now()) },
     getAssistantDeliveredAt: (sid) => assistantDeliveredAt.get(sid),
+    dropSession: (sid) => {
+      aborts.get(sid)?.abort()
+      aborts.delete(sid)
+      sessionCosts.delete(sid)
+      assistantDeliveredAt.delete(sid)
+      let dirty = false
+      if (cache.lastSessionId === sid) { delete cache.lastSessionId; dirty = true }
+      if (cache.pinnedSessionId === sid) { delete cache.pinnedSessionId; dirty = true }
+      if (cache.tuiSelectedSession === sid) { delete cache.tuiSelectedSession; dirty = true }
+      if (dirty) void persist()
+    },
     getSessionCost: (sid) => sessionCosts.get(sid),
     setSessionCost: (sid, cost) => {
       if (cost === undefined) sessionCosts.delete(sid)

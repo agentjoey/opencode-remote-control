@@ -1,6 +1,7 @@
 import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
 import type { SessionState } from '../core/state.js'
+import type { OcEvent } from '../core/opencode-events.js'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { createLogger } from '../utils/logger.js'
 
@@ -76,8 +77,8 @@ export function startPushNotifications(deps: PushDeps) {
     }
   }
 
-  const handler = async (raw: unknown) => {
-    const e = raw as { type: string; properties?: any }
+  const handler = async (raw: OcEvent) => {
+    const e = raw
     const p = e.properties
     const sid =
       (typeof p?.sessionID === 'string' && p.sessionID) ||
@@ -143,5 +144,11 @@ export function startPushNotifications(deps: PushDeps) {
     handleEvent: handler,
     /** No-op retained for symmetry with the plugin lifecycle. */
     stop: () => {},
+    /** Lightweight counters for the rc-status diagnostic tool. */
+    stats: () => {
+      const now = Date.now()
+      while (recentPushes.length && now - recentPushes[0] > 60 * 60 * 1000) recentPushes.shift()
+      return { pushesLastHour: recentPushes.length, trackedSessions: lastSessionPush.size }
+    },
   }
 }

@@ -7,6 +7,7 @@ import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
+import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
 
@@ -93,11 +94,12 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
 
   return {
     event: async ({ event }) => {
-      const eventType = (event as any)?.type
+      const ev = event as unknown as OcEvent
+      const eventType = ev.type
       if (!eventType) return
 
       // Feed all events to push notification engine
-      push.handleEvent(event)
+      push.handleEvent(ev)
 
       switch (eventType) {
         case 'permission.asked':
@@ -106,7 +108,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           tgTransport.handlePluginPermissionEvent(event as any).catch((err) =>
             log.error('handlePluginPermissionEvent failed', err as Error),
           )
-          try { await relay.handleEvent(event) } catch (err) {
+          try { await relay.handleEvent(ev) } catch (err) {
             log.error('relay.handleEvent failed', err as Error)
           }
           break
@@ -118,10 +120,19 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           }
           break
         }
+        case 'session.deleted': {
+          // Free per-session memory (card buffer, costs, delivery marks, aborts).
+          const sid = (event as any)?.properties?.sessionID ?? (event as any)?.properties?.info?.id
+          if (typeof sid === 'string' && sid) {
+            cardBus.drop(sid)
+            state.dropSession(sid)
+            log.info(`[plugin] session deleted, evicted: ${sid.slice(-8)}`)
+          }
+          break
+        }
         case 'session.idle':
         case 'session.error':
         case 'session.created':
-        case 'session.deleted':
         case 'session.updated':
         case 'session.status':
         case 'message.part.updated':
@@ -130,7 +141,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         case 'message.part.removed':
         case 'message.removed':
         case 'command.executed':
-          try { await relay.handleEvent(event) } catch (err) {
+          try { await relay.handleEvent(ev) } catch (err) {
             log.error('relay.handleEvent failed', err as Error)
           }
           break
@@ -141,10 +152,13 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         description: 'Show opencode-remote-control plugin status',
         args: {},
         async execute() {
+          const s = push.stats()
           const lines = [
             `Remote Control v${VERSION}`,
-            `Telegram: ${tgTransport ? 'active' : 'inactive'}`,
-            `Web:     ${config.webEnabled ? `listening :${config.webPort}` : 'disabled'}`,
+            `Telegram:   ${tgTransport ? 'active' : 'inactive'}`,
+            `Web:        ${config.webEnabled ? `listening :${config.webPort}` : 'disabled'}`,
+            `Generating: ${state.hasActiveGeneration() ? 'yes' : 'no'}`,
+            `Pushes/hr:  ${s.pushesLastHour}  (tracked sessions: ${s.trackedSessions})`,
           ]
           return lines.join('\n')
         },

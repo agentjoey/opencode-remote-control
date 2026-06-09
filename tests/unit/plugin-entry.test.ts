@@ -85,6 +85,10 @@ function fakeState() {
     setNextModel: vi.fn(),
     getActiveAbort: vi.fn(),
     setActiveAbort: vi.fn(),
+    hasActiveGeneration: vi.fn(() => false),
+    markAssistantDelivered: vi.fn(),
+    getAssistantDeliveredAt: vi.fn(),
+    dropSession: vi.fn(),
     getSessionCost: vi.fn(),
     setSessionCost: vi.fn(),
     flush: vi.fn().mockResolvedValue(undefined),
@@ -101,7 +105,7 @@ describe('remoteControlPlugin', () => {
     stop: ReturnType<typeof vi.fn>
     handlePluginPermissionEvent: ReturnType<typeof vi.fn>
   }
-  let push: { handleEvent: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> }
+  let push: { handleEvent: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; stats: ReturnType<typeof vi.fn> }
   let ctx: any
   let plug: Awaited<ReturnType<typeof remoteControlPlugin>>
 
@@ -115,7 +119,7 @@ describe('remoteControlPlugin', () => {
       stop: vi.fn().mockResolvedValue(undefined),
       handlePluginPermissionEvent: vi.fn().mockResolvedValue(undefined),
     }
-    push = { handleEvent: vi.fn(), stop: vi.fn() }
+    push = { handleEvent: vi.fn(), stop: vi.fn(), stats: vi.fn().mockReturnValue({ pushesLastHour: 0, trackedSessions: 0 }) }
 
     ;(createCardBus as any).mockReturnValue(cardBus)
     ;(createFileBackedState as any).mockReturnValue(state)
@@ -237,8 +241,9 @@ describe('remoteControlPlugin', () => {
     const toolFn = plug.tool['rc-status']
     const result = await toolFn.execute()
     expect(result).toContain('Remote Control v')
-    expect(result).toContain('Telegram: active')
+    expect(result).toMatch(/Telegram:\s+active/)
     expect(result).toContain('Web:')
+    expect(result).toMatch(/Pushes\/hr:/)
   })
 
   // ── Unknown events ──

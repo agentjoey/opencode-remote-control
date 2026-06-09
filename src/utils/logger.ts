@@ -36,8 +36,20 @@ function format(level: Level, mod: string, msg: string, extra: unknown[]): strin
   return `[${ts}] [${level.toUpperCase()}] [${mod}] ${msg}${extras}`
 }
 
+// In-memory ring buffer of recent log lines, surfaced via GET /api/logs for
+// remote diagnostics without shipping the user a log file.
+const RING_SIZE = 500
+const ring: string[] = []
+
+export function recentLogs(limit = RING_SIZE): string[] {
+  return ring.slice(-limit)
+}
+
 function write(level: Level, mod: string, msg: string, extra: unknown[]): void {
   const line = format(level, mod, msg, extra)
+
+  ring.push(line)
+  if (ring.length > RING_SIZE) ring.shift()
 
   // Write to file only — console would pollute the opencode TUI
   ensureLogFile()

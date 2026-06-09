@@ -10,6 +10,8 @@ export interface CardBus {
   subscribe(sessionId: string, fn: (card: StructuredCard) => void): () => void
   subscribeAll(fn: (card: StructuredCard) => void): () => void
   recent(sessionId: string, limit?: number): StructuredCard[]
+  /** Drop the buffer + subscribers for a deleted session (frees memory). */
+  drop(sessionId: string): void
 }
 
 export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
@@ -54,6 +56,10 @@ export function createCardBus(bufferSize: number = DEFAULT_BUFFER): CardBus {
     recent(sessionId, limit = bufferSize) {
       const buf = buffers.get(sessionId) ?? []
       return buf.slice(-limit)
+    },
+    drop(sessionId) {
+      buffers.delete(sessionId)
+      perSession.delete(sessionId)
     },
   }
 }

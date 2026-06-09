@@ -4,6 +4,7 @@ import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import { submitPrompt } from '../opencode/submit.js'
+import { sessionIdOf, errorMessageOf, type OcEvent } from './opencode-events.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
@@ -93,6 +94,15 @@ async function selectTuiSession(baseUrl: string | undefined, sessionID: string, 
   }
 }
 
+async function sessionExists(client: OpencodeClient, id: string): Promise<boolean> {
+  try {
+    const res = await client.session.get({ path: { id } })
+    return !!res.data
+  } catch {
+    return false
+  }
+}
+
 async function pickSessionFallback(client: OpencodeClient): Promise<string> {
   const res = await client.session.list()
   const sessions = (res.data ?? []) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
@@ -122,15 +132,6 @@ interface PluginSessionCtx {
   timer: ReturnType<typeof setTimeout>
 }
 
-function extractSessionID(raw: { type?: string; properties?: any; [key: string]: any }): string | undefined {
-  const p = raw.properties ?? {}
-  if (typeof p.sessionID === 'string') return p.sessionID
-  if (typeof p.sessionId === 'string') return p.sessionId
-  if (p.part && typeof p.part.sessionID === 'string') return p.part.sessionID
-  if (p.info && typeof p.info.sessionID === 'string') return p.info.sessionID
-  return undefined
-}
-
 export function createRelay(deps: RelayDeps) {
   /** Plugin mode: per-session response contexts. Only used when eventStream is undefined. */
   const pluginSessions = new Map<string, PluginSessionCtx>()
@@ -157,7 +158,15 @@ export function createRelay(deps: RelayDeps) {
       const pinnedSession = deps.state.getPinnedSessionId()
       const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
       const lastSession = deps.state.getLastSessionId()
-      const resolvedId = pinnedSession ?? tuiSession ?? lastSession ?? await pickSessionFallback(deps.client)
+      // A persisted target (pinned/tui/last) may point at a deleted session —
+      // validate it before submitting, otherwise submitWithRetry burns 5 retries
+      // against a 404. A fresh pickSessionFallback() result is trusted as-is.
+      let resolvedId = pinnedSession ?? tuiSession ?? lastSession
+      if (resolvedId && !(await sessionExists(deps.client, resolvedId))) {
+        log.warn(`target session ${resolvedId.slice(-8)} no longer exists, falling back to newest`)
+        resolvedId = undefined
+      }
+      if (!resolvedId) resolvedId = await pickSessionFallback(deps.client)
       log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
       if (deps.tuiVisible) {
         await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
@@ -278,14 +287,14 @@ export function createRelay(deps: RelayDeps) {
    * streaming/finalization for the in-flight session (message.part.updated,
    * message.part.delta, session.idle, session.error).
    */
-  relay.handleEvent = async function handleEvent(raw: { type?: string; properties?: any; [key: string]: any }) {
+  relay.handleEvent = async function handleEvent(raw: OcEvent) {
     const eventType = raw.type
     if (!eventType) return
 
     const p = raw.properties ?? {}
 
     {
-      const sid = extractSessionID(raw)
+      const sid = sessionIdOf(raw)
       const ctx = sid ? pluginSessions.get(sid) : undefined
 
       if (eventType === 'message.part.updated') {
@@ -303,7 +312,7 @@ export function createRelay(deps: RelayDeps) {
 
           const input: PartInput = {
             id: effectiveId,
-            type: part.type,
+            type: part.type ?? 'unknown',
             text: part.text,
             tool: part.tool,
             state: part.state,
@@ -373,13 +382,13 @@ export function createRelay(deps: RelayDeps) {
 
       if (eventType === 'session.error') {
         if (ctx) {
-          const errMsg = p?.error?.message ?? p?.error ?? p?.message ?? 'session error'
-          log.warn(`[plugin] session error: ${String(errMsg)}`)
-          deps.cardBus.publish({ kind: 'error', sessionId: ctx.sessionId, message: String(errMsg) })
+          const errMsg = errorMessageOf(p)
+          log.warn(`[plugin] session error: ${errMsg}`)
+          deps.cardBus.publish({ kind: 'error', sessionId: ctx.sessionId, message: errMsg })
           cleanupPluginSession(ctx.sessionId)
           deps.state.setActiveAbort(ctx.sessionId, undefined)
         } else {
-          const errMsg = p?.error?.message ?? p?.error ?? p?.message ?? 'session error'
+          const errMsg = errorMessageOf(p)
           const fallbackSid = sid || 'unknown'
           log.warn(`[plugin] session error (no ctx): ${String(errMsg)}`)
           deps.cardBus.publish({ kind: 'error', sessionId: fallbackSid, message: String(errMsg) })

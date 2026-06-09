@@ -22,6 +22,7 @@ import { registerTodo } from './routes/todo.js'
 import { registerContext } from './routes/context.js'
 import { registerApproval } from './routes/approval.js'
 import { registerVersion } from './routes/version.js'
+import { registerLogs } from './routes/logs.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -62,5 +63,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerContext(app, opts.client, opts.state)
   registerApproval(app, opts.client)
   registerVersion(app)
+  registerLogs(app)
   return app
 }
