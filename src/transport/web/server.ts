@@ -55,7 +55,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
     return c.json({ email: user.email })
   })
   registerSessions(app, opts.client, opts.state)
-  registerSession(app, opts.client)
+  registerSession(app, opts.client, opts.cardBus)
   if (opts.onMessage) registerMessage(app, opts.onMessage)
   registerAbort(app, opts.state)
   registerDiff(app, opts.client)

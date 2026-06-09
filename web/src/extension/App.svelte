@@ -20,9 +20,11 @@
   function handleSelect(id: string) {
     activeSession.set(id)
     api.history(id)
-      .then((cards) => setHistory(id, cards))
+      .then(({ cards, lastSeq }) => {
+        setHistory(id, cards, lastSeq)
+        wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq: lastSeq })
+      })
       .catch(console.warn)
-    wsClient?.send({ type: 'subscribe', sessionId: id })
   }
 
   onMount(async () => {
@@ -36,7 +38,8 @@
         onReconnect: () => {
           const id = $activeSession
           if (id) {
-            wsClient?.send({ type: 'subscribe', sessionId: id })
+            const sinceSeq = $feeds[id]?.lastSeq ?? 0
+            wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq })
           }
         },
         onMessage: (msg) => {

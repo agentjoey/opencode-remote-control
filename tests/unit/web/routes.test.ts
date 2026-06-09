@@ -41,7 +41,7 @@ function fakeClient() {
 const baseOpts = (state: any, client: any) => ({
   cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
   client, state,
-  cardBus: { publish: vi.fn(), subscribeAll: () => () => {} } as any,
+  cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
 })
@@ -60,12 +60,13 @@ describe('web routes', () => {
     expect(body[0].cost).toBe(0.1)
   })
 
-  it('GET /api/session/:id returns history StructuredCards', async () => {
+  it('GET /api/session/:id returns history cards + lastSeq', async () => {
     const app = buildServer(baseOpts(fakeState(), fakeClient()))
     const res = await app.request('/api/session/ses_a', undefined, LOOPBACK)
     expect(res.status).toBe(200)
-    const body = await res.json() as any[]
-    expect(body[0].kind).toBe('user')
+    const body = await res.json() as { cards: any[]; lastSeq: number }
+    expect(body.cards[0].kind).toBe('user')
+    expect(body.lastSeq).toBe(7)
   })
 
   it('POST /api/message accepts a prompt', async () => {

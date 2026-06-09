@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { get } from 'svelte/store'
   import { page } from '$app/stores'
   import { afterNavigate } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
-  import { sessionList, upsertCard, setHistory } from '$lib/stores/sessions.js'
+  import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
   import SessionList from '$lib/components/SessionList.svelte'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
@@ -20,9 +21,16 @@
     if (!id || id === lastLoaded) return
     lastLoaded = id
     api.history(id)
-      .then((cards) => setHistory(id, cards))
-      .catch((err) => console.warn('[layout] history failed', err))
-    wsClient?.send({ type: 'subscribe', sessionId: id })
+      .then(({ cards, lastSeq }) => {
+        setHistory(id, cards, lastSeq)
+        // Subscribe with sinceSeq so the WS replays only cards published after
+        // this snapshot — no gap, no duplicate.
+        wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq: lastSeq })
+      })
+      .catch((err) => {
+        console.warn('[layout] history failed', err)
+        wsClient?.send({ type: 'subscribe', sessionId: id })
+      })
   }
 
   onMount(() => {
@@ -32,10 +40,13 @@
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     wsClient = createWsClient({
       url: `${protocol}//${location.host}/ws`,
-      // On reconnect, re-send subscribe directly — loadSession() would
-      // early-return because lastLoaded already equals the current session id.
+      // On reconnect, re-subscribe with the feed's current lastSeq so the WS
+      // replays only what we missed while disconnected.
       onReconnect: () => {
-        if (lastLoaded) wsClient?.send({ type: 'subscribe', sessionId: lastLoaded })
+        if (lastLoaded) {
+          const sinceSeq = get(feeds)[lastLoaded]?.lastSeq ?? 0
+          wsClient?.send({ type: 'subscribe', sessionId: lastLoaded, sinceSeq })
+        }
       },
       onMessage: (msg) => {
         if (msg.type === 'card' && msg.card) {
@@ -44,9 +55,11 @@
             pendingApproval = msg.card
           }
         }
-        if (msg.type === 'sessions' && msg.sessions) {
+        // hello (on connect) and sessions (live updates) both carry the list.
+        if ((msg.type === 'hello' || msg.type === 'sessions') && msg.sessions) {
           sessionList.set(msg.sessions)
         }
+        // replayEnd: buffered catch-up done; nothing to do (cards already applied).
       },
     })
 
