@@ -43,7 +43,7 @@ export interface TelegramTransport extends Transport {
 }
 
 export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport {
-  const bot = new Telegraf(cfg.token, { handlerTimeout: 600_000, telegram: { agent: undefined } })
+  const bot = new Telegraf(cfg.token, { handlerTimeout: 600_000, telegram: { agent: false as any } })
 
   // Whitelist middleware
   bot.use(async (ctx, next) => {
