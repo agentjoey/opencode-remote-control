@@ -128,17 +128,34 @@ C→S ping / S→C pong
 ### B5 — Chrome extension cross-origin auth *(TBD — decide later)*
 
 PWA auth is CF Access **cookies**, which an extension side-panel can't rely on
-cross-origin. Two candidate paths, **not yet chosen**:
+cross-origin. The decisive constraint is that a browser `WebSocket` can't set
+request headers, so a CF service token can't authenticate the `/ws` upgrade.
 
-- **A. Service token (leaning this way):** store a CF Access *service token* in
-  `chrome.storage`; send `CF-Access-Client-Id/Secret` on REST and
-  `?cf_access_jwt=`/handshake header on WS. Decoupled from browser login.
-- **B. Same-site cookie:** require the tunnel to set `SameSite=None; Secure` and
-  add the extension origin to the CF Access app.
+- **A. Service token:** store a CF Access *service token* in `chrome.storage`;
+  send `CF-Access-Client-Id/Secret` headers on REST. WS needs either **A1** (put
+  `/ws` on a CF Access bypass + an app-minted short-TTL WS ticket) or **A2**
+  (drop WS, poll REST). Unattended (no interactive login); stores a powerful
+  long-lived secret locally.
+- **B. Same-site cookie:** set the Access cookie `SameSite=None; Secure` and
+  allowlist the (stable) extension id in CF CORS. WS works natively via the
+  cookie, but the user must re-login interactively in a tab when the CF session
+  expires — poor unattended UX.
 
-Prep that helps either way (can land before the decision): give `api/client.ts`
-and `ws/client.ts` an injectable `getAuth()` hook (PWA returns nothing; the
-extension fills it in once B5 is decided).
+See the full comparison in the B5 analysis (chat / PR notes).
+
+**Status — A2 shipped** *(REST-polling extension)*:
+- `api/client.ts` has an injectable `setAuthHeaders()` (PWA: no-op cookie path;
+  extension: CF service-token headers).
+- `adapters/extension.ts` reads `botUrl` + `cfAccessClientId/Secret` from
+  `chrome.storage`; `serviceTokenHeaders()` builds the headers.
+- The extension replaces WebSocket with polling `/api/session/:id` (change-
+  detected `setHistory`, ~2.5 s) + periodic session-list refresh, and drives the
+  `connection` store. No backend change — CF's edge validates the service token
+  and injects the assertion our middleware already checks.
+- Tradeoff (inherent to A2): completed turns appear within a poll interval; no
+  sub-second streaming. **A1** (WS ticket) is the follow-up for live streaming.
+- Still TODO: a small extension popup form to enter the bot URL + service token
+  (today they must be set in `chrome.storage` directly).
 
 ### B6 — PWA polish
 

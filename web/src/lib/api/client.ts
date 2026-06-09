@@ -6,8 +6,21 @@ export function setBaseUrl(url: string) {
   base = url.replace(/\/$/, '')
 }
 
+// Pluggable auth header injector. PWA: no-op (relies on the CF Access cookie).
+// Extension (B5/A): injects CF-Access-Client-Id/Secret service-token headers so
+// cross-origin REST is accepted at the Cloudflare edge without an interactive
+// login.
+let authHeaders: () => Record<string, string> = () => ({})
+
+export function setAuthHeaders(fn: () => Record<string, string>) {
+  authHeaders = fn
+}
+
 async function jsonGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${base}${path}`, { credentials: 'include' })
+  const res = await fetch(`${base}${path}`, {
+    credentials: 'include',
+    headers: { ...authHeaders() },
+  })
   if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
   return res.json()
 }
@@ -15,7 +28,7 @@ async function jsonGet<T>(path: string): Promise<T> {
 async function jsonPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...authHeaders() },
     credentials: 'include',
     body: JSON.stringify(body),
   })

@@ -1,64 +1,84 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { getBotUrl } from '../lib/adapters/extension.js'
-  import { setBaseUrl, api } from '../lib/api/client.js'
-  import { createWsClient } from '../lib/ws/client.js'
-  import { sessionList, feeds, cardsOf, upsertCard, setHistory } from '../lib/stores/sessions.js'
+  import { getExtensionConfig, serviceTokenHeaders, type ExtensionConfig } from '../lib/adapters/extension.js'
+  import { setBaseUrl, setAuthHeaders, api } from '../lib/api/client.js'
+  import { sessionList, feeds, cardsOf, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
+  import { connection } from '../lib/stores/connection.js'
   import SessionList from '../lib/components/SessionList.svelte'
   import Card from '../lib/components/Card.svelte'
   import Composer from '../lib/components/Composer.svelte'
   import ConnectionBadge from '../lib/components/ConnectionBadge.svelte'
 
+  // B5 option A2: a Chrome extension can't put service-token headers on a
+  // WebSocket handshake, so the extension authenticates REST with the CF Access
+  // service token and polls /api/session/:id instead of streaming over WS.
+  const POLL_MS = 2500
+  const SESSIONS_EVERY = 4 // refresh the session list every Nth poll
+
   let scrollEl: HTMLDivElement
-  let botUrl = ''
   let configured = false
   let error = ''
-  let wsClient: ReturnType<typeof createWsClient> | null = null
+  let pollTimer: ReturnType<typeof setInterval> | null = null
+  let tick = 0
+  // Skip setHistory when nothing changed (avoids needless re-render).
+  let lastSig = ''
 
   function handleSelect(id: string) {
     activeSession.set(id)
-    api.history(id)
-      .then(({ cards, lastSeq }) => {
+    lastSig = ''
+    void pollActive()
+  }
+
+  function historySig(cards: any[]): string {
+    const last = cards[cards.length - 1]
+    const tail = last?.blocks?.[last.blocks.length - 1]?.text ?? last?.text ?? ''
+    return `${cards.length}:${last?.kind ?? ''}:${tail.length}`
+  }
+
+  async function pollActive() {
+    const id = $activeSession
+    if (!id) return
+    try {
+      const { cards, lastSeq } = await api.history(id)
+      connection.set('connected')
+      const sig = historySig(cards)
+      if (sig !== lastSig) {
+        lastSig = sig
         setHistory(id, cards, lastSeq)
-        wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq: lastSeq })
-      })
-      .catch(console.warn)
+      }
+    } catch {
+      connection.set('reconnecting')
+    }
+  }
+
+  async function pollSessions() {
+    try {
+      sessionList.set(await api.sessions())
+      connection.set('connected')
+    } catch {
+      connection.set('reconnecting')
+    }
   }
 
   onMount(() => {
-    // Async setup runs in an inner IIFE so onMount can return a *synchronous*
-    // cleanup (Svelte rejects an async onMount that resolves to a cleanup fn).
+    // Async setup in an inner IIFE so onMount returns a *synchronous* cleanup.
     void (async () => {
-    try {
-      botUrl = await getBotUrl()
-      setBaseUrl(botUrl)
-      configured = true
+      try {
+        const cfg: ExtensionConfig = await getExtensionConfig()
+        setBaseUrl(cfg.botUrl)
+        setAuthHeaders(() => serviceTokenHeaders(cfg))
+        configured = true
 
-      wsClient = createWsClient({
-        url: `${botUrl.replace(/^http/, 'ws')}/ws`,
-        onReconnect: () => {
-          const id = $activeSession
-          if (id) {
-            const sinceSeq = $feeds[id]?.lastSeq ?? 0
-            wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq })
-          }
-        },
-        onMessage: (msg) => {
-          if (msg.type === 'hello' && msg.sessions) {
-            sessionList.set(msg.sessions)
-          } else if (msg.type === 'card' && msg.card) {
-            upsertCard(msg.card)
-          } else if (msg.type === 'sessions' && msg.sessions) {
-            sessionList.set(msg.sessions)
-          }
-        },
-      })
-
-      api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
-    } catch (err) {
-      error = String(err)
-    }
+        await pollSessions()
+        pollTimer = setInterval(() => {
+          tick += 1
+          void pollActive()
+          if (tick % SESSIONS_EVERY === 0) void pollSessions()
+        }, POLL_MS)
+      } catch (err) {
+        error = String(err)
+      }
     })()
 
     const listener = (msg: any) => {
@@ -67,7 +87,11 @@
       }
     }
     chrome.runtime.onMessage.addListener(listener)
-    return () => chrome.runtime.onMessage.removeListener(listener)
+    return () => {
+      if (pollTimer) clearInterval(pollTimer)
+      connection.set('offline')
+      chrome.runtime.onMessage.removeListener(listener)
+    }
   })
 
   $: currentCards = $activeSession ? cardsOf($feeds[$activeSession]) : []
@@ -81,10 +105,10 @@
   <div class="unconfigured">
     {#if error}
       <h2>Extension not configured</h2>
-      <p>Open the extension popup and set your bot URL.</p>
+      <p>Open the extension popup and set your bot URL (and CF Access service token).</p>
       <p class="err">{error}</p>
     {:else}
-      <p>Loading...</p>
+      <p>Loading…</p>
     {/if}
   </div>
 {:else}
