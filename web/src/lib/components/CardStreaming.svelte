@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ExtractStructuredCard, ToolCall } from '../api/types.js'
+  import type { ExtractStructuredCard, ToolBlock, TextBlock } from '../api/types.js'
   import MarkdownView from './MarkdownView.svelte'
   import ToolCallList from './ToolCallList.svelte'
   import { api } from '../api/client.js'
@@ -7,16 +7,16 @@
   export let card: ExtractStructuredCard<'streaming'>
 
   $: tools = card.blocks
-    .filter((b): b is ToolCall => b.type === 'tool')
+    .filter((b): b is ToolBlock => b.type === 'tool')
     .map(b => ({ tool: b.tool, args: b.args, status: b.status }))
   $: text = card.blocks
-    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+    .filter((b): b is TextBlock => b.type === 'text')
     .map(b => b.text).join('')
 </script>
 
 <div class="card streaming">
   <ToolCallList {tools} />
-  <MarkdownView src={text} />
+  <MarkdownView src={text} throttle />
   <button class="stop" on:click={() => api.abort(card.sessionId)}>Stop</button>
 </div>
 

@@ -7,7 +7,6 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { StructuredCard } from '../../core/structured-card.js'
-import type { EventStream } from '../../opencode/event-stream.js'
 import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
@@ -19,7 +18,6 @@ export interface WebTransportConfig {
   host: string
   port: number
   client: OpencodeClient
-  eventStream: EventStream
   cfAccess: { team: string; aud: string; devBypass?: boolean; devEmail?: string; host?: string }
   staticRoot: string
   cacheSize: number
@@ -88,8 +86,8 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
           return
         }
         const user = await verifyUpgradeJwt(
-          { headers: req.headers, url: req.url },
-          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail, host: cfg.cfAccess.host ?? cfg.host },
+          { headers: req.headers, url: req.url, socket: req.socket },
+          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
         )
         if (!user) {
           log.warn(`ws upgrade rejected: JWT verify failed (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr})`)

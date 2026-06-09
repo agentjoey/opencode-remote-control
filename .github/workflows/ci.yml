@@ -11,5 +11,6 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test
       - run: cd web && npm ci
+      - run: cd web && npm run check
       - run: cd web && npm run build
       - run: cd web && npm run test

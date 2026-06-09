@@ -1,0 +1,61 @@
+diff --git a/node_modules/telegraf/lib/core/network/client.js b/node_modules/telegraf/lib/core/network/client.js
+index 25fbbbb..c88df61 100644
+--- a/node_modules/telegraf/lib/core/network/client.js
++++ b/node_modules/telegraf/lib/core/network/client.js
+@@ -32,7 +32,25 @@ const fs = __importStar(require("fs"));
+ const promises_1 = require("fs/promises");
+ const https = __importStar(require("https"));
+ const path = __importStar(require("path"));
+-const node_fetch_1 = __importDefault(require("node-fetch"));
++const node_fetch_1 = {
++  __esModule: true,
++  default: async function bunFetch(url, init) {
++    const { agent, timeout, ...rest } = init || {}
++    const ctrl = new AbortController()
++    const timer = timeout ? setTimeout(() => ctrl.abort(), timeout) : null
++    try {
++      const res = await fetch(url, { ...rest, signal: init?.signal || ctrl.signal })
++      // Make node-fetch response quack like node-fetch Response
++      res.json = res.json.bind(res)
++      res.text = res.text.bind(res)
++      res.buffer = async () => Buffer.from(await res.arrayBuffer())
++      return res
++    } finally {
++      if (timer) clearTimeout(timer)
++    }
++  }
++}
++__setModuleDefault(node_fetch_1, node_fetch_1.default)
+ const check_1 = require("../helpers/check");
+ const compact_1 = require("../helpers/compact");
+ const multipart_stream_1 = __importDefault(require("./multipart-stream"));
+@@ -245,7 +263,15 @@ async function answerToWebhook(response, payload, options) {
+     return true;
+ }
+ function redactToken(error) {
+-    error.message = error.message.replace(/\/(bot|user)(\d+):[^/]+\//, '/$1$2:[REDACTED]/');
++    try {
++        error.message = error.message.replace(/\/(bot|user)(\d+):[^/]+\//, '/$1$2:[REDACTED]/');
++    } catch {
++        Object.defineProperty(error, 'message', {
++            value: error.message.replace(/\/(bot|user)(\d+):[^/]+\//, '/$1$2:[REDACTED]/'),
++            writable: true,
++            configurable: true,
++        });
++    }
+     throw error;
+ }
+ class ApiClient {
+diff --git a/node_modules/telegraf/lib/core/network/polling.js b/node_modules/telegraf/lib/core/network/polling.js
+index 42f20a5..44fc99e 100644
+--- a/node_modules/telegraf/lib/core/network/polling.js
++++ b/node_modules/telegraf/lib/core/network/polling.js
+@@ -42,7 +42,7 @@ class Polling {
+                 const err = error;
+                 if (err.name === 'AbortError')
+                     return;
+-                if (err.name === 'FetchError' ||
++                if (err.name === 'TimeoutError' || err.name === 'FetchError' ||
+                     (err instanceof error_1.TelegramError && err.code === 429) ||
+                     (err instanceof error_1.TelegramError && err.code >= 500)) {
+                     const retryAfter = (_b = (_a = err.parameters) === null || _a === void 0 ? void 0 : _a.retry_after) !== null && _b !== void 0 ? _b : 5;

@@ -3,6 +3,7 @@ import type {
   AssistantMeta,
   InfoSection,
   Button,
+  ContentBlock,
   StructuredCard,
 } from '$shared/structured-card.js'
 
@@ -11,8 +12,13 @@ export type {
   AssistantMeta,
   InfoSection,
   Button,
+  ContentBlock,
   StructuredCard,
 }
+
+/** The 'tool' / 'text' variants of a ContentBlock. */
+export type ToolBlock = Extract<ContentBlock, { type: 'tool' }>
+export type TextBlock = Extract<ContentBlock, { type: 'text' }>
 
 export type ExtractStructuredCard<K extends StructuredCard['kind']> = Extract<StructuredCard, { kind: K }>
 

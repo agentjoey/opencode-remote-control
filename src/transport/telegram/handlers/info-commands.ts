@@ -10,15 +10,24 @@ interface InfoDeps {
   state: SessionState
 }
 
+function safeBaseUrl(url: string): string | null {
+  return url && url.startsWith('http') ? url : null
+}
+
 export function registerInfoCommands(deps: InfoDeps): void {
   deps.bot.command('diff', async (ctx: Context) => {
+    const base = safeBaseUrl(deps.baseUrl)
+    if (!base) {
+      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
+      return
+    }
     const last = deps.state.getLastSessionId()
     if (!last) {
       await ctx.reply('<b>📝 Diff</b>\n\nNo session yet.', { parse_mode: 'HTML' })
       return
     }
     try {
-      const res = await fetch(`${deps.baseUrl}/session/${last}/diff`, {
+      const res = await fetch(`${base}/session/${last}/diff`, {
         signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -48,10 +57,15 @@ export function registerInfoCommands(deps: InfoDeps): void {
   })
 
   deps.bot.command('todo', async (ctx: Context) => {
+    const base = safeBaseUrl(deps.baseUrl)
+    if (!base) {
+      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
+      return
+    }
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const res = await fetch(`${deps.baseUrl}/session/${last}/todo`, { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${base}/session/${last}/todo`, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const todos = (await res.json()) as Array<{ content: string; status: 'pending' | 'in_progress' | 'completed' }>
       if (todos.length === 0) {
@@ -71,16 +85,21 @@ export function registerInfoCommands(deps: InfoDeps): void {
   })
 
   deps.bot.command('context', async (ctx: Context) => {
+    const base = safeBaseUrl(deps.baseUrl)
+    if (!base) {
+      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
+      return
+    }
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const sRes = await fetch(`${deps.baseUrl}/session/${last}`, { signal: AbortSignal.timeout(5000) })
+      const sRes = await fetch(`${base}/session/${last}`, { signal: AbortSignal.timeout(5000) })
       const s = (await sRes.json()) as {
         agent?: string
         tokens?: { input?: number; output?: number; cache?: number }
         cost?: number
       }
-      const cRes = await fetch(`${deps.baseUrl}/config`, { signal: AbortSignal.timeout(5000) })
+      const cRes = await fetch(`${base}/config`, { signal: AbortSignal.timeout(5000) })
       const c = (await cRes.json()) as { agent?: Record<string, { model?: string }> }
       const model = s.agent && c.agent?.[s.agent]?.model
       const nextAgent = deps.state.getNextAgent()

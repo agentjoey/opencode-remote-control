@@ -27,9 +27,6 @@ export async function runInitWizard(deps: InitDeps): Promise<void> {
     process.exit(1)
   }
 
-  const spawnRaw = await deps.ask('Auto-spawn opencode serve on start? (Y/n): ')
-  const spawnOpencode = !spawnRaw.trim().toLowerCase().startsWith('n')
-
   console.log('\n🔌 Testing connection to Telegram…')
   try {
     await deps.testConnection(token)
@@ -54,7 +51,6 @@ export async function runInitWizard(deps: InitDeps): Promise<void> {
   const lines = [
     `TELEGRAM_BOT_TOKEN=${token}`,
     `ALLOWED_USER_IDS=${userId}`,
-    `SPAWN_OPENCODE=${spawnOpencode}`,
     'OPENCODE_BASE_URL=http://localhost:4096',
   ]
 
@@ -63,9 +59,7 @@ export async function runInitWizard(deps: InitDeps): Promise<void> {
   console.log('Next steps:')
   console.log('  npm install')
   console.log('  npm run build')
-  console.log('  npm start')
-  console.log('\nOr install as a background service:')
-  console.log('  bash scripts/install-launchd.sh')
+  console.log('  npx opencode-remote-control install')
 }
 
 export async function defaultTestConnection(token: string): Promise<void> {
