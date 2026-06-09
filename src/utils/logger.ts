@@ -7,7 +7,7 @@ type Level = 'debug' | 'info' | 'warn' | 'error'
 const LEVELS: Record<Level, number> = { debug: 0, info: 1, warn: 2, error: 3 }
 
 function currentLevel(): number {
-  const raw = (process.env.LOG_LEVEL ?? 'info').toLowerCase()
+  const raw = (process.env.LOG_LEVEL ?? 'warn').toLowerCase()
   return LEVELS[raw as Level] ?? LEVELS.info
 }
 
@@ -39,16 +39,13 @@ function format(level: Level, mod: string, msg: string, extra: unknown[]): strin
 function write(level: Level, mod: string, msg: string, extra: unknown[]): void {
   const line = format(level, mod, msg, extra)
 
-  // Console output for real-time visibility
-  const con = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
-  con(line)
-
-  // File output for persistent audit trail
+  // Write to file only — console would pollute the opencode TUI
   ensureLogFile()
   try {
     appendFileSync(logFilePath(), line + '\n')
   } catch {
-    // file write failed — already logged to console above
+    // fallback to stderr if file writing fails
+    if (level === 'error' || level === 'warn') console.error(line)
   }
 }
 
