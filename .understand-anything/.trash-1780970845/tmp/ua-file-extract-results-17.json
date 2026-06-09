@@ -1,0 +1,501 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "web/src/app.html",
+      "language": "html",
+      "fileCategory": "markup",
+      "totalLines": 22,
+      "nonEmptyLines": 22,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/extension/App.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 127,
+      "nonEmptyLines": 116,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/adapters/extension.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 5,
+      "functions": [
+        {
+          "name": "getBotUrl",
+          "startLine": 1,
+          "endLine": 5,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getBotUrl",
+          "line": 1,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getBotUrl",
+          "callee": "chrome.storage.local.get",
+          "lineNumber": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/api/client.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 37,
+      "nonEmptyLines": 32,
+      "functions": [
+        {
+          "name": "setBaseUrl",
+          "startLine": 5,
+          "endLine": 7,
+          "params": [
+            "url"
+          ]
+        },
+        {
+          "name": "jsonGet",
+          "startLine": 9,
+          "endLine": 13,
+          "params": [
+            "path"
+          ]
+        },
+        {
+          "name": "jsonPost",
+          "startLine": 15,
+          "endLine": 24,
+          "params": [
+            "path",
+            "body"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "setBaseUrl",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "api",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setBaseUrl",
+          "callee": "url.replace",
+          "lineNumber": 6
+        },
+        {
+          "caller": "jsonGet",
+          "callee": "fetch",
+          "lineNumber": 10
+        },
+        {
+          "caller": "jsonGet",
+          "callee": "res.json",
+          "lineNumber": 12
+        },
+        {
+          "caller": "jsonPost",
+          "callee": "fetch",
+          "lineNumber": 16
+        },
+        {
+          "caller": "jsonPost",
+          "callee": "JSON.stringify",
+          "lineNumber": 20
+        },
+        {
+          "caller": "jsonPost",
+          "callee": "res.json",
+          "lineNumber": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/api/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 24,
+      "exports": [
+        {
+          "name": "ToolCall",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "AssistantMeta",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "InfoSection",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "Button",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "StructuredCard",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/components/ApprovalModal.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 80,
+      "nonEmptyLines": 76,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/Card.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 43,
+      "nonEmptyLines": 40,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardAssistant.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 48,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardError.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 30,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardInfo.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 46,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardStatus.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 36,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardStreaming.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 44,
+      "nonEmptyLines": 40,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardThinking.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 35,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardThinkStream.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 31,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/CardUser.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 20,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/Composer.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 73,
+      "nonEmptyLines": 68,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/ConnectionBadge.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 18,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/MarkdownView.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 46,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/MarkdownView.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 14,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/components/SessionList.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 92,
+      "nonEmptyLines": 87,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/components/ToolCallList.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 58,
+      "nonEmptyLines": 53,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/lib/stores/activeSession.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 25,
+      "functions": [
+        {
+          "name": "readCookie",
+          "startLine": 3,
+          "endLine": 6,
+          "params": []
+        },
+        {
+          "name": "writeCookie",
+          "startLine": 8,
+          "endLine": 15,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "createActiveSessionStore",
+          "startLine": 17,
+          "endLine": 28,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "activeSession",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "readCookie",
+          "callee": "document.cookie.match",
+          "lineNumber": 4
+        },
+        {
+          "caller": "readCookie",
+          "callee": "decodeURIComponent",
+          "lineNumber": 5
+        },
+        {
+          "caller": "writeCookie",
+          "callee": "encodeURIComponent",
+          "lineNumber": 11
+        },
+        {
+          "caller": "createActiveSessionStore",
+          "callee": "readCookie",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createActiveSessionStore",
+          "callee": "writable",
+          "lineNumber": 19
+        },
+        {
+          "caller": "set",
+          "callee": "writeCookie",
+          "lineNumber": 24
+        },
+        {
+          "caller": "set",
+          "callee": "set",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/lib/stores/sessions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 29,
+      "functions": [
+        {
+          "name": "appendCard",
+          "startLine": 7,
+          "endLine": 28,
+          "params": [
+            "card"
+          ]
+        },
+        {
+          "name": "setHistory",
+          "startLine": 30,
+          "endLine": 32,
+          "params": [
+            "sessionId",
+            "cards"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "sessionList",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "cardsBySession",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "appendCard",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "setHistory",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "appendCard",
+          "callee": "cardsBySession.update",
+          "lineNumber": 10
+        },
+        {
+          "caller": "appendCard",
+          "callee": "JSON.stringify",
+          "lineNumber": 14
+        },
+        {
+          "caller": "appendCard",
+          "callee": "JSON.stringify",
+          "lineNumber": 14
+        },
+        {
+          "caller": "appendCard",
+          "callee": "list.filter",
+          "lineNumber": 18
+        },
+        {
+          "caller": "appendCard",
+          "callee": "trimmed.push",
+          "lineNumber": 19
+        },
+        {
+          "caller": "appendCard",
+          "callee": "list.push",
+          "lineNumber": 22
+        },
+        {
+          "caller": "setHistory",
+          "callee": "cardsBySession.update",
+          "lineNumber": 31
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "web/src/routes/[sessionId]/+page.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 40,
+      "nonEmptyLines": 34,
+      "metrics": {}
+    },
+    {
+      "path": "web/src/routes/+layout.svelte",
+      "language": "svelte",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 120,
+      "metrics": {}
+    }
+  ]
+}

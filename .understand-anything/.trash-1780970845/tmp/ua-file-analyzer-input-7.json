@@ -1,0 +1,9 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": ".agent/sprints/sprint-001.md", "language": "markdown", "sizeLines": 38, "fileCategory": "docs"},
+    {"path": ".agent/sprints/sprint-002.md", "language": "markdown", "sizeLines": 54, "fileCategory": "docs"},
+    {"path": ".agent/sprints/sprint-003.md", "language": "markdown", "sizeLines": 35, "fileCategory": "docs"}
+  ],
+  "batchImportData": {".agent/sprints/sprint-001.md": [], ".agent/sprints/sprint-002.md": [], ".agent/sprints/sprint-003.md": []}
+}

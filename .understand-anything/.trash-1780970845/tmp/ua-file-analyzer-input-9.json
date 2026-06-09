@@ -1,0 +1,11 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "docs/ARCHITECTURE.md", "language": "markdown", "sizeLines": 160, "fileCategory": "docs"},
+    {"path": "docs/COMPARISON_IM_HUB.md", "language": "markdown", "sizeLines": 57, "fileCategory": "docs"},
+    {"path": "docs/OPS.md", "language": "markdown", "sizeLines": 124, "fileCategory": "docs"},
+    {"path": "docs/QUICKSTART.md", "language": "markdown", "sizeLines": 87, "fileCategory": "docs"},
+    {"path": "docs/RELEASE.md", "language": "markdown", "sizeLines": 117, "fileCategory": "docs"}
+  ],
+  "batchImportData": {"docs/ARCHITECTURE.md": [], "docs/COMPARISON_IM_HUB.md": [], "docs/OPS.md": [], "docs/QUICKSTART.md": [], "docs/RELEASE.md": []}
+}

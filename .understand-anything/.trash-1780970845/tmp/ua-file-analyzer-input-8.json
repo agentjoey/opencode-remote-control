@@ -1,0 +1,23 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": ".env.example", "language": "config", "sizeLines": 76, "fileCategory": "config"},
+    {"path": "CHANGELOG.md", "language": "markdown", "sizeLines": 209, "fileCategory": "docs"},
+    {"path": "CONTRIBUTING.md", "language": "markdown", "sizeLines": 40, "fileCategory": "docs"},
+    {"path": "README.md", "language": "markdown", "sizeLines": 199, "fileCategory": "docs"},
+    {"path": "SECURITY.md", "language": "markdown", "sizeLines": 15, "fileCategory": "docs"},
+    {"path": "config.json", "language": "json", "sizeLines": 7, "fileCategory": "config"},
+    {"path": "tsconfig.json", "language": "json", "sizeLines": 24, "fileCategory": "config"},
+    {"path": "vitest.config.ts", "language": "typescript", "sizeLines": 24, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    ".env.example": [],
+    "CHANGELOG.md": [],
+    "CONTRIBUTING.md": [],
+    "README.md": [],
+    "SECURITY.md": [],
+    "config.json": [],
+    "tsconfig.json": [],
+    "vitest.config.ts": []
+  }
+}

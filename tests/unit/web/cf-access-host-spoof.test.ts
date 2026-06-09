@@ -75,8 +75,10 @@ describe('CF-Access Host header spoofing prevention', () => {
     expect(user!.email).toBe('dev@localhost')
   })
 
-  it('allows via opts.host when explicitly set to loopback', async () => {
-    // opts.host is a server-level config, not client-supplied — still safe
+  it('ignores opts.host even when set to loopback if the peer is remote', async () => {
+    // opts.host is the server's own bind address — it must NOT grant bypass.
+    // Behind a tunnel the peer is 127.0.0.1 while the real client is remote;
+    // trusting opts.host (or a loopback bind) would defeat CF Access entirely.
     const user = await verifyUpgradeJwt(
       {
         headers: {},
@@ -84,8 +86,7 @@ describe('CF-Access Host header spoofing prevention', () => {
       },
       { team: 'test', aud: 'app', devBypass: true, host: '127.0.0.1' },
     )
-    expect(user).not.toBeNull()
-    expect(user!.email).toBe('dev@localhost')
+    expect(user).toBeNull()
   })
 
   // ── Normal JWT flow (devBypass off) ──

@@ -1,0 +1,807 @@
+{
+  "nodes": [
+    {
+      "id": "document:.agent/BACKLOG.md",
+      "type": "document",
+      "name": "BACKLOG.md",
+      "filePath": ".agent/BACKLOG.md",
+      "summary": "Product backlog tracking unprioritized work for opencode-remote-control, organized by HIGH / MED / LOW / research priority with completed-sprint history.",
+      "tags": ["documentation", "backlog", "planning", "internal"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:.agent/CURRENT.md",
+      "type": "document",
+      "name": "CURRENT.md",
+      "filePath": ".agent/CURRENT.md",
+      "summary": "Current status snapshot for the v0.6.0-rc.1 release, summarising the plugin-registry migration, test counts, and key architectural decisions.",
+      "tags": ["documentation", "status", "release-notes", "internal"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.github/dependabot.yml",
+      "type": "config",
+      "name": "dependabot.yml",
+      "filePath": ".github/dependabot.yml",
+      "summary": "Dependabot v2 configuration enabling weekly npm dependency updates with a 10-PR limit and the `dependencies` label applied via `chore(deps)` commit messages.",
+      "tags": ["configuration", "ci-cd", "dependencies", "dependabot"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:.github/ISSUE_TEMPLATE/bug.md",
+      "type": "document",
+      "name": "bug.md",
+      "filePath": ".github/ISSUE_TEMPLATE/bug.md",
+      "summary": "GitHub issue template for bug reports, capturing reproduction steps, expected behavior, environment details (OS, Node, opencode, transport), and log snippets.",
+      "tags": ["documentation", "issue-template", "bug-report", "github"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:.github/ISSUE_TEMPLATE/feature.md",
+      "type": "document",
+      "name": "feature.md",
+      "filePath": ".github/ISSUE_TEMPLATE/feature.md",
+      "summary": "GitHub issue template for feature requests, prompting the problem statement, proposed solution, considered alternatives, and additional context.",
+      "tags": ["documentation", "issue-template", "feature-request", "github"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:.github/PULL_REQUEST_TEMPLATE.md",
+      "type": "document",
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "filePath": ".github/PULL_REQUEST_TEMPLATE.md",
+      "summary": "PR template with Summary, Details, Testing, and a Checklist section requiring `npm test`, `tsc --noEmit`, new tests, and updated docs.",
+      "tags": ["documentation", "pr-template", "contributing", "github"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "Understand-Anything ignore file using .gitignore-style globs, currently empty (all sample patterns are commented out) so the project remains fully analyzable.",
+      "tags": ["configuration", "tooling", "analysis-ignore", "config"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "type": "config",
+      "name": "ai.opencode.remote-control.telegram.plist",
+      "filePath": "deploy/ai.opencode.remote-control.telegram.plist",
+      "summary": "macOS launchd plist that keeps the Telegram transport running under `dist/launcher/index.js` with `KeepAlive` enabled, logs to `/tmp/opencode-remote-control-telegram.{log,err}`, and a 10-second restart throttle.",
+      "tags": ["configuration", "launchd", "macos", "deployment", "daemon"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:docs/superpowers/phase5-acceptance.md",
+      "type": "document",
+      "name": "phase5-acceptance.md",
+      "filePath": "docs/superpowers/phase5-acceptance.md",
+      "summary": "Phase 5 acceptance checklist documenting the 133 root + 4 web tests passing, 35 completed tasks (StructuredCard, CardBus, Web PWA, Chrome MV3), known issues, and the v0.5.0 release tag command.",
+      "tags": ["documentation", "acceptance", "release", "checklist"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "type": "document",
+      "name": "CONTRIBUTING-NEW-TRANSPORT.md",
+      "filePath": "docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "summary": "Step-by-step guide for adding a new channel transport: the `Transport`/`ChannelCapabilities`/`Card` interfaces, a 7-step recipe (directory, factory, loader, env vars, tests, docs, README), and a skeleton example.",
+      "tags": ["documentation", "contributing", "transport", "architecture", "extensibility"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/transports/telegram.md",
+      "type": "document",
+      "name": "telegram.md",
+      "filePath": "docs/transports/telegram.md",
+      "summary": "Telegram transport setup guide: bot creation with @BotFather, user ID discovery, .env configuration, launch instructions, four common-error recipes, and the launchd install snippet.",
+      "tags": ["documentation", "telegram", "setup", "troubleshooting"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/install-launchd.sh",
+      "type": "file",
+      "name": "install-launchd.sh",
+      "filePath": "scripts/install-launchd.sh",
+      "summary": "macOS installer that validates `node` and `opencode` on PATH, builds the dist if missing, substitutes the project directory into the plist template, and bootstraps the LaunchAgent.",
+      "tags": ["script", "shell", "install", "launchd", "macos"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:scripts/patch-telegraf.cjs",
+      "type": "file",
+      "name": "patch-telegraf.cjs",
+      "filePath": "scripts/patch-telegraf.cjs",
+      "summary": "CommonJS patch script that rewrites Telegraf's `redactToken` helper to survive Bun's readonly `Error.message` property via a `try`/defineProperty fallback.",
+      "tags": ["script", "javascript", "patch", "telegraf", "bun-compat"],
+      "complexity": "simple",
+      "languageNotes": "Idempotent postinstall patch: detects already-patched content and exits early to support re-runs."
+    },
+    {
+      "id": "file:scripts/uninstall.sh",
+      "type": "file",
+      "name": "uninstall.sh",
+      "filePath": "scripts/uninstall.sh",
+      "summary": "macOS uninstaller that bootouts the LaunchAgent and removes the plist from `~/Library/LaunchAgents/`.",
+      "tags": ["script", "shell", "uninstall", "launchd", "macos"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/cli/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/cli/index.ts",
+      "summary": "CLI entry point that dispatches the subcommand: `init` runs the setup wizard, `install` / `uninstall` mutate the opencode config, `install-svc` prints the launchd hint, and the default starts the launcher.",
+      "tags": ["entry-point", "cli", "dispatcher", "subcommand"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/cli/init.ts",
+      "type": "file",
+      "name": "init.ts",
+      "filePath": "src/cli/init.ts",
+      "summary": "Interactive setup wizard that prompts for Telegram bot token and user ID, validates the bot via Telegram's `getMe` API, and writes a starter `.env` file with sane defaults.",
+      "tags": ["cli", "wizard", "setup", "telegram", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/cli/install.ts",
+      "type": "file",
+      "name": "install.ts",
+      "filePath": "src/cli/install.ts",
+      "summary": "CLI install command that registers `opencode-remote-control` in the global `~/.config/opencode/opencode.json` (or project `opencode.json` with `--local`) as a plugin tuple with token/IDs/web options.",
+      "tags": ["cli", "install", "plugin", "config-mutation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/cli/uninstall.ts",
+      "type": "file",
+      "name": "uninstall.ts",
+      "filePath": "src/cli/uninstall.ts",
+      "summary": "CLI uninstall command that filters out the opencode-remote-control plugin entry from the opencode config JSON, deleting the `plugin` key entirely when empty.",
+      "tags": ["cli", "uninstall", "plugin", "config-mutation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "src/config.ts",
+      "summary": "Zod-validated runtime configuration loader that parses process.env into a strongly-typed `Config` covering Telegram, opencode, web, CF Access, and chunking tunables.",
+      "tags": ["config", "validation", "zod", "environment"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/history.ts",
+      "type": "file",
+      "name": "history.ts",
+      "filePath": "src/core/history.ts",
+      "summary": "History reconstruction that converts opencode SDK messages into `StructuredCard[]` (tail-N window of 50 by default) and provides a tool-arg summarizer for the bash/read/edit/grep toolset.",
+      "tags": ["core", "history", "transformation", "streaming", "tail-window"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/state.ts",
+      "type": "file",
+      "name": "state.ts",
+      "filePath": "src/core/state.ts",
+      "summary": "File-backed session state store with debounced atomic-rename persistence, providing typed get/set accessors for last/pinned session, next agent/model, TUI selection, current agent, abort controllers, and per-session cost.",
+      "tags": ["core", "state", "persistence", "debounced", "session"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/stream-accumulator.ts",
+      "type": "file",
+      "name": "stream-accumulator.ts",
+      "filePath": "src/core/stream-accumulator.ts",
+      "summary": "Streaming-part accumulator that deduplicates and orders SDK `EventMessagePartUpdated` events into an ordered `ContentBlock[]`, filtering out empty-text overwrites and reasoning-only blocks from the public output.",
+      "tags": ["core", "streaming", "accumulator", "deduplication", "transformation"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/core/tui-sync.ts",
+      "type": "file",
+      "name": "tui-sync.ts",
+      "filePath": "src/core/tui-sync.ts",
+      "summary": "TUI session synchroniser that listens to `tui.session.select` events to update the state's `tuiSelectedSession` and polls the selected session every 5s to refresh the current agent name.",
+      "tags": ["core", "tui-sync", "event-bus", "polling", "session"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/core/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "src/core/types.ts",
+      "summary": "Shared core types: `Card`, `Button`, `IncomingMessage`, and `ChannelCapabilities` — the channel-agnostic vocabulary consumed by transports and the relay.",
+      "tags": ["type-definition", "core", "transport", "shared-types"],
+      "complexity": "simple",
+      "languageNotes": "Pure type-only module: no runtime code, four exported interfaces form the cross-transport contract."
+    },
+    {
+      "id": "file:src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/index.ts",
+      "summary": "Plugin/launcher entry point: waits for the opencode health check, builds the event stream, file-backed state, card bus, telegram (and optional web) transports, and the relay; wires SIGINT/SIGTERM shutdown.",
+      "tags": ["entry-point", "orchestrator", "lifecycle", "transport-setup", "plugin"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/index.ts:waitForHealth",
+      "type": "function",
+      "name": "waitForHealth",
+      "filePath": "src/index.ts",
+      "lineRange": [17, 29],
+      "summary": "Polls the opencode `/health` endpoint with a 3-attempt backoff (2s/4s/8s) before throwing if the server never becomes reachable.",
+      "tags": ["health-check", "retry", "lifecycle", "utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/index.ts:runBot",
+      "type": "function",
+      "name": "runBot",
+      "filePath": "src/index.ts",
+      "lineRange": [31, 108],
+      "summary": "Async orchestrator exported as the plugin/launcher entry: composes config, health, client, event stream, state, card bus, telegram (+ optional web) transports, relay, TUI sync, and push notifications, with graceful SIGINT/SIGTERM shutdown.",
+      "tags": ["entry-point", "orchestrator", "lifecycle", "composition-root"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/cli/index.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "src/cli/index.ts",
+      "lineRange": [6, 41],
+      "summary": "CLI dispatcher that reads `process.argv[2]` and routes to `init`, `install-svc`, `install`, `uninstall`, or the default launcher import.",
+      "tags": ["cli", "dispatcher", "entry-point"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/cli/init.ts:runInitWizard",
+      "type": "function",
+      "name": "runInitWizard",
+      "filePath": "src/cli/init.ts",
+      "lineRange": [13, 69],
+      "summary": "Interactive setup wizard that prompts for Telegram token, user ID, and spawn preference, validates the token against `getMe`, and writes a starter `.env` file with overwrite confirmation.",
+      "tags": ["cli", "wizard", "validation", "env-generation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/cli/install.ts:runInstall",
+      "type": "function",
+      "name": "runInstall",
+      "filePath": "src/cli/install.ts",
+      "lineRange": [40, 131],
+      "summary": "Installs/updates the `opencode-remote-control` plugin entry in the chosen opencode config file, interactively prompting for TELEGRAM_BOT_TOKEN, ALLOWED_USER_IDS, and web toggle (or reusing prior config under `--yes`).",
+      "tags": ["cli", "install", "plugin-registry", "config-mutation"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/cli/install.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "src/cli/install.ts",
+      "lineRange": [133, 162],
+      "summary": "Parses `--local` / `--yes` / `--help` argv flags and delegates to `runInstall`; prints a usage banner when `--help` is supplied.",
+      "tags": ["cli", "entry-point", "argv"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/cli/uninstall.ts:runUninstall",
+      "type": "function",
+      "name": "runUninstall",
+      "filePath": "src/cli/uninstall.ts",
+      "lineRange": [15, 45],
+      "summary": "Removes any `opencode-remote-control` plugin entry from the targeted opencode config, deleting the `plugin` key entirely when the list becomes empty.",
+      "tags": ["cli", "uninstall", "plugin-registry", "config-mutation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/cli/uninstall.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "src/cli/uninstall.ts",
+      "lineRange": [47, 65],
+      "summary": "Parses `--local` / `--help` flags and delegates to `runUninstall`, printing a usage banner when help is requested.",
+      "tags": ["cli", "entry-point", "argv"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/config.ts:loadConfig",
+      "type": "function",
+      "name": "loadConfig",
+      "filePath": "src/config.ts",
+      "lineRange": [65, 104],
+      "summary": "Parses `process.env` through the zod schema, normalises `ALLOWED_USER_IDS`/`ALLOWED_USER_ID` (with a deprecation warning), enforces at least one allowed ID, and returns the strongly-typed `Config`.",
+      "tags": ["config", "validation", "zod", "environment"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/history.ts:messageToCards",
+      "type": "function",
+      "name": "messageToCards",
+      "filePath": "src/core/history.ts",
+      "lineRange": [11, 69],
+      "summary": "Converts a single opencode SDK message (user or assistant role) into one or more `StructuredCard`s, assembling text and tool blocks and extracting assistant metadata (agent, model, cost, tokens).",
+      "tags": ["transformation", "core", "history", "adapter"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/history.ts:reconstructHistory",
+      "type": "function",
+      "name": "reconstructHistory",
+      "filePath": "src/core/history.ts",
+      "lineRange": [78, 93],
+      "summary": "Fetches messages for a session via the opencode client, tails to `limit` (default 50) to bound client-side rendering cost, and maps each message through `messageToCards`.",
+      "tags": ["core", "history", "tail-window", "sdk-call"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/core/state.ts:createFileBackedState",
+      "type": "function",
+      "name": "createFileBackedState",
+      "filePath": "src/core/state.ts",
+      "lineRange": [36, 109],
+      "summary": "Factory that returns a `SessionState` interface backed by an in-memory cache plus 100ms-debounced atomic-rename persistence, with maps for active abort controllers and per-session cost.",
+      "tags": ["factory", "state", "persistence", "debounced", "atomic-rename"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/core/stream-accumulator.ts:createStreamAccumulator",
+      "type": "function",
+      "name": "createStreamAccumulator",
+      "filePath": "src/core/stream-accumulator.ts",
+      "lineRange": [40, 136],
+      "summary": "Factory returning a stream-accumulator object with `update`/`finalize`/`getText`/`getTools`/`reset` methods that deduplicate SDK Part updates by id, preserve insertion order, and emit ordered `ContentBlock[]` output.",
+      "tags": ["factory", "streaming", "deduplication", "accumulator"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/core/tui-sync.ts:startTuiSync",
+      "type": "function",
+      "name": "startTuiSync",
+      "filePath": "src/core/tui-sync.ts",
+      "lineRange": [15, 53],
+      "summary": "Subscribes to the event stream and updates `tuiSelectedSession` from explicit TUI navigation events, then polls the selected session every 5s to refresh the current agent name; returns a cleanup disposer.",
+      "tags": ["core", "event-bus", "polling", "session-sync"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/index.ts",
+      "type": "contains",
+      "target": "function:src/index.ts:waitForHealth",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "contains",
+      "target": "function:src/index.ts:runBot",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "exports",
+      "target": "function:src/index.ts:runBot",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/cli/index.ts",
+      "type": "contains",
+      "target": "function:src/cli/index.ts:main",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/init.ts",
+      "type": "contains",
+      "target": "function:src/cli/init.ts:runInitWizard",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/init.ts",
+      "type": "exports",
+      "target": "function:src/cli/init.ts:runInitWizard",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/cli/install.ts",
+      "type": "contains",
+      "target": "function:src/cli/install.ts:runInstall",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/install.ts",
+      "type": "contains",
+      "target": "function:src/cli/install.ts:main",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/install.ts",
+      "type": "exports",
+      "target": "function:src/cli/install.ts:runInstall",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/cli/install.ts",
+      "type": "exports",
+      "target": "function:src/cli/install.ts:main",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/cli/uninstall.ts",
+      "type": "contains",
+      "target": "function:src/cli/uninstall.ts:runUninstall",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/uninstall.ts",
+      "type": "contains",
+      "target": "function:src/cli/uninstall.ts:main",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/cli/uninstall.ts",
+      "type": "exports",
+      "target": "function:src/cli/uninstall.ts:runUninstall",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/cli/uninstall.ts",
+      "type": "exports",
+      "target": "function:src/cli/uninstall.ts:main",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/config.ts",
+      "type": "contains",
+      "target": "function:src/config.ts:loadConfig",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/config.ts",
+      "type": "exports",
+      "target": "function:src/config.ts:loadConfig",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "contains",
+      "target": "function:src/core/history.ts:messageToCards",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "contains",
+      "target": "function:src/core/history.ts:reconstructHistory",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "exports",
+      "target": "function:src/core/history.ts:messageToCards",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "exports",
+      "target": "function:src/core/history.ts:reconstructHistory",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/state.ts",
+      "type": "contains",
+      "target": "function:src/core/state.ts:createFileBackedState",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/state.ts",
+      "type": "exports",
+      "target": "function:src/core/state.ts:createFileBackedState",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/stream-accumulator.ts",
+      "type": "contains",
+      "target": "function:src/core/stream-accumulator.ts:createStreamAccumulator",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/stream-accumulator.ts",
+      "type": "exports",
+      "target": "function:src/core/stream-accumulator.ts:createStreamAccumulator",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/tui-sync.ts",
+      "type": "contains",
+      "target": "function:src/core/tui-sync.ts:startTuiSync",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/tui-sync.ts",
+      "type": "exports",
+      "target": "function:src/core/tui-sync.ts:startTuiSync",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "document:.agent/CURRENT.md",
+      "type": "documents",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/CURRENT.md",
+      "type": "documents",
+      "target": "file:src/cli/install.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/CURRENT.md",
+      "type": "documents",
+      "target": "file:src/cli/uninstall.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/BACKLOG.md",
+      "type": "related",
+      "target": "file:src/core/tui-sync.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/BACKLOG.md",
+      "type": "related",
+      "target": "file:src/core/stream-accumulator.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.agent/BACKLOG.md",
+      "type": "related",
+      "target": "file:src/core/history.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/phase5-acceptance.md",
+      "type": "documents",
+      "target": "file:src/core/stream-accumulator.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/phase5-acceptance.md",
+      "type": "documents",
+      "target": "file:src/core/history.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "type": "documents",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "type": "documents",
+      "target": "file:src/config.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/CONTRIBUTING-NEW-TRANSPORT.md",
+      "type": "documents",
+      "target": "file:src/core/types.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/telegram.md",
+      "type": "documents",
+      "target": "file:src/cli/init.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/telegram.md",
+      "type": "documents",
+      "target": "file:src/config.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/telegram.md",
+      "type": "documents",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/transports/telegram.md",
+      "type": "depends_on",
+      "target": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "type": "deploys",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:scripts/install-launchd.sh",
+      "type": "depends_on",
+      "target": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:scripts/install-launchd.sh",
+      "type": "deploys",
+      "target": "file:src/index.ts",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:scripts/uninstall.sh",
+      "type": "depends_on",
+      "target": "config:deploy/ai.opencode.remote-control.telegram.plist",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:scripts/patch-telegraf.cjs",
+      "type": "related",
+      "target": "document:docs/transports/telegram.md",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/cli/index.ts",
+      "type": "related",
+      "target": "file:src/cli/init.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/cli/index.ts",
+      "type": "related",
+      "target": "file:src/cli/install.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/cli/index.ts",
+      "type": "related",
+      "target": "file:src/cli/uninstall.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/cli/install.ts",
+      "type": "depends_on",
+      "target": "file:src/config.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/cli/init.ts",
+      "type": "depends_on",
+      "target": "file:src/config.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "depends_on",
+      "target": "file:src/config.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "depends_on",
+      "target": "file:src/core/state.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "depends_on",
+      "target": "file:src/core/tui-sync.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "depends_on",
+      "target": "file:src/core/stream-accumulator.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/index.ts",
+      "type": "depends_on",
+      "target": "file:src/core/history.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/core/tui-sync.ts",
+      "type": "depends_on",
+      "target": "file:src/core/state.ts",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "related",
+      "target": "file:src/core/stream-accumulator.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/config.ts",
+      "type": "tested_by",
+      "target": "file:tests/unit/config.test.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/core/history.ts",
+      "type": "tested_by",
+      "target": "file:tests/unit/history.test.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/core/state.ts",
+      "type": "tested_by",
+      "target": "file:tests/unit/state.test.ts",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/core/stream-accumulator.ts",
+      "type": "tested_by",
+      "target": "file:tests/unit/stream-accumulator.test.ts",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

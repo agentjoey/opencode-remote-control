@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/reviews/2026-05-17-phase5-sprint-plan.md",
+      "type": "document",
+      "name": "2026-05-17-phase5-sprint-plan.md",
+      "filePath": "docs/reviews/2026-05-17-phase5-sprint-plan.md",
+      "summary": "Phase 5 Web sprint plan (v0.5.4 → v0.5.5) that schedules 13 work items across P0/P1/P2 priorities over ~11 hours, including a newly discovered Web UI main-thread hang fix and validation checklist.",
+      "tags": ["documentation", "sprint-plan", "phase5", "web", "review"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/reviews/2026-05-17-phase5-web-code-review.md",
+      "type": "document",
+      "name": "2026-05-17-phase5-web-code-review.md",
+      "filePath": "docs/reviews/2026-05-17-phase5-web-code-review.md",
+      "summary": "Comprehensive Phase 5 Web code review report (v0.5.3) covering type system, transport, frontend components, core, extension, and API layers, finding 7 Important issues and 6 Suggestions with security audit and test coverage analysis.",
+      "tags": ["documentation", "code-review", "phase5", "web", "security-audit"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/reviews/2026-05-17-phase5-work-items.md",
+      "type": "document",
+      "name": "2026-05-17-phase5-work-items.md",
+      "filePath": "docs/reviews/2026-05-17-phase5-work-items.md",
+      "summary": "Phase 5 Web work items tracker derived from the 2026-05-17 code review, listing 12 prioritized tasks (P0/P1/P2) with locations, current state, goals, and time estimates.",
+      "tags": ["documentation", "work-items", "phase5", "web", "tracking"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:docs/reviews/2026-05-17-phase5-sprint-plan.md",
+      "target": "document:docs/reviews/2026-05-17-phase5-web-code-review.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/reviews/2026-05-17-phase5-sprint-plan.md",
+      "target": "document:docs/reviews/2026-05-17-phase5-work-items.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/reviews/2026-05-17-phase5-work-items.md",
+      "target": "document:docs/reviews/2026-05-17-phase5-web-code-review.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

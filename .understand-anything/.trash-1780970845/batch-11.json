@@ -1,0 +1,261 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "type": "document",
+      "name": "2026-05-15-opencode-remote-control.md",
+      "filePath": "docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "summary": "Phase 1 (v0.1) implementation plan for the initial sidecar Telegram bot that relays messages to a running opencode TUI session, streams responses back, and surfaces tool-approval prompts as inline-keyboard buttons. Defines the bootstrap tasks: project scaffold, utilities, config, opencode client + SSE event stream, TUI bridge, reply stream, chat/approval/commands handlers, bot wiring, live integration test, and launchd deployment.",
+      "tags": ["documentation", "plan", "phase-1", "telegram-sidecar", "tui-bridge"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "type": "document",
+      "name": "2026-05-16-phase3-implementation-plan.md",
+      "filePath": "docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "summary": "Phase 3 plan migrating to SDK-native `client.session.prompt()` submission, introducing the channel-agnostic `Transport` abstraction that splits `src/bot/` into `src/core/` (relay + state) and `src/transport/telegram/` (Telegram-specific transport). Adds file-backed persistent `SessionState`, finishes stability, and prepares the project for OSS publication with LICENSE, SECURITY.md, public README, transport docs, and GitHub Actions CI.",
+      "tags": ["documentation", "plan", "phase-3", "transport-abstraction", "oss-prep"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "type": "document",
+      "name": "2026-05-16-phase4-implementation-plan.md",
+      "filePath": "docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "summary": "Phase 4 plan productizing startup with a single-command launcher (subprocess lifecycle + launchd plist), closing the TUI/bot information gap with `/diff`, `/todo`, `/context`, inline tool-call rendering, and selective push notifications. Adds competitor-borrowed UX (inline Stop button, cost footer, multi-user allowlist) plus an npx `init` wizard for publish-readiness.",
+      "tags": ["documentation", "plan", "phase-4", "launcher", "productization", "multi-user"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "type": "document",
+      "name": "2026-05-16-phase5-implementation-plan.md",
+      "filePath": "docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "summary": "Phase 5 plan shipping v0.5.0 with a Web transport (PWA + Chrome Extension via Cloudflare Tunnel + Access) on top of a relay refactor that publishes transport-agnostic `StructuredCard`s through a `CardBus` to fix Telegram's long-thinking truncation. Introduces a Hono HTTP/WebSocket server, SvelteKit 5 frontend, CF Access JWT middleware, Chrome Manifest V3 extension, and Playwright E2E coverage.",
+      "tags": ["documentation", "plan", "phase-5", "web-transport", "card-bus", "pwa", "chrome-extension"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "type": "document",
+      "name": "2026-05-31-phase6-plugin-migration.md",
+      "filePath": "docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "summary": "Phase 6 plan migrating opencode-remote-control from a standalone sidecar to the openCode Plugin Registry: a single `npx install` and the plugin auto-starts with opencode. Adds the `@opencode-ai/plugin` entry point, adapts the relay and transports to consume the opencode event hook instead of `EventStream`, ships `install`/`uninstall` CLI commands, and preserves the legacy `src/index.ts` entry for backward compatibility.",
+      "tags": ["documentation", "plan", "phase-6", "plugin-registry", "migration", "cli"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/opencode/client.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/transport/telegram/reply-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-15-opencode-remote-control.md",
+      "target": "file:src/transport/telegram/handlers.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/core/types.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/transport/interface.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/opencode/submit.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/core/state.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md",
+      "target": "file:src/transport/telegram/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/launcher/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/launcher/spawn.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/core/state.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/core/tui-sync.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/core/push.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md",
+      "target": "file:src/transport/telegram/handlers.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/core/structured-card.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/core/card-bus.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/transport/telegram/renderer.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/transport/web/server.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md",
+      "target": "file:src/transport/web/ws-hub.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/plugin/entry.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/plugin/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/cli/install.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/cli/uninstall.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

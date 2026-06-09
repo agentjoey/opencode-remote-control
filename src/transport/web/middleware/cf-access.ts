@@ -16,12 +16,6 @@ function isLoopbackAddr(addr?: string): boolean {
   return clean === '127.0.0.1' || clean === '::1'
 }
 
-function isLoopback(host?: string): boolean {
-  if (!host) return false
-  const h = host.split(':')[0]
-  return h === '127.0.0.1' || h === 'localhost' || h === '::1'
-}
-
 function remoteAddr(c: any): string | undefined {
   try {
     // Hono on Node.js / Bun: use raw request socket
@@ -51,8 +45,10 @@ export async function verifyUpgradeJwt(
   req: { headers: Record<string, string | string[] | undefined>; url?: string; socket?: { remoteAddress?: string } },
   opts: CfAccessOpts,
 ): Promise<{ email: string; sub: string } | null> {
-  const isLoop = isLoopbackAddr(req.socket?.remoteAddress) || isLoopback(opts.host)
-  if (opts.devBypass && isLoop) {
+  // Bypass only when the *actual peer* is loopback. opts.host (the server's own
+  // bind address) is not a safe signal: behind a tunnel the peer is 127.0.0.1
+  // while the real client is remote.
+  if (opts.devBypass && isLoopbackAddr(req.socket?.remoteAddress)) {
     return { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' }
   }
   const query = req.url ? req.url.split('?')[1] : undefined
@@ -77,9 +73,9 @@ export function cfAccessMiddleware(opts: CfAccessOpts): MiddlewareHandler {
 
   return async (c, next) => {
     const remoteAddrVal = remoteAddr(c)
-    const isLoop = isLoopbackAddr(remoteAddrVal) || isLoopback(opts.host)
-    // Dev bypass — use socket.remoteAddress, not the client-supplied Host header
-    if (opts.devBypass && isLoop) {
+    // Dev bypass — only trust the actual socket peer, never opts.host (server's
+    // own bind) nor the client-supplied Host header.
+    if (opts.devBypass && isLoopbackAddr(remoteAddrVal)) {
       c.set('user', { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' })
       return next()
     }

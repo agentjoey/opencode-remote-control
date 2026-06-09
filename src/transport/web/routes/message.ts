@@ -6,7 +6,10 @@ export function registerMessage(
   onMessage: (msg: IncomingMessage) => Promise<void>,
 ) {
   app.post('/api/message', async (c) => {
-    const body = await c.req.json() as { sessionId?: string; text: string }
+    const body = await c.req.json().catch(() => ({})) as { sessionId?: string; text?: string }
+    if (typeof body.text !== 'string' || body.text.trim() === '') {
+      return c.json({ error: 'text required' }, 400)
+    }
     const user = c.get('user') as { email: string; sub: string }
     const msg: IncomingMessage = {
       userId: user.sub ?? user.email,

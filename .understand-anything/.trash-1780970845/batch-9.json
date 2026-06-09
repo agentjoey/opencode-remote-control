@@ -1,0 +1,170 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/ARCHITECTURE.md",
+      "type": "document",
+      "name": "ARCHITECTURE.md",
+      "filePath": "docs/ARCHITECTURE.md",
+      "summary": "Plain-language architectural reference for opencode-remote-control covering Plugin vs Sidecar deployment modes, the src/ file tree (core, opencode, transport, utils), the end-to-end message flow from Telegram/Web through relay to CardBus, state persistence, configuration, the Transport contract, and guidance for adding new transports.",
+      "tags": ["documentation", "architecture", "design", "plugin-mode", "cardbus"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/COMPARISON_IM_HUB.md",
+      "type": "document",
+      "name": "COMPARISON_IM_HUB.md",
+      "filePath": "docs/COMPARISON_IM_HUB.md",
+      "summary": "Competitive analysis (dated 2026-06-08, written in Chinese) comparing im-hub v0.2.12 against opencode-remote-control v0.5.7 across positioning, architecture, IM channels, agent backends, Web UI, features, code quality, dependencies, and roadmaps, with strategic recommendations and potential improvements to borrow from im-hub.",
+      "tags": ["documentation", "competitive-analysis", "im-hub", "roadmap", "architecture"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/OPS.md",
+      "type": "document",
+      "name": "OPS.md",
+      "filePath": "docs/OPS.md",
+      "summary": "Operations runbook for the host machine covering the service landscape (ocrc, opencode, P021 FutuTrade, Cloudflare Tunnel, infrastructure gateways), launchd management for the Telegram bot, manual opencode serve/attach lifecycle, port and health-check commands, restart matrix after code changes, env var reference, and a per-version changelog from v0.5.0 through v0.5.7.",
+      "tags": ["documentation", "operations", "runbook", "launchd", "deployment"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/QUICKSTART.md",
+      "type": "document",
+      "name": "QUICKSTART.md",
+      "filePath": "docs/QUICKSTART.md",
+      "summary": "Quickstart documentation file listed in the project batch manifest but not present on disk; intended to provide a short getting-started guide for opencode-remote-control.",
+      "tags": ["documentation", "quickstart", "missing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:docs/RELEASE.md",
+      "type": "document",
+      "name": "RELEASE.md",
+      "filePath": "docs/RELEASE.md",
+      "summary": "Release process documentation file listed in the project batch manifest but not present on disk; intended to describe the version publishing workflow for opencode-remote-control.",
+      "tags": ["documentation", "release", "missing"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/card-bus.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/structured-card.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/stream-accumulator.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/state.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/push.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/core/history.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/opencode/client.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/opencode/submit.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ARCHITECTURE.md",
+      "target": "file:src/transport/interface.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/OPS.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/OPS.md",
+      "target": "file:src/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/OPS.md",
+      "target": "file:src/transport/telegram/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/OPS.md",
+      "target": "file:src/transport/web/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

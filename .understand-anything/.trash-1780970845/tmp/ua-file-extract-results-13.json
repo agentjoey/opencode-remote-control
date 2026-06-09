@@ -1,0 +1,89 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "web/extension/manifest.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 14,
+      "nonEmptyLines": 14,
+      "sections": [
+        {
+          "heading": "manifest_version",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "permissions",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "host_permissions",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "background",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "side_panel",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "action",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "icons",
+          "level": 1,
+          "line": 10
+        },
+        {
+          "heading": "content_security_policy",
+          "level": 1,
+          "line": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "web/extension/popup.html",
+      "language": "html",
+      "fileCategory": "markup",
+      "totalLines": 25,
+      "nonEmptyLines": 25,
+      "metrics": {}
+    },
+    {
+      "path": "web/extension/sidepanel.html",
+      "language": "html",
+      "fileCategory": "markup",
+      "totalLines": 16,
+      "nonEmptyLines": 16,
+      "metrics": {}
+    }
+  ]
+}

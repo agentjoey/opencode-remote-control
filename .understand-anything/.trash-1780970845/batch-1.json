@@ -1,0 +1,235 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/core/card-bus.ts",
+      "type": "file",
+      "name": "card-bus.ts",
+      "filePath": "src/core/card-bus.ts",
+      "summary": "In-memory pub/sub bus for structured cards with per-session subscription sets, a global subscriber list, and a bounded per-session recent-buffer for replay.",
+      "tags": ["event-bus", "pub-sub", "card-stream", "session-state", "factory"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/push.ts",
+      "type": "file",
+      "name": "push.ts",
+      "filePath": "src/core/push.ts",
+      "summary": "Push notification layer that subscribes to the opencode event stream and publishes session-finished and test-failure info cards to the CardBus, with hourly rate limits and per-session cooldowns.",
+      "tags": ["event-handler", "rate-limiting", "notification", "event-stream", "session-monitoring"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/relay.ts",
+      "type": "file",
+      "name": "relay.ts",
+      "filePath": "src/core/relay.ts",
+      "summary": "Core message relay that routes incoming chat messages to the right opencode session (TUI, pinned, last-used, or fallback) and streams assistant responses back via the CardBus, supporting both sidecar SSE and Plugin event-hook modes.",
+      "tags": ["relay", "session-router", "event-handler", "streaming", "retry", "chat"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/core/card-bus.ts:createCardBus",
+      "type": "function",
+      "name": "createCardBus",
+      "filePath": "src/core/card-bus.ts",
+      "lineRange": [15, 59],
+      "summary": "Factory that returns a CardBus implementation: per-session and global subscriber sets, a bounded per-session card buffer, and safe publisher dispatch that isolates subscriber errors.",
+      "tags": ["factory", "pub-sub", "event-bus", "buffer"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/push.ts:startPushNotifications",
+      "type": "function",
+      "name": "startPushNotifications",
+      "filePath": "src/core/push.ts",
+      "lineRange": [18, 143],
+      "summary": "Wires an event handler that tracks session busy/idle transitions and bash-tool output, enforces hourly and per-session cooldown rate limits, fetches a final assistant summary, and publishes info cards to the CardBus.",
+      "tags": ["event-handler", "rate-limiting", "notification", "event-stream", "session-monitoring"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/core/relay.ts:createRelay",
+      "type": "function",
+      "name": "createRelay",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [161, 565],
+      "summary": "Factory that returns a relay callable plus a handleEvent dispatcher. Routes incoming messages to a session, streams response blocks from the SSE loop or Plugin event hook, and publishes final assistant cards with cost and token metadata.",
+      "tags": ["relay", "factory", "session-router", "streaming", "event-handler", "chat"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/core/relay.ts:isNetworkError",
+      "type": "function",
+      "name": "isNetworkError",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [28, 37],
+      "summary": "Heuristically detects retryable network errors by lowercasing the error message and matching common fetch/Node socket failure substrings.",
+      "tags": ["utility", "error-detection", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/core/relay.ts:submitWithRetry",
+      "type": "function",
+      "name": "submitWithRetry",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [39, 59],
+      "summary": "Wraps submitPrompt with up to 5 attempts and exponential backoff, retrying only on network-class errors and honoring AbortSignal cancellation.",
+      "tags": ["retry", "backoff", "submit", "abortable"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/relay.ts:delayOrAbort",
+      "type": "function",
+      "name": "delayOrAbort",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [61, 71],
+      "summary": "Promise-based sleep that resolves after a given delay or rejects with 'aborted' when the supplied AbortSignal fires.",
+      "tags": ["utility", "abortable", "delay"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/core/relay.ts:waitForBusySession",
+      "type": "function",
+      "name": "waitForBusySession",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [78, 100],
+      "summary": "Subscribes to the EventStream and resolves with the first session ID that transitions to busy, returning undefined on timeout or abort.",
+      "tags": ["event-handler", "race-condition", "session-detection"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/relay.ts:selectTuiSession",
+      "type": "function",
+      "name": "selectTuiSession",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [107, 127],
+      "summary": "Best-effort POST to /tui/select-session via raw fetch to navigate the opencode TUI to a given session, with a 2s hard timeout and silent failure.",
+      "tags": ["http", "tui-integration", "best-effort"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/core/relay.ts:pickSessionFallback",
+      "type": "function",
+      "name": "pickSessionFallback",
+      "filePath": "src/core/relay.ts",
+      "lineRange": [129, 139],
+      "summary": "Lists opencode sessions and returns the most recently active one (by time.updated, falling back to time.created) when no pinned or last-used session is available.",
+      "tags": ["session-router", "fallback", "sorting"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/core/card-bus.ts",
+      "target": "function:src/core/card-bus.ts:createCardBus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/card-bus.ts",
+      "target": "function:src/core/card-bus.ts:createCardBus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/push.ts",
+      "target": "function:src/core/push.ts:startPushNotifications",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/push.ts",
+      "target": "function:src/core/push.ts:startPushNotifications",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:createRelay",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:createRelay",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:isNetworkError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:submitWithRetry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:delayOrAbort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:waitForBusySession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:selectTuiSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "function:src/core/relay.ts:pickSessionFallback",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/core/push.ts",
+      "target": "file:src/core/card-bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/push.ts",
+      "target": "file:src/core/relay.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "file:src/core/card-bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/core/relay.ts",
+      "target": "file:src/transport/card-bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

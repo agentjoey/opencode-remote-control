@@ -1,0 +1,49 @@
+{
+  "issues": [],
+  "warnings": [
+    "Node 'pipeline:.github/workflows/ci.yml' has no edges (orphan)",
+    "Node 'document:CONTRIBUTING.md' has no edges (orphan)",
+    "Node 'document:SECURITY.md' has no edges (orphan)",
+    "Node 'document:docs/COMPARISON_IM_HUB.md' has no edges (orphan)",
+    "Node 'document:docs/QUICKSTART.md' has no edges (orphan)",
+    "Node 'document:docs/RELEASE.md' has no edges (orphan)",
+    "Node 'document:docs/superpowers/specs/2026-05-15-opensource-roadmap.md' has no edges (orphan)",
+    "Node 'document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md' has no edges (orphan)",
+    "Node 'config:.github/dependabot.yml' has no edges (orphan)",
+    "Node 'document:.github/ISSUE_TEMPLATE/bug.md' has no edges (orphan)",
+    "Node 'document:.github/ISSUE_TEMPLATE/feature.md' has no edges (orphan)",
+    "Node 'document:.github/PULL_REQUEST_TEMPLATE.md' has no edges (orphan)",
+    "Node 'file:.understand-anything/.understandignore' has no edges (orphan)",
+    "Node 'file:web/static/manifest.webmanifest' has no edges (orphan)",
+    "Node 'file:web/svelte.config.js' has no edges (orphan)",
+    "Node 'file:web/vite.config.ts' has no edges (orphan)"
+  ],
+  "stats": {
+    "totalNodes": 224,
+    "totalEdges": 335,
+    "totalLayers": 9,
+    "tourSteps": 10,
+    "nodeTypes": {
+      "file": 87,
+      "function": 77,
+      "class": 3,
+      "pipeline": 1,
+      "document": 38,
+      "config": 9,
+      "endpoint": 9
+    },
+    "edgeTypes": {
+      "contains": 82,
+      "exports": 49,
+      "imports": 25,
+      "calls": 8,
+      "tested_by": 29,
+      "depends_on": 13,
+      "documents": 102,
+      "configures": 7,
+      "related": 9,
+      "deploys": 2,
+      "routes": 9
+    }
+  }
+}

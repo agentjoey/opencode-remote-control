@@ -1,0 +1,306 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "type": "document",
+      "name": "2026-05-15-opencode-remote-control-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "summary": "Phase 1 design spec defining the project goal, process topology, file layout, data flow for Telegram message submission, error handling, and launchd deployment for the local opencode remote-control.",
+      "tags": ["documentation", "design-spec", "phase-1", "architecture", "telegram"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-15-opensource-roadmap.md",
+      "type": "document",
+      "name": "2026-05-15-opensource-roadmap.md",
+      "filePath": "docs/superpowers/specs/2026-05-15-opensource-roadmap.md",
+      "summary": "Open-source release roadmap with vision, positioning, milestones (M0–M7+), non-goals, decision points, and success metrics for taking the project public after Phase 2.",
+      "tags": ["documentation", "roadmap", "open-source", "milestones", "planning"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "type": "document",
+      "name": "2026-05-15-phase2-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "summary": "Phase 2 spec covering live streaming output via opencode SSE plus five new Telegram card commands (/files, /agent, /model, /session) with implementation details and UX principles.",
+      "tags": ["documentation", "design-spec", "phase-2", "telegram", "streaming"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "type": "document",
+      "name": "2026-05-16-architecture-comparison.md",
+      "filePath": "docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "summary": "Decision document comparing Plan A (Hybrid Plugin + Sidecar) versus Plan B (External Bot + Web aligned with SDK), culminating in a recommended path with strategic differentiation from competitor projects.",
+      "tags": ["documentation", "architecture-decision", "comparison", "sdk", "plugin"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "type": "document",
+      "name": "2026-05-16-phase3-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "summary": "Phase 3 spec detailing SDK-native message submission migration, transport interface design, core relay, persistent state, Telegram transport implementation, and open-source prep tasks.",
+      "tags": ["documentation", "design-spec", "phase-3", "transport", "open-source"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "type": "document",
+      "name": "2026-05-16-phase4-productization-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "summary": "Phase 4 productization spec covering single-command launcher, information parity with the TUI (/diff, /todo, /context), two-way state sync, and competitive UX improvements (Stop button, cost tracking, npm publish).",
+      "tags": ["documentation", "design-spec", "phase-4", "productization", "tui-parity"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "type": "document",
+      "name": "2026-05-16-phase5-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "summary": "Comprehensive Phase 5 spec for the Web UI transport and Telegram streaming overflow fix, covering the StructuredCard model, CardBus relay refactor, SvelteKit frontend, Chrome extension, and Cloudflare Access auth.",
+      "tags": ["documentation", "design-spec", "phase-5", "web-ui", "streaming-overflow"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+      "type": "document",
+      "name": "2026-05-16-phase5-web-ui-outline.md",
+      "filePath": "docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+      "summary": "High-level outline of the Phase 5 Web UI covering wireframes for desktop/mobile/Chrome side panel, form-factor matrix, preliminary stack, auth flow, and capabilities surface.",
+      "tags": ["documentation", "outline", "phase-5", "web-ui", "pwa"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "type": "document",
+      "name": "2026-05-19-streaming-optimization.md",
+      "filePath": "docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "summary": "Streaming architecture optimization v1.1 documenting SDK event model findings, content-block design, thinking/text separation, stream accumulator, ping heartbeats, and an executed sprint plan.",
+      "tags": ["documentation", "streaming", "sdk", "optimization", "sprint-plan"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "type": "document",
+      "name": "2026-05-31-phase6-plugin-migration-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "summary": "Phase 6 design spec for migrating the project into the opencode plugin registry, covering file tree changes, plugin entry design, configuration migration, relay adaptation, CLI install flow, and backward compatibility.",
+      "tags": ["documentation", "design-spec", "phase-6", "plugin-registry", "migration"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "target": "file:src/opencode/submit.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "target": "file:src/transport/interface.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-opensource-roadmap.md",
+      "target": "file:README.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "target": "file:src/core/structured-card.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-15-phase2-design.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "target": "file:src/plugin/entry.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-architecture-comparison.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "target": "file:src/opencode/submit.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "target": "file:src/transport/interface.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase3-design.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "target": "file:src/cli",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "target": "file:src/launcher",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase4-productization-design.md",
+      "target": "file:src/core/tui-sync.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "target": "file:src/core/structured-card.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "target": "file:src/core/card-bus.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "target": "file:src/transport/web",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-design.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+      "target": "file:web/",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md",
+      "target": "file:src/transport/web",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "target": "file:src/core/stream-accumulator.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "target": "file:src/opencode/event-stream.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-19-streaming-optimization.md",
+      "target": "file:src/core/structured-card.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "target": "file:src/plugin/entry.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "target": "file:src/plugin/config.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "target": "file:src/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md",
+      "target": "file:src/core/relay.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

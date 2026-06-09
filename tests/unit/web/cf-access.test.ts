@@ -42,18 +42,18 @@ describe('cfAccessMiddleware', () => {
     expect(c.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Unauthorized' }), 401)
   })
 
-  it('dev bypass works on loopback host', async () => {
-    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: '127.0.0.1' })
-    const c = { req: { header: () => undefined, query: () => undefined }, env: () => undefined, set: vi.fn(), json: vi.fn(), header: vi.fn() } as any
+  it('dev bypass works for a loopback socket peer', async () => {
+    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' })
+    const c = { req: { header: () => undefined, query: () => undefined }, env: { incoming: { socket: { remoteAddress: '127.0.0.1' } } }, set: vi.fn(), json: vi.fn(), header: vi.fn() } as any
     const next = vi.fn()
     await mw(c, next)
     expect(next).toHaveBeenCalled()
     expect(c.set).toHaveBeenCalledWith('user', { email: 'dev@local', sub: 'dev' })
   })
 
-  it('dev bypass ignored on non-loopback host', async () => {
-    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local', host: 'example.com' })
-    const c = { req: { header: () => undefined, query: () => undefined }, env: () => undefined, set: vi.fn(), json: vi.fn(), header: vi.fn() } as any
+  it('dev bypass ignored when socket peer is remote', async () => {
+    const mw = cfAccessMiddleware({ team: 'test', aud: 'app', devBypass: true, devEmail: 'dev@local' })
+    const c = { req: { header: () => undefined, query: () => undefined }, env: { incoming: { socket: { remoteAddress: '10.0.0.5' } } }, set: vi.fn(), json: vi.fn(), header: vi.fn() } as any
     const next = vi.fn()
     await mw(c, next)
     expect(next).not.toHaveBeenCalled()

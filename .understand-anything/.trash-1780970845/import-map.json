@@ -1,0 +1,248 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 169,
+    "filesWithImports": 29,
+    "totalEdges": 40
+  },
+  "importMap": {
+    ".agent/BACKLOG.md": [],
+    ".agent/CURRENT.md": [],
+    ".agent/sprints/sprint-001.md": [],
+    ".agent/sprints/sprint-002.md": [],
+    ".agent/sprints/sprint-003.md": [],
+    ".env.example": [],
+    ".github/dependabot.yml": [],
+    ".github/ISSUE_TEMPLATE/bug.md": [],
+    ".github/ISSUE_TEMPLATE/feature.md": [],
+    ".github/PULL_REQUEST_TEMPLATE.md": [],
+    ".github/workflows/ci.yml": [],
+    ".understand-anything/.understandignore": [],
+    "CHANGELOG.md": [],
+    "CONTRIBUTING.md": [],
+    "deploy/ai.opencode.remote-control.telegram.plist": [],
+    "docs/ARCHITECTURE.md": [],
+    "docs/COMPARISON_IM_HUB.md": [],
+    "docs/OPS.md": [],
+    "docs/PRD.md": [],
+    "docs/PRODUCT_STATUS.md": [],
+    "docs/reviews/2026-05-17-phase5-sprint-plan.md": [],
+    "docs/reviews/2026-05-17-phase5-web-code-review.md": [],
+    "docs/reviews/2026-05-17-phase5-work-items.md": [],
+    "docs/superpowers/phase5-acceptance.md": [],
+    "docs/superpowers/plans/2026-05-15-opencode-remote-control.md": [],
+    "docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md": [],
+    "docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md": [],
+    "docs/superpowers/specs/2026-05-15-opensource-roadmap.md": [],
+    "docs/superpowers/specs/2026-05-15-phase2-design.md": [],
+    "docs/superpowers/specs/2026-05-16-architecture-comparison.md": [],
+    "docs/superpowers/specs/2026-05-16-phase3-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase4-productization-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase5-design.md": [],
+    "docs/superpowers/specs/2026-05-16-phase5-web-ui-outline.md": [],
+    "docs/superpowers/specs/2026-05-19-streaming-optimization.md": [],
+    "docs/superpowers/specs/2026-05-31-phase6-plugin-migration-design.md": [],
+    "docs/transports/CONTRIBUTING-NEW-TRANSPORT.md": [],
+    "docs/transports/telegram.md": [],
+    "opencode.json": [],
+    "package.json": [],
+    "README.md": [],
+    "scripts/install-launchd.sh": [],
+    "scripts/patch-telegraf.cjs": [],
+    "scripts/uninstall.sh": [],
+    "SECURITY.md": [],
+    "src/cli/index.ts": [],
+    "src/cli/init.ts": [],
+    "src/cli/install.ts": [],
+    "src/cli/uninstall.ts": [],
+    "src/config.ts": [],
+    "src/core/card-bus.ts": [],
+    "src/core/history.ts": [],
+    "src/core/push.ts": [],
+    "src/core/relay.ts": [],
+    "src/core/state.ts": [],
+    "src/core/stream-accumulator.ts": [],
+    "src/core/structured-card.ts": [],
+    "src/core/tui-sync.ts": [],
+    "src/core/types.ts": [],
+    "src/index.ts": [],
+    "src/launcher/index.ts": [],
+    "src/launcher/spawn.ts": [],
+    "src/opencode/client.ts": [],
+    "src/opencode/event-stream.ts": [],
+    "src/opencode/submit.ts": [],
+    "src/plugin/config.ts": [],
+    "src/plugin/entry.ts": [],
+    "src/transport/interface.ts": [],
+    "src/transport/telegram/handlers.ts": [],
+    "src/transport/telegram/handlers/info-commands.ts": [],
+    "src/transport/telegram/index.ts": [],
+    "src/transport/telegram/render.ts": [],
+    "src/transport/telegram/renderer.ts": [],
+    "src/transport/telegram/reply-stream.ts": [],
+    "src/transport/web/index.ts": [],
+    "src/transport/web/middleware/cf-access.ts": [],
+    "src/transport/web/routes/abort.ts": [],
+    "src/transport/web/routes/approval.ts": [],
+    "src/transport/web/routes/context.ts": [],
+    "src/transport/web/routes/diff.ts": [],
+    "src/transport/web/routes/message.ts": [],
+    "src/transport/web/routes/session.ts": [],
+    "src/transport/web/routes/sessions.ts": [],
+    "src/transport/web/routes/todo.ts": [],
+    "src/transport/web/routes/version.ts": [],
+    "src/transport/web/server.ts": [],
+    "src/transport/web/session-summary.ts": [],
+    "src/transport/web/ws-hub.ts": [],
+    "src/utils/logger.ts": [],
+    "src/utils/markdown.ts": [],
+    "src/utils/version.ts": [],
+    "tests/integration/telegram-overflow.test.ts": [
+      "src/transport/telegram/renderer.ts"
+    ],
+    "tests/unit/approval.test.ts": [],
+    "tests/unit/card-bus.test.ts": [
+      "src/core/card-bus.ts",
+      "src/core/structured-card.ts"
+    ],
+    "tests/unit/config.test.ts": [
+      "src/config.ts"
+    ],
+    "tests/unit/event-stream.test.ts": [
+      "src/opencode/event-stream.ts"
+    ],
+    "tests/unit/history.test.ts": [
+      "src/core/history.ts"
+    ],
+    "tests/unit/init-wizard.test.ts": [],
+    "tests/unit/markdown.test.ts": [
+      "src/utils/markdown.ts"
+    ],
+    "tests/unit/opencode-client.test.ts": [
+      "src/opencode/client.ts"
+    ],
+    "tests/unit/plugin-entry.test.ts": [],
+    "tests/unit/push.test.ts": [
+      "src/core/card-bus.ts",
+      "src/core/push.ts",
+      "src/core/structured-card.ts",
+      "src/opencode/event-stream.ts"
+    ],
+    "tests/unit/relay.test.ts": [
+      "src/core/card-bus.ts",
+      "src/core/relay.ts",
+      "src/core/structured-card.ts"
+    ],
+    "tests/unit/reply.test.ts": [
+      "src/transport/telegram/reply-stream.ts"
+    ],
+    "tests/unit/spawn.test.ts": [
+      "src/launcher/spawn.ts"
+    ],
+    "tests/unit/stability-14.2-14.12.test.ts": [
+      "src/core/card-bus.ts",
+      "src/core/relay.ts",
+      "src/core/structured-card.ts"
+    ],
+    "tests/unit/state.test.ts": [
+      "src/core/state.ts"
+    ],
+    "tests/unit/stream-accumulator.test.ts": [
+      "src/core/stream-accumulator.ts"
+    ],
+    "tests/unit/structured-card.test.ts": [
+      "src/core/structured-card.ts"
+    ],
+    "tests/unit/submit.test.ts": [
+      "src/opencode/submit.ts"
+    ],
+    "tests/unit/telegram-render.test.ts": [
+      "src/transport/telegram/render.ts"
+    ],
+    "tests/unit/telegram/overflow.test.ts": [
+      "src/transport/telegram/renderer.ts"
+    ],
+    "tests/unit/telegram/renderer.test.ts": [
+      "src/core/structured-card.ts",
+      "src/transport/telegram/renderer.ts"
+    ],
+    "tests/unit/tri-end-coordination.test.ts": [],
+    "tests/unit/web/cf-access-host-spoof.test.ts": [
+      "src/transport/web/middleware/cf-access.ts"
+    ],
+    "tests/unit/web/cf-access.test.ts": [
+      "src/transport/web/middleware/cf-access.ts"
+    ],
+    "tests/unit/web/routes.test.ts": [
+      "src/transport/web/server.ts"
+    ],
+    "tests/unit/web/server.test.ts": [
+      "src/transport/web/server.ts"
+    ],
+    "tests/unit/web/transport.test.ts": [
+      "src/transport/web/index.ts"
+    ],
+    "tests/unit/web/ws-auth.test.ts": [
+      "src/transport/web/middleware/cf-access.ts"
+    ],
+    "tests/unit/web/ws-hub.test.ts": [
+      "src/core/card-bus.ts",
+      "src/transport/web/ws-hub.ts"
+    ],
+    "tsconfig.json": [],
+    "vitest.config.ts": [],
+    "web/extension/background.ts": [],
+    "web/extension/manifest.json": [],
+    "web/extension/popup.html": [],
+    "web/extension/popup.ts": [],
+    "web/extension/sidepanel-entry.ts": [
+      "web/src/extension/App.svelte"
+    ],
+    "web/extension/sidepanel.html": [],
+    "web/package.json": [],
+    "web/src/app.html": [],
+    "web/src/extension/App.svelte": [],
+    "web/src/lib/adapters/extension.ts": [],
+    "web/src/lib/api/client.ts": [],
+    "web/src/lib/api/types.ts": [],
+    "web/src/lib/components/ApprovalModal.svelte": [],
+    "web/src/lib/components/Card.svelte": [],
+    "web/src/lib/components/CardAssistant.svelte": [],
+    "web/src/lib/components/CardError.svelte": [],
+    "web/src/lib/components/CardInfo.svelte": [],
+    "web/src/lib/components/CardStatus.svelte": [],
+    "web/src/lib/components/CardStreaming.svelte": [],
+    "web/src/lib/components/CardThinking.svelte": [],
+    "web/src/lib/components/CardThinkStream.svelte": [],
+    "web/src/lib/components/CardUser.svelte": [],
+    "web/src/lib/components/Composer.svelte": [],
+    "web/src/lib/components/ConnectionBadge.svelte": [],
+    "web/src/lib/components/MarkdownView.svelte": [],
+    "web/src/lib/components/MarkdownView.test.ts": [
+      "web/src/lib/components/MarkdownView.svelte"
+    ],
+    "web/src/lib/components/SessionList.svelte": [],
+    "web/src/lib/components/ToolCallList.svelte": [],
+    "web/src/lib/stores/activeSession.ts": [],
+    "web/src/lib/stores/connection.ts": [],
+    "web/src/lib/stores/sessions.ts": [],
+    "web/src/lib/ws/client.test.ts": [
+      "web/src/lib/stores/connection.ts",
+      "web/src/lib/ws/client.ts"
+    ],
+    "web/src/lib/ws/client.ts": [],
+    "web/src/routes/[sessionId]/+page.svelte": [],
+    "web/src/routes/+layout.svelte": [],
+    "web/src/routes/+layout.ts": [],
+    "web/src/routes/+page.svelte": [],
+    "web/static/manifest.webmanifest": [],
+    "web/svelte.config.js": [],
+    "web/tests/e2e/happy-path.spec.ts": [],
+    "web/tsconfig.json": [],
+    "web/vite.config.ts": [],
+    "web/vite.extension.config.ts": []
+  }
+}

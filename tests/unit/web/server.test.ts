@@ -12,7 +12,7 @@ describe('buildServer', () => {
       wsHub: { subscribe: vi.fn(), broadcast: vi.fn() },
       cacheSize: 100,
     })
-    const res = await app.request('/api/me')
+    const res = await app.request('/api/me', undefined, { incoming: { socket: { remoteAddress: '127.0.0.1' } } })
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.email).toBe('dev@local')

@@ -1,0 +1,47 @@
+{
+  "nodes": [
+    {
+      "id": "config:web/extension/manifest.json",
+      "type": "config",
+      "name": "manifest.json",
+      "filePath": "web/extension/manifest.json",
+      "summary": "Chrome MV3 manifest for the opencode-remote-control browser extension, declaring permissions (sidePanel, contextMenus, storage, activeTab), a module background service worker, the side panel surface, the toolbar action popup, icons, and a content security policy restricting scripts to self and connections to https endpoints.",
+      "tags": ["configuration", "chrome-extension", "manifest-v3", "browser-extension"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/extension/popup.html",
+      "type": "file",
+      "name": "popup.html",
+      "filePath": "web/extension/popup.html",
+      "summary": "Toolbar popup page rendered when the extension's action icon is clicked, providing a dark-themed Bot URL input and a Connect button that delegates to ./popup.js.",
+      "tags": ["markup", "popup", "chrome-extension", "ui-shell"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/extension/sidepanel.html",
+      "type": "file",
+      "name": "sidepanel.html",
+      "filePath": "web/extension/sidepanel.html",
+      "summary": "Full-height side panel host page that mounts a #app container and bootstraps the main UI by loading ./sidepanel-entry.js as an ES module.",
+      "tags": ["markup", "side-panel", "chrome-extension", "ui-shell"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:web/extension/manifest.json",
+      "target": "file:web/extension/popup.html",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "config:web/extension/manifest.json",
+      "target": "file:web/extension/sidepanel.html",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    }
+  ]
+}

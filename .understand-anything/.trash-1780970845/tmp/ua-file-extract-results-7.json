@@ -1,0 +1,145 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".agent/sprints/sprint-001.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 38,
+      "nonEmptyLines": 31,
+      "sections": [
+        {
+          "heading": "Sprint 001",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "范围",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "验收（Sprint Done 标准）",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "Sprint 回顾",
+          "level": 2,
+          "line": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": ".agent/sprints/sprint-002.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 54,
+      "nonEmptyLines": 45,
+      "sections": [
+        {
+          "heading": "Sprint 2 — Phase 2: Command Cards + Streaming",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Tasks",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "F5 /session 固定命令（低风险，先做）",
+          "level": 3,
+          "line": 8
+        },
+        {
+          "heading": "现有命令卡片化（零风险）",
+          "level": 3,
+          "line": 16
+        },
+        {
+          "heading": "F2 /files 命令",
+          "level": 3,
+          "line": 23
+        },
+        {
+          "heading": "F3 /agent 命令",
+          "level": 3,
+          "line": 29
+        },
+        {
+          "heading": "F4 /model 命令",
+          "level": 3,
+          "line": 36
+        },
+        {
+          "heading": "F1 流式输出（最后做，风险最高）",
+          "level": 3,
+          "line": 43
+        },
+        {
+          "heading": "Definition of Done",
+          "level": 2,
+          "line": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 9
+      }
+    },
+    {
+      "path": ".agent/sprints/sprint-003.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 35,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Sprint 3 — Stability: Delta Accumulation, TCP Hangs, Streaming Removal",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Tasks",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "v0.5.6 — 稳定性修复",
+          "level": 3,
+          "line": 9
+        },
+        {
+          "heading": "v0.5.7 — 移除 Telegram Streaming",
+          "level": 3,
+          "line": 21
+        },
+        {
+          "heading": "Definition of Done",
+          "level": 2,
+          "line": 28
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    }
+  ]
+}

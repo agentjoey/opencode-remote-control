@@ -1,0 +1,127 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/transport/web/middleware/cf-access.ts",
+      "type": "file",
+      "name": "cf-access.ts",
+      "filePath": "src/transport/web/middleware/cf-access.ts",
+      "summary": "Hono middleware and standalone helper for verifying Cloudflare Access JWTs on the web transport, with a loopback-only dev bypass that uses the socket remote address to prevent Host header spoofing.",
+      "tags": ["middleware", "auth", "jwt", "cloudflare", "security"],
+      "complexity": "moderate",
+      "languageNotes": "Uses the `jose` library for JWK set fetching and JWT verification; loopback detection strips the IPv4-mapped prefix and the IPv6 zone suffix to normalize addresses."
+    },
+    {
+      "id": "function:src/transport/web/middleware/cf-access.ts:extractJwt",
+      "type": "function",
+      "name": "extractJwt",
+      "filePath": "src/transport/web/middleware/cf-access.ts",
+      "lineRange": [35, 48],
+      "summary": "Pulls the Cloudflare Access JWT from the `cf-access-jwt-assertion` header, the `cf_access_jwt` query parameter, or the `CF_Authorization` cookie, in that order.",
+      "tags": ["jwt", "header-parsing", "cookie", "utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt",
+      "type": "function",
+      "name": "verifyUpgradeJwt",
+      "filePath": "src/transport/web/middleware/cf-access.ts",
+      "lineRange": [50, 71],
+      "summary": "Exported helper that verifies a Cloudflare Access JWT for WebSocket upgrade requests, honoring the loopback dev bypass and returning `{ email, sub }` on success or `null` on failure.",
+      "tags": ["jwt", "verification", "cloudflare", "dev-bypass", "exported"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware",
+      "type": "function",
+      "name": "cfAccessMiddleware",
+      "filePath": "src/transport/web/middleware/cf-access.ts",
+      "lineRange": [73, 104],
+      "summary": "Exported Hono middleware factory that authenticates requests with a prebuilt Cloudflare Access JWKS, sets the verified user on the context, short-circuits on missing/invalid tokens with 401, and applies the loopback dev bypass.",
+      "tags": ["middleware", "hono", "jwt", "cloudflare", "auth", "exported"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/web/cf-access-host-spoof.test.ts",
+      "type": "file",
+      "name": "cf-access-host-spoof.test.ts",
+      "filePath": "tests/unit/web/cf-access-host-spoof.test.ts",
+      "summary": "Vitest suite that exercises `verifyUpgradeJwt` to confirm dev-bypass decisions are driven by `socket.remoteAddress` rather than the client-supplied Host header, plus coverage for IPv4, IPv6, and IPv4-mapped loopback addresses.",
+      "tags": ["test", "security", "host-header-spoofing", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/unit/web/cf-access.test.ts",
+      "type": "file",
+      "name": "cf-access.test.ts",
+      "filePath": "tests/unit/web/cf-access.test.ts",
+      "summary": "Vitest suite for `cfAccessMiddleware` covering the missing-token, valid-JWT, invalid-JWT, loopback dev bypass, and non-loopback dev bypass cases using mocked `jose` calls.",
+      "tags": ["test", "middleware", "jwt", "vitest", "mocking"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:extractJwt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/unit/web/cf-access-host-spoof.test.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:verifyUpgradeJwt",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/unit/web/cf-access.test.ts",
+      "target": "function:src/transport/web/middleware/cf-access.ts:cfAccessMiddleware",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "file:tests/unit/web/cf-access-host-spoof.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/transport/web/middleware/cf-access.ts",
+      "target": "file:tests/unit/web/cf-access.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

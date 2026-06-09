@@ -1,0 +1,17 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "docs/superpowers/plans/2026-05-15-opencode-remote-control.md", "language": "markdown", "sizeLines": 2185, "fileCategory": "docs"},
+    {"path": "docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md", "language": "markdown", "sizeLines": 1408, "fileCategory": "docs"},
+    {"path": "docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md", "language": "markdown", "sizeLines": 1542, "fileCategory": "docs"},
+    {"path": "docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md", "language": "markdown", "sizeLines": 4783, "fileCategory": "docs"},
+    {"path": "docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md", "language": "markdown", "sizeLines": 712, "fileCategory": "docs"}
+  ],
+  "batchImportData": {
+    "docs/superpowers/plans/2026-05-15-opencode-remote-control.md": [],
+    "docs/superpowers/plans/2026-05-16-phase3-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-16-phase4-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-16-phase5-implementation-plan.md": [],
+    "docs/superpowers/plans/2026-05-31-phase6-plugin-migration.md": []
+  }
+}

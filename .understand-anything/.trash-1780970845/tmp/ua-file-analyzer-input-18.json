@@ -1,0 +1,14 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "web/src/routes/+layout.ts", "language": "typescript", "sizeLines": 3, "fileCategory": "code"},
+    {"path": "web/src/routes/+page.svelte", "language": "svelte", "sizeLines": 13, "fileCategory": "code"},
+    {"path": "web/static/manifest.webmanifest", "language": "webmanifest", "sizeLines": 12, "fileCategory": "code"},
+    {"path": "web/svelte.config.js", "language": "javascript", "sizeLines": 20, "fileCategory": "code"},
+    {"path": "web/tests/e2e/happy-path.spec.ts", "language": "typescript", "sizeLines": 14, "fileCategory": "code"},
+    {"path": "web/tsconfig.json", "language": "json", "sizeLines": 18, "fileCategory": "config"},
+    {"path": "web/vite.config.ts", "language": "typescript", "sizeLines": 13, "fileCategory": "code"},
+    {"path": "web/vite.extension.config.ts", "language": "typescript", "sizeLines": 51, "fileCategory": "code"}
+  ],
+  "batchImportData": {"web/src/routes/+layout.ts":[],"web/src/routes/+page.svelte":[],"web/static/manifest.webmanifest":[],"web/svelte.config.js":[],"web/tests/e2e/happy-path.spec.ts":[],"web/tsconfig.json":[],"web/vite.config.ts":[],"web/vite.extension.config.ts":[]}
+}

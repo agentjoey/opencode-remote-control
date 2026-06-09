@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "web/src/lib/stores/connection.ts", "language": "typescript", "sizeLines": 35, "fileCategory": "code"},
+    {"path": "web/src/lib/ws/client.test.ts", "language": "typescript", "sizeLines": 110, "fileCategory": "code"},
+    {"path": "web/src/lib/ws/client.ts", "language": "typescript", "sizeLines": 170, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "web/src/lib/stores/connection.ts": [],
+    "web/src/lib/ws/client.test.ts": [],
+    "web/src/lib/ws/client.ts": []
+  }
+}

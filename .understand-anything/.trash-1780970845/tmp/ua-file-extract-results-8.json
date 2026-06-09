@@ -1,0 +1,589 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".env.example",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 76,
+      "nonEmptyLines": 53,
+      "definitions": [
+        {
+          "name": "TELEGRAM_BOT_TOKEN",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 2,
+          "endLine": 2
+        },
+        {
+          "name": "ALLOWED_USER_IDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "name": "OPENCODE_BASE_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 11,
+          "endLine": 11
+        },
+        {
+          "name": "EDIT_THROTTLE_MS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 14,
+          "endLine": 14
+        },
+        {
+          "name": "CHAT_TIMEOUT_MS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 17,
+          "endLine": 17
+        },
+        {
+          "name": "LOG_LEVEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        },
+        {
+          "name": "STREAM_OUTPUT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 23,
+          "endLine": 23
+        },
+        {
+          "name": "TOOL_CALLS_INLINE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 26,
+          "endLine": 26
+        },
+        {
+          "name": "TUI_VISIBLE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 29,
+          "endLine": 29
+        },
+        {
+          "name": "STATE_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 32,
+          "endLine": 32
+        },
+        {
+          "name": "TRANSPORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 35,
+          "endLine": 35
+        },
+        {
+          "name": "SPAWN_OPENCODE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 38,
+          "endLine": 38
+        },
+        {
+          "name": "OPENCODE_BIN",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 41,
+          "endLine": 41
+        },
+        {
+          "name": "LOG_DIR",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 47,
+          "endLine": 47
+        },
+        {
+          "name": "PUSH_TEST_FAILURES",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 50,
+          "endLine": 50
+        },
+        {
+          "name": "TG_CHUNK_SOFT_LIMIT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 53,
+          "endLine": 53
+        },
+        {
+          "name": "TG_CHUNK_HARD_LIMIT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 54,
+          "endLine": 54
+        },
+        {
+          "name": "WEB_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 58,
+          "endLine": 58
+        },
+        {
+          "name": "WEB_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 61,
+          "endLine": 61
+        },
+        {
+          "name": "WEB_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 62,
+          "endLine": 62
+        },
+        {
+          "name": "WEB_STATIC_ROOT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 65,
+          "endLine": 65
+        },
+        {
+          "name": "WEB_SESSION_CACHE_SIZE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 68,
+          "endLine": 68
+        },
+        {
+          "name": "WEB_CF_ACCESS_TEAM",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 71,
+          "endLine": 71
+        },
+        {
+          "name": "WEB_CF_ACCESS_AUD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 72,
+          "endLine": 72
+        },
+        {
+          "name": "WEB_CF_ACCESS_DEV_BYPASS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 75,
+          "endLine": 75
+        },
+        {
+          "name": "WEB_CF_ACCESS_DEV_EMAIL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 76,
+          "endLine": 76
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 26
+      }
+    },
+    {
+      "path": "CHANGELOG.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 168,
+      "nonEmptyLines": 145,
+      "sections": [
+        {
+          "heading": "Changelog",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "v0.6.0-rc.1 — 2026-05-31",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Added",
+          "level": 3,
+          "line": 5
+        },
+        {
+          "heading": "Changed",
+          "level": 3,
+          "line": 17
+        },
+        {
+          "heading": "Deprecated",
+          "level": 3,
+          "line": 23
+        },
+        {
+          "heading": "v0.5.7 — 2026-05-21",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "Removed",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "Fixed",
+          "level": 3,
+          "line": 35
+        },
+        {
+          "heading": "Changed",
+          "level": 3,
+          "line": 51
+        },
+        {
+          "heading": "v0.5.6 — 2026-05-20",
+          "level": 2,
+          "line": 60
+        },
+        {
+          "heading": "Fixed",
+          "level": 3,
+          "line": 62
+        },
+        {
+          "heading": "Changed",
+          "level": 3,
+          "line": 78
+        },
+        {
+          "heading": "v0.4.0-rc.1 — 2026-05-16",
+          "level": 2,
+          "line": 84
+        },
+        {
+          "heading": "Added",
+          "level": 3,
+          "line": 86
+        },
+        {
+          "heading": "Changed",
+          "level": 3,
+          "line": 116
+        },
+        {
+          "heading": "Fixed",
+          "level": 3,
+          "line": 124
+        },
+        {
+          "heading": "v0.3.0-rc.1 — 2026-05-16",
+          "level": 2,
+          "line": 128
+        },
+        {
+          "heading": "Added",
+          "level": 3,
+          "line": 130
+        },
+        {
+          "heading": "Changed",
+          "level": 3,
+          "line": 145
+        },
+        {
+          "heading": "Removed",
+          "level": 3,
+          "line": 149
+        },
+        {
+          "heading": "v0.2.0 — 2026-05-15",
+          "level": 2,
+          "line": 153
+        },
+        {
+          "heading": "Added",
+          "level": 3,
+          "line": 155
+        },
+        {
+          "heading": "v0.1.0 — 2026-05-14",
+          "level": 2,
+          "line": 161
+        },
+        {
+          "heading": "Added",
+          "level": 3,
+          "line": 163
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 24
+      }
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 70,
+      "nonEmptyLines": 52,
+      "sections": [
+        {
+          "heading": "Contributing to opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Getting Started",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Development Workflow",
+          "level": 2,
+          "line": 29
+        },
+        {
+          "heading": "Testing",
+          "level": 2,
+          "line": 42
+        },
+        {
+          "heading": "Code Style",
+          "level": 2,
+          "line": 49
+        },
+        {
+          "heading": "Adding a New Transport",
+          "level": 2,
+          "line": 57
+        },
+        {
+          "heading": "Pull Requests",
+          "level": 2,
+          "line": 61
+        },
+        {
+          "heading": "Questions?",
+          "level": 2,
+          "line": 68
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 199,
+      "nonEmptyLines": 159,
+      "sections": [
+        {
+          "heading": "opencode-remote-control",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "How we're different",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "Architecture",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Quick Start (Telegram)",
+          "level": 2,
+          "line": 52
+        },
+        {
+          "heading": "Web UI (PWA + Chrome Extension)",
+          "level": 2,
+          "line": 78
+        },
+        {
+          "heading": "PWA",
+          "level": 3,
+          "line": 82
+        },
+        {
+          "heading": "Chrome Extension",
+          "level": 3,
+          "line": 90
+        },
+        {
+          "heading": "Running as a service (macOS)",
+          "level": 2,
+          "line": 100
+        },
+        {
+          "heading": "Commands",
+          "level": 2,
+          "line": 110
+        },
+        {
+          "heading": "Push notifications",
+          "level": 2,
+          "line": 127
+        },
+        {
+          "heading": "Multi-transport",
+          "level": 2,
+          "line": 139
+        },
+        {
+          "heading": "Security model",
+          "level": 2,
+          "line": 154
+        },
+        {
+          "heading": "Environment variables",
+          "level": 2,
+          "line": 163
+        },
+        {
+          "heading": "Testing",
+          "level": 2,
+          "line": 187
+        },
+        {
+          "heading": "License",
+          "level": 2,
+          "line": 197
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 15
+      }
+    },
+    {
+      "path": "SECURITY.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 16,
+      "nonEmptyLines": 12,
+      "sections": [
+        {
+          "heading": "Security Policy",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Response targets",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Scope",
+          "level": 2,
+          "line": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": "config.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 4,
+      "nonEmptyLines": 4,
+      "sections": [
+        {
+          "heading": "model",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 3
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 19,
+      "nonEmptyLines": 19,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 17
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": "vitest.config.ts",
+      "language": "typescript",
+      "fileCategory": "config",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

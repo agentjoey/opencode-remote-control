@@ -1,0 +1,109 @@
+{
+  "nodes": [
+    {
+      "id": "file:web/src/routes/+layout.ts",
+      "type": "file",
+      "name": "+layout.ts",
+      "filePath": "web/src/routes/+layout.ts",
+      "summary": "SvelteKit root layout configuration that disables SSR and prerendering and enforces trailing slashes on all routes, forcing the app to behave as a client-side single-page application served from static files.",
+      "tags": ["sveltekit", "routing", "configuration", "spa", "client-side"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/routes/+page.svelte",
+      "type": "file",
+      "name": "+page.svelte",
+      "filePath": "web/src/routes/+page.svelte",
+      "summary": "Root SvelteKit route component rendering a centered 'No active session' placeholder when no chat session is active; serves as the default landing view for the web PWA.",
+      "tags": ["svelte", "component", "routing", "ui", "placeholder"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/static/manifest.webmanifest",
+      "type": "file",
+      "name": "manifest.webmanifest",
+      "filePath": "web/static/manifest.webmanifest",
+      "summary": "Progressive Web App manifest declaring the opencode-remote-control installable app with standalone display, dark theme colors, and 192/512 px icons for the home screen.",
+      "tags": ["pwa", "manifest", "configuration", "installable", "static-asset"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/svelte.config.js",
+      "type": "file",
+      "name": "svelte.config.js",
+      "filePath": "web/svelte.config.js",
+      "summary": "SvelteKit configuration that wires up Vite preprocessing, the static adapter with an index.html fallback (SPA mode), empty prerender entries, and a $shared alias pointing at the ../src/core module.",
+      "tags": ["sveltekit", "configuration", "build-system", "static-adapter", "path-alias"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/tests/e2e/happy-path.spec.ts",
+      "type": "file",
+      "name": "happy-path.spec.ts",
+      "filePath": "web/tests/e2e/happy-path.spec.ts",
+      "summary": "Playwright end-to-end test placeholder for the full happy path (dev login bypass → session select → prompt send → streaming). Currently marked test.skip because it requires a live bot, mocked opencode, and headless Chrome to be set up manually.",
+      "tags": ["test", "e2e", "playwright", "skipped", "placeholder"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:web/tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "web/tsconfig.json",
+      "summary": "TypeScript compiler configuration for the web app that extends the SvelteKit-generated tsconfig, enables strict mode with bundler resolution, allows JS/JSON, and pulls in vitest globals; covers src and tests.",
+      "tags": ["typescript", "configuration", "build-system", "strict-mode", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/vite.config.ts",
+      "type": "file",
+      "name": "vite.config.ts",
+      "filePath": "web/vite.config.ts",
+      "summary": "Vite configuration for the SvelteKit PWA build target: enables the sveltekit plugin, configures vitest with a jsdom environment and unit-test glob, and forces the browser resolve condition so the SvelteKit build emits the web client.",
+      "tags": ["vite", "sveltekit", "build-system", "pwa", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/vite.extension.config.ts",
+      "type": "file",
+      "name": "vite.extension.config.ts",
+      "filePath": "web/vite.extension.config.ts",
+      "summary": "Separate Vite configuration for building the browser extension target (distinct from the PWA vite.config.ts): bundles background, sidepanel, and popup entries to extension-dist, runs Svelte in client-only mode, and uses a custom plugin to copy the manifest, HTML shells, and icons into the output directory.",
+      "tags": ["vite", "browser-extension", "build-system", "rollup", "plugin"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/vite.extension.config.ts:extensionManifestPlugin",
+      "type": "function",
+      "name": "extensionManifestPlugin",
+      "filePath": "web/vite.extension.config.ts",
+      "lineRange": [7, 28],
+      "summary": "Custom Rollup/Vite plugin (writeBundle hook) that synchronizes the version field from the root package.json into extension/manifest.json, writes it to extension-dist, and copies the sidepanel/popup HTML shells plus the 16/32/128 px icon set into the build output.",
+      "tags": ["plugin", "rollup", "build-system", "browser-extension", "manifest"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:web/src/routes/+page.svelte",
+      "target": "file:web/tests/e2e/happy-path.spec.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:web/vite.extension.config.ts",
+      "target": "function:web/vite.extension.config.ts:extensionManifestPlugin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "config:web/tsconfig.json",
+      "target": "file:web/src/routes/+layout.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

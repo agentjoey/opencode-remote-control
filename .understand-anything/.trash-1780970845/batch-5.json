@@ -1,0 +1,95 @@
+{
+  "nodes": [
+    {
+      "id": "file:web/src/lib/stores/connection.ts",
+      "type": "file",
+      "name": "connection.ts",
+      "filePath": "web/src/lib/stores/connection.ts",
+      "summary": "Defines a Svelte writable store tracking the WebSocket connection status (offline, connected, or reconnecting) used across the web PWA.",
+      "tags": ["svelte-store", "state", "websocket", "type-definition"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/lib/ws/client.test.ts",
+      "type": "file",
+      "name": "client.test.ts",
+      "filePath": "web/src/lib/ws/client.test.ts",
+      "summary": "Vitest test suite for the WebSocket client factory, using a FakeWebSocket stub to verify message dispatch and subscribe sending behavior.",
+      "tags": ["test", "websocket", "vitest", "fake"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:web/src/lib/ws/client.test.ts:FakeWebSocket",
+      "type": "class",
+      "name": "FakeWebSocket",
+      "filePath": "web/src/lib/ws/client.test.ts",
+      "lineRange": [5, 27],
+      "summary": "In-memory WebSocket stub used in tests, tracking each instance and simulating the open transition via setTimeout so the client factory can be exercised synchronously.",
+      "tags": ["test-double", "websocket", "fake"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/lib/ws/client.ts",
+      "type": "file",
+      "name": "client.ts",
+      "filePath": "web/src/lib/ws/client.ts",
+      "summary": "Implements a resilient WebSocket client factory with exponential reconnect backoff, application-level ping/pong liveness checks, and Svelte store status updates.",
+      "tags": ["websocket", "reconnect", "service", "svelte-store"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/lib/ws/client.ts:createWsClient",
+      "type": "function",
+      "name": "createWsClient",
+      "filePath": "web/src/lib/ws/client.ts",
+      "lineRange": [17, 112],
+      "summary": "Factory that returns a resilient WebSocket client: it auto-connects, schedules periodic pings, reconnects with a bounded backoff schedule, and exposes send/close controls to the caller.",
+      "tags": ["websocket", "reconnect", "factory", "ping-pong"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:web/src/lib/ws/client.test.ts",
+      "target": "class:web/src/lib/ws/client.test.ts:FakeWebSocket",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/lib/ws/client.ts",
+      "target": "function:web/src/lib/ws/client.ts:createWsClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/lib/ws/client.ts",
+      "target": "function:web/src/lib/ws/client.ts:createWsClient",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/lib/ws/client.test.ts",
+      "target": "file:web/src/lib/ws/client.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:web/src/lib/ws/client.test.ts",
+      "target": "file:web/src/lib/ws/client.ts",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:web/src/lib/ws/client.ts",
+      "target": "file:web/src/lib/stores/connection.ts",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

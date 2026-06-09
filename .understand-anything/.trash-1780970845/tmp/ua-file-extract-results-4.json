@@ -1,0 +1,275 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/transport/web/server.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "buildServer",
+          "startLine": 43,
+          "endLine": 66,
+          "params": [
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildServer",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildServer",
+          "callee": "app.use",
+          "lineNumber": 45
+        },
+        {
+          "caller": "buildServer",
+          "callee": "Date.now",
+          "lineNumber": 46
+        },
+        {
+          "caller": "buildServer",
+          "callee": "next",
+          "lineNumber": 47
+        },
+        {
+          "caller": "buildServer",
+          "callee": "log.info",
+          "lineNumber": 48
+        },
+        {
+          "caller": "buildServer",
+          "callee": "Date.now",
+          "lineNumber": 48
+        },
+        {
+          "caller": "buildServer",
+          "callee": "app.use",
+          "lineNumber": 50
+        },
+        {
+          "caller": "buildServer",
+          "callee": "cfAccessMiddleware",
+          "lineNumber": 50
+        },
+        {
+          "caller": "buildServer",
+          "callee": "app.get",
+          "lineNumber": 51
+        },
+        {
+          "caller": "buildServer",
+          "callee": "c.get",
+          "lineNumber": 52
+        },
+        {
+          "caller": "buildServer",
+          "callee": "c.json",
+          "lineNumber": 53
+        },
+        {
+          "caller": "buildServer",
+          "callee": "c.json",
+          "lineNumber": 54
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerSessions",
+          "lineNumber": 56
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerSession",
+          "lineNumber": 57
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerMessage",
+          "lineNumber": 58
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerAbort",
+          "lineNumber": 59
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerDiff",
+          "lineNumber": 60
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerTodo",
+          "lineNumber": 61
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerContext",
+          "lineNumber": 62
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerApproval",
+          "lineNumber": 63
+        },
+        {
+          "caller": "buildServer",
+          "callee": "registerVersion",
+          "lineNumber": 64
+        }
+      ],
+      "metrics": {
+        "importCount": 14,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/routes.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 138,
+      "nonEmptyLines": 128,
+      "functions": [
+        {
+          "name": "fakeState",
+          "startLine": 4,
+          "endLine": 24,
+          "params": []
+        },
+        {
+          "name": "fakeClient",
+          "startLine": 26,
+          "endLine": 39,
+          "params": []
+        },
+        {
+          "name": "baseOpts",
+          "startLine": 41,
+          "endLine": 47,
+          "params": [
+            "state",
+            "client"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fakeState",
+          "callee": "costs.get",
+          "lineNumber": 7
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 8
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 10
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 11
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 14
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 15
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 17
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 19
+        },
+        {
+          "caller": "fakeState",
+          "callee": "vi.fn",
+          "lineNumber": 20
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 29
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn",
+          "lineNumber": 29
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 33
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn",
+          "lineNumber": 33
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn().mockResolvedValue",
+          "lineNumber": 36
+        },
+        {
+          "caller": "fakeClient",
+          "callee": "vi.fn",
+          "lineNumber": 36
+        },
+        {
+          "caller": "baseOpts",
+          "callee": "vi.fn",
+          "lineNumber": 44
+        },
+        {
+          "caller": "baseOpts",
+          "callee": "vi.fn",
+          "lineNumber": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tests/unit/web/server.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 31,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

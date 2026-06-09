@@ -62,7 +62,6 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
   }
 
   const webHost = env('WEB_HOST', options?.webHost as string) ?? '127.0.0.1'
-  const isLoopback = webHost === '127.0.0.1' || webHost === 'localhost' || webHost === '::1'
 
   const devBypassExplicit = bool(options?.webCfAccessDevBypass as string)
   const devBypassEnv = process.env.WEB_CF_ACCESS_DEV_BYPASS
@@ -77,7 +76,10 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
     webCfAccessTeam: env('WEB_CF_ACCESS_TEAM', options?.webCfAccessTeam as string) ?? '',
     webCfAccessAud: env('WEB_CF_ACCESS_AUD', options?.webCfAccessAud as string) ?? '',
-    webCfAccessDevBypass: devBypassExplicit ?? (devBypassEnv !== undefined ? devBypassEnv === 'true' : isLoopback),
+    // Default OFF: a loopback bind is not a safe bypass signal when traffic
+    // arrives via a tunnel (cloudflared connects from 127.0.0.1). Local dev
+    // must opt in explicitly with WEB_CF_ACCESS_DEV_BYPASS=true.
+    webCfAccessDevBypass: devBypassExplicit ?? (devBypassEnv !== undefined ? devBypassEnv === 'true' : false),
     webCfAccessDevEmail: env('WEB_CF_ACCESS_DEV_EMAIL', options?.webCfAccessDevEmail as string) ?? 'dev@localhost',
     statePath: env('STATE_PATH', options?.statePath as string) ?? './data/state.json',
     tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE !== 'false',

@@ -1,0 +1,4747 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "src/launcher/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "waitForHealth",
+          "startLine": 12,
+          "endLine": 19,
+          "params": [
+            "baseUrl",
+            "timeoutMs"
+          ]
+        },
+        {
+          "name": "main",
+          "startLine": 21,
+          "endLine": 56,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "waitForHealth",
+          "callee": "Date.now",
+          "lineNumber": 13
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "Date.now",
+          "lineNumber": 14
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "checkHealth",
+          "lineNumber": 15
+        },
+        {
+          "caller": "waitForHealth",
+          "callee": "setTimeout",
+          "lineNumber": 16
+        },
+        {
+          "caller": "main",
+          "callee": "loadConfig",
+          "lineNumber": 22
+        },
+        {
+          "caller": "main",
+          "callee": "log.info",
+          "lineNumber": 23
+        },
+        {
+          "caller": "main",
+          "callee": "mkdirSync",
+          "lineNumber": 25
+        },
+        {
+          "caller": "main",
+          "callee": "checkHealth",
+          "lineNumber": 28
+        },
+        {
+          "caller": "main",
+          "callee": "createSupervisor",
+          "lineNumber": 29
+        },
+        {
+          "caller": "main",
+          "callee": "join",
+          "lineNumber": 33
+        },
+        {
+          "caller": "main",
+          "callee": "ownSupervisor.start",
+          "lineNumber": 38
+        },
+        {
+          "caller": "main",
+          "callee": "log.info",
+          "lineNumber": 39
+        },
+        {
+          "caller": "main",
+          "callee": "log.info",
+          "lineNumber": 41
+        },
+        {
+          "caller": "main",
+          "callee": "waitForHealth",
+          "lineNumber": 44
+        },
+        {
+          "caller": "main",
+          "callee": "log.info",
+          "lineNumber": 45
+        },
+        {
+          "caller": "shutdown",
+          "callee": "log.info",
+          "lineNumber": 48
+        },
+        {
+          "caller": "shutdown",
+          "callee": "ownSupervisor.stop",
+          "lineNumber": 49
+        },
+        {
+          "caller": "shutdown",
+          "callee": "process.exit",
+          "lineNumber": 50
+        },
+        {
+          "caller": "main",
+          "callee": "process.once",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "shutdown",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "process.once",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "shutdown",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "runBot",
+          "lineNumber": 55
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/launcher/spawn.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 70,
+      "nonEmptyLines": 64,
+      "functions": [
+        {
+          "name": "createSupervisor",
+          "startLine": 24,
+          "endLine": 70,
+          "params": [
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createSupervisor",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "spawnOnce",
+          "callee": "openSync",
+          "lineNumber": 33
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "spawn",
+          "lineNumber": 34
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "log.info",
+          "lineNumber": 39
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "child.on",
+          "lineNumber": 40
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "closeSync",
+          "lineNumber": 41
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "log.warn",
+          "lineNumber": 42
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "opts.onExit",
+          "lineNumber": 43
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "Math.min",
+          "lineNumber": 45
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "log.info",
+          "lineNumber": 47
+        },
+        {
+          "caller": "spawnOnce",
+          "callee": "setTimeout",
+          "lineNumber": 48
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "spawnOnce",
+          "lineNumber": 53
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "child.kill",
+          "lineNumber": 57
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "setTimeout",
+          "lineNumber": 59
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "child.kill",
+          "lineNumber": 60
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "resolve",
+          "lineNumber": 61
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "child!.once",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "clearTimeout",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "resolve",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createSupervisor",
+          "callee": "closeSync",
+          "lineNumber": 66
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/opencode/client.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 17,
+      "functions": [
+        {
+          "name": "getClient",
+          "startLine": 5,
+          "endLine": 9,
+          "params": [
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "checkHealth",
+          "startLine": 11,
+          "endLine": 20,
+          "params": [
+            "baseUrl"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getClient",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "checkHealth",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getClient",
+          "callee": "createOpencodeClient",
+          "lineNumber": 7
+        },
+        {
+          "caller": "checkHealth",
+          "callee": "fetch",
+          "lineNumber": 13
+        },
+        {
+          "caller": "checkHealth",
+          "callee": "res.json",
+          "lineNumber": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/opencode/event-stream.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 160,
+      "nonEmptyLines": 138,
+      "classes": [
+        {
+          "name": "EventStream",
+          "startLine": 12,
+          "endLine": 160,
+          "methods": [
+            "constructor",
+            "setStatusChecker",
+            "reconnectDelay",
+            "extractSessionID",
+            "start",
+            "session",
+            "onAny",
+            "stop"
+          ],
+          "properties": [
+            "emitter",
+            "stopped",
+            "consecutiveFailures",
+            "running",
+            "activeListeners",
+            "statusChecker",
+            "reconnectMs",
+            "heartbeatTimer"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "EventStream",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "this.emitter.setMaxListeners",
+          "lineNumber": 25
+        },
+        {
+          "caller": "reconnectDelay",
+          "callee": "Math.min",
+          "lineNumber": 33
+        },
+        {
+          "caller": "reconnectDelay",
+          "callee": "Math.pow",
+          "lineNumber": 34
+        },
+        {
+          "caller": "reconnectDelay",
+          "callee": "Math.max",
+          "lineNumber": 34
+        },
+        {
+          "caller": "start",
+          "callee": "(async () => {\n      while (!this.stopped) {\n        try {\n          const { stream } = await client.event.subscribe()\n          log.info('SSE connected')\n          this.consecutiveFailures = 0\n\n          // After every (re)connect, check if any active session generators are\n          // waiting for an idle event that was fired while the SSE was down.\n          if (this.statusChecker && this.activeListeners.size > 0) {\n            try {\n              const status = await this.statusChecker()\n              for (const sid of this.activeListeners) {\n                if (status[sid]?.type !== 'busy') {\n                  log.info(`session ${sid} already idle after SSE reconnect, emitting synthetic idle`)\n                  this.emitter.emit(sid, { type: 'session.idle', properties: { sessionID: sid } })\n                } else {\n                  log.info(`session ${sid} still busy after SSE reconnect, emitting synthetic busy`)\n                  this.emitter.emit(sid, { type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })\n                }\n              }\n            } catch {}\n          }\n\n          const abortController = new AbortController()\n\n          // Heartbeat: if no event arrives within HEARTBEAT_GAP_MS, force reconnect.\n          const resetHeartbeat = () => {\n            if (this.heartbeatTimer) clearTimeout(this.heartbeatTimer)\n            this.heartbeatTimer = setTimeout(() => {\n              log.warn('SSE heartbeat timeout, forcing reconnect')\n              abortController.abort()\n            }, HEARTBEAT_GAP_MS)\n          }\n          resetHeartbeat()\n\n          const signal = abortController.signal\n\n          for await (const event of stream) {\n            if (this.stopped || signal.aborted) break\n            resetHeartbeat()\n            const sid = this.extractSessionID(event)\n            if (sid) this.emitter.emit(sid, event)\n            this.emitter.emit('*', event)\n          }\n          log.warn('SSE stream ended unexpectedly')\n        } catch (err) {\n          log.warn('SSE connection error', (err as Error).message)\n        }\n\n        if (this.stopped) break\n        this.consecutiveFailures += 1\n        if (this.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {\n          log.error(`SSE failed ${MAX_CONSECUTIVE_FAILURES} times in a row, exiting`)\n          process.exit(1)\n        }\n        const delay = this.reconnectDelay()\n        log.info(`SSE reconnect in ${delay}ms (attempt ${this.consecutiveFailures})`)\n        await new Promise((r) => setTimeout(r, delay))\n      }\n\n      this.running = false\n    })",
+          "lineNumber": 52
+        },
+        {
+          "caller": "start",
+          "callee": "client.event.subscribe",
+          "lineNumber": 55
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 56
+        },
+        {
+          "caller": "start",
+          "callee": "this.statusChecker",
+          "lineNumber": 63
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 66
+        },
+        {
+          "caller": "start",
+          "callee": "this.emitter.emit",
+          "lineNumber": 67
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 69
+        },
+        {
+          "caller": "start",
+          "callee": "this.emitter.emit",
+          "lineNumber": 70
+        },
+        {
+          "caller": "resetHeartbeat",
+          "callee": "clearTimeout",
+          "lineNumber": 80
+        },
+        {
+          "caller": "resetHeartbeat",
+          "callee": "setTimeout",
+          "lineNumber": 81
+        },
+        {
+          "caller": "resetHeartbeat",
+          "callee": "log.warn",
+          "lineNumber": 82
+        },
+        {
+          "caller": "resetHeartbeat",
+          "callee": "abortController.abort",
+          "lineNumber": 83
+        },
+        {
+          "caller": "start",
+          "callee": "resetHeartbeat",
+          "lineNumber": 86
+        },
+        {
+          "caller": "start",
+          "callee": "resetHeartbeat",
+          "lineNumber": 92
+        },
+        {
+          "caller": "start",
+          "callee": "this.extractSessionID",
+          "lineNumber": 93
+        },
+        {
+          "caller": "start",
+          "callee": "this.emitter.emit",
+          "lineNumber": 94
+        },
+        {
+          "caller": "start",
+          "callee": "this.emitter.emit",
+          "lineNumber": 95
+        },
+        {
+          "caller": "start",
+          "callee": "log.warn",
+          "lineNumber": 97
+        },
+        {
+          "caller": "start",
+          "callee": "log.warn",
+          "lineNumber": 99
+        },
+        {
+          "caller": "start",
+          "callee": "log.error",
+          "lineNumber": 105
+        },
+        {
+          "caller": "start",
+          "callee": "process.exit",
+          "lineNumber": 106
+        },
+        {
+          "caller": "start",
+          "callee": "this.reconnectDelay",
+          "lineNumber": 108
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 109
+        },
+        {
+          "caller": "start",
+          "callee": "setTimeout",
+          "lineNumber": 110
+        },
+        {
+          "caller": "session",
+          "callee": "this.activeListeners.add",
+          "lineNumber": 118
+        },
+        {
+          "caller": "handler",
+          "callee": "queue.push",
+          "lineNumber": 123
+        },
+        {
+          "caller": "handler",
+          "callee": "wake",
+          "lineNumber": 124
+        },
+        {
+          "caller": "session",
+          "callee": "this.emitter.on",
+          "lineNumber": 127
+        },
+        {
+          "caller": "onAbort",
+          "callee": "this.emitter.off",
+          "lineNumber": 130
+        },
+        {
+          "caller": "onAbort",
+          "callee": "wake",
+          "lineNumber": 131
+        },
+        {
+          "caller": "session",
+          "callee": "signal.addEventListener",
+          "lineNumber": 134
+        },
+        {
+          "caller": "session",
+          "callee": "queue.shift",
+          "lineNumber": 138
+        },
+        {
+          "caller": "session",
+          "callee": "this.activeListeners.delete",
+          "lineNumber": 143
+        },
+        {
+          "caller": "session",
+          "callee": "this.emitter.off",
+          "lineNumber": 144
+        },
+        {
+          "caller": "session",
+          "callee": "signal.removeEventListener",
+          "lineNumber": 145
+        },
+        {
+          "caller": "onAny",
+          "callee": "this.emitter.on",
+          "lineNumber": 150
+        },
+        {
+          "caller": "onAny",
+          "callee": "this.emitter.off",
+          "lineNumber": 151
+        },
+        {
+          "caller": "stop",
+          "callee": "clearTimeout",
+          "lineNumber": 157
+        },
+        {
+          "caller": "stop",
+          "callee": "this.emitter.removeAllListeners",
+          "lineNumber": 158
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/opencode/submit.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 28,
+      "functions": [
+        {
+          "name": "submitPrompt",
+          "startLine": 17,
+          "endLine": 32,
+          "params": [
+            "client",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "submitPrompt",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "submitPrompt",
+          "callee": "client.session.promptAsync",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/plugin/config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 94,
+      "nonEmptyLines": 83,
+      "functions": [
+        {
+          "name": "loadDotEnv",
+          "startLine": 24,
+          "endLine": 34,
+          "params": []
+        },
+        {
+          "name": "env",
+          "startLine": 36,
+          "endLine": 38,
+          "params": [
+            "key",
+            "optionsVal"
+          ]
+        },
+        {
+          "name": "loadPluginConfig",
+          "startLine": 40,
+          "endLine": 87,
+          "params": [
+            "options"
+          ]
+        },
+        {
+          "name": "bool",
+          "startLine": 89,
+          "endLine": 94,
+          "params": [
+            "val"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "loadPluginConfig",
+          "line": 40,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadDotEnv",
+          "callee": "process.cwd",
+          "lineNumber": 25
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "dotenvConfig",
+          "lineNumber": 26
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "resolve",
+          "lineNumber": 26
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "dotenvConfig",
+          "lineNumber": 28
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "resolve",
+          "lineNumber": 28
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "dotenvConfig",
+          "lineNumber": 29
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "resolve",
+          "lineNumber": 29
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "dotenvConfig",
+          "lineNumber": 32
+        },
+        {
+          "caller": "loadDotEnv",
+          "callee": "resolve",
+          "lineNumber": 32
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "loadDotEnv",
+          "lineNumber": 41
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString()\n    .split(',')\n    .map((s) => s.trim())\n    .filter(Boolean)\n    .map(Number)\n    .filter",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString()\n    .split(',')\n    .map((s) => s.trim())\n    .filter(Boolean)\n    .map",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString()\n    .split(',')\n    .map((s) => s.trim())\n    .filter",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString()\n    .split(',')\n    .map",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString()\n    .split",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "userIdsRaw\n    .toString",
+          "lineNumber": 51
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "s.trim",
+          "lineNumber": 54
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "Number.isFinite",
+          "lineNumber": 57
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 63
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "bool",
+          "lineNumber": 66
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "bool",
+          "lineNumber": 72
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "Number",
+          "lineNumber": 74
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 75
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "Number",
+          "lineNumber": 76
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 77
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 78
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 80
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 81
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "bool",
+          "lineNumber": 82
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 83
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "Number",
+          "lineNumber": 84
+        },
+        {
+          "caller": "loadPluginConfig",
+          "callee": "env",
+          "lineNumber": 85
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/plugin/entry.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 158,
+      "nonEmptyLines": 141,
+      "functions": [
+        {
+          "name": "remoteControlPlugin",
+          "startLine": 16,
+          "endLine": 156,
+          "params": [
+            "ctx",
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "remoteControlPlugin",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 17
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "loadPluginConfig",
+          "lineNumber": 19
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 20
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "createFileBackedState",
+          "lineNumber": 22
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "createCardBus",
+          "lineNumber": 23
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "ctx.serverUrl.toString().replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "ctx.serverUrl.toString",
+          "lineNumber": 25
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "createRelay",
+          "lineNumber": 27
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "createTelegramTransport",
+          "lineNumber": 36
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "tgTransport.onMessage",
+          "lineNumber": 45
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "createWebTransport",
+          "lineNumber": 50
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "webTransport.onMessage",
+          "lineNumber": 63
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "transports.push",
+          "lineNumber": 64
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "Promise.all(transports.map((t) => t.start({ cardBus, state })))\n    .then(() => {\n      log.info(`${transports.length} transport(s) started successfully`)\n    })\n    .catch",
+          "lineNumber": 69
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "Promise.all(transports.map((t) => t.start({ cardBus, state })))\n    .then",
+          "lineNumber": 69
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "Promise.all",
+          "lineNumber": 69
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "transports.map",
+          "lineNumber": 69
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "t.start",
+          "lineNumber": 69
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 71
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.error",
+          "lineNumber": 74
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "startPushNotifications",
+          "lineNumber": 78
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "setInterval",
+          "lineNumber": 81
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "state.getTuiSelectedSession",
+          "lineNumber": 82
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "ctx.client.session.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "state.setCurrentAgent",
+          "lineNumber": 87
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "push.handleEvent",
+          "lineNumber": 99
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "tgTransport.handlePluginPermissionEvent(event as any).catch",
+          "lineNumber": 105
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "tgTransport.handlePluginPermissionEvent",
+          "lineNumber": 105
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.error",
+          "lineNumber": 106
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "relay.handleEvent",
+          "lineNumber": 108
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "state.setTuiSelectedSession",
+          "lineNumber": 113
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 114
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "sid.slice",
+          "lineNumber": 114
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "relay.handleEvent",
+          "lineNumber": 130
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "tool",
+          "lineNumber": 135
+        },
+        {
+          "caller": "execute",
+          "callee": "lines.join",
+          "lineNumber": 144
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 149
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "clearInterval",
+          "lineNumber": 150
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "push.stop",
+          "lineNumber": 151
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "Promise.allSettled",
+          "lineNumber": 152
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "transports.map",
+          "lineNumber": 152
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "t.stop",
+          "lineNumber": 152
+        },
+        {
+          "caller": "remoteControlPlugin",
+          "callee": "log.info",
+          "lineNumber": 153
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/interface.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 18,
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/telegram/handlers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 930,
+      "nonEmptyLines": 851,
+      "functions": [
+        {
+          "name": "hasHttpApi",
+          "startLine": 37,
+          "endLine": 39,
+          "params": [
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "checkHealth",
+          "startLine": 42,
+          "endLine": 50,
+          "params": [
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "fetchUserAgents",
+          "startLine": 52,
+          "endLine": 70,
+          "params": [
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "parseAgentModel",
+          "startLine": 76,
+          "endLine": 83,
+          "params": [
+            "modelStr"
+          ]
+        },
+        {
+          "name": "shortPath",
+          "startLine": 86,
+          "endLine": 94,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "buildStatusCard",
+          "startLine": 101,
+          "endLine": 159,
+          "params": [
+            "deps"
+          ]
+        },
+        {
+          "name": "registerHandlers",
+          "startLine": 161,
+          "endLine": 811,
+          "params": [
+            "deps"
+          ]
+        },
+        {
+          "name": "setupApproval",
+          "startLine": 824,
+          "endLine": 921,
+          "params": [
+            "deps",
+            "pending"
+          ]
+        },
+        {
+          "name": "labelFor",
+          "startLine": 923,
+          "endLine": 930,
+          "params": [
+            "response"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerHandlers",
+          "line": 161,
+          "isDefault": false
+        },
+        {
+          "name": "setupApproval",
+          "line": 824,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "hasHttpApi",
+          "callee": "baseUrl.startsWith",
+          "lineNumber": 38
+        },
+        {
+          "caller": "checkHealth",
+          "callee": "hasHttpApi",
+          "lineNumber": 43
+        },
+        {
+          "caller": "checkHealth",
+          "callee": "fetch",
+          "lineNumber": 45
+        },
+        {
+          "caller": "checkHealth",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 45
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "hasHttpApi",
+          "lineNumber": 53
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "log.debug",
+          "lineNumber": 54
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "fetch",
+          "lineNumber": 57
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 57
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "res.json",
+          "lineNumber": 59
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "Object.entries(agents)\n    .filter(([, v]) => typeof v.model === 'string')\n    .map",
+          "lineNumber": 63
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "Object.entries(agents)\n    .filter",
+          "lineNumber": 63
+        },
+        {
+          "caller": "fetchUserAgents",
+          "callee": "Object.entries",
+          "lineNumber": 63
+        },
+        {
+          "caller": "parseAgentModel",
+          "callee": "modelStr.indexOf",
+          "lineNumber": 77
+        },
+        {
+          "caller": "parseAgentModel",
+          "callee": "modelStr.slice",
+          "lineNumber": 80
+        },
+        {
+          "caller": "parseAgentModel",
+          "callee": "modelStr.slice",
+          "lineNumber": 81
+        },
+        {
+          "caller": "shortPath",
+          "callee": "process.cwd",
+          "lineNumber": 87
+        },
+        {
+          "caller": "shortPath",
+          "callee": "p.startsWith",
+          "lineNumber": 88
+        },
+        {
+          "caller": "shortPath",
+          "callee": "p.slice",
+          "lineNumber": 88
+        },
+        {
+          "caller": "shortPath",
+          "callee": "p.startsWith",
+          "lineNumber": 89
+        },
+        {
+          "caller": "shortPath",
+          "callee": "p.split",
+          "lineNumber": 90
+        },
+        {
+          "caller": "shortPath",
+          "callee": "parts.slice(-3).join",
+          "lineNumber": 91
+        },
+        {
+          "caller": "shortPath",
+          "callee": "parts.slice",
+          "lineNumber": 91
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "checkHealth",
+          "lineNumber": 102
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "hasHttpApi",
+          "lineNumber": 106
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "fetch",
+          "lineNumber": 108
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "res.json",
+          "lineNumber": 109
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Object.keys",
+          "lineNumber": 110
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Object.values(data).filter",
+          "lineNumber": 111
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Object.values",
+          "lineNumber": 111
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Object.keys",
+          "lineNumber": 112
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getSessionCost",
+          "lineNumber": 113
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.client.session.list",
+          "lineNumber": 119
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getPinnedSessionId",
+          "lineNumber": 124
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 125
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getTuiSelectedSession",
+          "lineNumber": 126
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getCurrentAgent",
+          "lineNumber": 128
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getNextAgent",
+          "lineNumber": 129
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 130
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "row",
+          "lineNumber": 139
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "row",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "totalCost.toFixed",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "row",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "effectiveSession.slice",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "row",
+          "lineNumber": 145
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "tuiSession.slice",
+          "lineNumber": 145
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Markup.button.callback",
+          "lineNumber": 153
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "deps.isGenerating",
+          "lineNumber": 155
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "buttons.push",
+          "lineNumber": 156
+        },
+        {
+          "caller": "buildStatusCard",
+          "callee": "Markup.button.callback",
+          "lineNumber": 156
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 164
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "checkHealth",
+          "lineNumber": 165
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextAgent",
+          "lineNumber": 167
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 168
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 187
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 188
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 189
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 191
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 191
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 193
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 194
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 199
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "buildStatusCard",
+          "lineNumber": 200
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 201
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 201
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 203
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 207
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.client.session.list",
+          "lineNumber": 209
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 212
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 215
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "new Date(s.time.created).toLocaleString",
+          "lineNumber": 220
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 225
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "s.id.slice",
+          "lineNumber": 225
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 226
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 227
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 230
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "pinned.slice",
+          "lineNumber": 230
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "sessions.map",
+          "lineNumber": 232
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 233
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "s.id.slice",
+          "lineNumber": 233
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 235
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 235
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 237
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 240
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 241
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 245
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "text.split(' ').slice(1)[0]?.trim",
+          "lineNumber": 247
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "text.split(' ').slice",
+          "lineNumber": 247
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "text.split",
+          "lineNumber": 247
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setPinnedSessionId",
+          "lineNumber": 249
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 250
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 254
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 255
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getPinnedSessionId",
+          "lineNumber": 261
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 263
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 269
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 273
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 274
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 280
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 281
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 283
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.client.session.messages",
+          "lineNumber": 291
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fileOps.set",
+          "lineNumber": 306
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fileOps.has",
+          "lineNumber": 310
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fileOps.set",
+          "lineNumber": 310
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "last.slice",
+          "lineNumber": 316
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 318
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fileOps.entries",
+          "lineNumber": 326
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "entries.slice",
+          "lineNumber": 327
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "shown.map",
+          "lineNumber": 331
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "shortPath",
+          "lineNumber": 331
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 334
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 336
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 338
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 338
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 340
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 341
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 345
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetchUserAgents",
+          "lineNumber": 347
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 349
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextAgent",
+          "lineNumber": 355
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "a.model.split('/').pop",
+          "lineNumber": 359
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "a.model.split",
+          "lineNumber": 359
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 363
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 365
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "agents.map",
+          "lineNumber": 366
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 366
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 367
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 367
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 368
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 368
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 370
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 373
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 374
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 378
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "hasHttpApi",
+          "lineNumber": 380
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 381
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetch",
+          "lineNumber": 384
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 384
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "res.json",
+          "lineNumber": 386
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 392
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 396
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Object.keys",
+          "lineNumber": 401
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 404
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 405
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 405
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 409
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 411
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 411
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 413
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 413
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 415
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 418
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 419
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 423
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 424
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 426
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 432
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 436
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 437
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 443
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 444
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 446
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.abortGeneration",
+          "lineNumber": 449
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "hasHttpApi",
+          "lineNumber": 451
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetch",
+          "lineNumber": 452
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 455
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "last.slice",
+          "lineNumber": 455
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 457
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 461
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "getVersionInfo",
+          "lineNumber": 462
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 463
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "[\n        `<b>opencode-remote-control</b>  v${version}`,\n        `Commit: <code>${commit}</code>`,\n        `Uptime: ${uptime}`,\n        `Node: ${node}`,\n      ].join",
+          "lineNumber": 464
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.command",
+          "lineNumber": 474
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.reply",
+          "lineNumber": 475
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "[\n        '<b>🤖 opencode-remote-control</b>',\n        '',\n        '<b>Commands:</b>',\n        '  /start   Handshake + health',\n        '  /status  Server health + session',\n        '  /sessions List all sessions',\n        '  /session Pin a session',\n        '  /files   Files touched in last session',\n        '  /diff    Pending git diff',\n        '  /todo    Session todo list',\n        '  /context Tokens + cost + model',\n        '  /agent   Set next agent',\n        '  /model   Set next model',\n        '  /current Last session used',\n        '  /abort   Stop generation',\n        '  /version Bot version + uptime',\n        '  /help    This message',\n        '',\n        'Send any text to relay it into opencode.',\n      ].join",
+          "lineNumber": 476
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 499
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 500
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.telegram\n    .setMyCommands([\n      { command: 'start', description: 'Handshake and health' },\n      { command: 'status', description: 'Server + last session' },\n      { command: 'sessions', description: 'List all sessions' },\n      { command: 'session', description: 'Pin a session' },\n      { command: 'files', description: 'Files touched in last session' },\n      { command: 'diff', description: 'Pending git diff' },\n      { command: 'todo', description: 'Session todo list' },\n      { command: 'context', description: 'Tokens + cost + model' },\n      { command: 'agent', description: 'Set next agent' },\n      { command: 'model', description: 'Set next model' },\n      { command: 'current', description: 'Last session used' },\n      { command: 'abort', description: 'Stop the current generation' },\n      { command: 'version', description: 'Bot version + uptime' },\n      { command: 'help', description: 'Show help' },\n    ])\n    .catch",
+          "lineNumber": 506
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.telegram\n    .setMyCommands",
+          "lineNumber": 506
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 523
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 527
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setPinnedSessionId",
+          "lineNumber": 529
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 530
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "id.slice",
+          "lineNumber": 530
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 532
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 538
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 538
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 542
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setPinnedSessionId",
+          "lineNumber": 543
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 544
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 546
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 552
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 552
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 556
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "buildStatusCard",
+          "lineNumber": 557
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 559
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 559
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 561
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 563
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 566
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 567
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 569
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 570
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 575
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.abortGeneration",
+          "lineNumber": 576
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 577
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "hasHttpApi",
+          "lineNumber": 578
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetch",
+          "lineNumber": 580
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 583
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 585
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 588
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 588
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 592
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.info",
+          "lineNumber": 594
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setNextAgent",
+          "lineNumber": 595
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetchUserAgents",
+          "lineNumber": 600
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "agents.find",
+          "lineNumber": 601
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "parseAgentModel",
+          "lineNumber": 602
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setNextModel",
+          "lineNumber": 604
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 608
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 610
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 612
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 618
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 618
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 622
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setNextAgent",
+          "lineNumber": 623
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 624
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 626
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 632
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 632
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 636
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.info",
+          "lineNumber": 639
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setNextModel",
+          "lineNumber": 641
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 642
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 644
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 650
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 650
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 654
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.setNextModel",
+          "lineNumber": 655
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 656
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 658
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "msg.includes",
+          "lineNumber": 664
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.warn",
+          "lineNumber": 664
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 669
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "hasHttpApi",
+          "lineNumber": 672
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 673
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetch",
+          "lineNumber": 676
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 676
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "res.json",
+          "lineNumber": 678
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "data.providers?.find",
+          "lineNumber": 681
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Object.keys",
+          "lineNumber": 682
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 683
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 687
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Object.entries",
+          "lineNumber": 694
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 696
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 697
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 697
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 700
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 700
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 702
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 702
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 704
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 706
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 708
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 709
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 714
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "hasHttpApi",
+          "lineNumber": 716
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 717
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "fetch",
+          "lineNumber": 720
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 720
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "res.json",
+          "lineNumber": 722
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 727
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Object.keys",
+          "lineNumber": 732
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 735
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 736
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 736
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.push",
+          "lineNumber": 740
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "rows.push",
+          "lineNumber": 742
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.button.callback",
+          "lineNumber": 742
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 744
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "lines.join",
+          "lineNumber": 744
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 746
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 748
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 750
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 751
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 755
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.state.getActiveAbort",
+          "lineNumber": 757
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ac.abort",
+          "lineNumber": 759
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 760
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 762
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 765
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 769
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 770
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.deleteMessage().catch",
+          "lineNumber": 771
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.deleteMessage",
+          "lineNumber": 771
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "registerInfoCommands",
+          "lineNumber": 775
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.bot.action",
+          "lineNumber": 778
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.pendingApprovals.get",
+          "lineNumber": 782
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 785
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "(deps.client as any).postSessionIdPermissionsPermissionId",
+          "lineNumber": 790
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "log.error",
+          "lineNumber": 795
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 796
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "deps.pendingApprovals.delete",
+          "lineNumber": 800
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText(`${display}\\n\\n${p.title}`, { parse_mode: 'HTML' }).catch",
+          "lineNumber": 808
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.editMessageText",
+          "lineNumber": 808
+        },
+        {
+          "caller": "registerHandlers",
+          "callee": "ctx.answerCbQuery",
+          "lineNumber": 809
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "deps.eventStream!.onAny",
+          "lineNumber": 829
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "ev.type?.startsWith",
+          "lineNumber": 831
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.info",
+          "lineNumber": 832
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.warn",
+          "lineNumber": 843
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 847
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "title.replace(/&/g, '&amp;').replace",
+          "lineNumber": 847
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "title.replace",
+          "lineNumber": 847
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 850
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "Markup.button.callback",
+          "lineNumber": 852
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "Markup.button.callback",
+          "lineNumber": 853
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "Markup.button.callback",
+          "lineNumber": 854
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "deps.bot.telegram.sendMessage",
+          "lineNumber": 861
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "pending.set",
+          "lineNumber": 862
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.info",
+          "lineNumber": 868
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.error",
+          "lineNumber": 870
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "deps.cardBus?.publish",
+          "lineNumber": 875
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.warn",
+          "lineNumber": 883
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "deps.eventStream!.onAny",
+          "lineNumber": 887
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "pending.get",
+          "lineNumber": 898
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "pending.delete",
+          "lineNumber": 901
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "labelFor",
+          "lineNumber": 903
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "deps.bot.telegram.editMessageText",
+          "lineNumber": 904
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "log.warn",
+          "lineNumber": 912
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "offUpdated",
+          "lineNumber": 918
+        },
+        {
+          "caller": "setupApproval",
+          "callee": "offReplied",
+          "lineNumber": 919
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 2,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/telegram/handlers/info-commands.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 127,
+      "nonEmptyLines": 121,
+      "functions": [
+        {
+          "name": "safeBaseUrl",
+          "startLine": 13,
+          "endLine": 15,
+          "params": [
+            "url"
+          ]
+        },
+        {
+          "name": "registerInfoCommands",
+          "startLine": 17,
+          "endLine": 127,
+          "params": [
+            "deps"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerInfoCommands",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "safeBaseUrl",
+          "callee": "url.startsWith",
+          "lineNumber": 14
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.bot.command",
+          "lineNumber": 18
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "safeBaseUrl",
+          "lineNumber": 19
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 21
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 24
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fetch",
+          "lineNumber": 30
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 31
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "res.json",
+          "lineNumber": 34
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 36
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "last.slice",
+          "lineNumber": 36
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "last.slice",
+          "lineNumber": 41
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 44
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "(d.patch ?? '').split('\\n').slice",
+          "lineNumber": 45
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "(d.patch ?? '').split",
+          "lineNumber": 45
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "patch.join('\\n').replace",
+          "lineNumber": 46
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "patch.join",
+          "lineNumber": 46
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 48
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 49
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 50
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 52
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 53
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.join",
+          "lineNumber": 53
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 55
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.bot.command",
+          "lineNumber": 59
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "safeBaseUrl",
+          "lineNumber": 60
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 62
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 65
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 66
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fetch",
+          "lineNumber": 68
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 68
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "res.json",
+          "lineNumber": 70
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 72
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "last.slice",
+          "lineNumber": 72
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "last.slice",
+          "lineNumber": 76
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 79
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "mark",
+          "lineNumber": 79
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 81
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.join",
+          "lineNumber": 81
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 83
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.bot.command",
+          "lineNumber": 87
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "safeBaseUrl",
+          "lineNumber": 88
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 90
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.state.getLastSessionId",
+          "lineNumber": 93
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 94
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fetch",
+          "lineNumber": 96
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 96
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "sRes.json",
+          "lineNumber": 97
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fetch",
+          "lineNumber": 102
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 102
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "cRes.json",
+          "lineNumber": 103
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.state.getNextAgent",
+          "lineNumber": 105
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "deps.state.getNextModel",
+          "lineNumber": 106
+        },
+        {
+          "caller": "fmt",
+          "callee": "(n/1000).toFixed",
+          "lineNumber": 107
+        },
+        {
+          "caller": "fmt",
+          "callee": "String",
+          "lineNumber": 107
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "last.slice",
+          "lineNumber": 110
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "row",
+          "lineNumber": 112
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "row",
+          "lineNumber": 113
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "row",
+          "lineNumber": 114
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fmt",
+          "lineNumber": 114
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fmt",
+          "lineNumber": 114
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "fmt",
+          "lineNumber": 114
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "row",
+          "lineNumber": 115
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "(s.cost ?? 0).toFixed",
+          "lineNumber": 115
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 118
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 119
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.push",
+          "lineNumber": 120
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 122
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "lines.join",
+          "lineNumber": 122
+        },
+        {
+          "caller": "registerInfoCommands",
+          "callee": "ctx.reply",
+          "lineNumber": 124
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/telegram/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 299,
+      "nonEmptyLines": 267,
+      "functions": [
+        {
+          "name": "createTelegramTransport",
+          "startLine": 41,
+          "endLine": 299,
+          "params": [
+            "cfg"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createTelegramTransport",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createTelegramTransport",
+          "callee": "bot.use",
+          "lineNumber": 45
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "cfg.allowedUserIds.includes",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "log.warn",
+          "lineNumber": 47
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "ctx.reply('Unauthorized').catch",
+          "lineNumber": 48
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "ctx.reply",
+          "lineNumber": 48
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "next",
+          "lineNumber": 51
+        },
+        {
+          "caller": "abortGeneration",
+          "callee": "currentAbortController?.abort",
+          "lineNumber": 59
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "bot.use",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "next",
+          "lineNumber": 64
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "next",
+          "lineNumber": 66
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "m.text.startsWith",
+          "lineNumber": 67
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "next",
+          "lineNumber": 67
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "next",
+          "lineNumber": 68
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "ctx.reply",
+          "lineNumber": 71
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "String",
+          "lineNumber": 79
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "String",
+          "lineNumber": 80
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "String",
+          "lineNumber": 82
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "messageHandler(msg).finally",
+          "lineNumber": 85
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "messageHandler",
+          "lineNumber": 85
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "registerHandlers",
+          "lineNumber": 95
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "bot.catch",
+          "lineNumber": 108
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "log.error",
+          "lineNumber": 109
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "ctx.reply(`Internal error: ${(err as Error).message}`).catch",
+          "lineNumber": 110
+        },
+        {
+          "caller": "createTelegramTransport",
+          "callee": "ctx.reply",
+          "lineNumber": 110
+        },
+        {
+          "caller": "getRenderer",
+          "callee": "renderers.get",
+          "lineNumber": 117
+        },
+        {
+          "caller": "getRenderer",
+          "callee": "renderers.set",
+          "lineNumber": 120
+        },
+        {
+          "caller": "start",
+          "callee": "String",
+          "lineNumber": 142
+        },
+        {
+          "caller": "start",
+          "callee": "setupApproval",
+          "lineNumber": 146
+        },
+        {
+          "caller": "start",
+          "callee": "cardBus.subscribeAll",
+          "lineNumber": 163
+        },
+        {
+          "caller": "start",
+          "callee": "getRenderer",
+          "lineNumber": 165
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 166
+        },
+        {
+          "caller": "start",
+          "callee": "r.onCard(card).catch",
+          "lineNumber": 167
+        },
+        {
+          "caller": "start",
+          "callee": "r.onCard",
+          "lineNumber": 167
+        },
+        {
+          "caller": "start",
+          "callee": "log.error",
+          "lineNumber": 168
+        },
+        {
+          "caller": "start",
+          "callee": "renderers.delete",
+          "lineNumber": 171
+        },
+        {
+          "caller": "start",
+          "callee": "bot.launch",
+          "lineNumber": 182
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 183
+        },
+        {
+          "caller": "start",
+          "callee": "log.warn",
+          "lineNumber": 189
+        },
+        {
+          "caller": "start",
+          "callee": "bot.stop",
+          "lineNumber": 191
+        },
+        {
+          "caller": "start",
+          "callee": "bot.telegram.callApi",
+          "lineNumber": 194
+        },
+        {
+          "caller": "start",
+          "callee": "setTimeout",
+          "lineNumber": 196
+        },
+        {
+          "caller": "start",
+          "callee": "log.error",
+          "lineNumber": 198
+        },
+        {
+          "caller": "start",
+          "callee": "Math.min",
+          "lineNumber": 202
+        },
+        {
+          "caller": "start",
+          "callee": "log.error",
+          "lineNumber": 203
+        },
+        {
+          "caller": "start",
+          "callee": "setTimeout",
+          "lineNumber": 204
+        },
+        {
+          "caller": "start",
+          "callee": "log.error",
+          "lineNumber": 208
+        },
+        {
+          "caller": "stop",
+          "callee": "bot.stop",
+          "lineNumber": 211
+        },
+        {
+          "caller": "stop",
+          "callee": "cleanup",
+          "lineNumber": 213
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "log.warn",
+          "lineNumber": 231
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 235
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "title.replace(/&/g, '&amp;').replace",
+          "lineNumber": 235
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "title.replace",
+          "lineNumber": 235
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "Markup.inlineKeyboard",
+          "lineNumber": 238
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "Markup.button.callback",
+          "lineNumber": 240
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "Markup.button.callback",
+          "lineNumber": 241
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "Markup.button.callback",
+          "lineNumber": 242
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "bot.telegram.sendMessage",
+          "lineNumber": 249
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "String",
+          "lineNumber": 249
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "pendingApprovals.set",
+          "lineNumber": 250
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "log.info",
+          "lineNumber": 256
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "log.error",
+          "lineNumber": 258
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "cardBusRef?.publish",
+          "lineNumber": 263
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "log.warn",
+          "lineNumber": 271
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "pendingApprovals.get",
+          "lineNumber": 280
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "pendingApprovals.delete",
+          "lineNumber": 283
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "labelFor",
+          "lineNumber": 285
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "bot.telegram.editMessageText",
+          "lineNumber": 286
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "String",
+          "lineNumber": 287
+        },
+        {
+          "caller": "handlePluginPermissionEvent",
+          "callee": "log.warn",
+          "lineNumber": 294
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/telegram/render.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 44,
+      "nonEmptyLines": 41,
+      "functions": [
+        {
+          "name": "escapeHtml",
+          "startLine": 3,
+          "endLine": 5,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "cardToTelegram",
+          "startLine": 9,
+          "endLine": 44,
+          "params": [
+            "card"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "cardToTelegram",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "escapeHtml",
+          "callee": "text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 4
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "text.replace(/&/g, '&amp;').replace",
+          "lineNumber": 4
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "text.replace",
+          "lineNumber": 4
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 18
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 19
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 22
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 24
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "card.lines.map",
+          "lineNumber": 24
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 27
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 28
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.push",
+          "lineNumber": 29
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "escapeHtml",
+          "lineNumber": 29
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "lines.join",
+          "lineNumber": 31
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "text.slice",
+          "lineNumber": 33
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "card.buttons.map",
+          "lineNumber": 38
+        },
+        {
+          "caller": "cardToTelegram",
+          "callee": "row.map",
+          "lineNumber": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/telegram/reply-stream.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 42,
+      "functions": [
+        {
+          "name": "createReplyStream",
+          "startLine": 14,
+          "endLine": 47,
+          "params": [
+            "ctx",
+            "messageId",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createReplyStream",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "update",
+          "callee": "Date.now",
+          "lineNumber": 24
+        },
+        {
+          "caller": "update",
+          "callee": "text.slice",
+          "lineNumber": 27
+        },
+        {
+          "caller": "update",
+          "callee": "ctx.telegram.editMessageText",
+          "lineNumber": 29
+        },
+        {
+          "caller": "finalize",
+          "callee": "ctx.deleteMessage",
+          "lineNumber": 37
+        },
+        {
+          "caller": "finalize",
+          "callee": "chunkMessage",
+          "lineNumber": 42
+        },
+        {
+          "caller": "finalize",
+          "callee": "ctx.reply",
+          "lineNumber": 43
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 126,
+      "nonEmptyLines": 117,
+      "functions": [
+        {
+          "name": "createWebTransport",
+          "startLine": 34,
+          "endLine": 126,
+          "params": [
+            "cfg"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createWebTransport",
+          "line": 34,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "start",
+          "callee": "existsSync",
+          "lineNumber": 43
+        },
+        {
+          "caller": "start",
+          "callee": "createWsHub",
+          "lineNumber": 46
+        },
+        {
+          "caller": "start",
+          "callee": "buildServer",
+          "lineNumber": 47
+        },
+        {
+          "caller": "start",
+          "callee": "messageHandler",
+          "lineNumber": 54
+        },
+        {
+          "caller": "start",
+          "callee": "Promise.resolve",
+          "lineNumber": 54
+        },
+        {
+          "caller": "start",
+          "callee": "app.use",
+          "lineNumber": 57
+        },
+        {
+          "caller": "start",
+          "callee": "serveStatic",
+          "lineNumber": 57
+        },
+        {
+          "caller": "start",
+          "callee": "join",
+          "lineNumber": 66
+        },
+        {
+          "caller": "start",
+          "callee": "app.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "start",
+          "callee": "path.startsWith",
+          "lineNumber": 69
+        },
+        {
+          "caller": "start",
+          "callee": "c.notFound",
+          "lineNumber": 69
+        },
+        {
+          "caller": "start",
+          "callee": "join",
+          "lineNumber": 70
+        },
+        {
+          "caller": "start",
+          "callee": "existsSync",
+          "lineNumber": 71
+        },
+        {
+          "caller": "start",
+          "callee": "readFileSync",
+          "lineNumber": 72
+        },
+        {
+          "caller": "start",
+          "callee": "c.html",
+          "lineNumber": 74
+        },
+        {
+          "caller": "start",
+          "callee": "readFileSync",
+          "lineNumber": 74
+        },
+        {
+          "caller": "start",
+          "callee": "serve",
+          "lineNumber": 77
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 78
+        },
+        {
+          "caller": "start",
+          "callee": "(server as any).on",
+          "lineNumber": 82
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 85
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 87
+        },
+        {
+          "caller": "start",
+          "callee": "socket.destroy",
+          "lineNumber": 88
+        },
+        {
+          "caller": "start",
+          "callee": "verifyUpgradeJwt",
+          "lineNumber": 91
+        },
+        {
+          "caller": "start",
+          "callee": "log.warn",
+          "lineNumber": 96
+        },
+        {
+          "caller": "start",
+          "callee": "socket.destroy",
+          "lineNumber": 97
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 100
+        },
+        {
+          "caller": "start",
+          "callee": "wss!.handleUpgrade",
+          "lineNumber": 101
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 102
+        },
+        {
+          "caller": "start",
+          "callee": "wsHub.attach",
+          "lineNumber": 103
+        },
+        {
+          "caller": "start",
+          "callee": "ws.on",
+          "lineNumber": 104
+        },
+        {
+          "caller": "start",
+          "callee": "wsHub.handleClientMessage",
+          "lineNumber": 105
+        },
+        {
+          "caller": "start",
+          "callee": "JSON.parse",
+          "lineNumber": 105
+        },
+        {
+          "caller": "start",
+          "callee": "data.toString",
+          "lineNumber": 105
+        },
+        {
+          "caller": "start",
+          "callee": "ws.on",
+          "lineNumber": 107
+        },
+        {
+          "caller": "start",
+          "callee": "log.info",
+          "lineNumber": 108
+        },
+        {
+          "caller": "start",
+          "callee": "reason.toString",
+          "lineNumber": 108
+        },
+        {
+          "caller": "start",
+          "callee": "wsHub.detach",
+          "lineNumber": 109
+        },
+        {
+          "caller": "start",
+          "callee": "ws.on",
+          "lineNumber": 111
+        },
+        {
+          "caller": "start",
+          "callee": "log.warn",
+          "lineNumber": 111
+        },
+        {
+          "caller": "stop",
+          "callee": "wss?.close",
+          "lineNumber": 116
+        },
+        {
+          "caller": "stop",
+          "callee": "server?.close",
+          "lineNumber": 117
+        }
+      ],
+      "metrics": {
+        "importCount": 8,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/abort.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 11,
+      "nonEmptyLines": 10,
+      "functions": [
+        {
+          "name": "registerAbort",
+          "startLine": 4,
+          "endLine": 11,
+          "params": [
+            "app",
+            "state"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerAbort",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerAbort",
+          "callee": "app.post",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerAbort",
+          "callee": "c.req.json",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerAbort",
+          "callee": "state.getActiveAbort",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerAbort",
+          "callee": "ac?.abort",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerAbort",
+          "callee": "c.json",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/approval.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 12,
+      "functions": [
+        {
+          "name": "registerApproval",
+          "startLine": 4,
+          "endLine": 13,
+          "params": [
+            "app",
+            "client"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerApproval",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerApproval",
+          "callee": "app.post",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerApproval",
+          "callee": "c.req.json",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerApproval",
+          "callee": "(client as any).postSessionIdPermissionsPermissionId",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerApproval",
+          "callee": "c.json",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/context.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "registerContext",
+          "startLine": 5,
+          "endLine": 20,
+          "params": [
+            "app",
+            "client",
+            "state"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerContext",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerContext",
+          "callee": "app.get",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerContext",
+          "callee": "c.req.param",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerContext",
+          "callee": "client.session.get",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerContext",
+          "callee": "c.json",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerContext",
+          "callee": "state.getSessionCost",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerContext",
+          "callee": "state.getNextAgent",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerContext",
+          "callee": "state.getNextModel",
+          "lineNumber": 17
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/diff.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "functions": [
+        {
+          "name": "registerDiff",
+          "startLine": 4,
+          "endLine": 10,
+          "params": [
+            "app",
+            "client"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerDiff",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerDiff",
+          "callee": "app.get",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerDiff",
+          "callee": "c.req.param",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerDiff",
+          "callee": "(client.session as any).diff",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerDiff",
+          "callee": "c.json",
+          "lineNumber": 8
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/message.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "registerMessage",
+          "startLine": 4,
+          "endLine": 20,
+          "params": [
+            "app",
+            "onMessage"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerMessage",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerMessage",
+          "callee": "app.post",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerMessage",
+          "callee": "c.req.json",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerMessage",
+          "callee": "c.get",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerMessage",
+          "callee": "Date.now",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerMessage",
+          "callee": "onMessage",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerMessage",
+          "callee": "c.json",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/session.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 12,
+      "functions": [
+        {
+          "name": "registerSession",
+          "startLine": 5,
+          "endLine": 13,
+          "params": [
+            "app",
+            "client"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerSession",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerSession",
+          "callee": "app.get",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerSession",
+          "callee": "c.req.param",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerSession",
+          "callee": "c.req.query",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerSession",
+          "callee": "Math.max",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerSession",
+          "callee": "Math.min",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerSession",
+          "callee": "parseInt",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerSession",
+          "callee": "reconstructHistory",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerSession",
+          "callee": "c.json",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/sessions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 11,
+      "nonEmptyLines": 10,
+      "functions": [
+        {
+          "name": "registerSessions",
+          "startLine": 6,
+          "endLine": 11,
+          "params": [
+            "app",
+            "client",
+            "state"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerSessions",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerSessions",
+          "callee": "app.get",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerSessions",
+          "callee": "fetchSessionSummaries",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerSessions",
+          "callee": "c.json",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/todo.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "functions": [
+        {
+          "name": "registerTodo",
+          "startLine": 4,
+          "endLine": 10,
+          "params": [
+            "app",
+            "client"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerTodo",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerTodo",
+          "callee": "app.get",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerTodo",
+          "callee": "c.req.param",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerTodo",
+          "callee": "(client.session as any).todo",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerTodo",
+          "callee": "c.json",
+          "lineNumber": 8
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/routes/version.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 6,
+      "nonEmptyLines": 5,
+      "functions": [
+        {
+          "name": "registerVersion",
+          "startLine": 4,
+          "endLine": 6,
+          "params": [
+            "app"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerVersion",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerVersion",
+          "callee": "app.get",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerVersion",
+          "callee": "c.json",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerVersion",
+          "callee": "getVersionInfo",
+          "lineNumber": 5
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/session-summary.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "fetchSessionSummaries",
+          "startLine": 14,
+          "endLine": 32,
+          "params": [
+            "client",
+            "state"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "fetchSessionSummaries",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "client.session.list",
+          "lineNumber": 18
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "all.filter",
+          "lineNumber": 20
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "state.getSessionCost",
+          "lineNumber": 20
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "all.slice",
+          "lineNumber": 21
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "visible.sort",
+          "lineNumber": 22
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "sorted.map",
+          "lineNumber": 23
+        },
+        {
+          "caller": "fetchSessionSummaries",
+          "callee": "state.getSessionCost",
+          "lineNumber": 28
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/transport/web/ws-hub.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "createWsHub",
+          "startLine": 21,
+          "endLine": 56,
+          "params": [
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createWsHub",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createWsHub",
+          "callee": "opts.cardBus.subscribeAll",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createWsHub",
+          "callee": "clients.values",
+          "lineNumber": 26
+        },
+        {
+          "caller": "createWsHub",
+          "callee": "state.ws.send",
+          "lineNumber": 29
+        },
+        {
+          "caller": "createWsHub",
+          "callee": "JSON.stringify",
+          "lineNumber": 29
+        },
+        {
+          "caller": "attach",
+          "callee": "fetchSessionSummaries(opts.client, opts.state).catch",
+          "lineNumber": 35
+        },
+        {
+          "caller": "attach",
+          "callee": "fetchSessionSummaries",
+          "lineNumber": 35
+        },
+        {
+          "caller": "attach",
+          "callee": "clients.set",
+          "lineNumber": 36
+        },
+        {
+          "caller": "attach",
+          "callee": "ws.send",
+          "lineNumber": 37
+        },
+        {
+          "caller": "attach",
+          "callee": "JSON.stringify",
+          "lineNumber": 37
+        },
+        {
+          "caller": "handleClientMessage",
+          "callee": "clients.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "handleClientMessage",
+          "callee": "ws.send",
+          "lineNumber": 42
+        },
+        {
+          "caller": "handleClientMessage",
+          "callee": "JSON.stringify",
+          "lineNumber": 42
+        },
+        {
+          "caller": "detach",
+          "callee": "clients.delete",
+          "lineNumber": 53
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

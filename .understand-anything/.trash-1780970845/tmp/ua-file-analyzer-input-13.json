@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/Users/xtation/AgentWorks/Code_Opencode/opencode-remote-control",
+  "batchFiles": [
+    {"path": "web/extension/manifest.json", "language": "json", "sizeLines": 14, "fileCategory": "config"},
+    {"path": "web/extension/popup.html", "language": "html", "sizeLines": 25, "fileCategory": "markup"},
+    {"path": "web/extension/sidepanel.html", "language": "html", "sizeLines": 16, "fileCategory": "markup"}
+  ],
+  "batchImportData": {
+    "web/extension/manifest.json": [],
+    "web/extension/popup.html": [],
+    "web/extension/sidepanel.html": []
+  }
+}
