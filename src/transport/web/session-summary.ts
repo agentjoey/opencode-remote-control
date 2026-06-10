@@ -17,20 +17,67 @@ export interface SessionSummary {
   deletions?: number
 }
 
+// Sidebar hygiene rules. opencode `time` fields are epoch milliseconds.
+const STALE_MS = 14 * 24 * 60 * 60 * 1000 // hide sessions idle longer than this
+const EMPTY_GRACE_MS = 60 * 60 * 1000     // keep a brand-new empty session visible this long
+
+/** A session that never produced any content (no title, never updated past creation). */
+function isEmptySession(s: any): boolean {
+  const created = s.time?.created ?? 0
+  const updated = s.time?.updated ?? created
+  return !s.title && updated === created
+}
+
+/**
+ * Delete a session only after a fresh message check confirms it's truly empty.
+ * Best-effort and fire-and-forget — failures are swallowed so a list request
+ * never breaks on cleanup.
+ */
+async function pruneIfEmpty(client: OpencodeClient, id: string): Promise<void> {
+  try {
+    const res = await client.session.messages({ path: { id } })
+    const msgs = (res.data ?? []) as unknown[]
+    if (msgs.length === 0) await client.session.delete({ path: { id } })
+  } catch {
+    /* ignore — cleanup is opportunistic */
+  }
+}
+
 export async function fetchSessionSummaries(
   client: OpencodeClient,
   state: SessionState,
 ): Promise<SessionSummary[]> {
   const res = await client.session.list()
   const all = (res.data ?? []) as Array<any>
-  // Prefer root sessions over subagent sessions, then sort by most recent
-  const sorted = [...all].sort((a, b) => {
-    const aIsChild = !!a.parentID
-    const bIsChild = !!b.parentID
-    if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
-    return (b.time?.created ?? 0) - (a.time?.created ?? 0)
-  })
-  return sorted.map((s) => ({
+  const now = Date.now()
+
+  // subagent child sessions (task tool) are never shown in the rail.
+  const roots = all.filter((s) => !s.parentID)
+
+  const visible: any[] = []
+  for (const s of roots) {
+    const created = s.time?.created ?? 0
+    const updated = s.time?.updated ?? created
+
+    if (isEmptySession(s)) {
+      // Older empty sessions get auto-deleted (after a message recheck) and
+      // hidden; freshly-created ones stay visible during the grace window so a
+      // just-opened session isn't yanked away before it's used.
+      if (now - created > EMPTY_GRACE_MS) {
+        void pruneIfEmpty(client, s.id)
+        continue
+      }
+      visible.push(s)
+      continue
+    }
+
+    // Hide (non-destructively) sessions with no activity for N days.
+    if (now - updated > STALE_MS) continue
+    visible.push(s)
+  }
+
+  visible.sort((a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0))
+  return visible.map((s) => ({
     id: s.id,
     title: s.title ?? '',
     agent: typeof s.agent === 'string' ? s.agent : s.agent?.name,
@@ -42,4 +89,24 @@ export async function fetchSessionSummaries(
     additions: s.summary?.additions,
     deletions: s.summary?.deletions,
   }))
+}
+
+/**
+ * Delete all subagent child sessions (those with a parentID). Destructive and
+ * user-triggered only — returns the number deleted.
+ */
+export async function cleanupSubagentSessions(client: OpencodeClient): Promise<number> {
+  const res = await client.session.list()
+  const all = (res.data ?? []) as Array<any>
+  const children = all.filter((s) => !!s.parentID)
+  let deleted = 0
+  for (const s of children) {
+    try {
+      await client.session.delete({ path: { id: s.id } })
+      deleted++
+    } catch {
+      /* skip ones that fail; report how many succeeded */
+    }
+  }
+  return deleted
 }

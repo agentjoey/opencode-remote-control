@@ -27,8 +27,8 @@ function fakeClient(config: any = {}, providers: any[] = []) {
   return {
     session: {
       list: vi.fn().mockResolvedValue({ data: [
-        { id: 'ses_a', time: { created: 200 }, agent: { name: 'build' }, model: 'k2p6' },
-        { id: 'ses_b', time: { created: 100 }, agent: { name: 'plan' } },
+        { id: 'ses_a', title: 'A', time: { created: Date.now() - 2000, updated: Date.now() - 1000 }, agent: { name: 'build' }, model: 'k2p6' },
+        { id: 'ses_b', title: 'B', time: { created: Date.now() - 4000, updated: Date.now() - 3000 }, agent: { name: 'plan' } },
       ]}),
       messages: vi.fn().mockResolvedValue({ data: [
         { role: 'user', parts: [{ type: 'text', text: 'hi' }], ts: 1 },

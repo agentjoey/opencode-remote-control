@@ -17,7 +17,8 @@
   }
 
   function formatTime(ts: number): string {
-    const diff = Date.now() - ts * 1000
+    // opencode timestamps are epoch milliseconds.
+    const diff = Date.now() - ts
     const m = Math.floor(diff / 60000)
     if (m < 1) return 'now'
     if (m < 60) return `${m}m`
