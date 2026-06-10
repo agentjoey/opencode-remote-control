@@ -44,6 +44,7 @@ const baseOpts = (state: any, client: any) => ({
   cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
+  baseUrl: 'http://localhost:4096',
 })
 
 // dev bypass now requires a loopback socket peer (not opts.host), so every

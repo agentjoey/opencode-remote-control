@@ -38,6 +38,7 @@ export interface BuildServerOpts {
   cardBus: CardBus
   wsHub: WsHub
   cacheSize: number
+  baseUrl: string
   onMessage?: (msg: IncomingMessage) => Promise<void>
 }
 
