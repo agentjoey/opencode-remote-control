@@ -42,7 +42,11 @@ export function messageToCards(sessionId: string, msg: any): StructuredCard[] {
           type: 'tool',
           tool: part.tool,
           args: summarizeToolArgs(part.tool, part.state?.input ?? {}),
-          status: status === 'error' ? 'error' : status === 'done' ? 'done' : 'running',
+          // opencode's terminal status is 'completed' (never 'done'); without
+          // mapping it, finished tools stay 'running' and blink forever.
+          status: status === 'error' ? 'error'
+            : status === 'completed' || status === 'done' ? 'done'
+            : 'running',
         })
       }
     }

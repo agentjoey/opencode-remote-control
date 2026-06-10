@@ -17,7 +17,8 @@ describe('messageToCards', () => {
       role: 'assistant',
       parts: [
         { type: 'text', text: 'done' },
-        { type: 'tool', tool: 'bash', state: { input: { command: 'ls -la' }, status: 'done' } }
+        // opencode's real terminal status is 'completed' (never 'done').
+        { type: 'tool', tool: 'bash', state: { input: { command: 'ls -la' }, status: 'completed' } }
       ],
       agent: { name: 'build' },
       model: 'k2p6',
@@ -56,6 +57,21 @@ describe('messageToCards', () => {
     expect(c.blocks[0].text).toBe('partial')
     expect(c.blocks[1].type).toBe('tool')
     expect(c.blocks[1].status).toBe('running')
+  })
+
+  it('maps every opencode tool status to our tri-state (regression: finished tools must not stay running)', () => {
+    const mk = (status: string) => {
+      const cards = messageToCards('ses_1', {
+        role: 'assistant',
+        parts: [{ type: 'tool', tool: 'bash', state: { input: {}, status } }],
+      })
+      return (cards[0] as any).blocks[0].status
+    }
+    expect(mk('completed')).toBe('done')
+    expect(mk('done')).toBe('done')
+    expect(mk('error')).toBe('error')
+    expect(mk('running')).toBe('running')
+    expect(mk('pending')).toBe('running')
   })
 })
 
