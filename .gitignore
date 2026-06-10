@@ -14,3 +14,11 @@ deno.lock
 
 # code-analysis tool cache — never commit
 .understand-anything/
+
+# internal planning/design docs — keep local, don't publish
+docs/PRD.md
+docs/PRODUCT_STATUS.md
+docs/COMPARISON_IM_HUB.md
+docs/WEB_DESIGN.md
+docs/reviews/
+docs/superpowers/
