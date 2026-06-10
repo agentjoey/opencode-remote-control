@@ -128,15 +128,6 @@ describe('web routes', () => {
     expect(ctx.cost).toBe(0.04)
   })
 
-  it('GET /api/ws-ticket mints a ticket for the authed user', async () => {
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
-    const res = await app.request('/api/ws-ticket', undefined, LOOPBACK)
-    expect(res.status).toBe(200)
-    const body = await res.json() as { ticket: string }
-    expect(typeof body.ticket).toBe('string')
-    expect(body.ticket.split('.').length).toBe(3) // JWT shape
-  })
-
   it('POST /api/approval proxies the decision to opencode', async () => {
     const respond = vi.fn().mockResolvedValue({})
     const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any

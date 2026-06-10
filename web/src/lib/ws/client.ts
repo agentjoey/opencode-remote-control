@@ -7,13 +7,6 @@ export interface WsClientOpts {
   onMessage?: (msg: any) => void
   onStatus?: (status: ConnectionStatus) => void
   onReconnect?: () => void
-  /**
-   * Optional per-connection auth ticket (B5/A1). When set, a fresh ticket is
-   * fetched before each (re)connect and appended as `?ticket=`. Used by the
-   * extension, which can't put service-token headers on a WebSocket; the PWA
-   * leaves this unset and relies on the CF Access cookie.
-   */
-  getTicket?: () => Promise<string | null>
 }
 
 export interface WsClient {
@@ -52,21 +45,11 @@ export function createWsClient(opts: WsClientOpts): WsClient {
     }, 25000)
   }
 
-  async function connect() {
+  function connect() {
     if (closed) return
     setStatus('reconnecting')
-    let url = opts.url
-    if (opts.getTicket) {
-      try {
-        const ticket = await opts.getTicket()
-        if (closed) return
-        if (ticket) url += (url.includes('?') ? '&' : '?') + 'ticket=' + encodeURIComponent(ticket)
-      } catch {
-        // fall through and try without a ticket; the server will reject if needed
-      }
-    }
     try {
-      ws = new WebSocket(url)
+      ws = new WebSocket(opts.url)
     } catch {
       reconnect()
       return
