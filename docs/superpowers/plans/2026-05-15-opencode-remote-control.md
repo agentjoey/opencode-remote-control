@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript 5.4, Node 20, Telegraf v4, `@opencode-ai/sdk` v1.14, Zod, Vitest, launchd.
 
-**Repo:** `/Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control/`
+**Repo:** `/Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control/`
 
 **Spec:** `docs/superpowers/specs/2026-05-15-opencode-remote-control-design.md`
 
@@ -201,7 +201,7 @@ launchctl start ai.opencode.remote-control.telegram
 
 Run:
 ```bash
-cd /Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control
+cd /Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control
 npm install
 ```
 
@@ -2011,7 +2011,7 @@ Create `deploy/ai.opencode.remote-control.telegram.plist`:
   <string>ai.opencode.remote-control.telegram</string>
 
   <key>WorkingDirectory</key>
-  <string>/Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control</string>
+  <string>/Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control</string>
 
   <key>ProgramArguments</key>
   <array>

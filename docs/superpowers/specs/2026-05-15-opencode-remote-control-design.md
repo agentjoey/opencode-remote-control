@@ -6,7 +6,7 @@
 | Date | 2026-05-15 |
 | Status | Approved for implementation |
 | Replaces | `telegram-opencode-bot/` (abandoned) |
-| Location | `/Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control/` |
+| Location | `/Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control/` |
 
 ---
 
@@ -489,7 +489,7 @@ tests/unit/
   <key>Label</key>
   <string>ai.opencode.remote-control.telegram</string>
   <key>WorkingDirectory</key>
-  <string>/Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control</string>
+  <string>/Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control</string>
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/node</string>
@@ -512,7 +512,7 @@ tests/unit/
 ### 7.2 安装
 
 ```bash
-cd /Users/REDACTED/AgentWorks/Code_Opencode/opencode-remote-control
+cd /Users/<you>/AgentWorks/Code_Opencode/opencode-remote-control
 npm install
 npm run build
 cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
