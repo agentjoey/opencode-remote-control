@@ -10,12 +10,9 @@
   import { connection } from '$lib/stores/connection.js'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
-  import ApprovalModal from '$lib/components/ApprovalModal.svelte'
   import SessionRail from '$lib/components/SessionRail.svelte'
   import Inspector from '$lib/components/Inspector.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
-  import type { StructuredCard } from '$lib/api/types.js'
-
   let paletteOpen = false
   function onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen = true }
@@ -31,9 +28,6 @@
     await installEvent.userChoice
     installEvent = null
   }
-  // FIFO queue — multiple approvals can be in flight; show them one at a time.
-  let approvalQueue: StructuredCard[] = []
-  $: pendingApproval = approvalQueue[0] ?? null
   let lastLoaded: string | null = null
 
   function loadSession(id: string | undefined) {
@@ -70,12 +64,6 @@
       onMessage: (msg) => {
         if (msg.type === 'card' && msg.card) {
           upsertCard(msg.card)
-          if (msg.card.kind === 'approval') {
-            // de-dupe by requestId, then enqueue
-            if (!approvalQueue.some((c) => (c as any).requestId === msg.card.requestId)) {
-              approvalQueue = [...approvalQueue, msg.card]
-            }
-          }
         }
         // hello (on connect) and sessions (live updates) both carry the list.
         if ((msg.type === 'hello' || msg.type === 'sessions') && msg.sessions) {
@@ -121,9 +109,6 @@
     <main><slot /></main>
     <Inspector sessionId={$page.params.sessionId} />
   </div>
-  {#if pendingApproval && pendingApproval.kind === 'approval'}
-    <ApprovalModal card={pendingApproval} onClose={() => (approvalQueue = approvalQueue.slice(1))} />
-  {/if}
 </div>
 <CommandPalette bind:open={paletteOpen} />
 
