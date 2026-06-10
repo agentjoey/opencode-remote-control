@@ -5,21 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>oprcode — Configure</title>
   <style>
-    body { margin: 0; padding: 1rem; width: 280px; font-family: sans-serif; background: #0a0a0a; color: #fff; }
-    label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #aaa; }
-    input { width: 100%; padding: 0.5rem; border: 1px solid #333; background: #1a1a1a; color: #fff; border-radius: 4px; box-sizing: border-box; }
-    button { width: 100%; padding: 0.5rem; margin-top: 0.75rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    body { margin: 0; padding: 1rem; width: 300px; font-family: sans-serif; background: #0a0a0a; color: #fff; }
+    label { display: block; margin: 0.75rem 0 0.25rem; font-size: 0.8rem; color: #aaa; }
+    label:first-of-type { margin-top: 0; }
+    input { width: 100%; padding: 0.5rem; border: 1px solid #333; background: #1a1a1a; color: #fff; border-radius: 4px; box-sizing: border-box; font: inherit; }
+    button { width: 100%; padding: 0.5rem; margin-top: 0.9rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; font: inherit; }
     button:hover { background: #1d4ed8; }
-    #status { margin-top: 0.5rem; font-size: 0.875rem; min-height: 1.2em; }
+    .opt { color: #666; font-weight: 400; }
+    .note { margin-top: 0.5rem; font-size: 0.72rem; color: #777; line-height: 1.4; }
+    #status { margin-top: 0.5rem; font-size: 0.85rem; min-height: 1.2em; }
     #status.ok { color: #22c55e; }
     #status.err { color: #ef4444; }
   </style>
 </head>
 <body>
-  <label>Bot URL</label>
+  <label for="url">Bot URL</label>
   <input type="text" id="url" placeholder="https://oprc.example.com" />
-  <button id="save">Connect</button>
+
+  <label for="cid">CF Access Client ID <span class="opt">(optional)</span></label>
+  <input type="text" id="cid" placeholder="xxxxx.access" autocomplete="off" />
+
+  <label for="csecret">CF Access Client Secret <span class="opt">(optional)</span></label>
+  <input type="password" id="csecret" placeholder="••••••••" autocomplete="off" />
+
+  <button id="save">Save</button>
   <div id="status"></div>
+  <p class="note">
+    Leave the service-token fields blank to use cookie auth (log in to the tunnel
+    in a browser tab first). Fill them for unattended access — create a service
+    token in Cloudflare Zero Trust and put <code>/ws</code> on a CF Access bypass.
+  </p>
   <script type="module" src="./popup.js"></script>
 </body>
 </html>
