@@ -11,3 +11,6 @@ config.json
 data/
 # deno lock file (project uses Node.js, not Deno)
 deno.lock
+
+# code-analysis tool cache — never commit
+.understand-anything/
