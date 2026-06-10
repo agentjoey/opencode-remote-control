@@ -38,6 +38,7 @@ async function jsonPost<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   me: () => jsonGet<{ email: string }>('/api/me'),
+  wsTicket: () => jsonGet<{ ticket: string }>('/api/ws-ticket'),
   sessions: () => jsonGet<SessionSummary[]>('/api/sessions'),
   history: (id: string) => jsonGet<{ cards: StructuredCard[]; lastSeq: number }>(`/api/session/${id}`),
   diff: (id: string) => jsonGet<any[]>(`/api/session/${id}/diff`),

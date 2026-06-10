@@ -2,63 +2,36 @@
   import { onMount } from 'svelte'
   import { getExtensionConfig, serviceTokenHeaders, type ExtensionConfig } from '../lib/adapters/extension.js'
   import { setBaseUrl, setAuthHeaders, api } from '../lib/api/client.js'
-  import { sessionList, feeds, cardsOf, setHistory } from '../lib/stores/sessions.js'
+  import { createWsClient } from '../lib/ws/client.js'
+  import { sessionList, feeds, cardsOf, upsertCard, setHistory } from '../lib/stores/sessions.js'
   import { activeSession } from '../lib/stores/activeSession.js'
-  import { connection } from '../lib/stores/connection.js'
   import SessionList from '../lib/components/SessionList.svelte'
   import Card from '../lib/components/Card.svelte'
   import Composer from '../lib/components/Composer.svelte'
   import ConnectionBadge from '../lib/components/ConnectionBadge.svelte'
 
-  // B5 option A2: a Chrome extension can't put service-token headers on a
-  // WebSocket handshake, so the extension authenticates REST with the CF Access
-  // service token and polls /api/session/:id instead of streaming over WS.
-  const POLL_MS = 2500
-  const SESSIONS_EVERY = 4 // refresh the session list every Nth poll
-
+  // B5 option A1: the extension can't put service-token headers on a WebSocket,
+  // so it authenticates REST with the CF service token and authenticates /ws
+  // with a short-lived app ticket (GET /api/ws-ticket) appended as ?ticket=.
+  // (/ws must be on a CF Access bypass so the upgrade reaches this app.)
   let scrollEl: HTMLDivElement
   let configured = false
   let error = ''
-  let pollTimer: ReturnType<typeof setInterval> | null = null
-  let tick = 0
-  // Skip setHistory when nothing changed (avoids needless re-render).
-  let lastSig = ''
+  let wsClient: ReturnType<typeof createWsClient> | null = null
+
+  function subscribe(id: string) {
+    const sinceSeq = $feeds[id]?.lastSeq ?? 0
+    wsClient?.send({ type: 'subscribe', sessionId: id, sinceSeq })
+  }
 
   function handleSelect(id: string) {
     activeSession.set(id)
-    lastSig = ''
-    void pollActive()
-  }
-
-  function historySig(cards: any[]): string {
-    const last = cards[cards.length - 1]
-    const tail = last?.blocks?.[last.blocks.length - 1]?.text ?? last?.text ?? ''
-    return `${cards.length}:${last?.kind ?? ''}:${tail.length}`
-  }
-
-  async function pollActive() {
-    const id = $activeSession
-    if (!id) return
-    try {
-      const { cards, lastSeq } = await api.history(id)
-      connection.set('connected')
-      const sig = historySig(cards)
-      if (sig !== lastSig) {
-        lastSig = sig
+    api.history(id)
+      .then(({ cards, lastSeq }) => {
         setHistory(id, cards, lastSeq)
-      }
-    } catch {
-      connection.set('reconnecting')
-    }
-  }
-
-  async function pollSessions() {
-    try {
-      sessionList.set(await api.sessions())
-      connection.set('connected')
-    } catch {
-      connection.set('reconnecting')
-    }
+        subscribe(id)
+      })
+      .catch(console.warn)
   }
 
   onMount(() => {
@@ -70,12 +43,25 @@
         setAuthHeaders(() => serviceTokenHeaders(cfg))
         configured = true
 
-        await pollSessions()
-        pollTimer = setInterval(() => {
-          tick += 1
-          void pollActive()
-          if (tick % SESSIONS_EVERY === 0) void pollSessions()
-        }, POLL_MS)
+        wsClient = createWsClient({
+          url: `${cfg.botUrl.replace(/^http/, 'ws')}/ws`,
+          getTicket: async () => {
+            try { return (await api.wsTicket()).ticket } catch { return null }
+          },
+          onReconnect: () => {
+            const id = $activeSession
+            if (id) subscribe(id)
+          },
+          onMessage: (msg) => {
+            if ((msg.type === 'hello' || msg.type === 'sessions') && msg.sessions) {
+              sessionList.set(msg.sessions)
+            } else if (msg.type === 'card' && msg.card) {
+              upsertCard(msg.card)
+            }
+          },
+        })
+
+        api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
       } catch (err) {
         error = String(err)
       }
@@ -88,8 +74,7 @@
     }
     chrome.runtime.onMessage.addListener(listener)
     return () => {
-      if (pollTimer) clearInterval(pollTimer)
-      connection.set('offline')
+      wsClient?.close()
       chrome.runtime.onMessage.removeListener(listener)
     }
   })
