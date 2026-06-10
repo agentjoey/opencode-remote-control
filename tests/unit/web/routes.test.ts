@@ -35,6 +35,7 @@ function fakeClient(config: any = {}, providers: any[] = []) {
       ]}),
       promptAsync: vi.fn().mockResolvedValue({ data: { messageID: 'msg_1' } }),
       abort: vi.fn().mockResolvedValue({ data: true }),
+      delete: vi.fn().mockResolvedValue({ data: true }),
     },
     config: {
       get: vi.fn().mockResolvedValue({ data: config }),
@@ -64,6 +65,18 @@ describe('web routes', () => {
     const body = await res.json() as any[]
     expect(body[0].id).toBe('ses_a')
     expect(body[0].cost).toBe(0.1)
+  })
+
+  it('POST /api/sessions/:id/delete deletes the session', async () => {
+    const client = fakeClient()
+    const app = buildServer(baseOpts(fakeState(), client))
+    const res = await app.request('/api/sessions/ses_a/delete', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    }, LOOPBACK)
+    expect(res.status).toBe(200)
+    expect(client.session.delete).toHaveBeenCalledWith({ path: { id: 'ses_a' } })
   })
 
   it('GET /api/session/:id returns history cards + lastSeq', async () => {

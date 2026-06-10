@@ -76,6 +76,18 @@
   .toggle.on { color: var(--accent); }
   .panel { display: flex; flex-direction: column; width: 240px; border-left: 1px solid var(--border-2); overflow: hidden; }
   .phead { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 8px 14px; }
+  .pacts { display: inline-flex; align-items: center; gap: 4px; }
+  .picon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px;
+    background: transparent; border: none; border-radius: var(--radius-sm);
+    color: var(--text-3); cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .picon:hover:not(:disabled) { background: var(--bg-elev); color: var(--text); }
+  .picon:disabled { cursor: default; }
+  .spin { animation: spin .8s linear infinite; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .clean {
     display: inline-flex; align-items: center; gap: 5px;
     background: transparent; border: 1px solid var(--border);
