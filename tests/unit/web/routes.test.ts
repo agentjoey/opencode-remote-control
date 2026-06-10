@@ -44,6 +44,7 @@ const baseOpts = (state: any, client: any) => ({
   cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
+  baseUrl: 'http://localhost:4096',
 })
 
 // dev bypass now requires a loopback socket peer (not opts.host), so every
@@ -117,6 +118,7 @@ describe('web routes', () => {
         get: vi.fn().mockResolvedValue({ data: {
           agent: { name: 'build' }, model: 'kimi/k2p6',
           tokens: { input: 5000, output: 2000 }, cost: 0.04,
+          directory: '/home/u/proj',
         }}),
       },
     } as any
@@ -126,6 +128,80 @@ describe('web routes', () => {
     const ctx = await res.json() as any
     expect(ctx.agent).toBe('build')
     expect(ctx.cost).toBe(0.04)
+    expect(ctx.directory).toBe('/home/u/proj')
+  })
+
+  it('GET /api/mcp lists configured MCP servers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      mcp: { github: { type: 'remote' }, figma: { type: 'local', enabled: false } },
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/mcp', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body).toEqual([
+      { name: 'github', type: 'remote', status: 'configured' },
+      { name: 'figma', type: 'local', status: 'disabled' },
+    ])
+    vi.unstubAllGlobals()
+  })
+
+  it('GET /api/agents returns configured agents (name, model, description)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      agent: { build: { model: 'kimi/k2p6', description: 'code' }, plan: { model: 'google/g3' } },
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/agents', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body).toContainEqual({ name: 'build', model: 'kimi/k2p6', description: 'code' })
+    expect(body).toContainEqual({ name: 'plan', model: 'google/g3', description: '' })
+    vi.unstubAllGlobals()
+  })
+
+  it('GET /api/models returns providers with their models', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      providers: [{ id: 'kimi', name: 'Kimi', models: { k2p6: { name: 'K2 P6' } } }],
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/models', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body[0]).toMatchObject({ id: 'kimi', name: 'Kimi' })
+    expect(body[0].models).toContainEqual({ id: 'k2p6', name: 'K2 P6' })
+    vi.unstubAllGlobals()
+  })
+
+  it('GET /api/overrides returns current next agent/model', async () => {
+    const state = fakeState()
+    state.getNextAgent = () => 'build'
+    state.getNextModel = () => ({ providerID: 'kimi', modelID: 'k2p6' })
+    const app = buildServer(baseOpts(state, fakeClient()))
+    const res = await app.request('/api/overrides', undefined, LOOPBACK)
+    expect(await res.json()).toEqual({ agent: 'build', model: { providerID: 'kimi', modelID: 'k2p6' } })
+  })
+
+  it('POST /api/overrides sets agent + model on state', async () => {
+    const state = fakeState()
+    const app = buildServer(baseOpts(state, fakeClient()))
+    const res = await app.request('/api/overrides', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ agent: 'plan', model: { providerID: 'google', modelID: 'g3' } }),
+    }, LOOPBACK)
+    expect(res.status).toBe(200)
+    expect(state.setNextAgent).toHaveBeenCalledWith('plan')
+    expect(state.setNextModel).toHaveBeenCalledWith({ providerID: 'google', modelID: 'g3' })
+  })
+
+  it('POST /api/overrides with nulls clears them', async () => {
+    const state = fakeState()
+    const app = buildServer(baseOpts(state, fakeClient()))
+    await app.request('/api/overrides', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ agent: null, model: null }),
+    }, LOOPBACK)
+    expect(state.setNextAgent).toHaveBeenCalledWith(undefined)
+    expect(state.setNextModel).toHaveBeenCalledWith(undefined)
   })
 
   it('POST /api/approval proxies the decision to opencode', async () => {

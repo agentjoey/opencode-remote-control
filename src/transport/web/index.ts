@@ -21,6 +21,8 @@ export interface WebTransportConfig {
   cfAccess: { team: string; aud: string; devBypass?: boolean; devEmail?: string; host?: string }
   staticRoot: string
   cacheSize: number
+  /** opencode server base URL (the in-process plugin server) — for raw /config reads. */
+  baseUrl?: string
 }
 
 const CAPS: ChannelCapabilities = {
@@ -48,6 +50,7 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
         cardBus: deps.cardBus,
         wsHub,
         cacheSize: cfg.cacheSize,
+        baseUrl: cfg.baseUrl ?? '',
         onMessage: (msg) => messageHandler ? messageHandler(msg) : Promise.resolve(),
       })
 
