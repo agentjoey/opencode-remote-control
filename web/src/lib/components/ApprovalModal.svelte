@@ -11,8 +11,11 @@
   }
 </script>
 
-<div class="overlay" on:click={onClose}>
-  <div class="modal" on:click|stopPropagation>
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape') onClose() }} />
+
+<div class="overlay">
+  <button class="backdrop" aria-label="Close" on:click={onClose}></button>
+  <div class="modal" role="dialog" aria-modal="true" aria-label={card.title}>
     <div class="title">{card.title}</div>
     <pre class="args">{JSON.stringify(card.args, null, 2)}</pre>
     <div class="actions">
@@ -27,13 +30,23 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
   }
+  .backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: default;
+  }
   .modal {
+    position: relative;
+    z-index: 1;
     background: #1a1a1a;
     border: 1px solid #333;
     border-radius: 12px;

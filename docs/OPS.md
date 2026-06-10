@@ -311,3 +311,39 @@ curl -m 2 http://localhost:4096/tui/control/next
 # 端口占用总览
 lsof -i :4096 -i :7081 -i :REDACTED-PORT
 ```
+
+---
+
+## Web / PWA + 浏览器扩展（Cloudflare Access）
+
+Web 与扩展通过 cloudflared 隧道暴露,边缘用 **Cloudflare Access** 把关。
+
+### 启用 Web
+```bash
+# .env / opencode.json plugin options
+WEB_ENABLED=true
+WEB_HOST=127.0.0.1            # 隧道回源到本地;不要直接对公网监听
+WEB_PORT=7081
+WEB_CF_ACCESS_TEAM=<team>     # <team>.cloudflareaccess.com
+WEB_CF_ACCESS_AUD=<app-aud>  # Access 应用的 Application Audience (AUD) tag
+# 本地裸调试(无隧道)才需要,默认关闭:
+# WEB_CF_ACCESS_DEV_BYPASS=true   # 仅对 loopback 对端放行
+```
+
+### Cloudflare Access 配置
+1. 给隧道主机名建一个 Access 应用,记下 **AUD**(填到 `WEB_CF_ACCESS_AUD`)。
+2. **关键:给 `/ws` 加一条 Bypass 策略**(路径 `^/ws`)。浏览器 WebSocket 无法带鉴权头,所以让无头的升级请求穿过边缘,由应用自己用 ticket(扩展)/ cookie 里的 CF JWT(PWA)把关。其余路径保持正常 Access 策略。
+3. PWA:浏览器里走交互式登录即可(cookie 自动带上)。
+
+### 浏览器扩展(无人值守,B5 方案 A)
+1. 在 Zero Trust 后台建一个 **Service Token**,把它加进 Access 应用策略(Include → Service Auth)。
+2. 打开扩展 popup,填:Bot URL、CF Access Client ID、Client Secret(留空则回退到 cookie 鉴权)。
+3. 扩展用服务令牌走 REST 取 `/api/ws-ticket`,再用 ticket 连 `wss://<host>/ws`(需上面 `/ws` 的 Bypass)。
+
+### 速查
+```bash
+# Web 是否监听
+lsof -i :7081
+# 最近日志(应用内 ring buffer,需鉴权)
+curl -s https://<host>/api/logs | jq -r '.lines[]' | tail -50
+```
