@@ -22,6 +22,19 @@ export interface PluginConfig {
   tgChunkSoftLimit: number
 }
 
+// Repo root resolved from this module's OWN location (<repo>/dist/plugin/config.js,
+// or <repo>/src/plugin/config.ts in dev — both two levels below the root). The
+// plugin is registered globally, so opencode can be launched from any folder;
+// resolving .env and bundled web assets against this constant instead of cwd is
+// what keeps it working regardless of the launch directory.
+const PLUGIN_ROOT = (() => {
+  try {
+    return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+  } catch {
+    return process.cwd()
+  }
+})()
+
 function loadDotEnv(): void {
   const cwd = process.cwd()
   dotenvConfig({ path: resolve(cwd, '.env') })
@@ -32,16 +45,8 @@ function loadDotEnv(): void {
   if (process.env.OPENCODE_CONFIG_DIR) {
     dotenvConfig({ path: resolve(process.env.OPENCODE_CONFIG_DIR, '.env'), override: false })
   }
-  // Finally, the plugin's own install directory — works regardless of cwd, so
-  // opencode launched from ANY folder still finds our .env. This module is at
-  // <repo>/dist/plugin/config.js (or src/plugin/config.ts in dev), so the repo
-  // root (where .env lives) is two levels up.
-  try {
-    const here = dirname(fileURLToPath(import.meta.url))
-    dotenvConfig({ path: resolve(here, '..', '..', '.env'), override: false })
-  } catch {
-    /* import.meta.url unavailable — other sources already attempted */
-  }
+  // Finally, the plugin's own install directory — works regardless of cwd.
+  dotenvConfig({ path: resolve(PLUGIN_ROOT, '.env'), override: false })
 }
 
 function env(key: string, optionsVal?: string): string | undefined {
@@ -82,7 +87,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
     webHost,
     webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 7081),
-    webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? 'web/dist',
+    webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? resolve(PLUGIN_ROOT, 'web', 'dist'),
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
     webCfAccessTeam: env('WEB_CF_ACCESS_TEAM', options?.webCfAccessTeam as string) ?? '',
     webCfAccessAud: env('WEB_CF_ACCESS_AUD', options?.webCfAccessAud as string) ?? '',
