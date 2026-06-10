@@ -11,6 +11,7 @@ import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
 import { verifyUpgradeJwt } from './middleware/cf-access.js'
+import { verifyWsTicket } from './ws-ticket.js'
 
 const log = createLogger('web')
 
@@ -79,25 +80,34 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
       ;(server as any).on('upgrade', async (req: any, socket: any, head: any) => {
         const hasCookie = !!req.headers?.cookie
         const hasAccessHdr = !!req.headers?.['cf-access-jwt-assertion']
-        log.info(`ws upgrade attempt url=${req.url} cookie=${hasCookie} cf-access-hdr=${hasAccessHdr}`)
-        if (req.url !== '/ws') {
-          log.info(`ws upgrade rejected: wrong url=${req.url}`)
+        const reqUrl = new URL(req.url, 'http://localhost')
+        log.info(`ws upgrade attempt path=${reqUrl.pathname} cookie=${hasCookie} cf-access-hdr=${hasAccessHdr}`)
+        if (reqUrl.pathname !== '/ws') {
+          log.info(`ws upgrade rejected: wrong path=${reqUrl.pathname}`)
           socket.destroy()
           return
         }
-        const user = await verifyUpgradeJwt(
-          { headers: req.headers, url: req.url, socket: req.socket },
-          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
-        )
+        // Auth: an app-minted ticket (B5/A1 — extension over a CF Access bypass)
+        // takes precedence; otherwise fall back to the CF Access JWT (PWA cookie
+        // / header / query).
+        const ticket = reqUrl.searchParams.get('ticket')
+        let user: { email?: string; sub?: string } | null = ticket ? await verifyWsTicket(ticket) : null
         if (!user) {
-          log.warn(`ws upgrade rejected: JWT verify failed (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr})`)
+          user = await verifyUpgradeJwt(
+            { headers: req.headers, url: req.url, socket: req.socket },
+            { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
+          )
+        }
+        if (!user) {
+          log.warn(`ws upgrade rejected: no valid ticket/JWT (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr} ticket=${!!ticket})`)
           socket.destroy()
           return
         }
-        log.info(`ws upgrade accepted: ${user.email}`)
+        const wsUser = { email: user.email ?? user.sub ?? 'user' }
+        log.info(`ws upgrade accepted: ${wsUser.email}${ticket ? ' (ticket)' : ''}`)
         wss!.handleUpgrade(req, socket, head, (ws) => {
           log.info(`ws handleUpgrade callback fired, attaching`)
-          wsHub.attach(ws as any, user)
+          wsHub.attach(ws as any, wsUser)
           ws.on('message', (data) => {
             try { wsHub.handleClientMessage(ws as any, JSON.parse(data.toString())) } catch {}
           })

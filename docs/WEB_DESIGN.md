@@ -153,7 +153,20 @@ See the full comparison in the B5 analysis (chat / PR notes).
   `connection` store. No backend change — CF's edge validates the service token
   and injects the assertion our middleware already checks.
 - Tradeoff (inherent to A2): completed turns appear within a poll interval; no
-  sub-second streaming. **A1** (WS ticket) is the follow-up for live streaming.
+  sub-second streaming.
+
+**Status — A1 shipped** *(live WS via app ticket)* — supersedes A2's polling:
+- Backend `ws-ticket.ts` mints a 60s single-use HS256 ticket (per-process random
+  secret) for the authenticated user; `GET /api/ws-ticket` (behind CF Access)
+  returns it. The WS upgrade accepts `?ticket=` (verified app-side) **or** the CF
+  Access JWT (PWA cookie/header) — and parses the path so the query is allowed.
+- `ws/client.ts` gained `getTicket()`: it fetches a fresh ticket before each
+  (re)connect and appends `?ticket=`. The PWA leaves it unset (cookie path).
+- The extension is back on the WebSocket (live streaming) — service-token REST
+  for `/api/ws-ticket`, ticket for the socket. Polling removed.
+- **Deployment requirement:** put `/ws` on a CF Access **bypass** policy so the
+  header-less WS upgrade reaches this app, which then gates it with the ticket.
+  The PWA still works because the app verifies the CF JWT from the cookie.
 - Still TODO: a small extension popup form to enter the bot URL + service token
   (today they must be set in `chrome.storage` directly).
 
