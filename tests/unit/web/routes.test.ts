@@ -144,6 +144,32 @@ describe('web routes', () => {
     vi.unstubAllGlobals()
   })
 
+  it('GET /api/agents returns configured agents (name, model, description)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      agent: { build: { model: 'kimi/k2p6', description: 'code' }, plan: { model: 'google/g3' } },
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/agents', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body).toContainEqual({ name: 'build', model: 'kimi/k2p6', description: 'code' })
+    expect(body).toContainEqual({ name: 'plan', model: 'google/g3', description: '' })
+    vi.unstubAllGlobals()
+  })
+
+  it('GET /api/models returns providers with their models', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      providers: [{ id: 'kimi', name: 'Kimi', models: { k2p6: { name: 'K2 P6' } } }],
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/models', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body[0]).toMatchObject({ id: 'kimi', name: 'Kimi' })
+    expect(body[0].models).toContainEqual({ id: 'k2p6', name: 'K2 P6' })
+    vi.unstubAllGlobals()
+  })
+
   it('POST /api/approval proxies the decision to opencode', async () => {
     const respond = vi.fn().mockResolvedValue({})
     const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any

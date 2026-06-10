@@ -24,6 +24,7 @@ import { registerApproval } from './routes/approval.js'
 import { registerVersion } from './routes/version.js'
 import { registerLogs } from './routes/logs.js'
 import { registerMcp } from './routes/mcp.js'
+import { registerCatalog } from './routes/catalog.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -67,5 +68,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerVersion(app)
   registerLogs(app)
   registerMcp(app, opts.baseUrl)
+  registerCatalog(app, opts.baseUrl)
   return app
 }
