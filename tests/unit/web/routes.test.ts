@@ -170,6 +170,38 @@ describe('web routes', () => {
     vi.unstubAllGlobals()
   })
 
+  it('GET /api/overrides returns current next agent/model', async () => {
+    const state = fakeState()
+    state.getNextAgent = () => 'build'
+    state.getNextModel = () => ({ providerID: 'kimi', modelID: 'k2p6' })
+    const app = buildServer(baseOpts(state, fakeClient()))
+    const res = await app.request('/api/overrides', undefined, LOOPBACK)
+    expect(await res.json()).toEqual({ agent: 'build', model: { providerID: 'kimi', modelID: 'k2p6' } })
+  })
+
+  it('POST /api/overrides sets agent + model on state', async () => {
+    const state = fakeState()
+    const app = buildServer(baseOpts(state, fakeClient()))
+    const res = await app.request('/api/overrides', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ agent: 'plan', model: { providerID: 'google', modelID: 'g3' } }),
+    }, LOOPBACK)
+    expect(res.status).toBe(200)
+    expect(state.setNextAgent).toHaveBeenCalledWith('plan')
+    expect(state.setNextModel).toHaveBeenCalledWith({ providerID: 'google', modelID: 'g3' })
+  })
+
+  it('POST /api/overrides with nulls clears them', async () => {
+    const state = fakeState()
+    const app = buildServer(baseOpts(state, fakeClient()))
+    await app.request('/api/overrides', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ agent: null, model: null }),
+    }, LOOPBACK)
+    expect(state.setNextAgent).toHaveBeenCalledWith(undefined)
+    expect(state.setNextModel).toHaveBeenCalledWith(undefined)
+  })
+
   it('POST /api/approval proxies the decision to opencode', async () => {
     const respond = vi.fn().mockResolvedValue({})
     const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any

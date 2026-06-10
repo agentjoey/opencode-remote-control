@@ -25,6 +25,7 @@ import { registerVersion } from './routes/version.js'
 import { registerLogs } from './routes/logs.js'
 import { registerMcp } from './routes/mcp.js'
 import { registerCatalog } from './routes/catalog.js'
+import { registerOverrides } from './routes/overrides.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -69,5 +70,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerLogs(app)
   registerMcp(app, opts.baseUrl)
   registerCatalog(app, opts.baseUrl)
+  registerOverrides(app, opts.state)
   return app
 }
