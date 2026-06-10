@@ -4,6 +4,7 @@ import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import { submitPrompt } from '../opencode/submit.js'
+import { listAllSessions } from '../opencode/list-sessions.js'
 import { sessionIdOf, errorMessageOf, type OcEvent } from './opencode-events.js'
 import { createLogger } from '../utils/logger.js'
 
@@ -104,8 +105,7 @@ async function sessionExists(client: OpencodeClient, id: string): Promise<boolea
 }
 
 async function pickSessionFallback(client: OpencodeClient): Promise<string> {
-  const res = await client.session.list()
-  const sessions = (res.data ?? []) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
+  const sessions = await listAllSessions(client) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
   // Sort by time.updated (most recently active) rather than time.created (newest).
   // Prefer root sessions (no parentID) over child/subagent sessions to avoid

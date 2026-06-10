@@ -41,6 +41,7 @@ function fakeClient(config: any = {}, providers: any[] = []) {
       get: vi.fn().mockResolvedValue({ data: config }),
       providers: vi.fn().mockResolvedValue({ data: { providers } }),
     },
+    project: { list: vi.fn().mockResolvedValue({ data: [] }) },
   } as any
 }
 

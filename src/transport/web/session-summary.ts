@@ -1,5 +1,6 @@
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { SessionState } from '../../core/state.js'
+import { listAllSessions } from '../../opencode/list-sessions.js'
 
 export interface SessionSummary {
   id: string
@@ -47,8 +48,7 @@ export async function fetchSessionSummaries(
   client: OpencodeClient,
   state: SessionState,
 ): Promise<SessionSummary[]> {
-  const res = await client.session.list()
-  const all = (res.data ?? []) as Array<any>
+  const all = await listAllSessions(client)
   const now = Date.now()
 
   // subagent child sessions (task tool) are never shown in the rail.
@@ -96,8 +96,7 @@ export async function fetchSessionSummaries(
  * user-triggered only — returns the number deleted.
  */
 export async function cleanupSubagentSessions(client: OpencodeClient): Promise<number> {
-  const res = await client.session.list()
-  const all = (res.data ?? []) as Array<any>
+  const all = await listAllSessions(client)
   const children = all.filter((s) => !!s.parentID)
   let deleted = 0
   for (const s of children) {

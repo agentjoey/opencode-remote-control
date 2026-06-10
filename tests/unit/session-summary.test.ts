@@ -14,6 +14,7 @@ function makeClient(sessions: any[], messages: Record<string, unknown[]> = {}) {
       messages: async ({ path }: any) => ({ data: messages[path.id] ?? [] }),
       delete: async ({ path }: any) => { deleted.push(path.id); return {} },
     },
+    project: { list: async () => ({ data: [] }) },
   } as unknown as OpencodeClient
   return { client, deleted }
 }

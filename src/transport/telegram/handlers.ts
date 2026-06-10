@@ -6,6 +6,7 @@ import type { CardBus } from '../../core/card-bus.js'
 import { createLogger } from '../../utils/logger.js'
 import { getVersionInfo } from '../../utils/version.js'
 import { registerInfoCommands } from './handlers/info-commands.js'
+import { listAllSessions } from '../../opencode/list-sessions.js'
 
 const log = createLogger('handlers')
 
@@ -119,8 +120,7 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
     } catch {}
   } else {
     try {
-      const result = await deps.client.session.list()
-      const sessions = (result.data ?? []) as Array<{ id: string }>
+      const sessions = await listAllSessions(deps.client) as Array<{ id: string }>
       totalSessions = sessions.length
     } catch {}
   }
@@ -209,8 +209,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('sessions', async (ctx: Context) => {
     try {
-      const result = await deps.client.session.list()
-      const sessions = (result.data ?? []) as Array<{ id: string; title?: string; time?: { created?: number } }>
+      const sessions = await listAllSessions(deps.client) as Array<{ id: string; title?: string; time?: { created?: number } }>
       if (sessions.length === 0) {
         await ctx.reply('No sessions.', { parse_mode: 'HTML' })
         return
