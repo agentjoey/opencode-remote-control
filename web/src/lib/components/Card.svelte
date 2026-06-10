@@ -8,6 +8,7 @@
   import CardError from './CardError.svelte'
   import CardInfo from './CardInfo.svelte'
   import CardStatus from './CardStatus.svelte'
+  import CardApproval from './CardApproval.svelte'
 
   export let card: StructuredCard
 </script>
@@ -29,7 +30,7 @@
 {:else if card.kind === 'status'}
   <CardStatus {card} />
 {:else if card.kind === 'approval'}
-  <!-- Approval rendered by +layout.svelte modal -->
+  <CardApproval {card} />
 {:else}
   <div class="card placeholder">[{(card as StructuredCard).kind}]</div>
 {/if}
