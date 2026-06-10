@@ -61,6 +61,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       },
       staticRoot: config.webStaticRoot,
       cacheSize: config.webCacheSize,
+      baseUrl: serverUrl,
     })
     webTransport.onMessage(relay)
     transports.push(webTransport)

@@ -13,6 +13,7 @@ export function registerContext(app: Hono, client: OpencodeClient, state: Sessio
       model: typeof s.model === 'string' ? s.model : undefined,
       tokens: s.tokens,
       cost: typeof s.cost === 'number' ? s.cost : state.getSessionCost(id),
+      directory: typeof s.directory === 'string' ? s.directory : undefined,
       nextAgent: state.getNextAgent(),
       nextModel: state.getNextModel(),
     })
