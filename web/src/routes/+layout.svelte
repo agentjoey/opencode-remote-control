@@ -8,11 +8,18 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
-  import SessionList from '$lib/components/SessionList.svelte'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import ApprovalModal from '$lib/components/ApprovalModal.svelte'
+  import SessionRail from '$lib/components/SessionRail.svelte'
+  import Inspector from '$lib/components/Inspector.svelte'
+  import CommandPalette from '$lib/components/CommandPalette.svelte'
   import type { StructuredCard } from '$lib/api/types.js'
+
+  let paletteOpen = false
+  function onGlobalKey(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen = true }
+  }
 
   let email = ''
   let wsClient: ReturnType<typeof createWsClient> | null = null
@@ -98,75 +105,35 @@
   })
 </script>
 
+<svelte:window on:keydown={onGlobalKey} />
+
 <div class="app">
-  <header>
+  <header class="titlebar">
     <span class="brand">ocrc</span>
+    <span class="sep mono">▸ {$page.params.sessionId ? '…' + $page.params.sessionId.slice(-8) : 'no session'}</span>
     <ConnectionBadge />
-    {#if installEvent}
-      <button class="install" on:click={install}>Install</button>
-    {/if}
+    {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
     <span class="email">{email}</span>
   </header>
   <OfflineBanner />
-
   <div class="body">
-    <SessionList activeId={$page.params.sessionId} />
-    <main>
-      <slot />
-    </main>
+    <SessionRail activeId={$page.params.sessionId} />
+    <main><slot /></main>
+    <Inspector sessionId={$page.params.sessionId} />
   </div>
-
   {#if pendingApproval && pendingApproval.kind === 'approval'}
     <ApprovalModal card={pendingApproval} onClose={() => (approvalQueue = approvalQueue.slice(1))} />
   {/if}
 </div>
+<CommandPalette bind:open={paletteOpen} />
 
 <style>
-  .app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    border-bottom: 1px solid #222;
-    background: #0f0f0f;
-    flex-shrink: 0;
-  }
-  .brand {
-    font-weight: 700;
-    font-size: 1.1em;
-    color: #fff;
-  }
-  .email {
-    margin-left: auto;
-    font-size: 0.85em;
-    color: #888;
-  }
-  .install {
-    margin-left: auto;
-    background: #1e3a8a;
-    color: #fff;
-    border: 1px solid #2563eb;
-    border-radius: 8px;
-    padding: 3px 10px;
-    font-size: 0.8em;
-    cursor: pointer;
-  }
-  .install + .email { margin-left: 8px; }
-  .body {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-  main {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .titlebar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; font-size: 13px; }
+  .brand { font-weight: 700; color: #fff; }
+  .sep { color: var(--text-3); }
+  .email { margin-left: auto; font-size: 0.8em; color: var(--text-3); }
+  .install { background: var(--accent-2); color: #fff; border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 3px 10px; font-size: 0.8em; cursor: pointer; }
+  .body { display: flex; flex: 1; overflow: hidden; }
+  main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
 </style>
