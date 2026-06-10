@@ -2,6 +2,7 @@
   import { api } from '../api/client.js'
   import { connection } from '../stores/connection.js'
   import { upsertCard } from '../stores/sessions.js'
+  import AgentModelChip from './AgentModelChip.svelte'
 
   export let sessionId: string
   /** Send on plain Enter (Shift+Enter = newline). Ctrl/Cmd+Enter always sends. */
@@ -56,6 +57,7 @@
     <div class="error" role="alert">{error}</div>
   {/if}
   <div class="row">
+    <AgentModelChip />
     <textarea
       bind:this={textarea}
       bind:value={text}
