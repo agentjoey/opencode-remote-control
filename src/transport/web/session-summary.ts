@@ -17,9 +17,13 @@ export async function fetchSessionSummaries(
 ): Promise<SessionSummary[]> {
   const res = await client.session.list()
   const all = (res.data ?? []) as Array<any>
-  const touched = all.filter((s) => state.getSessionCost(s.id) !== undefined)
-  const visible = touched.length > 0 ? touched : all.slice(0, 10)
-  const sorted = visible.sort((a, b) => (b.time?.created ?? 0) - (a.time?.created ?? 0))
+  // Prefer root sessions over subagent sessions, then sort by most recent
+  const sorted = [...all].sort((a, b) => {
+    const aIsChild = !!a.parentID
+    const bIsChild = !!b.parentID
+    if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
+    return (b.time?.created ?? 0) - (a.time?.created ?? 0)
+  })
   return sorted.map((s) => ({
     id: s.id,
     title: s.title ?? '',

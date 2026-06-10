@@ -115,9 +115,10 @@ lsof -i :4096 -i :7081                               # 端口占用
 
 ---
 
-## Web / PWA + 浏览器扩展（Cloudflare Access）
+## Web / PWA（Cloudflare Access）
 
-Web 与扩展通过 cloudflared 隧道暴露，边缘用 **Cloudflare Access** 把关。
+Web 通过 cloudflared 隧道暴露，边缘用 **Cloudflare Access** 把关。装成桌面/手机
+app(PWA)远程访问;鉴权走浏览器交互登录的 CF Access cookie。
 
 ### 启用 Web
 
@@ -134,15 +135,13 @@ WEB_CF_ACCESS_AUD=<app-aud>  # Access 应用的 Application Audience (AUD) tag
 
 ### Cloudflare Access 配置
 
-1. 给隧道主机名建一个 Access 应用，记下 **AUD**（填到 `WEB_CF_ACCESS_AUD`）。
-2. **关键：给 `/ws` 加一条 Bypass 策略**（路径 `^/ws`）。浏览器 WebSocket 无法带鉴权头，所以让无头的升级请求穿过边缘，由应用自己用 ticket（扩展）/ cookie 里的 CF JWT（PWA）把关。其余路径保持正常 Access 策略。
-3. PWA：浏览器里走交互式登录即可（cookie 自动带上）。
+1. 给隧道主机名建一个 Access 应用（**整站，路径留空**），记下 **AUD**（填到
+   `WEB_CF_ACCESS_AUD`），策略 Allow 你的登录邮箱。
+2. 浏览器打开该主机名 → 交互式登录 → cookie 自动带上(REST 和 WS 握手都带)。
+   无需对 `/ws` 做任何特殊处理。
+3. 为减少重登,把 Access 应用的 session duration 设长(单用户)。
 
-### 浏览器扩展（无人值守，B5 方案 A）
-
-1. 在 Zero Trust 后台建一个 **Service Token**，把它加进 Access 应用策略（Include → Service Auth）。
-2. 打开扩展 popup，填：Bot URL、CF Access Client ID、Client Secret（留空则回退到 cookie 鉴权）。
-3. 扩展用服务令牌走 REST 取 `/api/ws-ticket`，再用 ticket 连 `wss://<host>/ws`（需上面 `/ws` 的 Bypass）。
+> 不再需要 Service Token / `/ws` Bypass —— 那是已移除的浏览器扩展才需要的。
 
 ### 速查
 

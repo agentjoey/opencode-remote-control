@@ -11,7 +11,6 @@ import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
 import { verifyUpgradeJwt } from './middleware/cf-access.js'
-import { verifyWsTicket } from './ws-ticket.js'
 
 const log = createLogger('web')
 
@@ -87,24 +86,18 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
           socket.destroy()
           return
         }
-        // Auth: an app-minted ticket (B5/A1 — extension over a CF Access bypass)
-        // takes precedence; otherwise fall back to the CF Access JWT (PWA cookie
-        // / header / query).
-        const ticket = reqUrl.searchParams.get('ticket')
-        let user: { email?: string; sub?: string } | null = ticket ? await verifyWsTicket(ticket) : null
+        // Auth: CF Access JWT from the cookie / header / query (PWA path).
+        const user = await verifyUpgradeJwt(
+          { headers: req.headers, url: req.url, socket: req.socket },
+          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
+        )
         if (!user) {
-          user = await verifyUpgradeJwt(
-            { headers: req.headers, url: req.url, socket: req.socket },
-            { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
-          )
-        }
-        if (!user) {
-          log.warn(`ws upgrade rejected: no valid ticket/JWT (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr} ticket=${!!ticket})`)
+          log.warn(`ws upgrade rejected: JWT verify failed (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr})`)
           socket.destroy()
           return
         }
         const wsUser = { email: user.email ?? user.sub ?? 'user' }
-        log.info(`ws upgrade accepted: ${wsUser.email}${ticket ? ' (ticket)' : ''}`)
+        log.info(`ws upgrade accepted: ${wsUser.email}`)
         wss!.handleUpgrade(req, socket, head, (ws) => {
           log.info(`ws handleUpgrade callback fired, attaching`)
           wsHub.attach(ws as any, wsUser)
