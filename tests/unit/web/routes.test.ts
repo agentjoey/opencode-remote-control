@@ -118,6 +118,7 @@ describe('web routes', () => {
         get: vi.fn().mockResolvedValue({ data: {
           agent: { name: 'build' }, model: 'kimi/k2p6',
           tokens: { input: 5000, output: 2000 }, cost: 0.04,
+          directory: '/home/u/proj',
         }}),
       },
     } as any
@@ -127,6 +128,7 @@ describe('web routes', () => {
     const ctx = await res.json() as any
     expect(ctx.agent).toBe('build')
     expect(ctx.cost).toBe(0.04)
+    expect(ctx.directory).toBe('/home/u/proj')
   })
 
   it('GET /api/mcp lists configured MCP servers', async () => {
