@@ -11,6 +11,7 @@
   let text = ''
   let sending = false
   let error = ''
+  let focused = false
   let textarea: HTMLTextAreaElement
 
   function newClientId(): string {
@@ -53,73 +54,102 @@
 </script>
 
 <div class="composer">
-  {#if error}
-    <div class="error" role="alert">{error}</div>
-  {/if}
-  <div class="row">
-    <AgentModelChip />
-    <textarea
-      bind:this={textarea}
-      bind:value={text}
-      on:keydown={onKeydown}
-      on:input={autoGrow}
-      placeholder={$connection === 'connected' ? 'Type a message…' : 'Disconnected…'}
-      rows={1}
-    ></textarea>
-    <button on:click={send} disabled={sending || !text.trim() || $connection !== 'connected'}>
-      {sending ? '…' : 'Send'}
-    </button>
+  <div class="dock">
+    {#if error}
+      <div class="error" role="alert">{error}</div>
+    {/if}
+    <div class="box" class:focused>
+      <textarea
+        bind:this={textarea}
+        bind:value={text}
+        on:keydown={onKeydown}
+        on:input={autoGrow}
+        on:focus={() => (focused = true)}
+        on:blur={() => (focused = false)}
+        placeholder={$connection === 'connected' ? 'Message opencode…' : 'Disconnected…'}
+        rows={1}
+      ></textarea>
+      <div class="controls">
+        <AgentModelChip />
+        <span class="spacer"></span>
+        <button class="send" on:click={send} aria-label="Send"
+                disabled={sending || !text.trim() || $connection !== 'connected'}>
+          {#if sending}…{:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          {/if}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
   .composer {
-    border-top: 1px solid var(--border);
     background: var(--bg);
-    padding: 12px 16px 18px;
+    padding: 0 24px 22px;
   }
-  .row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-    max-width: 880px;
+  .dock {
+    max-width: 760px;
     margin: 0 auto;
   }
   .error {
     color: var(--err);
     font-size: 0.8em;
-    margin: 0 auto 8px;
-    max-width: 880px;
+    margin: 0 0 8px;
     font-family: var(--font-mono);
   }
-  textarea {
-    flex: 1;
+  /* one rounded surface holding the input + its controls (claude.ai style) */
+  .box {
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    padding: 10px 12px 8px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .28);
+    transition: border-color .15s ease;
+  }
+  .box.focused { border-color: var(--accent); }
+  textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    padding: 4px 4px 2px;
     color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 1.5;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
     resize: none;
-    min-height: 42px;
-    max-height: 160px;
+    min-height: 24px;
+    max-height: 200px;
     overflow-y: auto;
   }
-  textarea:focus { outline: none; border-color: var(--accent); }
-  button {
-    align-self: flex-end;
-    padding: 10px 18px;
-    border-radius: var(--radius);
+  textarea:focus { outline: none; }
+  textarea::placeholder { color: var(--text-3); }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .spacer { flex: 1; }
+  .send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     border: none;
     background: var(--accent);
-    color: #fff;
-    font-weight: 600;
+    color: var(--accent-ink);
     cursor: pointer;
+    transition: opacity .15s ease, transform .1s ease;
   }
-  button:disabled {
-    opacity: 0.5;
+  .send:not(:disabled):hover { transform: scale(1.06); }
+  .send:disabled {
+    background: var(--border);
+    color: var(--text-3);
     cursor: not-allowed;
   }
 </style>

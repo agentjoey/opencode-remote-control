@@ -9,6 +9,12 @@ export interface SessionSummary {
   cost?: number
   lastActiveAt: number
   unread: boolean
+  /** Absolute working directory of the session (for showing the repo/project). */
+  directory?: string
+  /** Lines added across the session's diff, when known. */
+  additions?: number
+  /** Lines deleted across the session's diff, when known. */
+  deletions?: number
 }
 
 export async function fetchSessionSummaries(
@@ -32,5 +38,8 @@ export async function fetchSessionSummaries(
     cost: state.getSessionCost(s.id),
     lastActiveAt: s.time?.updated ?? s.time?.created ?? 0,
     unread: false,
+    directory: typeof s.directory === 'string' ? s.directory : undefined,
+    additions: s.summary?.additions,
+    deletions: s.summary?.deletions,
   }))
 }

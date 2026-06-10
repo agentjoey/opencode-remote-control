@@ -1,24 +1,41 @@
-/* src/lib/theme.css — dark-IDE design tokens (spec § Style B) */
+/* src/lib/theme.css — warm dark theme, claude.ai/code aesthetic */
 :root {
-  --bg:        #0a0a0a;
-  --bg-panel:  #0c0c0c;
-  --bg-elev:   #141414;
-  --bg-input:  #1a1a1a;
-  --border:    #1f1f1f;
-  --border-2:  #1c1c1c;
-  --text:      #e5e7eb;
-  --text-2:    #9ca3af;
-  --text-3:    #6b7280;
-  --accent:    #2563eb;
-  --accent-2:  #1e3a8a;
-  --ok:        #22c55e;
-  --warn:      #fbbf24;
-  --err:       #f87171;
-  --radius:    10px;
-  --radius-sm: 8px;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  --bg:        #1c1b19;  /* warm charcoal — main canvas */
+  --bg-panel:  #181715;  /* side rails / titlebar — slightly deeper */
+  --bg-elev:   #262521;  /* elevated cards */
+  --bg-input:  #2a2824;  /* input surfaces */
+  --border:    #393631;  /* hairline borders */
+  --border-2:  #302d29;
+  --text:      #f2f0ec;  /* primary — warm off-white */
+  --text-2:    #c2bdb4;  /* secondary */
+  --text-3:    #8d877c;  /* muted / meta */
+  --accent:    #3fb27f;  /* emerald */
+  --accent-2:  #243029;  /* subtle green-tinted hover/selected fill */
+  --accent-ink:#06140d;  /* dark text on emerald surfaces (buttons) */
+  --user-bubble: linear-gradient(135deg, #3fb27f 0%, #2e9468 100%);  /* user message */
+  --user-ink:  #f2fbf6;  /* text on the user bubble */
+  --ok:        #6cc08b;
+  --warn:      #e0b341;
+  --err:       #e0796b;
+  --radius:    14px;
+  --radius-sm: 9px;
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
 }
-:global(body) { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
-.label { text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-size: 10px; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.label { text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); font-size: 10px; }
 .mono { font-family: var(--font-mono); }
+
+/* slim, unobtrusive scrollbars that match the warm theme */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: #4a463f; background-clip: content-box; }

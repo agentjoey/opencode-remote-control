@@ -41,15 +41,16 @@
     overflow-y: auto;
   }
   .stream {
-    max-width: 880px;
+    max-width: 760px;
     margin: 0 auto;
-    padding: 16px 24px 24px;
+    padding: 24px 24px 8px;
+    display: flex;
+    flex-direction: column;
   }
   .empty {
     color: var(--text-3);
     text-align: center;
-    padding: 48px 0;
-    font-family: var(--font-mono);
-    font-size: 13px;
+    padding: 56px 0;
+    font-size: 14px;
   }
 </style>

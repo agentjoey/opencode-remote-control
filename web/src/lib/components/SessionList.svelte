@@ -1,5 +1,6 @@
 <script lang="ts">
   import { sessionList, feeds } from '../stores/sessions.js'
+  import { pinnedSessions } from '../stores/pins.js'
   import type { SessionSummary } from '../api/types.js'
 
   // PWA passes activeId from $page.params and relies on <a href> for routing.
@@ -25,100 +26,166 @@
     return `${Math.floor(h / 24)}d`
   }
 
+  // Last 8 chars of the id, minus any "ses_"-style prefix.
+  function shortId(id: string): string {
+    const bare = id.includes('_') ? id.slice(id.indexOf('_') + 1) : id
+    return bare.slice(-8)
+  }
+
+  function repoName(dir?: string): string {
+    if (!dir) return ''
+    const parts = dir.replace(/\/+$/, '').split('/')
+    return parts[parts.length - 1] || ''
+  }
+
   function handleClick(e: MouseEvent, id: string) {
     if (onSelect) {
       e.preventDefault()
       onSelect(id)
     }
   }
+
+  function togglePin(e: MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    pinnedSessions.toggle(id)
+  }
+
+  // Most-recent first, then split into pinned / recent groups.
+  $: byRecent = [...$sessionList].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+  $: pinned = byRecent.filter((s) => $pinnedSessions.includes(s.id))
+  $: recent = byRecent.filter((s) => !$pinnedSessions.includes(s.id))
 </script>
 
 <div class="sidebar">
-  {#each $sessionList as s (s.id)}
-    <a
-      href="/{s.id}/"
-      class="session"
-      class:active={activeId === s.id}
-      on:click={(e) => handleClick(e, s.id)}
-    >
-      <div class="row">
-        <span class="agent">
-          {#if isBusy(s.id, $feeds)}<span class="dot" title="working"></span>{/if}
-          {s.agent ?? 'opencode'}
-        </span>
-        <span class="time">
-          {#if s.cost !== undefined && s.cost > 0}<span class="cost">${s.cost.toFixed(2)}</span>{/if}
-          {formatTime(s.lastActiveAt)}
-        </span>
-      </div>
-      {#if s.title}
-        <div class="title">{s.title}</div>
-      {/if}
-    </a>
+  {#each [{ key: 'pinned', label: 'Pinned', rows: pinned }, { key: 'recent', label: pinned.length ? 'Recent' : '', rows: recent }] as group (group.key)}
+    {#if group.rows.length}
+      {#if group.label}<div class="group label">{group.label}</div>{/if}
+      {#each group.rows as s (s.id)}
+        <a
+          href="/{s.id}/"
+          class="session"
+          class:active={activeId === s.id}
+          on:click={(e) => handleClick(e, s.id)}
+        >
+          <div class="line1">
+            <span class="dot" class:busy={isBusy(s.id, $feeds)}></span>
+            <span class="title">{s.title || 'Untitled session'}</span>
+            <button
+              class="pin"
+              class:on={$pinnedSessions.includes(s.id)}
+              title={$pinnedSessions.includes(s.id) ? 'Unpin' : 'Pin'}
+              aria-label="Pin session"
+              on:click={(e) => togglePin(e, s.id)}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={$pinnedSessions.includes(s.id) ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><line x1="12" y1="15" x2="12" y2="21"/></svg>
+            </button>
+          </div>
+          <div class="meta mono">
+            <span class="id">{shortId(s.id)}</span>
+            {#if repoName(s.directory)}<span class="sep">·</span><span class="repo">{repoName(s.directory)}</span>{/if}
+            <span class="sep">·</span><span>{formatTime(s.lastActiveAt)}</span>
+            {#if s.additions || s.deletions}
+              <span class="sep">·</span>
+              {#if s.additions}<span class="add">+{s.additions}</span>{/if}
+              {#if s.deletions}<span class="del">−{s.deletions}</span>{/if}
+            {/if}
+          </div>
+        </a>
+      {/each}
+    {/if}
   {/each}
+  {#if $sessionList.length === 0}
+    <div class="empty label">No sessions</div>
+  {/if}
 </div>
 
 <style>
   .sidebar {
-    width: 240px;
-    border-right: 1px solid #222;
-    background: #0f0f0f;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-panel);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    padding: 6px;
+    gap: 2px;
   }
+  .group { padding: 10px 8px 4px; }
+  .group:first-child { padding-top: 4px; }
   .session {
-    text-align: left;
-    padding: 10px 14px;
-    border: none;
-    border-bottom: 1px solid #1a1a1a;
+    position: relative;
+    display: block;
+    text-decoration: none;
+    padding: 9px 12px 9px 14px;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: #ccc;
     cursor: pointer;
+    transition: background .12s ease;
   }
-  .session:hover, .session.active {
-    background: #1a1a1a;
+  .session:hover { background: var(--bg-elev); }
+  .session.active { background: var(--accent-2); }
+  /* emerald active marker — matches brand + user bubble */
+  .session.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 3px;
+    background: var(--accent);
   }
-  .session.active {
-    border-left: 3px solid #2563eb;
-  }
-  .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .agent {
-    font-weight: 600;
-    font-size: 0.9em;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
+
+  .line1 { display: flex; align-items: center; gap: 7px; }
   .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #22c55e;
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid var(--text-3);
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .dot.busy {
+    border-color: var(--accent);
+    background: var(--accent);
     animation: pulse 1.2s ease-in-out infinite;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-  .time {
-    font-size: 0.75em;
-    color: #888;
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-  }
-  .cost { color: #6b7280; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   .title {
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 2px;
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .session.active .title { color: var(--text); }
+
+  .pin {
+    flex-shrink: 0;
+    display: inline-flex;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity .12s ease, color .12s ease;
+  }
+  .session:hover .pin { opacity: .7; }
+  .pin:hover { color: var(--text); opacity: 1; }
+  .pin.on { opacity: 1; color: var(--accent); }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--text-3);
+    margin: 4px 0 0 14px;
+  }
+  .sep { color: var(--border); }
+  .id { color: var(--text-2); }
+  .repo { color: var(--text-2); }
+  .add { color: var(--ok); }
+  .del { color: var(--err); }
+  .empty { padding: 16px 12px; }
 </style>

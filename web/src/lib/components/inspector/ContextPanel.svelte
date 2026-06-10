@@ -12,11 +12,14 @@
 </script>
 <div class="ctx">
   <div class="label">Context</div>
-  <div class="body">
-    {#if ctx?.model}<span class="mono">{String(ctx.model).split('/').pop()}</span>{/if}
-    ↑{k(tin)} ↓{k(tout)}{#if typeof ctx?.cost === 'number'} · 💰${ctx.cost.toFixed(3)}{/if}
+  {#if ctx?.model}<div class="model mono">{String(ctx.model).split('/').pop()}</div>{/if}
+  <div class="body mono">
+    <span>↑{k(tin)}</span><span>↓{k(tout)}</span>{#if typeof ctx?.cost === 'number'}<span class="cost">${ctx.cost.toFixed(3)}</span>{/if}
   </div>
 </div>
 <style>
-  .ctx { font-size: 11px; } .body { color: var(--text-2); margin-top: 4px; }
+  .ctx { font-size: 11px; }
+  .model { color: var(--text); margin: 6px 0 4px; }
+  .body { color: var(--text-2); display: flex; gap: 12px; }
+  .cost { color: var(--accent); }
 </style>

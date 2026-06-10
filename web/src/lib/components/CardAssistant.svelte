@@ -19,7 +19,7 @@
   $: hasMeta = m.cost !== undefined || m.agent || m.model || m.tokens
 </script>
 
-<div class="assistant">
+<div class="card assistant">
   <ToolCallList {tools} />
   {#if text}<div class="text"><MarkdownView src={text} /></div>{/if}
   {#if hasMeta}
@@ -33,19 +33,21 @@
 </div>
 
 <style>
-  .assistant {
-    border-left: 2px solid var(--border);
-    padding: 2px 0 8px 14px;
-    margin: 2px 0 10px;
+  .card {
+    align-self: stretch;
+    width: 100%;
+    padding: 4px 2px 8px;
+    margin: 6px 0 18px;
   }
-  .text { color: var(--text-2); font-size: 13px; line-height: 1.6; }
+  .text { color: var(--text); font-size: 15px; line-height: 1.7; }
   .meta {
     display: flex;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-3);
-    margin-top: 8px;
+    margin-top: 12px;
+    padding-top: 2px;
   }
 </style>

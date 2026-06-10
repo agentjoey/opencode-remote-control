@@ -39,8 +39,9 @@
 
 <style>
   .wrap { position: relative; }
-  .chip { display: flex; align-items: center; gap: 5px; background: var(--accent-2); border: 1px solid var(--accent); color: #9db4e0; border-radius: var(--radius-sm); padding: 6px 8px; font-size: 11px; white-space: nowrap; cursor: pointer; }
-  .pop { position: absolute; bottom: 42px; left: 0; width: 240px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.55); z-index: 100; }
+  .chip { display: flex; align-items: center; gap: 5px; background: transparent; border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 5px 11px; font-size: 11.5px; white-space: nowrap; cursor: pointer; transition: border-color .15s, color .15s; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .pop { position: absolute; bottom: 44px; left: 0; width: 248px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; box-shadow: 0 16px 40px rgba(0,0,0,.5); z-index: 100; }
   .opt { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: none; color: var(--text); padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
   .opt:hover, .opt.sel { background: var(--accent-2); }
   .clear { color: var(--text-3); margin-top: 4px; }

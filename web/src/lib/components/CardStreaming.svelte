@@ -14,28 +14,32 @@
     .map(b => b.text).join('')
 </script>
 
-<div class="assistant streaming">
+<div class="card streaming">
   <ToolCallList {tools} />
   {#if text}<div class="text"><MarkdownView src={text} throttle /></div>{/if}
   <button class="stop" on:click={() => api.abort(card.sessionId)}>■ stop</button>
 </div>
 
 <style>
-  .assistant {
+  .card {
+    align-self: stretch;
+    width: 100%;
+    padding: 4px 2px 8px;
+    margin: 6px 0 18px;
     border-left: 2px solid var(--accent);
-    padding: 2px 0 8px 14px;
-    margin: 2px 0 10px;
+    padding-left: 14px;
   }
-  .text { color: var(--text-2); font-size: 13px; line-height: 1.6; }
+  .text { color: var(--text); font-size: 15px; line-height: 1.7; }
   .stop {
-    margin-top: 8px;
+    margin-top: 10px;
     background: transparent;
-    border: 1px solid #7f3a3a;
-    color: var(--err);
+    border: 1px solid var(--border);
+    color: var(--text-2);
     border-radius: var(--radius-sm);
-    padding: 2px 8px;
+    padding: 3px 10px;
     font-family: var(--font-mono);
     font-size: 11px;
     cursor: pointer;
   }
+  .stop:hover { border-color: var(--err); color: var(--err); }
 </style>

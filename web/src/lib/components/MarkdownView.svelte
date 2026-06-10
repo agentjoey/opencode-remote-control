@@ -36,10 +36,10 @@
 
 <style>
   .md {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--text-2);
-    line-height: 1.6;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
     word-break: break-word;
   }
   .md :global(pre) {

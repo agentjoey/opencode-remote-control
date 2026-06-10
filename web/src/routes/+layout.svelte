@@ -97,7 +97,7 @@
 
 <div class="app">
   <header class="titlebar">
-    <span class="brand">ocrc</span>
+    <span class="brand">OCRC</span>
     <span class="sep mono">▸ {$page.params.sessionId ? '…' + $page.params.sessionId.slice(-8) : 'no session'}</span>
     <ConnectionBadge />
     {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
@@ -113,12 +113,12 @@
 <CommandPalette bind:open={paletteOpen} />
 
 <style>
-  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  .titlebar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; font-size: 13px; }
-  .brand { font-weight: 700; color: #fff; }
+  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
+  .titlebar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; font-size: 13px; }
+  .brand { font-weight: 800; color: var(--accent); letter-spacing: .08em; font-size: 14px; }
   .sep { color: var(--text-3); }
   .email { margin-left: auto; font-size: 0.8em; color: var(--text-3); }
-  .install { background: var(--accent-2); color: #fff; border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 3px 10px; font-size: 0.8em; cursor: pointer; }
+  .install { background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius-sm); padding: 4px 12px; font-size: 0.8em; font-weight: 600; cursor: pointer; }
   .body { display: flex; flex: 1; overflow: hidden; }
-  main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
 </style>

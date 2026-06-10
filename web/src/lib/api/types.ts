@@ -30,4 +30,7 @@ export interface SessionSummary {
   cost?: number
   lastActiveAt: number
   unread: boolean
+  directory?: string
+  additions?: number
+  deletions?: number
 }

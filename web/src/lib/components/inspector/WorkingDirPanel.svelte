@@ -19,9 +19,12 @@
 <div class="wd">
   <div class="label">Working dir</div>
   {#if dir}<div class="path mono">{short(dir)}</div>{/if}
-  {#if files.length}<div class="files mono">{#each files as f}<div>✏️ {f}</div>{/each}</div>{/if}
+  {#if files.length}<div class="files mono">{#each files as f}<div class="f"><span class="m">M</span>{short(f)}</div>{/each}</div>{/if}
   {#if !dir && files.length === 0}<div class="label">—</div>{/if}
 </div>
 <style>
-  .wd { font-size: 11px; } .path { color: var(--text-2); margin: 3px 0; } .files { color: var(--text-2); }
+  .wd { font-size: 11px; } .path { color: var(--text-2); margin: 4px 0 6px; }
+  .files { color: var(--text-2); display: flex; flex-direction: column; gap: 3px; }
+  .f { display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m { color: var(--warn); flex-shrink: 0; font-weight: 600; }
 </style>
