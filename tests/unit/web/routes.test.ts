@@ -129,6 +129,21 @@ describe('web routes', () => {
     expect(ctx.cost).toBe(0.04)
   })
 
+  it('GET /api/mcp lists configured MCP servers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      mcp: { github: { type: 'remote' }, figma: { type: 'local', enabled: false } },
+    }) }))
+    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const res = await app.request('/api/mcp', undefined, LOOPBACK)
+    expect(res.status).toBe(200)
+    const body = await res.json() as any[]
+    expect(body).toEqual([
+      { name: 'github', type: 'remote', status: 'configured' },
+      { name: 'figma', type: 'local', status: 'disabled' },
+    ])
+    vi.unstubAllGlobals()
+  })
+
   it('POST /api/approval proxies the decision to opencode', async () => {
     const respond = vi.fn().mockResolvedValue({})
     const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any
