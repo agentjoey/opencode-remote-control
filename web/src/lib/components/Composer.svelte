@@ -74,35 +74,46 @@
 
 <style>
   .composer {
-    border-top: 1px solid #222;
-    background: #0a0a0a;
-    padding: 8px 14px 10px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    padding: 12px 16px 18px;
   }
-  .row { display: flex; gap: 8px; align-items: flex-end; }
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    max-width: 880px;
+    margin: 0 auto;
+  }
   .error {
-    color: #f87171;
+    color: var(--err);
     font-size: 0.8em;
-    margin-bottom: 6px;
+    margin: 0 auto 8px;
+    max-width: 880px;
+    font-family: var(--font-mono);
   }
   textarea {
     flex: 1;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 10px 12px;
-    color: #eee;
-    font: inherit;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
     resize: none;
-    min-height: 40px;
+    min-height: 42px;
     max-height: 160px;
     overflow-y: auto;
   }
+  textarea:focus { outline: none; border-color: var(--accent); }
   button {
     align-self: flex-end;
     padding: 10px 18px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     border: none;
-    background: #2563eb;
+    background: var(--accent);
     color: #fff;
     font-weight: 600;
     cursor: pointer;

@@ -44,6 +44,17 @@ describe('session feed store', () => {
     expect(cardsOf(feed('s')).some((c) => c.id === 'a:new')).toBe(true)
   })
 
+  it('stamps an id onto id-less history cards (transcript keys by card.id)', () => {
+    setHistory('s', [
+      { kind: 'assistant', sessionId: 's', blocks: [], meta: {} } as StructuredCard,
+      { kind: 'assistant', sessionId: 's', blocks: [], meta: {} } as StructuredCard,
+    ], 0)
+    const cards = cardsOf(feed('s'))
+    expect(cards).toHaveLength(2)
+    expect(cards.every((c) => typeof c.id === 'string' && c.id)).toBe(true)
+    expect(cards[0].id).not.toBe(cards[1].id)
+  })
+
   it('setHistory replaces the feed and sets lastSeq', () => {
     upsertCard({ kind: 'user', sessionId: 's', text: 'stale', ts: 0, id: 'x', seq: 1 })
     setHistory('s', [{ kind: 'user', sessionId: 's', text: 'h', ts: 0, id: 'h1' } as StructuredCard], 10)

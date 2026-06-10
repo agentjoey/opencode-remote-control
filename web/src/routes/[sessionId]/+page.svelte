@@ -23,9 +23,14 @@
 </script>
 
 <div class="chat" bind:this={scrollEl}>
-  {#each cards as card (card.id)}
-    <Card {card} />
-  {/each}
+  <div class="stream">
+    {#each cards as card (card.id)}
+      <Card {card} />
+    {/each}
+    {#if cards.length === 0}
+      <div class="empty">No messages yet — send one below.</div>
+    {/if}
+  </div>
 </div>
 
 <Composer {sessionId} />
@@ -34,8 +39,17 @@
   .chat {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
+  }
+  .stream {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 16px 24px 24px;
+  }
+  .empty {
+    color: var(--text-3);
+    text-align: center;
+    padding: 48px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
   }
 </style>

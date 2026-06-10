@@ -23,7 +23,7 @@ function fakeState() {
   } as any
 }
 
-function fakeClient() {
+function fakeClient(config: any = {}, providers: any[] = []) {
   return {
     session: {
       list: vi.fn().mockResolvedValue({ data: [
@@ -34,6 +34,10 @@ function fakeClient() {
         { role: 'user', parts: [{ type: 'text', text: 'hi' }], ts: 1 },
       ]}),
       promptAsync: vi.fn().mockResolvedValue({ data: { messageID: 'msg_1' } }),
+    },
+    config: {
+      get: vi.fn().mockResolvedValue({ data: config }),
+      providers: vi.fn().mockResolvedValue({ data: { providers } }),
     },
   } as any
 }
@@ -132,44 +136,34 @@ describe('web routes', () => {
   })
 
   it('GET /api/mcp lists configured MCP servers', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
-      mcp: { github: { type: 'remote' }, figma: { type: 'local', enabled: false } },
-    }) }))
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const client = fakeClient({ mcp: { github: { type: 'remote' }, figma: { type: 'local', enabled: false } } })
+    const app = buildServer(baseOpts(fakeState(), client))
     const res = await app.request('/api/mcp', undefined, LOOPBACK)
     expect(res.status).toBe(200)
-    const body = await res.json() as any[]
-    expect(body).toEqual([
+    expect(await res.json()).toEqual([
       { name: 'github', type: 'remote', status: 'configured' },
       { name: 'figma', type: 'local', status: 'disabled' },
     ])
-    vi.unstubAllGlobals()
   })
 
   it('GET /api/agents returns configured agents (name, model, description)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
-      agent: { build: { model: 'kimi/k2p6', description: 'code' }, plan: { model: 'google/g3' } },
-    }) }))
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const client = fakeClient({ agent: { build: { model: 'kimi/k2p6', description: 'code' }, plan: { model: 'google/g3' } } })
+    const app = buildServer(baseOpts(fakeState(), client))
     const res = await app.request('/api/agents', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
     expect(body).toContainEqual({ name: 'build', model: 'kimi/k2p6', description: 'code' })
     expect(body).toContainEqual({ name: 'plan', model: 'google/g3', description: '' })
-    vi.unstubAllGlobals()
   })
 
   it('GET /api/models returns providers with their models', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
-      providers: [{ id: 'kimi', name: 'Kimi', models: { k2p6: { name: 'K2 P6' } } }],
-    }) }))
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const client = fakeClient({}, [{ id: 'kimi', name: 'Kimi', models: { k2p6: { name: 'K2 P6' } } }])
+    const app = buildServer(baseOpts(fakeState(), client))
     const res = await app.request('/api/models', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
     expect(body[0]).toMatchObject({ id: 'kimi', name: 'Kimi' })
     expect(body[0].models).toContainEqual({ id: 'k2p6', name: 'K2 P6' })
-    vi.unstubAllGlobals()
   })
 
   it('GET /api/overrides returns current next agent/model', async () => {

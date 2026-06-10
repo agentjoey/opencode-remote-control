@@ -1,20 +1,20 @@
 import type { Hono } from 'hono'
-import { fetchOpencodeConfig } from '../opencode-config.js'
+import type { OpencodeClient } from '@opencode-ai/sdk'
 
-export function registerCatalog(app: Hono, baseUrl: string) {
+export function registerCatalog(app: Hono, client: OpencodeClient) {
   app.get('/api/agents', async (c) => {
-    const cfg = await fetchOpencodeConfig(baseUrl, '/config')
-    const agents = (cfg?.agent ?? {}) as Record<string, { model?: string; description?: string }>
+    let agents: Record<string, { model?: string; description?: string }> = {}
+    try { agents = (((await client.config.get()).data as any)?.agent ?? {}) } catch { /* empty */ }
     return c.json(
       Object.entries(agents)
-        .filter(([, v]) => typeof v.model === 'string')
-        .map(([name, v]) => ({ name, model: v.model as string, description: v.description ?? '' })),
+        .filter(([, v]) => typeof v?.model === 'string')
+        .map(([name, v]) => ({ name, model: v!.model as string, description: v?.description ?? '' })),
     )
   })
 
   app.get('/api/models', async (c) => {
-    const cfg = await fetchOpencodeConfig(baseUrl, '/config/providers')
-    const providers = (cfg?.providers ?? []) as Array<{ id: string; name: string; models: Record<string, { name?: string }> }>
+    let providers: Array<{ id: string; name: string; models: Record<string, { name?: string }> }> = []
+    try { providers = (((await client.config.providers()).data as any)?.providers ?? []) } catch { /* empty */ }
     return c.json(
       providers.map((p) => ({
         id: p.id,

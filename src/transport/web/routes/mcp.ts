@@ -1,14 +1,15 @@
 import type { Hono } from 'hono'
-import { fetchOpencodeConfig } from '../opencode-config.js'
+import type { OpencodeClient } from '@opencode-ai/sdk'
 
 export interface McpServer { name: string; type?: string; status: 'configured' | 'disabled' }
 
-export function registerMcp(app: Hono, baseUrl: string) {
-  // opencode's SDK exposes no MCP API, so read the raw /config 'mcp' section.
-  // This reflects *configured* servers; live connection status is not available.
+export function registerMcp(app: Hono, client: OpencodeClient) {
+  // Read MCP servers from the in-process SDK config (the opencode HTTP server is
+  // not separately reachable). Reflects *configured* servers; live connection
+  // status is not exposed.
   app.get('/api/mcp', async (c) => {
-    const cfg = await fetchOpencodeConfig(baseUrl, '/config')
-    const mcp = (cfg?.mcp ?? {}) as Record<string, { type?: string; enabled?: boolean }>
+    let mcp: Record<string, { type?: string; enabled?: boolean }> = {}
+    try { mcp = (((await client.config.get()).data as any)?.mcp ?? {}) } catch { /* empty */ }
     const out: McpServer[] = Object.entries(mcp).map(([name, v]) => ({
       name,
       type: v?.type,

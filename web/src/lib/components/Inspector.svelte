@@ -22,7 +22,7 @@
 <aside class="inspector">
   <div class="head">
     <div class="label">Session</div>
-    <div class="name">{title ?? (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</div>
+    <div class="name" title={title ?? sessionId}>{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</div>
   </div>
   <TaskPanel {sessionId} {tick} />
   <div class="fixed">
@@ -35,9 +35,17 @@
 </aside>
 
 <style>
-  .inspector { width: 252px; display: flex; flex-direction: column; background: var(--bg-panel); border-left: 1px solid var(--border-2); }
-  .head { padding: 9px 12px; border-bottom: 1px solid var(--border-2); }
-  .name { font-weight: 600; }
-  .fixed { border-top: 1px solid var(--border-2); padding: 10px 12px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
+  .inspector { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg-panel); border-left: 1px solid var(--border-2); }
+  .head { padding: 11px 14px; border-bottom: 1px solid var(--border-2); }
+  .name {
+    margin-top: 3px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fixed { border-top: 1px solid var(--border-2); padding: 12px 14px 18px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
   .div { border-top: 1px solid var(--border-2); }
 </style>

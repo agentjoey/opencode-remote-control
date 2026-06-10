@@ -15,39 +15,37 @@
   function fmtK(n: number): string {
     return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
   }
+  $: m = card.meta
+  $: hasMeta = m.cost !== undefined || m.agent || m.model || m.tokens
 </script>
 
-<div class="card assistant">
+<div class="assistant">
   <ToolCallList {tools} />
-  <MarkdownView src={text} />
-  {#if card.meta.cost !== undefined}
+  {#if text}<div class="text"><MarkdownView src={text} /></div>{/if}
+  {#if hasMeta}
     <div class="meta">
-      💰 ${card.meta.cost.toFixed(3)}
-      {#if card.meta.tokens}
-        ↑{fmtK(card.meta.tokens.input)} ↓{fmtK(card.meta.tokens.output)}
-      {/if}
-      {card.meta.agent ?? ''}
-      {card.meta.model ?? ''}
+      {#if m.agent}<span>{m.agent}</span>{/if}
+      {#if m.model}<span>{m.model}</span>{/if}
+      {#if m.tokens}<span>↑{fmtK(m.tokens.input)} ↓{fmtK(m.tokens.output)}</span>{/if}
+      {#if m.cost !== undefined}<span>${m.cost.toFixed(3)}</span>{/if}
     </div>
   {/if}
 </div>
 
 <style>
-  .card {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    margin: 6px 0;
-    line-height: 1.4;
-    background: #1f1f1f;
-    color: #ccc;
-    align-self: flex-start;
+  .assistant {
+    border-left: 2px solid var(--border);
+    padding: 2px 0 8px 14px;
+    margin: 2px 0 10px;
   }
+  .text { color: var(--text-2); font-size: 13px; line-height: 1.6; }
   .meta {
-    font-size: 0.8em;
-    color: #888;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
     margin-top: 8px;
-    border-top: 1px solid #333;
-    padding-top: 6px;
   }
 </style>

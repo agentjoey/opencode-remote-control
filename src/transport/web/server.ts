@@ -68,8 +68,8 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerApproval(app, opts.client)
   registerVersion(app)
   registerLogs(app)
-  registerMcp(app, opts.baseUrl)
-  registerCatalog(app, opts.baseUrl)
+  registerMcp(app, opts.client)
+  registerCatalog(app, opts.client)
   registerOverrides(app, opts.state)
   return app
 }

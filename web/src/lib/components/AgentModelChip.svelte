@@ -22,13 +22,14 @@
 </script>
 
 <div class="wrap">
-  <button class="chip mono" on:click={() => (open = !open)}>⚙ {label} ▾</button>
+  <button class="chip mono" on:click={() => { open = !open; if (open) refresh() }}>⚙ {label} ▾</button>
   {#if open}
     <div class="pop">
       <div class="label">Agent</div>
+      {#if agents.length === 0}<div class="none label">no agents configured</div>{/if}
       {#each agents as a}
         <button class="opt" class:sel={a.name === current.agent} on:click={() => pick(a)}>
-          {a.name} <span class="label mono">{a.model.split('/').pop()}</span>
+          <span>{a.name}</span> <span class="label mono">{a.model.split('/').pop()}</span>
         </button>
       {/each}
       <button class="opt clear" on:click={clear}>✕ clear override</button>
@@ -39,8 +40,9 @@
 <style>
   .wrap { position: relative; }
   .chip { display: flex; align-items: center; gap: 5px; background: var(--accent-2); border: 1px solid var(--accent); color: #9db4e0; border-radius: var(--radius-sm); padding: 6px 8px; font-size: 11px; white-space: nowrap; cursor: pointer; }
-  .pop { position: absolute; bottom: 38px; left: 0; width: 220px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.5); z-index: 50; }
-  .opt { display: flex; justify-content: space-between; width: 100%; background: transparent; border: none; color: var(--text); padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
+  .pop { position: absolute; bottom: 42px; left: 0; width: 240px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.55); z-index: 100; }
+  .opt { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: none; color: var(--text); padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
   .opt:hover, .opt.sel { background: var(--accent-2); }
   .clear { color: var(--text-3); margin-top: 4px; }
+  .none { padding: 6px 8px; }
 </style>

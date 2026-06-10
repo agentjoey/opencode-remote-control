@@ -45,9 +45,10 @@ export function upsertCard(card: StructuredCard) {
     if (card.seq != null && card.seq <= feed.lastSeq && !(id in feed.byId)) return map
     if (card.seq != null) feed.lastSeq = Math.max(feed.lastSeq, card.seq)
 
+    const stamped = card.id ? card : { ...card, id } as StructuredCard
     if (id in feed.byId) {
       // upsert in place — streaming → final assistant, same turn id
-      feed.byId = { ...feed.byId, [id]: card }
+      feed.byId = { ...feed.byId, [id]: stamped }
     } else {
       let order = feed.order
       let byId = feed.byId
@@ -60,7 +61,7 @@ export function upsertCard(card: StructuredCard) {
         })
       }
       feed.order = [...order, id]
-      feed.byId = { ...byId, [id]: card }
+      feed.byId = { ...byId, [id]: stamped }
     }
     return { ...map, [sid]: feed }
   })
@@ -74,7 +75,10 @@ export function setHistory(sessionId: string, cards: StructuredCard[], lastSeq =
     cards.forEach((c, i) => {
       const id = cardId(c, i)
       feed.order.push(id)
-      feed.byId[id] = c
+      // Stamp the id onto the card: reconstructed history cards have no id, and
+      // the transcript keys `{#each … (card.id)}`, so an id-less card would key
+      // to undefined and collide with every other card → nothing renders.
+      feed.byId[id] = c.id ? c : { ...c, id } as StructuredCard
     })
     return { ...map, [sessionId]: feed }
   })
