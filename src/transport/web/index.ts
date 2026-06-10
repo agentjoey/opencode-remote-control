@@ -92,7 +92,7 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
         // Auth: CF Access JWT from the cookie / header / query (PWA path).
         const user = await verifyUpgradeJwt(
           { headers: req.headers, url: req.url, socket: req.socket },
-          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail },
+          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail, host: cfg.host },
         )
         if (!user) {
           log.warn(`ws upgrade rejected: JWT verify failed (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr})`)

@@ -6,6 +6,19 @@
   export let activeId: string | undefined = undefined
   let expanded = false
   let cleaning = false
+  let refreshing = false
+
+  async function refresh() {
+    if (refreshing) return
+    refreshing = true
+    try {
+      sessionList.set(await api.sessions())
+    } catch (e) {
+      alert(`刷新失败：${(e as Error).message}`)
+    } finally {
+      refreshing = false
+    }
+  }
 
   async function cleanupSubagents() {
     if (cleaning) return
@@ -34,10 +47,15 @@
     <div class="panel">
       <div class="phead">
         <span class="label">Sessions</span>
-        <button class="clean" title="清理 subagent 子会话" disabled={cleaning} on:click={cleanupSubagents}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          {cleaning ? '…' : 'subagents'}
-        </button>
+        <span class="pacts">
+          <button class="picon" title="刷新会话列表" disabled={refreshing} on:click={refresh}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class:spin={refreshing}><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+          <button class="clean" title="清理 subagent 子会话" disabled={cleaning} on:click={cleanupSubagents}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            {cleaning ? '…' : 'subagents'}
+          </button>
+        </span>
       </div>
       <div class="list"><SessionList {activeId} /></div>
     </div>

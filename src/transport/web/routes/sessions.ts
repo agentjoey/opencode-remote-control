@@ -14,4 +14,15 @@ export function registerSessions(app: Hono, client: OpencodeClient, state: Sessi
     const deleted = await cleanupSubagentSessions(client)
     return c.json({ deleted })
   })
+
+  // Destructive, user-triggered: delete a single session by id.
+  app.post('/api/sessions/:id/delete', async (c) => {
+    const id = c.req.param('id')
+    try {
+      await client.session.delete({ path: { id } })
+      return c.json({ ok: true })
+    } catch (e) {
+      return c.json({ ok: false, error: (e as Error).message }, 500)
+    }
+  })
 }

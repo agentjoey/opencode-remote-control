@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { goto } from '$app/navigation'
   import { sessionList, feeds } from '../stores/sessions.js'
   import { pinnedSessions } from '../stores/pins.js'
+  import { api } from '../api/client.js'
   import type { SessionSummary } from '../api/types.js'
 
   // PWA passes activeId from $page.params and relies on <a href> for routing.
@@ -52,6 +54,24 @@
     pinnedSessions.toggle(id)
   }
 
+  let deleting: string | null = null
+  async function deleteSession(e: MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (deleting) return
+    if (!confirm('删除该会话？此操作不可逆。')) return
+    deleting = id
+    try {
+      await api.deleteSession(id)
+      sessionList.set(await api.sessions())
+      if (activeId === id) goto('/')
+    } catch (err) {
+      alert(`删除失败：${(err as Error).message}`)
+    } finally {
+      deleting = null
+    }
+  }
+
   // Most-recent first, then split into pinned / recent groups.
   $: byRecent = [...$sessionList].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
   $: pinned = byRecent.filter((s) => $pinnedSessions.includes(s.id))
@@ -72,15 +92,26 @@
           <div class="line1">
             <span class="dot" class:busy={isBusy(s.id, $feeds)}></span>
             <span class="title">{s.title || 'Untitled session'}</span>
-            <button
-              class="pin"
-              class:on={$pinnedSessions.includes(s.id)}
-              title={$pinnedSessions.includes(s.id) ? 'Unpin' : 'Pin'}
-              aria-label="Pin session"
-              on:click={(e) => togglePin(e, s.id)}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={$pinnedSessions.includes(s.id) ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><line x1="12" y1="15" x2="12" y2="21"/></svg>
-            </button>
+            <span class="actions">
+              <button
+                class="act pin"
+                class:on={$pinnedSessions.includes(s.id)}
+                title={$pinnedSessions.includes(s.id) ? 'Unpin' : 'Pin'}
+                aria-label="Pin session"
+                on:click={(e) => togglePin(e, s.id)}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill={$pinnedSessions.includes(s.id) ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><line x1="12" y1="15" x2="12" y2="21"/></svg>
+              </button>
+              <button
+                class="act trash"
+                title="删除会话"
+                aria-label="Delete session"
+                disabled={deleting === s.id}
+                on:click={(e) => deleteSession(e, s.id)}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </span>
           </div>
           <div class="meta mono">
             <span class="id">{shortId(s.id)}</span>
@@ -159,8 +190,8 @@
   }
   .session.active .title { color: var(--text); }
 
-  .pin {
-    flex-shrink: 0;
+  .actions { display: inline-flex; gap: 1px; flex-shrink: 0; }
+  .act {
     display: inline-flex;
     background: transparent;
     border: none;
@@ -170,9 +201,12 @@
     opacity: 0;
     transition: opacity .12s ease, color .12s ease;
   }
-  .session:hover .pin { opacity: .7; }
-  .pin:hover { color: var(--text); opacity: 1; }
-  .pin.on { opacity: 1; color: var(--accent); }
+  .session:hover .act { opacity: .65; }
+  .act:hover { opacity: 1; }
+  .act.pin:hover { color: var(--text); }
+  .act.pin.on { opacity: 1; color: var(--accent); }
+  .act.trash:hover { color: var(--err); }
+  .act:disabled { opacity: .4; cursor: default; }
 
   .meta {
     display: flex;
