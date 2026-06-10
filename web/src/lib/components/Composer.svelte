@@ -5,8 +5,6 @@
   import AgentModelChip from './AgentModelChip.svelte'
 
   export let sessionId: string
-  /** Send on plain Enter (Shift+Enter = newline). Ctrl/Cmd+Enter always sends. */
-  export let enterToSend = true
 
   let text = ''
   let sending = false
@@ -42,8 +40,8 @@
   }
 
   function onKeydown(e: KeyboardEvent) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); return }
-    if (enterToSend && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+    // Send only on Cmd/Ctrl+Enter; plain Enter inserts a newline.
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send() }
   }
 
   function autoGrow() {
@@ -66,7 +64,7 @@
         on:input={autoGrow}
         on:focus={() => (focused = true)}
         on:blur={() => (focused = false)}
-        placeholder={$connection === 'connected' ? 'Message opencode…' : 'Disconnected…'}
+        placeholder={$connection === 'connected' ? 'Message opencode…  (⌘/Ctrl+Enter 发送)' : 'Disconnected…'}
         rows={1}
       ></textarea>
       <div class="controls">

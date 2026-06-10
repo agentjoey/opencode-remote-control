@@ -34,6 +34,7 @@ function fakeClient(config: any = {}, providers: any[] = []) {
         { role: 'user', parts: [{ type: 'text', text: 'hi' }], ts: 1 },
       ]}),
       promptAsync: vi.fn().mockResolvedValue({ data: { messageID: 'msg_1' } }),
+      abort: vi.fn().mockResolvedValue({ data: true }),
     },
     config: {
       get: vi.fn().mockResolvedValue({ data: config }),
@@ -88,11 +89,12 @@ describe('web routes', () => {
     expect(messageHandler).toHaveBeenCalled()
   })
 
-  it('POST /api/abort triggers the active controller', async () => {
+  it('POST /api/abort aborts locally AND tells opencode to stop generating', async () => {
     const state = fakeState()
     const ac = { abort: vi.fn() }
     state.getActiveAbort = () => ac as any
-    const app = buildServer(baseOpts(state, fakeClient()))
+    const client = fakeClient()
+    const app = buildServer(baseOpts(state, client))
     const res = await app.request('/api/abort', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -100,6 +102,7 @@ describe('web routes', () => {
     }, LOOPBACK)
     expect(res.status).toBe(200)
     expect(ac.abort).toHaveBeenCalled()
+    expect(client.session.abort).toHaveBeenCalledWith({ path: { id: 'ses_a' } })
   })
 
   it('GET /api/session/:id/diff passes through to opencode', async () => {

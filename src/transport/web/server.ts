@@ -61,7 +61,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerSessions(app, opts.client, opts.state)
   registerSession(app, opts.client, opts.cardBus)
   if (opts.onMessage) registerMessage(app, opts.onMessage)
-  registerAbort(app, opts.state)
+  registerAbort(app, opts.client, opts.state)
   registerDiff(app, opts.client)
   registerTodo(app, opts.client)
   registerContext(app, opts.client, opts.state)
