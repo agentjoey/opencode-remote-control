@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '$lib/theme.css'
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
@@ -121,12 +122,6 @@
 </div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    background: #0a0a0a;
-    color: #eee;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
   .app {
     display: flex;
     flex-direction: column;
