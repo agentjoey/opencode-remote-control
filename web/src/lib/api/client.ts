@@ -6,21 +6,8 @@ export function setBaseUrl(url: string) {
   base = url.replace(/\/$/, '')
 }
 
-// Pluggable auth header injector. PWA: no-op (relies on the CF Access cookie).
-// Extension (B5/A): injects CF-Access-Client-Id/Secret service-token headers so
-// cross-origin REST is accepted at the Cloudflare edge without an interactive
-// login.
-let authHeaders: () => Record<string, string> = () => ({})
-
-export function setAuthHeaders(fn: () => Record<string, string>) {
-  authHeaders = fn
-}
-
 async function jsonGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${base}${path}`, {
-    credentials: 'include',
-    headers: { ...authHeaders() },
-  })
+  const res = await fetch(`${base}${path}`, { credentials: 'include' })
   if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
   return res.json()
 }
@@ -28,7 +15,7 @@ async function jsonGet<T>(path: string): Promise<T> {
 async function jsonPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...authHeaders() },
+    headers: { 'content-type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(body),
   })
@@ -38,7 +25,6 @@ async function jsonPost<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   me: () => jsonGet<{ email: string }>('/api/me'),
-  wsTicket: () => jsonGet<{ ticket: string }>('/api/ws-ticket'),
   sessions: () => jsonGet<SessionSummary[]>('/api/sessions'),
   history: (id: string) => jsonGet<{ cards: StructuredCard[]; lastSeq: number }>(`/api/session/${id}`),
   diff: (id: string) => jsonGet<any[]>(`/api/session/${id}/diff`),
