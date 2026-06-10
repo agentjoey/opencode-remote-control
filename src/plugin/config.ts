@@ -32,6 +32,16 @@ function loadDotEnv(): void {
   if (process.env.OPENCODE_CONFIG_DIR) {
     dotenvConfig({ path: resolve(process.env.OPENCODE_CONFIG_DIR, '.env'), override: false })
   }
+  // Finally, the plugin's own install directory — works regardless of cwd, so
+  // opencode launched from ANY folder still finds our .env. This module is at
+  // <repo>/dist/plugin/config.js (or src/plugin/config.ts in dev), so the repo
+  // root (where .env lives) is two levels up.
+  try {
+    const here = dirname(fileURLToPath(import.meta.url))
+    dotenvConfig({ path: resolve(here, '..', '..', '.env'), override: false })
+  } catch {
+    /* import.meta.url unavailable — other sources already attempted */
+  }
 }
 
 function env(key: string, optionsVal?: string): string | undefined {
