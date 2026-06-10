@@ -1,4 +1,5 @@
 import type { StructuredCard, SessionSummary } from './types.js'
+import { handleAuthFailure, clearAuthReloadFlag } from '../auth-reload.js'
 
 let base = ''
 
@@ -8,7 +9,9 @@ export function setBaseUrl(url: string) {
 
 async function jsonGet<T>(path: string): Promise<T> {
   const res = await fetch(`${base}${path}`, { credentials: 'include' })
+  if (res.status === 401) { handleAuthFailure(); throw new Error(`GET ${path} 401`) }
   if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
+  clearAuthReloadFlag()
   return res.json()
 }
 
@@ -19,7 +22,9 @@ async function jsonPost<T>(path: string, body: unknown): Promise<T> {
     credentials: 'include',
     body: JSON.stringify(body),
   })
+  if (res.status === 401) { handleAuthFailure(); throw new Error(`POST ${path} 401`) }
   if (!res.ok) throw new Error(`POST ${path} ${res.status}`)
+  clearAuthReloadFlag()
   return res.json()
 }
 
