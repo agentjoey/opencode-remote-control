@@ -16,6 +16,22 @@ function isLoopbackAddr(addr?: string): boolean {
   return clean === '127.0.0.1' || clean === '::1'
 }
 
+/**
+ * Whether dev bypass should grant access for this request.
+ *
+ * When the real peer address is known, ONLY a loopback peer qualifies — a
+ * remote peer must never be bypassed just because the server binds to loopback,
+ * otherwise host-header spoofing behind a tunnel (peer is 127.0.0.1 but the
+ * real client is remote) would defeat CF Access. Only when the peer address is
+ * unavailable (Bun/Nitropack, where raw socket info isn't exposed) do we fall
+ * back to opts.host.
+ */
+function devBypassAllowed(peer: string | undefined, opts: CfAccessOpts): boolean {
+  if (!opts.devBypass) return false
+  const peerKnown = peer !== undefined && peer !== ''
+  return peerKnown ? isLoopbackAddr(peer) : isLoopbackAddr(opts.host)
+}
+
 function remoteAddr(c: any): string | undefined {
   try {
     // Hono on Node.js / Bun: use raw request socket
@@ -45,9 +61,7 @@ export async function verifyUpgradeJwt(
   req: { headers: Record<string, string | string[] | undefined>; url?: string; socket?: { remoteAddress?: string } },
   opts: CfAccessOpts,
 ): Promise<{ email: string; sub: string } | null> {
-  // Bypass when peer is loopback or host is loopback (dev mode)
-  const isLoop = isLoopbackAddr(req.socket?.remoteAddress) || isLoopbackAddr(opts.host)
-  if (opts.devBypass && isLoop) {
+  if (devBypassAllowed(req.socket?.remoteAddress, opts)) {
     return { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' }
   }
   const query = req.url ? req.url.split('?')[1] : undefined
@@ -71,9 +85,7 @@ export function cfAccessMiddleware(opts: CfAccessOpts): MiddlewareHandler {
   const jwks = createRemoteJWKSet(new URL(jwksUri))
 
   return async (c, next) => {
-    // Dev bypass — check socket peer first, then opts.host as fallback
-    const isLoop = isLoopbackAddr(remoteAddr(c)) || isLoopbackAddr(opts.host)
-    if (opts.devBypass && isLoop) {
+    if (devBypassAllowed(remoteAddr(c), opts)) {
       c.set('user', { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' })
       return next()
     }
