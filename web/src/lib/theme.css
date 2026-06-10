@@ -1,0 +1,24 @@
+/* src/lib/theme.css — dark-IDE design tokens (spec § Style B) */
+:root {
+  --bg:        #0a0a0a;
+  --bg-panel:  #0c0c0c;
+  --bg-elev:   #141414;
+  --bg-input:  #1a1a1a;
+  --border:    #1f1f1f;
+  --border-2:  #1c1c1c;
+  --text:      #e5e7eb;
+  --text-2:    #9ca3af;
+  --text-3:    #6b7280;
+  --accent:    #2563eb;
+  --accent-2:  #1e3a8a;
+  --ok:        #22c55e;
+  --warn:      #fbbf24;
+  --err:       #f87171;
+  --radius:    10px;
+  --radius-sm: 8px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+}
+:global(body) { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
+.label { text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-size: 10px; }
+.mono { font-family: var(--font-mono); }
