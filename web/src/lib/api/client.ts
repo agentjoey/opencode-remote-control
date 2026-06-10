@@ -34,7 +34,13 @@ export const api = {
   history: (id: string) => jsonGet<{ cards: StructuredCard[]; lastSeq: number }>(`/api/session/${id}`),
   diff: (id: string) => jsonGet<any[]>(`/api/session/${id}/diff`),
   todo: (id: string) => jsonGet<any[]>(`/api/session/${id}/todo`),
-  context: (id: string) => jsonGet<{ sessionId: string; agent?: string; model?: string; tokens?: any; cost?: number; nextAgent?: string; nextModel?: any }>(`/api/session/${id}/context`),
+  context: (id: string) => jsonGet<{ sessionId: string; agent?: string; model?: string; tokens?: any; cost?: number; directory?: string; nextAgent?: string; nextModel?: any }>(`/api/session/${id}/context`),
+  mcp: () => jsonGet<Array<{ name: string; type?: string; status: 'configured' | 'disabled' }>>('/api/mcp'),
+  agents: () => jsonGet<Array<{ name: string; model: string; description: string }>>('/api/agents'),
+  models: () => jsonGet<Array<{ id: string; name: string; models: Array<{ id: string; name: string }> }>>('/api/models'),
+  getOverrides: () => jsonGet<{ agent: string | null; model: { providerID: string; modelID: string } | null }>('/api/overrides'),
+  setOverrides: (body: { agent?: string | null; model?: { providerID: string; modelID: string } | null }) =>
+    jsonPost<{ ok: boolean }>('/api/overrides', body),
   sendMessage: (body: { sessionId?: string; text: string; clientId?: string }) => jsonPost<{ messageId: string }>('/api/message', body),
   abort: (sessionId: string) => jsonPost<{ ok: boolean }>('/api/abort', { sessionId }),
   approve: (sessionId: string, requestId: string, decision: 'once' | 'always' | 'reject') =>
