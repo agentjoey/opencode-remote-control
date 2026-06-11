@@ -15,4 +15,16 @@ describe('GET /api/workspaces', () => {
     const body = await res.json() as any[]
     expect(body.some((w) => w.directory === '/Users/x/repo' && w.name === 'repo')).toBe(true)
   })
+
+  it('still returns 200 when project.list fails (best-effort)', async () => {
+    const client = {
+      project: { list: async () => { throw new Error('boom') } },
+      session: { list: async () => ({ data: [] }) },
+    } as any
+    const app = new Hono()
+    registerWorkspaces(app, client)
+    const res = await app.request('/api/workspaces')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([])
+  })
 })
