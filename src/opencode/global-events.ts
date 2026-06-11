@@ -38,9 +38,21 @@ export function startGlobalEvents(opts: GlobalEventsOptions): GlobalEventsHandle
         attempt = 0
         log.info('global event stream connected')
         const stream = res.stream as AsyncIterable<{ directory?: string; payload: OcEvent }>
+        // Note: stop() sets `stopped` but cannot interrupt a for-await that is
+        // blocked awaiting the next item — the flag is only checked between
+        // items. We deliberately don't force-close the generator via
+        // stream.return?.() (would need manual iteration); the SSE connection is
+        // released when the server ends it or on the next reconnect. Acceptable
+        // for opencode's event stream, which delivers events steadily.
         for await (const item of stream) {
           if (stopped) break
-          if (item?.payload) opts.onEvent(item.payload, item.directory)
+          if (item?.payload) {
+            try {
+              opts.onEvent(item.payload, item.directory)
+            } catch (err) {
+              log.warn(`onEvent threw (ignored): ${(err as Error).message}`)
+            }
+          }
         }
         if (stopped) break
         log.warn('global event stream ended, reconnecting')
