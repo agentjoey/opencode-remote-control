@@ -45,6 +45,14 @@ vi.mock('../../src/transport/web/index.js', () => ({
   createWebTransport: vi.fn(),
 }))
 
+vi.mock('../../src/opencode/global-events.js', () => ({
+  startGlobalEvents: vi.fn(),
+}))
+
+vi.mock('../../src/core/primary-election.js', () => ({
+  tryBecomePrimary: vi.fn().mockReturnValue({ isPrimary: true, release: vi.fn() }),
+}))
+
 vi.mock('../../src/utils/logger.js', () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
 }))
@@ -54,6 +62,7 @@ import { createRelay } from '../../src/core/relay.js'
 import { createCardBus } from '../../src/core/card-bus.js'
 import { startPushNotifications } from '../../src/core/push.js'
 import { createTelegramTransport } from '../../src/transport/telegram/index.js'
+import { startGlobalEvents } from '../../src/opencode/global-events.js'
 import { remoteControlPlugin } from '../../src/plugin/entry.js'
 
 function fakeCardBus() {
@@ -63,6 +72,7 @@ function fakeCardBus() {
     subscribeAll: vi.fn((fn) => { subs.push(fn); return () => {} }),
     subscribe: vi.fn(() => () => {}),
     recent: vi.fn().mockReturnValue([]),
+    drop: vi.fn(),
     _subs: subs,
   }
 }
@@ -108,6 +118,18 @@ describe('remoteControlPlugin', () => {
   let push: { handleEvent: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; stats: ReturnType<typeof vi.fn> }
   let ctx: any
   let plug: Awaited<ReturnType<typeof remoteControlPlugin>>
+  let globalStop: ReturnType<typeof vi.fn>
+  // Captured onEvent callback from startGlobalEvents — drives dispatch in tests.
+  let onEvent: (ev: any, directory?: string | undefined) => void
+  // Emit an unwrapped OcEvent payload through the global stream (matching how
+  // opencode's cross-workspace stream delivers events to the PRIMARY). The
+  // plugin's onEvent fires dispatchEvent as a detached promise (`void`), so we
+  // flush the microtask queue a few times to let its awaits settle before the
+  // test asserts.
+  const emit = async (ev: any) => {
+    onEvent(ev, undefined)
+    await new Promise((resolve) => setImmediate(resolve))
+  }
 
   beforeEach(async () => {
     cardBus = fakeCardBus()
@@ -126,6 +148,13 @@ describe('remoteControlPlugin', () => {
     ;(createRelay as any).mockReturnValue(relay)
     ;(createTelegramTransport as any).mockReturnValue(tgTransport)
     ;(startPushNotifications as any).mockReturnValue(push)
+
+    globalStop = vi.fn()
+    onEvent = () => {}
+    ;(startGlobalEvents as any).mockImplementation((opts: any) => {
+      onEvent = opts.onEvent
+      return { stop: globalStop }
+    })
 
     ctx = {
       client: {
@@ -164,72 +193,86 @@ describe('remoteControlPlugin', () => {
   // ── Event routing ──
 
   it('routes session.idle to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'session.idle', properties: { sessionID: 'ses_a' } } })
+    await emit({ type: 'session.idle', properties: { sessionID: 'ses_a' } })
     expect(relay.handleEvent).toHaveBeenCalled()
     expect(push.handleEvent).toHaveBeenCalled()
   })
 
   it('routes message.part.updated to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'message.part.updated', properties: { part: { text: 'ok' } } } })
+    await emit({ type: 'message.part.updated', properties: { part: { text: 'ok' } } })
     expect(relay.handleEvent).toHaveBeenCalled()
     expect(push.handleEvent).toHaveBeenCalled()
   })
 
   it('routes message.part.delta to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'message.part.delta', properties: {} } })
+    await emit({ type: 'message.part.delta', properties: {} })
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes session.error to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'session.error', properties: { error: { message: 'oops' } } } })
+    await emit({ type: 'session.error', properties: { error: { message: 'oops' } } })
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes session.created to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'session.created', properties: {} } })
+    await emit({ type: 'session.created', properties: {} })
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes command.executed to relay.handleEvent', async () => {
-    await plug.event({ event: { type: 'command.executed', properties: {} } })
+    await emit({ type: 'command.executed', properties: {} })
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   // ── tui.session.select ──
 
   it('updates state on tui.session.select', async () => {
-    await plug.event({ event: { type: 'tui.session.select', properties: { sessionID: 'ses_tui_001' } } })
+    await emit({ type: 'tui.session.select', properties: { sessionID: 'ses_tui_001' } })
     expect(state.setTuiSelectedSession).toHaveBeenCalledWith('ses_tui_001')
   })
 
   it('ignores tui.session.select without sessionID', async () => {
-    await plug.event({ event: { type: 'tui.session.select', properties: {} } })
+    await emit({ type: 'tui.session.select', properties: {} })
     expect(state.setTuiSelectedSession).not.toHaveBeenCalled()
+  })
+
+  // ── session.deleted ──
+
+  it('evicts session state on session.deleted', async () => {
+    await emit({ type: 'session.deleted', properties: { sessionID: 'ses_gone123' } })
+    expect(cardBus.drop).toHaveBeenCalledWith('ses_gone123')
+    expect(state.dropSession).toHaveBeenCalledWith('ses_gone123')
+  })
+
+  it('ignores session.deleted with no sessionID', async () => {
+    await emit({ type: 'session.deleted', properties: {} })
+    expect(cardBus.drop).not.toHaveBeenCalled()
+    expect(state.dropSession).not.toHaveBeenCalled()
   })
 
   // ── Permission events ──
 
   it('routes permission.asked to tgTransport.handlePluginPermissionEvent', async () => {
-    await plug.event({ event: { type: 'permission.asked', properties: { id: 'p1', sessionID: 'ses' } } })
+    await emit({ type: 'permission.asked', properties: { id: 'p1', sessionID: 'ses' } })
     expect(tgTransport.handlePluginPermissionEvent).toHaveBeenCalled()
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes permission.updated to tgTransport.handlePluginPermissionEvent', async () => {
-    await plug.event({ event: { type: 'permission.updated', properties: { id: 'p2', sessionID: 'ses' } } })
+    await emit({ type: 'permission.updated', properties: { id: 'p2', sessionID: 'ses' } })
     expect(tgTransport.handlePluginPermissionEvent).toHaveBeenCalled()
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes permission.replied to tgTransport.handlePluginPermissionEvent', async () => {
-    await plug.event({ event: { type: 'permission.replied', properties: {} } })
+    await emit({ type: 'permission.replied', properties: {} })
     expect(tgTransport.handlePluginPermissionEvent).toHaveBeenCalled()
   })
 
   // ── Push notification forwarding ──
 
   it('feeds every event to push.handleEvent', async () => {
-    await plug.event({ event: { type: 'session.status', properties: { sessionID: 'ses_a', status: { type: 'busy' } } } })
+    await emit({ type: 'session.status', properties: { sessionID: 'ses_a', status: { type: 'busy' } } })
     expect(push.handleEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'session.status' }),
     )
@@ -249,7 +292,7 @@ describe('remoteControlPlugin', () => {
   // ── Unknown events ──
 
   it('ignores events with no type', async () => {
-    await plug.event({ event: {} })
+    await emit({})
     expect(relay.handleEvent).not.toHaveBeenCalled()
     expect(tgTransport.handlePluginPermissionEvent).not.toHaveBeenCalled()
   })
@@ -258,6 +301,7 @@ describe('remoteControlPlugin', () => {
 
   it('dispose stops transports, clear timer, and stops push', async () => {
     await plug.dispose()
+    expect(globalStop).toHaveBeenCalled()
     expect(tgTransport.stop).toHaveBeenCalled()
     expect(push.stop).toHaveBeenCalled()
   })
