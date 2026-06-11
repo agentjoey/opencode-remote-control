@@ -7,6 +7,7 @@ import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
+import { tryBecomePrimary } from '../core/primary-election.js'
 import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
@@ -38,6 +39,19 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
   log.info(`v${VERSION} starting`)
 
   const config = loadPluginConfig(options)
+
+  const primary = tryBecomePrimary()
+  if (!primary.isPrimary) {
+    log.info('PASSIVE instance — web/bot/events owned by another opencode instance; standing down')
+    return {
+      // Minimal inert hooks: do nothing, so this workspace's plugin never
+      // competes for the web port or the Telegram bot. The PRIMARY instance's
+      // global event stream already covers this workspace.
+      event: async () => { /* no-op (PASSIVE) */ },
+      dispose: async () => { primary.release() },
+    }
+  }
+
   log.info(`transport=${config.transport}, web=${config.webEnabled}, port=${config.webPort}, baseUrl=${config.baseUrl}`)
 
   const state = createFileBackedState(config.statePath)
@@ -190,6 +204,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       clearInterval(pollTimer)
       push.stop()
       await Promise.allSettled(transports.map((t) => t.stop()))
+      primary.release()
       log.info('plugin disposed')
     },
   }
