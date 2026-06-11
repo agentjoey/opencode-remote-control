@@ -48,4 +48,12 @@ describe('sanitize', () => {
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="noopener noreferrer"')
   })
+
+  it('renders GFM pipe tables as a real <table> (survives sanitize)', () => {
+    const md = '| File | Change |\n|---|---|\n| a.ts | edit |\n| b.ts | add |'
+    const html = renderMarkdown(md)
+    expect(html).toContain('<table')
+    expect(html).toContain('<th')
+    expect(html).toContain('<td')
+  })
 })

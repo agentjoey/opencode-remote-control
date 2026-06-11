@@ -64,4 +64,28 @@
   .md :global(h1), .md :global(h2), .md :global(h3), .md :global(h4) { margin: 0.7em 0 0.35em; color: var(--text); }
   .md :global(ul), .md :global(ol) { padding-left: 1.4em; margin: 0.4em 0; }
   .md :global(.raw) { color: var(--text-2); }
+
+  /* GFM tables — marked emits real <table>; style it to match the TUI. */
+  .md :global(table) {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.6em 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .md :global(th), .md :global(td) {
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .md :global(thead th), .md :global(table tr:first-child th) {
+    background: var(--bg-elev);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .md :global(tbody tr:nth-child(even) td) { background: var(--bg-input); }
 </style>
