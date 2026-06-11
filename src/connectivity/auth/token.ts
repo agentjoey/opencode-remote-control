@@ -14,7 +14,7 @@ export interface TokenAuthOptions {
   token?: string
   /** Token file path. Default ${OPENCODE_CONFIG_DIR ?? ~/.opencode}/oprc-token. */
   tokenPath?: string
-  /** Identity email for the single user. */
+  /** Identity email for the single user (used for token auth too, not just dev-bypass). */
   devEmail?: string
   /** Bypass auth for a real loopback peer (local dev). */
   devBypass?: boolean
@@ -82,7 +82,7 @@ function extractToken(
   }
   const cookie = headers['cookie']
   if (typeof cookie === 'string') {
-    const m = cookie.match(new RegExp(`${COOKIE}=([^;]+)`))
+    const m = cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE}=([^;]+)`))
     if (m) return decodeURIComponent(m[1])
   }
   return undefined
@@ -100,6 +100,7 @@ export function createTokenAuth(opts: TokenAuthOptions): AuthStrategy {
   return {
     httpMiddleware(): MiddlewareHandler {
       return async (c, next) => {
+        // c.env.incoming is the Node IncomingMessage (set by @hono/node-server); c.req.raw is the web-standard Request. Peer may be undefined under some adapters → bypass() then falls back to host.
         const peer = ((): string | undefined => {
           try {
             return ((c.env as any)?.incoming ?? (c.req as any)?.raw)?.socket?.remoteAddress
@@ -107,20 +108,14 @@ export function createTokenAuth(opts: TokenAuthOptions): AuthStrategy {
             return undefined
           }
         })()
-        if (bypass(peer)) {
-          c.set('user', user)
-          return next()
-        }
-        const candidate =
-          (c.req.header('authorization')?.startsWith('Bearer ')
-            ? c.req.header('authorization')!.slice(7).trim()
-            : undefined) ??
-          c.req.query('token') ??
-          c.req.header('cookie')?.match(new RegExp(`${COOKIE}=([^;]+)`))?.[1]
-        if (tokenMatches(candidate, expected)) {
-          c.set('user', user)
-          return next()
-        }
+        if (bypass(peer)) { c.set('user', user); return next() }
+        const raw = (c.req as any).raw as Request | undefined
+        const rawHeaders: Record<string, string | undefined> = {}
+        try {
+          for (const [k, v] of (raw?.headers ?? new Headers()).entries()) rawHeaders[k] = v
+        } catch { /* ignore */ }
+        const candidate = extractToken(rawHeaders, raw?.url ?? c.req.url)
+        if (tokenMatches(candidate, expected)) { c.set('user', user); return next() }
         return c.json({ error: 'Unauthorized' }, 401)
       }
     },
