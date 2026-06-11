@@ -8,6 +8,7 @@ import { createRelay } from '../core/relay.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
 import { tryBecomePrimary } from '../core/primary-election.js'
+import { startGlobalEvents } from '../opencode/global-events.js'
 import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
@@ -128,60 +129,75 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       }
     }, 15000)
 
-    return {
-      event: async ({ event }) => {
-        const ev = event as unknown as OcEvent
-        const eventType = ev.type
-        if (!eventType) return
+    // Unified event dispatch. Driven by the PRIMARY's cross-workspace global
+    // event stream (startGlobalEvents below), so this runs for events from every
+    // workspace — not just this plugin instance's directory. The per-instance
+    // `event` hook is intentionally inert (see below) to avoid double-processing.
+    async function dispatchEvent(ev: OcEvent): Promise<void> {
+      const eventType = ev.type
+      if (!eventType) return
 
-        // Feed all events to push notification engine
-        push.handleEvent(ev)
+      // Feed all events to push notification engine
+      push.handleEvent(ev)
 
-        switch (eventType) {
-          case 'permission.asked':
-          case 'permission.replied':
-          case 'permission.updated':
-            tgTransport.handlePluginPermissionEvent(event as any).catch((err) =>
-              log.error('handlePluginPermissionEvent failed', err as Error),
-            )
-            try { await relay.handleEvent(ev) } catch (err) {
-              log.error('relay.handleEvent failed', err as Error)
-            }
-            break
-          case 'tui.session.select': {
-            const sid = (event as any)?.properties?.sessionID
-            if (typeof sid === 'string' && sid) {
-              state.setTuiSelectedSession(sid)
-              log.info(`[plugin] TUI session select: ${sid.slice(-8)}`)
-            }
-            break
+      switch (eventType) {
+        case 'permission.asked':
+        case 'permission.replied':
+        case 'permission.updated':
+          tgTransport.handlePluginPermissionEvent({ type: eventType, properties: (ev as any).properties } as any).catch((err) =>
+            log.error('handlePluginPermissionEvent failed', err as Error),
+          )
+          try { await relay.handleEvent(ev) } catch (err) {
+            log.error('relay.handleEvent failed', err as Error)
           }
-          case 'session.deleted': {
-            // Free per-session memory (card buffer, costs, delivery marks, aborts).
-            const sid = (event as any)?.properties?.sessionID ?? (event as any)?.properties?.info?.id
-            if (typeof sid === 'string' && sid) {
-              cardBus.drop(sid)
-              state.dropSession(sid)
-              log.info(`[plugin] session deleted, evicted: ${sid.slice(-8)}`)
-            }
-            break
+          break
+        case 'tui.session.select': {
+          const sid = (ev as any)?.properties?.sessionID
+          if (typeof sid === 'string' && sid) {
+            state.setTuiSelectedSession(sid)
+            log.info(`[plugin] TUI session select: ${sid.slice(-8)}`)
           }
-          case 'session.idle':
-          case 'session.error':
-          case 'session.created':
-          case 'session.updated':
-          case 'session.status':
-          case 'message.part.updated':
-          case 'message.part.delta':
-          case 'message.updated':
-          case 'message.part.removed':
-          case 'message.removed':
-          case 'command.executed':
-            try { await relay.handleEvent(ev) } catch (err) {
-              log.error('relay.handleEvent failed', err as Error)
-            }
-            break
+          break
         }
+        case 'session.deleted': {
+          // Free per-session memory (card buffer, costs, delivery marks, aborts).
+          const sid = (ev as any)?.properties?.sessionID ?? (ev as any)?.properties?.info?.id
+          if (typeof sid === 'string' && sid) {
+            cardBus.drop(sid)
+            state.dropSession(sid)
+            log.info(`[plugin] session deleted, evicted: ${sid.slice(-8)}`)
+          }
+          break
+        }
+        case 'session.idle':
+        case 'session.error':
+        case 'session.created':
+        case 'session.updated':
+        case 'session.status':
+        case 'message.part.updated':
+        case 'message.part.delta':
+        case 'message.updated':
+        case 'message.part.removed':
+        case 'message.removed':
+        case 'command.executed':
+          try { await relay.handleEvent(ev) } catch (err) {
+            log.error('relay.handleEvent failed', err as Error)
+          }
+          break
+      }
+    }
+
+    const globalEvents = startGlobalEvents({
+      client: ctx.client,
+      onEvent: (ev) => { void dispatchEvent(ev) },
+    })
+
+    return {
+      event: async () => {
+        // Events are consumed via the PRIMARY's global event stream
+        // (startGlobalEvents), which covers every workspace — not just this
+        // instance's. The per-instance hook is intentionally inert to avoid
+        // double-processing local events.
       },
       tool: {
         'rc-status': tool({
@@ -202,6 +218,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       },
       dispose: async () => {
         log.info('plugin disposing, stopping transports...')
+        globalEvents.stop()
         clearInterval(pollTimer)
         push.stop()
         await Promise.allSettled(transports.map((t) => t.stop()))
