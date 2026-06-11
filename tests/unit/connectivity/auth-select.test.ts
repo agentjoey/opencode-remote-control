@@ -12,4 +12,8 @@ describe('selectAuthStrategy', () => {
     expect(typeof a.httpMiddleware).toBe('function')
     expect(typeof a.verifyUpgrade).toBe('function')
   })
+  it('throws when cf-access mode is missing team/aud', () => {
+    expect(() => selectAuthStrategy({ mode: 'cf-access' })).toThrow(/WEB_CF_ACCESS_TEAM/)
+    expect(() => selectAuthStrategy({ mode: 'cf-access', cfAccess: { team: 't', aud: '' } })).toThrow()
+  })
 })

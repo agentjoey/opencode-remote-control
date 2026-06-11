@@ -15,7 +15,11 @@ export interface AuthSelection {
 
 export function selectAuthStrategy(sel: AuthSelection): AuthStrategy {
   if (sel.mode === 'cf-access') {
-    return createCfAccessAuth(sel.cfAccess ?? ({ team: '', aud: '' } as CfAccessOpts))
+    const cf = sel.cfAccess
+    if (!cf?.team || !cf?.aud) {
+      throw new Error('WEB_AUTH=cf-access requires WEB_CF_ACCESS_TEAM and WEB_CF_ACCESS_AUD to be set')
+    }
+    return createCfAccessAuth(cf)
   }
   return createTokenAuth({
     token: sel.token,
