@@ -2,6 +2,8 @@
   import { goto } from '$app/navigation'
   import { sessionList, feeds } from '../stores/sessions.js'
   import { pinnedSessions } from '../stores/pins.js'
+  import { activeWorkspace, workspaces } from '../stores/workspaces.js'
+  import { filterByWorkspace } from '../nav/workspaceFilter.js'
   import { api } from '../api/client.js'
   import type { SessionSummary } from '../api/types.js'
 
@@ -64,6 +66,7 @@
     try {
       await api.deleteSession(id)
       sessionList.set(await api.sessions())
+      workspaces.set(await api.workspaces())
       if (activeId === id) goto('/')
     } catch (err) {
       alert(`删除失败：${(err as Error).message}`)
@@ -72,8 +75,10 @@
     }
   }
 
-  // Most-recent first, then split into pinned / recent groups.
-  $: byRecent = [...$sessionList].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+  // Filter to the active workspace (null = all), then sort most-recent first
+  // and split into pinned / recent groups.
+  $: visible = filterByWorkspace($sessionList, $activeWorkspace)
+  $: byRecent = [...visible].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
   $: pinned = byRecent.filter((s) => $pinnedSessions.includes(s.id))
   $: recent = byRecent.filter((s) => !$pinnedSessions.includes(s.id))
 </script>
@@ -127,7 +132,7 @@
       {/each}
     {/if}
   {/each}
-  {#if $sessionList.length === 0}
+  {#if visible.length === 0}
     <div class="empty label">No sessions</div>
   {/if}
 </div>

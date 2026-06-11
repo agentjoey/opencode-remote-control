@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { Telegraf, Context } from 'telegraf'
 import { Markup } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
@@ -160,6 +161,15 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
 }
 
 export function registerHandlers(deps: HandlersDeps): void {
+  // Maps a short token -> workspace directory, so callback_data stays under
+  // Telegram's 64-byte limit. Stable per directory (sha1-derived).
+  const wsTokens = new Map<string, string>()
+  const wsToken = (dir: string) => {
+    const t = createHash('sha1').update(dir).digest('base64url').slice(0, 16)
+    wsTokens.set(t, dir)
+    return t
+  }
+
   // ── Commands ──
 
   deps.bot.command('start', async (ctx: Context) => {
@@ -184,6 +194,8 @@ export function registerHandlers(deps: HandlersDeps): void {
       '  /todo      Session todo list',
       '  /context   Tokens + cost + model',
       '  /abort     Stop generation',
+      '  /workspaces List/switch workspaces',
+      '  /new       New session in active workspace',
     ]
     if (nextAgent || nextModel) {
       lines.push('')
@@ -478,21 +490,23 @@ export function registerHandlers(deps: HandlersDeps): void {
         '<b>🤖 opencode-remote-control</b>',
         '',
         '<b>Commands:</b>',
-        '  /start   Handshake + health',
-        '  /status  Server health + session',
-        '  /sessions List all sessions',
-        '  /session Pin a session',
-        '  /pair    Pair a device (URL + token)',
-        '  /files   Files touched in last session',
-        '  /diff    Pending git diff',
-        '  /todo    Session todo list',
-        '  /context Tokens + cost + model',
-        '  /agent   Set next agent',
-        '  /model   Set next model',
-        '  /current Last session used',
-        '  /abort   Stop generation',
-        '  /version Bot version + uptime',
-        '  /help    This message',
+        '  /start      Handshake + health',
+        '  /status     Server health + session',
+        '  /sessions   List all sessions',
+        '  /session    Pin a session',
+        '  /pair       Pair a device (URL + token)',
+        '  /files      Files touched in last session',
+        '  /diff       Pending git diff',
+        '  /todo       Session todo list',
+        '  /context    Tokens + cost + model',
+        '  /agent      Set next agent',
+        '  /model      Set next model',
+        '  /current    Last session used',
+        '  /abort      Stop generation',
+        '  /version    Bot version + uptime',
+        '  /workspaces List/switch workspaces',
+        '  /new        New session in active workspace',
+        '  /help       This message',
         '',
         'Send any text to relay it into opencode.',
       ].join('\n'),
@@ -503,6 +517,48 @@ export function registerHandlers(deps: HandlersDeps): void {
         ]),
       },
     )
+  })
+
+  deps.bot.command('workspaces', async (ctx) => {
+    try {
+      const { listWorkspaces } = await import('../../opencode/workspaces.js')
+      const ws = await listWorkspaces(deps.client)
+      if (ws.length === 0) { await ctx.reply('No workspaces.', { parse_mode: 'HTML' }); return }
+      const active = deps.state.getActiveWorkspace()
+      const lines = ['<b>🗂 Workspaces</b>', '']
+      for (const w of ws.slice(0, 20)) {
+        const mark = w.directory === active ? '📍 ' : ''
+        lines.push(`${mark}<b>${w.name}</b>  ·  ${w.sessionCount} session${w.sessionCount === 1 ? '' : 's'}`)
+        lines.push(`   <code>${w.directory}</code>`)
+      }
+      const rows = ws.slice(0, 20).map((w) => [Markup.button.callback(`📂 ${w.name}`, `ws:set:${wsToken(w.directory)}`)])
+      await ctx.reply(lines.join('\n'), { parse_mode: 'HTML', ...Markup.inlineKeyboard(rows) })
+    } catch (err) {
+      await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
+    }
+  })
+
+  deps.bot.action(/^ws:set:(.+)$/, async (ctx) => {
+    const dir = wsTokens.get(ctx.match[1])
+    if (!dir) { await ctx.answerCbQuery('Stale — re-run /workspaces'); return }
+    deps.state.setActiveWorkspace(dir)
+    await ctx.answerCbQuery(`Workspace → ${dir.split('/').pop()}`)
+    try { await ctx.editMessageText(`📍 <b>Active workspace</b>\n\n<code>${dir}</code>\n\nUse /new to start a session here.`, { parse_mode: 'HTML' }) } catch { /* ignore */ }
+  })
+
+  deps.bot.command('new', async (ctx) => {
+    const dir = deps.state.getActiveWorkspace()
+    if (!dir) { await ctx.reply('No active workspace. Use /workspaces first.', { parse_mode: 'HTML' }); return }
+    try {
+      const text = ctx.message && 'text' in ctx.message ? ctx.message.text.split(' ').slice(1).join(' ').trim() : ''
+      const res = await deps.client.session.create({ query: { directory: dir }, body: text ? { title: text.slice(0, 60) } : {} } as any)
+      const id = (res.data as { id?: string } | undefined)?.id
+      if (!id) throw new Error('create failed')
+      deps.state.setPinnedSessionId(id)
+      await ctx.reply(`🆕 <b>New session</b> in <code>${dir.split('/').pop()}</code>\n<code>…${id.slice(-8)}</code> (pinned). Send a message to start.`, { parse_mode: 'HTML' })
+    } catch (err) {
+      await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
+    }
   })
 
   deps.bot.telegram
@@ -521,6 +577,8 @@ export function registerHandlers(deps: HandlersDeps): void {
       { command: 'abort', description: 'Stop the current generation' },
       { command: 'version', description: 'Bot version + uptime' },
       { command: 'pair', description: 'Pair a device (URL + token)' },
+      { command: 'workspaces', description: 'List/switch workspaces' },
+      { command: 'new', description: 'New session in active workspace' },
       { command: 'help', description: 'Show help' },
     ])
     .catch((err) => log.warn('setMyCommands failed', err))
