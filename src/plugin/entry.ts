@@ -3,6 +3,7 @@ import type { Plugin } from '@opencode-ai/plugin'
 import { loadPluginConfig } from './config.js'
 import { createTelegramTransport, type TelegramTransport } from '../transport/telegram/index.js'
 import { createWebTransport } from '../transport/web/index.js'
+import { selectAuthStrategy } from '../connectivity/auth/select.js'
 import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createCardBus } from '../core/card-bus.js'
@@ -85,16 +86,25 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     let webTransport: ReturnType<typeof createWebTransport> | undefined
 
     if (config.webEnabled) {
-      webTransport = createWebTransport({
+      const auth = selectAuthStrategy({
+        mode: config.webAuth,
+        token: config.webToken,
+        devEmail: config.webCfAccessDevEmail,
+        devBypass: config.webCfAccessDevBypass,
         host: config.webHost,
-        port: config.webPort,
-        client: ctx.client,
         cfAccess: {
           team: config.webCfAccessTeam,
           aud: config.webCfAccessAud,
           devBypass: config.webCfAccessDevBypass,
           devEmail: config.webCfAccessDevEmail,
+          host: config.webHost,
         },
+      })
+      webTransport = createWebTransport({
+        host: config.webHost,
+        port: config.webPort,
+        client: ctx.client,
+        auth,
         staticRoot: config.webStaticRoot,
         cacheSize: config.webCacheSize,
         baseUrl: serverUrl,

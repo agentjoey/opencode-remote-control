@@ -14,6 +14,8 @@ export interface PluginConfig {
   webCfAccessAud: string
   webCfAccessDevBypass: boolean
   webCfAccessDevEmail: string
+  webAuth: 'token' | 'cf-access'
+  webToken: string
   statePath: string
   tuiVisible: boolean
   transport: string
@@ -96,6 +98,8 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     // must opt in explicitly with WEB_CF_ACCESS_DEV_BYPASS=true.
     webCfAccessDevBypass: devBypassExplicit ?? (devBypassEnv !== undefined ? devBypassEnv === 'true' : false),
     webCfAccessDevEmail: env('WEB_CF_ACCESS_DEV_EMAIL', options?.webCfAccessDevEmail as string) ?? 'dev@localhost',
+    webAuth: (env('WEB_AUTH', options?.webAuth as string) ?? 'token') === 'cf-access' ? 'cf-access' : 'token',
+    webToken: env('WEB_TOKEN', options?.webToken as string) ?? '',
     statePath: env('STATE_PATH', options?.statePath as string) ?? './data/state.json',
     tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE !== 'false',
     transport: env('TRANSPORT', options?.transport as string) ?? 'telegram',

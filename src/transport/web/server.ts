@@ -3,7 +3,7 @@ import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
-import { cfAccessMiddleware, type CfAccessOpts } from './middleware/cf-access.js'
+import type { AuthStrategy } from '../../connectivity/auth/index.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('web')
@@ -35,7 +35,7 @@ export interface WsHub {
 }
 
 export interface BuildServerOpts {
-  cfAccess: CfAccessOpts
+  auth: AuthStrategy
   client: OpencodeClient
   state: SessionState
   cardBus: CardBus
@@ -52,7 +52,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
     await next()
     log.info(`${c.req.method} ${c.req.path} → ${c.res.status} ${Date.now() - t0}ms`)
   })
-  app.use('/api/*', cfAccessMiddleware(opts.cfAccess))
+  app.use('/api/*', opts.auth.httpMiddleware())
   app.get('/api/me', (c) => {
     const user = c.get('user') as { email: string } | undefined
     if (!user) return c.json({ error: 'unauthorized' }, 401)
