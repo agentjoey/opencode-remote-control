@@ -14,7 +14,27 @@ import { createLogger } from '../utils/logger.js'
 const VERSION = '0.6.0'
 const log = createLogger('plugin')
 
+// opencode 1.17 runs plugins in a worker thread. Any unhandled rejection or
+// uncaught exception in our long-lived services (web server, telegram polling,
+// timers) would otherwise crash that worker — opencode reports "Worker has been
+// terminated", the web transport dies (→ 502 at the tunnel), and opencode's own
+// session reads start failing. Absorb them here: log and keep the worker alive.
+// We deliberately NEVER call process.exit (opencode issue #27557: plugins that
+// exit on rejection take the host down with them).
+let guardsInstalled = false
+function installProcessGuards() {
+  if (guardsInstalled) return
+  guardsInstalled = true
+  process.on('unhandledRejection', (reason) => {
+    log.warn(`unhandledRejection absorbed: ${(reason as Error)?.stack ?? String(reason)}`)
+  })
+  process.on('uncaughtException', (err) => {
+    log.warn(`uncaughtException absorbed: ${err?.stack ?? String(err)}`)
+  })
+}
+
 export const remoteControlPlugin: Plugin = async (ctx, options) => {
+  installProcessGuards()
   log.info(`v${VERSION} starting`)
 
   const config = loadPluginConfig(options)

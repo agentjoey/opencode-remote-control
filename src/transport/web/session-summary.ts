@@ -60,13 +60,12 @@ export async function fetchSessionSummaries(
     const updated = s.time?.updated ?? created
 
     if (isEmptySession(s)) {
-      // Older empty sessions get auto-deleted (after a message recheck) and
-      // hidden; freshly-created ones stay visible during the grace window so a
-      // just-opened session isn't yanked away before it's used.
-      if (now - created > EMPTY_GRACE_MS) {
-        void pruneIfEmpty(client, s.id)
-        continue
-      }
+      // Hide empty sessions older than the grace window (NON-destructively — a
+      // GET listing must never have side effects, and auto-deleting here risked
+      // wrong calls against cross-project sessions). Freshly-created ones stay
+      // visible during the grace window. To actually purge them, use the manual
+      // cleanup endpoint.
+      if (now - created > EMPTY_GRACE_MS) continue
       visible.push(s)
       continue
     }
