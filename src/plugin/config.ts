@@ -89,7 +89,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     allowedUserIds: ids,
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
     webHost,
-    webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 7081),
+    webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 17081),
     webPublicUrl: env('WEB_PUBLIC_URL', options?.webPublicUrl as string) ?? '',
     webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? resolve(PLUGIN_ROOT, 'web', 'dist'),
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
