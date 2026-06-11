@@ -49,6 +49,10 @@ vi.mock('../../src/opencode/global-events.js', () => ({
   startGlobalEvents: vi.fn(),
 }))
 
+vi.mock('../../src/core/primary-election.js', () => ({
+  tryBecomePrimary: vi.fn().mockReturnValue({ isPrimary: true, release: vi.fn() }),
+}))
+
 vi.mock('../../src/utils/logger.js', () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
 }))
@@ -68,6 +72,7 @@ function fakeCardBus() {
     subscribeAll: vi.fn((fn) => { subs.push(fn); return () => {} }),
     subscribe: vi.fn(() => () => {}),
     recent: vi.fn().mockReturnValue([]),
+    drop: vi.fn(),
     _subs: subs,
   }
 }
@@ -229,6 +234,20 @@ describe('remoteControlPlugin', () => {
   it('ignores tui.session.select without sessionID', async () => {
     await emit({ type: 'tui.session.select', properties: {} })
     expect(state.setTuiSelectedSession).not.toHaveBeenCalled()
+  })
+
+  // ── session.deleted ──
+
+  it('evicts session state on session.deleted', async () => {
+    await emit({ type: 'session.deleted', properties: { sessionID: 'ses_gone123' } })
+    expect(cardBus.drop).toHaveBeenCalledWith('ses_gone123')
+    expect(state.dropSession).toHaveBeenCalledWith('ses_gone123')
+  })
+
+  it('ignores session.deleted with no sessionID', async () => {
+    await emit({ type: 'session.deleted', properties: {} })
+    expect(cardBus.drop).not.toHaveBeenCalled()
+    expect(state.dropSession).not.toHaveBeenCalled()
   })
 
   // ── Permission events ──
