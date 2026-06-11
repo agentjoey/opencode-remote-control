@@ -561,6 +561,19 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
   })
 
+  deps.bot.command('rename', async (ctx) => {
+    const text = ctx.message && 'text' in ctx.message ? ctx.message.text.split(' ').slice(1).join(' ').trim() : ''
+    const sid = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId()
+    if (!sid) { await ctx.reply('No active session. Pin one with /sessions first.', { parse_mode: 'HTML' }); return }
+    if (!text) { await ctx.reply('Usage: <code>/rename New Title</code>', { parse_mode: 'HTML' }); return }
+    try {
+      await deps.client.session.update({ path: { id: sid }, body: { title: text.slice(0, 100) } } as any)
+      await ctx.reply(`✏️ Renamed <code>…${sid.slice(-8)}</code> → <b>${text.slice(0, 100)}</b>`, { parse_mode: 'HTML' })
+    } catch (err) {
+      await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
+    }
+  })
+
   deps.bot.telegram
     .setMyCommands([
       { command: 'start', description: 'Handshake and health' },
@@ -579,6 +592,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       { command: 'pair', description: 'Pair a device (URL + token)' },
       { command: 'workspaces', description: 'List/switch workspaces' },
       { command: 'new', description: 'New session in active workspace' },
+      { command: 'rename', description: 'Rename the pinned/last session' },
       { command: 'help', description: 'Show help' },
     ])
     .catch((err) => log.warn('setMyCommands failed', err))

@@ -33,6 +33,7 @@ export const api = {
   sessions: () => jsonGet<SessionSummary[]>('/api/sessions'),
   cleanupSubagents: () => jsonPost<{ deleted: number }>('/api/sessions/cleanup-subagents', {}),
   deleteSession: (id: string) => jsonPost<{ ok: boolean }>(`/api/sessions/${id}/delete`, {}),
+  renameSession: (id: string, title: string) => jsonPost<{ ok: boolean }>(`/api/sessions/${id}/rename`, { title }),
   history: (id: string) => jsonGet<{ cards: StructuredCard[]; lastSeq: number }>(`/api/session/${id}`),
   diff: (id: string) => jsonGet<any[]>(`/api/session/${id}/diff`),
   todo: (id: string) => jsonGet<any[]>(`/api/session/${id}/todo`),

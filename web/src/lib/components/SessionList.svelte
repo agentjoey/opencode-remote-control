@@ -56,6 +56,50 @@
     pinnedSessions.toggle(id)
   }
 
+  // Inline rename state: the row being edited and its draft title.
+  let editing: string | null = null
+  let draft = ''
+  let renaming: string | null = null
+
+  function startRename(e: MouseEvent, s: SessionSummary) {
+    e.preventDefault()
+    e.stopPropagation()
+    editing = s.id
+    draft = s.title || ''
+  }
+
+  function cancelRename() {
+    editing = null
+    draft = ''
+  }
+
+  async function submitRename(id: string) {
+    const title = draft.trim()
+    if (!title || renaming) { cancelRename(); return }
+    renaming = id
+    try {
+      await api.renameSession(id, title)
+      sessionList.set(await api.sessions())
+    } catch (err) {
+      alert(`重命名失败：${(err as Error).message}`)
+    } finally {
+      renaming = null
+      editing = null
+      draft = ''
+    }
+  }
+
+  function onRenameKey(e: KeyboardEvent, id: string) {
+    if (e.key === 'Enter') { e.preventDefault(); submitRename(id) }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+  }
+
+  // Autofocus + select the input when it mounts.
+  function focusInput(node: HTMLInputElement) {
+    node.focus()
+    node.select()
+  }
+
   let deleting: string | null = null
   async function deleteSession(e: MouseEvent, id: string) {
     e.preventDefault()
@@ -96,8 +140,28 @@
         >
           <div class="line1">
             <span class="dot" class:busy={isBusy(s.id, $feeds)}></span>
-            <span class="title">{s.title || 'Untitled session'}</span>
-            <span class="actions">
+            {#if editing === s.id}
+              <input
+                class="rename-input"
+                bind:value={draft}
+                disabled={renaming === s.id}
+                placeholder="Session title"
+                use:focusInput
+                on:click={(e) => e.preventDefault()}
+                on:keydown={(e) => onRenameKey(e, s.id)}
+                on:blur={() => submitRename(s.id)}
+              />
+            {:else}
+              <span class="title">{s.title || 'Untitled session'}</span>
+              <span class="actions">
+              <button
+                class="act rename"
+                title="重命名会话"
+                aria-label="Rename session"
+                on:click={(e) => startRename(e, s)}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </button>
               <button
                 class="act pin"
                 class:on={$pinnedSessions.includes(s.id)}
@@ -116,7 +180,8 @@
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               </button>
-            </span>
+              </span>
+            {/if}
           </div>
           <div class="meta mono">
             <span class="id">{shortId(s.id)}</span>
@@ -195,6 +260,21 @@
   }
   .session.active .title { color: var(--text); }
 
+  .rename-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-panel);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+    outline: none;
+    font-family: inherit;
+  }
+  .rename-input:disabled { opacity: .6; }
+
   .actions { display: inline-flex; gap: 1px; flex-shrink: 0; }
   .act {
     display: inline-flex;
@@ -209,6 +289,7 @@
   .session:hover .act { opacity: .65; }
   .act:hover { opacity: 1; }
   .act.pin:hover { color: var(--text); }
+  .act.rename:hover { color: var(--accent); }
   .act.pin.on { opacity: 1; color: var(--accent); }
   .act.trash:hover { color: var(--err); }
   .act:disabled { opacity: .4; cursor: default; }
