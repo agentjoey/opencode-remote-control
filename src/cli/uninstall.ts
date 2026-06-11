@@ -1,67 +1,71 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { join, resolve, dirname } from 'node:path'
 import { homedir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 
-const PLUGIN_NAME = 'opencode-remote-control'
-const GLOBAL_CONFIG = join(homedir(), '.config', 'opencode', 'opencode.json')
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const OPENCODE_CONFIG_DIR = process.env.OPENCODE_CONFIG_DIR ?? join(homedir(), '.config', 'opencode')
+const BRIDGE_FILE = join(OPENCODE_CONFIG_DIR, 'plugins', 'opencode-remote-control.js')
+const GLOBAL_OPENCODE_JSON = join(OPENCODE_CONFIG_DIR, 'opencode.json')
 
 type PluginEntry = string | [string, Record<string, unknown>]
 
-function isOurPlugin(entry: PluginEntry): boolean {
-  const name = Array.isArray(entry) ? entry[0] : entry
-  return name.startsWith(PLUGIN_NAME) || name === process.cwd()
+/** Remove any legacy directory-path / package entry from opencode.json. */
+function removeLegacyEntry(): boolean {
+  if (!existsSync(GLOBAL_OPENCODE_JSON)) return false
+  let config: Record<string, any>
+  try { config = JSON.parse(readFileSync(GLOBAL_OPENCODE_JSON, 'utf-8')) } catch { return false }
+  const plugins: PluginEntry[] = config.plugin ?? []
+  const filtered = plugins.filter((e) => {
+    const name = Array.isArray(e) ? e[0] : e
+    return !(name === REPO_ROOT || name.startsWith('opencode-remote-control'))
+  })
+  if (filtered.length === plugins.length) return false
+  if (filtered.length > 0) config.plugin = filtered
+  else delete config.plugin
+  writeFileSync(GLOBAL_OPENCODE_JSON, JSON.stringify(config, null, 2) + '\n')
+  return true
 }
 
-export async function runUninstall(local: boolean = false): Promise<void> {
-  const target = local ? join(process.cwd(), 'opencode.json') : GLOBAL_CONFIG
+export async function runUninstall(): Promise<void> {
+  let removed = false
 
-  if (!existsSync(target)) {
-    console.log('No opencode config found.')
-    process.exit(1)
+  if (existsSync(BRIDGE_FILE)) {
+    rmSync(BRIDGE_FILE)
+    console.log(`Removed plugin bridge: ${BRIDGE_FILE}`)
+    removed = true
   }
 
-  let config: Record<string, any>
-  try {
-    config = JSON.parse(readFileSync(target, 'utf-8'))
-  } catch {
-    console.error(`Failed to parse ${target}.`)
-    process.exit(1)
+  if (removeLegacyEntry()) {
+    console.log(`Removed legacy plugin entry from ${GLOBAL_OPENCODE_JSON}`)
+    removed = true
   }
 
-  const plugins: PluginEntry[] = config.plugin ?? []
-  const newPlugins = plugins.filter((p) => !isOurPlugin(p))
-
-  if (newPlugins.length === plugins.length) {
-    console.log(`\n${PLUGIN_NAME} not found in ${target}`)
+  if (!removed) {
+    console.log('opencode-remote-control was not installed (no bridge or config entry found).')
     return
   }
 
-  config.plugin = newPlugins.length > 0 ? newPlugins : undefined
-  if (config.plugin === undefined) delete config.plugin
-
-  writeFileSync(target, JSON.stringify(config, null, 2) + '\n')
-  console.log(`\nRemoved ${PLUGIN_NAME} from ${target}`)
-  console.log('   Restart opencode to apply.')
+  console.log('\nUninstalled. Restart opencode to apply.')
+  console.log(`(Your .env at ${join(REPO_ROOT, '.env')} was left untouched.)`)
 }
 
 export async function main(): Promise<void> {
-  const local = process.argv.includes('--local')
-
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
     console.log(`
-opencode-remote-control uninstall
+opencode-remote-control uninstall (opencode 1.17+)
 
 USAGE:
-  npx opencode-remote-control uninstall [OPTIONS]
+  node dist/cli/uninstall.js
 
-OPTIONS:
-  --local     Uninstall from project opencode.json
-  --help, -h  Show this help
+WHAT IT DOES:
+  - Removes the plugin bridge from ~/.config/opencode/plugins/
+  - Removes any legacy directory-path entry from opencode.json
+  - Leaves your .env untouched
 `)
     return
   }
-
-  await runUninstall(local)
+  await runUninstall()
 }
 
 if (process.argv[1]?.endsWith('uninstall.js') || process.argv[1]?.endsWith('uninstall.ts')) {

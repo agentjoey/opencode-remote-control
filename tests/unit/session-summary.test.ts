@@ -42,18 +42,16 @@ describe('fetchSessionSummaries', () => {
     expect(ids).not.toContain('empty-old')
   })
 
-  it('auto-deletes an old empty session only after confirming it has no messages', async () => {
+  it('hides old empty sessions but never deletes them (a GET listing has no side effects)', async () => {
     const now = Date.now()
     const sessions = [
       { id: 'empty-old', title: '', time: { created: now - 2 * HOUR, updated: now - 2 * HOUR } },
-      { id: 'empty-but-has-msgs', title: '', time: { created: now - 2 * HOUR, updated: now - 2 * HOUR } },
     ]
-    // The second one looks empty by heuristic but actually has a message.
-    const { client, deleted } = makeClient(sessions, { 'empty-but-has-msgs': [{ id: 'm1' }] })
-    await fetchSessionSummaries(client, state)
-    await flush() // let the fire-and-forget prune run
-    expect(deleted).toContain('empty-old')
-    expect(deleted).not.toContain('empty-but-has-msgs')
+    const { client, deleted } = makeClient(sessions)
+    const out = await fetchSessionSummaries(client, state)
+    await flush()
+    expect(out.map((s) => s.id)).not.toContain('empty-old') // hidden from the list
+    expect(deleted).toHaveLength(0)                          // but NOT deleted
   })
 })
 

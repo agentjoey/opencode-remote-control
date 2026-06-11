@@ -29,21 +29,6 @@ function isEmptySession(s: any): boolean {
   return !s.title && updated === created
 }
 
-/**
- * Delete a session only after a fresh message check confirms it's truly empty.
- * Best-effort and fire-and-forget — failures are swallowed so a list request
- * never breaks on cleanup.
- */
-async function pruneIfEmpty(client: OpencodeClient, id: string): Promise<void> {
-  try {
-    const res = await client.session.messages({ path: { id } })
-    const msgs = (res.data ?? []) as unknown[]
-    if (msgs.length === 0) await client.session.delete({ path: { id } })
-  } catch {
-    /* ignore — cleanup is opportunistic */
-  }
-}
-
 export async function fetchSessionSummaries(
   client: OpencodeClient,
   state: SessionState,

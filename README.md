@@ -1,7 +1,7 @@
 # opencode-remote-control
 
 An [opencode](https://opencode.ai) **plugin** that lets you drive your local
-opencode from **Telegram** or a **Web UI (PWA + Chrome extension)**. Install
+opencode from **Telegram** or a **Web UI (PWA)**. Install
 once; it auto-starts in-process with opencode. Send a message from your phone or
 browser and watch the assistant work — even when you're away from your desk.
 
@@ -10,8 +10,8 @@ browser and watch the assistant work — even when you're away from your desk.
 - **Runs as an opencode plugin, in-process.** One install, no extra process, no
   daemon to babysit — it starts and stops with `opencode` itself.
 - **Telegram + Web from a single codebase.** The same sessions stream live to
-  Telegram, a PWA, and a Chrome side panel simultaneously; switch surfaces
-  mid-task without losing context.
+  Telegram and a desktop PWA simultaneously; switch surfaces mid-task without
+  losing context.
 - **SDK-native.** Built on `@opencode-ai/sdk` and the opencode plugin event
   hook — it speaks opencode's own protocol rather than scraping a UI, so agent /
   model overrides, approvals, diffs, and cost/token metadata all come through
@@ -51,49 +51,42 @@ Full deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 1. **Create a bot** with [@BotFather](https://t.me/BotFather), get a token.
 2. **Find your user ID** — message [@userinfobot](https://t.me/userinfobot).
-3. **Install the plugin** into opencode:
+3. **Build and install the plugin** (opencode 1.17+):
    ```bash
-   npx opencode-remote-control install
+   npm install && npm run build
+   node dist/cli/install.js
    ```
-4. **Configure** — run the wizard (writes `.env`), or set the values in your
-   `opencode.json` plugin options:
+   The installer writes a plugin bridge to `~/.config/opencode/plugins/`
+   (opencode 1.17 loads local plugins from there — directory paths in
+   `opencode.json` no longer work), ensures that dir's `package.json` has
+   `"type": "module"`, and saves `TELEGRAM_BOT_TOKEN` / `ALLOWED_USER_IDS` /
+   `WEB_ENABLED` / `WEB_PORT` to the repo's `.env`.
+4. **Run opencode** from any directory — the plugin loads globally:
    ```bash
-   npx opencode-remote-control init
-   # TELEGRAM_BOT_TOKEN=...   ALLOWED_USER_IDS=12345678
+   opencode
    ```
-5. **Run opencode** as usual:
-   ```bash
-   opencode serve --port 4096   # (or just `opencode`)
-   ```
-   The plugin auto-starts.
-6. **Send "hello"** in Telegram → the assistant responds.
+   The plugin auto-starts. For an always-on remote-control hub, run it from a
+   small/empty directory (e.g. `~/ocrc-hub`) so opencode's file watcher stays
+   fast. Run only **one** instance — web (`:17081`) and the Telegram bot are
+   global singletons.
+5. **Send "hello"** in Telegram → the assistant responds.
 
-## Web UI (PWA + Chrome Extension)
+## Web UI (PWA)
 
 The Web UI runs alongside Telegram and shows the same sessions in real time
-(full streaming). Front it with a Cloudflare Tunnel + Cloudflare Access for
-HTTPS and auth — see [`docs/OPS.md`](docs/OPS.md).
+(full streaming), installable as a desktop PWA. Front it with a Cloudflare
+Tunnel + Cloudflare Access for HTTPS and auth — see [`docs/OPS.md`](docs/OPS.md).
 
-### PWA
-
-1. Set `WEB_ENABLED=true`.
+1. Set `WEB_ENABLED=true` (and `WEB_PORT` — default `17081`, since opencode's
+   own server occupies `7081`).
 2. Build the web app: `cd web && npm run build`.
-3. The plugin serves the PWA at `http://127.0.0.1:7081`.
+3. The plugin serves the PWA at `http://127.0.0.1:17081`. Point your Cloudflare
+   tunnel ingress at that port.
 4. Behind Cloudflare Access, install it to your home screen from Chrome/Safari.
 
-### Chrome Extension
-
-1. Build it: `cd web && npm run build:extension`.
-2. Chrome → Extensions → Developer mode → **Load unpacked** → `web/extension-dist/`.
-3. Click the extension icon → set **Bot URL** (and, for unattended access, a
-   **CF Access service token** — Client ID + Secret).
-4. Open the side panel; right-click a page selection → "Send to opencode" to
-   pre-fill the composer.
-
-> **Cloudflare Access note:** because a browser WebSocket can't carry
-> service-token headers, put `/ws` on a CF Access **Bypass** policy — the app
-> then gates the socket itself (a short-lived ticket for the extension, the CF
-> cookie for the PWA). Details in [`docs/OPS.md`](docs/OPS.md).
+> **Cloudflare Access note:** a browser WebSocket can't carry service-token
+> headers, so put `/ws` on a CF Access **Bypass** policy — the app then gates
+> the socket itself with the CF cookie. Details in [`docs/OPS.md`](docs/OPS.md).
 
 ## Commands
 
@@ -168,12 +161,30 @@ To add another channel, see
 | **Web** |||
 | `WEB_ENABLED` | `false` | Enable the Web transport |
 | `WEB_HOST` | `127.0.0.1` | Web bind address (keep loopback; front with a tunnel) |
-| `WEB_PORT` | `7081` | Web port |
-| `WEB_STATIC_ROOT` | `web/dist` | Built PWA path |
+| `WEB_PORT` | `17081` | Web port (opencode 1.17's own server occupies `7081`) |
+| `WEB_STATIC_ROOT` | `<repo>/web/dist` | Built PWA path (resolved from the plugin dir, cwd-independent) |
 | `WEB_SESSION_CACHE_SIZE` | `100` | Per-session card ring-buffer size |
 | `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team name |
 | `WEB_CF_ACCESS_AUD` | — | Cloudflare Access app AUD tag |
 | `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass auth **only for a loopback socket peer** |
+
+## opencode 1.17+ notes
+
+opencode 1.17 changed plugin loading; this project accounts for all of it:
+
+- **Local plugins load from `~/.config/opencode/plugins/`**, not from directory
+  paths in `opencode.json`. The installer writes a bridge file there that
+  re-invokes the built `dist/` (the source of truth — rebuild + restart to
+  update). 1.17 also only calls functions *defined* in the loaded module, so the
+  bridge wraps the plugin in a local function rather than re-exporting it.
+- **Plugins run in a worker thread.** An unhandled rejection would otherwise
+  crash the worker (`Worker has been terminated`), taking down the web server.
+  The plugin installs absorbing guards so it survives.
+- **Web runs on `17081`** because opencode's own server occupies `7081`. Point
+  your tunnel ingress at `17081`.
+- **Single instance.** Web (`:17081`) and the Telegram bot are global
+  singletons — run one opencode for remote control, ideally from a small/empty
+  directory so the file watcher stays fast.
 
 ## Testing
 
@@ -183,7 +194,6 @@ npx tsc --noEmit                    # backend type-check
 cd web && npm run check             # web type-check (svelte-check)
 cd web && npm test                  # web unit tests
 cd web && npm run build             # build PWA
-cd web && npm run build:extension   # build Chrome extension
 ```
 
 ## License
