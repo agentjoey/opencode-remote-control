@@ -33,34 +33,23 @@ interface AgentConfig {
   description: string
 }
 
-/** Returns true if the opencode HTTP API is reachable (has a baseUrl set). */
-function hasHttpApi(baseUrl?: string): baseUrl is string {
-  return !!(baseUrl && baseUrl.startsWith('http'))
-}
+// All opencode API access goes through the in-process SDK client. opencode 1.17
+// runs plugins in a worker thread where Bun's fetch can't reach ctx.serverUrl
+// ("Unable to connect"), so raw fetch(baseUrl/...) is unusable — the client is.
 
-/** Check health — always OK in plugin mode (in-process), or fetch /health endpoint. */
-async function checkHealth(baseUrl?: string): Promise<boolean> {
-  if (!hasHttpApi(baseUrl)) return true
+/** Check health via the in-process SDK client. */
+async function checkHealth(client: OpencodeClient): Promise<boolean> {
   try {
-    const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(3000) })
-    return res.ok
+    await client.session.status()
+    return true
   } catch {
     return false
   }
 }
 
-async function fetchUserAgents(baseUrl?: string, directory?: string): Promise<AgentConfig[]> {
-  if (!hasHttpApi(baseUrl)) {
-    log.debug('fetchUserAgents: no baseUrl, returning empty')
-    return []
-  }
-  const params = new URLSearchParams()
-  if (directory) params.set('directory', directory)
-  const qs = params.toString()
-  const url = `${baseUrl}/config${qs ? `?${qs}` : ''}`
-  const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
-  if (!res.ok) throw new Error(`/config HTTP ${res.status}`)
-  const data = (await res.json()) as {
+async function fetchUserAgents(client: OpencodeClient, directory?: string): Promise<AgentConfig[]> {
+  const res = await client.config.get(directory ? { query: { directory } } : {})
+  const data = (res.data ?? {}) as {
     agent?: Record<string, { model?: string; description?: string }>
   }
   const agents = data.agent ?? {}
@@ -71,6 +60,18 @@ async function fetchUserAgents(baseUrl?: string, directory?: string): Promise<Ag
       model: v.model as string,
       description: v.description ?? '',
     }))
+}
+
+interface ProviderInfo {
+  id: string
+  name: string
+  models: Record<string, { name: string }>
+}
+
+async function fetchProviders(client: OpencodeClient, directory?: string): Promise<ProviderInfo[]> {
+  const res = await client.config.providers(directory ? { query: { directory } } : {})
+  const data = (res.data ?? {}) as { providers?: ProviderInfo[] }
+  return data.providers ?? []
 }
 
 /**
@@ -103,25 +104,22 @@ interface StatusCard {
 }
 
 async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
-  const healthy = await checkHealth(deps.baseUrl)
+  const healthy = await checkHealth(deps.client)
   let busyCount = 0
   let totalSessions = 0
   let totalCost = 0
-  if (hasHttpApi(deps.baseUrl)) {
+  try {
+    const res = await deps.client.session.status()
+    const data = (res.data ?? {}) as Record<string, { type: string }>
+    totalSessions = Object.keys(data).length
+    busyCount = Object.values(data).filter((s) => s.type === 'busy').length
+    for (const sid of Object.keys(data)) {
+      const c = deps.state.getSessionCost(sid)
+      if (c !== undefined) totalCost += c
+    }
+  } catch {
     try {
-      const res = await fetch(`${deps.baseUrl}/session/status`)
-      const data = (await res.json()) as Record<string, { type: string }>
-      totalSessions = Object.keys(data).length
-      busyCount = Object.values(data).filter((s) => s.type === 'busy').length
-      for (const sid of Object.keys(data)) {
-        const c = deps.state.getSessionCost(sid)
-        if (c !== undefined) totalCost += c
-      }
-    } catch {}
-  } else {
-    try {
-      const sessions = await listAllSessions(deps.client) as Array<{ id: string }>
-      totalSessions = sessions.length
+      totalSessions = ((await listAllSessions(deps.client)) as Array<{ id: string }>).length
     } catch {}
   }
   const pinnedSession = deps.state.getPinnedSessionId()
@@ -165,7 +163,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   // ── Commands ──
 
   deps.bot.command('start', async (ctx: Context) => {
-    const healthy = await checkHealth(deps.baseUrl)
+    const healthy = await checkHealth(deps.client)
     const username = ctx.from?.first_name ?? 'there'
     const nextAgent = deps.state.getNextAgent()
     const nextModel = deps.state.getNextModel()
@@ -346,7 +344,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
+      const agents = await fetchUserAgents(deps.client, deps.opencodeProject)
       if (agents.length === 0) {
         await ctx.reply(
           '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
@@ -379,20 +377,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      if (!hasHttpApi(deps.baseUrl)) {
-        await ctx.reply('Model listing requires opencode HTTP API. Use legacy sidecar mode for this command.', { parse_mode: 'HTML' })
-        return
-      }
-      const params = new URLSearchParams()
-      if (deps.opencodeProject) params.set('directory', deps.opencodeProject)
-      const qs = params.toString()
-      const res = await fetch(`${deps.baseUrl}/config/providers${qs ? `?${qs}` : ''}`, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) throw new Error(`/config/providers HTTP ${res.status}`)
-      const data = (await res.json()) as {
-        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
-      }
-
-      const providers = data.providers ?? []
+      const providers = await fetchProviders(deps.client, deps.opencodeProject)
       if (providers.length === 0) {
         await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
         return
@@ -453,10 +438,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
     deps.abortGeneration()
     try {
-      if (hasHttpApi(deps.baseUrl)) {
-        const res = await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      }
+      await deps.client.session.abort({ path: { id: last } })
       await ctx.reply(`<b>🛑 Aborted</b>\n\n<code>…${last.slice(-8)}</code>`, { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ Abort failed: ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -580,9 +562,9 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action('status:abort', async (ctx) => {
     deps.abortGeneration()
     const last = deps.state.getLastSessionId()
-    if (last && hasHttpApi(deps.baseUrl)) {
+    if (last) {
       try {
-        await fetch(`${deps.baseUrl}/session/${last}/abort`, { method: 'POST' })
+        await deps.client.session.abort({ path: { id: last } })
       } catch {}
     }
     await ctx.answerCbQuery('Aborting…')
@@ -602,7 +584,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     // user doesn't end up running a new agent against a stale /model override.
     let modelSuffix = ''
     try {
-      const agents = await fetchUserAgents(deps.baseUrl, deps.opencodeProject)
+      const agents = await fetchUserAgents(deps.client, deps.opencodeProject)
       const a = agents.find((x) => x.name === name)
       const parsed = a ? parseAgentModel(a.model) : undefined
       if (parsed) {
@@ -674,19 +656,8 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action(/^model:pick:(.+)$/, async (ctx) => {
     const providerID = ctx.match[1]
     try {
-      if (!hasHttpApi(deps.baseUrl)) {
-        await ctx.answerCbQuery('Not available in plugin mode')
-        return
-      }
-      const params2 = new URLSearchParams()
-      if (deps.opencodeProject) params2.set('directory', deps.opencodeProject)
-      const qs2 = params2.toString()
-      const res = await fetch(`${deps.baseUrl}/config/providers${qs2 ? `?${qs2}` : ''}`, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = (await res.json()) as {
-        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
-      }
-      const provider = data.providers?.find(p => p.id === providerID)
+      const providers = await fetchProviders(deps.client, deps.opencodeProject)
+      const provider = providers.find(p => p.id === providerID)
       if (!provider || Object.keys(provider.models ?? {}).length === 0) {
         await ctx.answerCbQuery('No models for this provider')
         return
@@ -721,20 +692,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   // Back to provider list
   deps.bot.action('model:back', async (ctx) => {
     try {
-      if (!hasHttpApi(deps.baseUrl)) {
-        await ctx.answerCbQuery('Not available in plugin mode')
-        return
-      }
-      const params3 = new URLSearchParams()
-      if (deps.opencodeProject) params3.set('directory', deps.opencodeProject)
-      const qs3 = params3.toString()
-      const res = await fetch(`${deps.baseUrl}/config/providers${qs3 ? `?${qs3}` : ''}`, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = (await res.json()) as {
-        providers?: Array<{ id: string; name: string; models: Record<string, { name: string }> }>
-      }
-
-      const providers = data.providers ?? []
+      const providers = await fetchProviders(deps.client, deps.opencodeProject)
       const nextModel = deps.state.getNextModel()
       const lines = ['<b>⚙️ Model — Select provider</b>', '']
       const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
@@ -783,7 +741,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   // ── Info commands (split to separate file) ──
-  registerInfoCommands({ bot: deps.bot, baseUrl: deps.baseUrl ?? '', state: deps.state })
+  registerInfoCommands({ bot: deps.bot, client: deps.client, state: deps.state })
 
   // ── Approval callbacks — always registered so buttons work in both modes ──
   deps.bot.action(/^approve:(once|always|reject):(.+)$/, async (ctx) => {

@@ -77,6 +77,24 @@ describe('createRelay', () => {
     expect(cards.some(c => c.kind === 'assistant')).toBe(false)
   })
 
+  it('routes to msg.sessionId (web-selected) over the global pinned session', async () => {
+    const client = fakeClient()
+    const state = fakeState()
+    state.getPinnedSessionId = () => 'ses_pinned' // global pin points elsewhere
+    const relay = createRelay({
+      cardBus: createCardBus(),
+      client,
+      state,
+      chatTimeoutMs: 5000,
+      tuiVisible: false,
+      baseUrl: 'http://localhost:4096',
+    })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'm', sessionId: 'ses_web_selected' })
+    expect(client.session.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ path: { id: 'ses_web_selected' } }),
+    )
+  })
+
   it('navigates the TUI via /tui/select-session when tuiVisible', async () => {
     const client = fakeClient()
     const state = fakeState()

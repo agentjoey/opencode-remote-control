@@ -1,4 +1,5 @@
 import type { Telegraf, Context } from 'telegraf'
+import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { SessionState } from '../../../core/state.js'
 import { createLogger } from '../../../utils/logger.js'
 
@@ -6,68 +7,53 @@ const log = createLogger('info-commands')
 
 interface InfoDeps {
   bot: Telegraf
-  baseUrl: string
+  // opencode API access via the in-process SDK client — opencode 1.17 runs
+  // plugins in a worker thread where Bun's fetch can't reach ctx.serverUrl, so
+  // raw fetch(baseUrl/...) is unusable.
+  client: OpencodeClient
   state: SessionState
-}
-
-function safeBaseUrl(url: string): string | null {
-  return url && url.startsWith('http') ? url : null
 }
 
 export function registerInfoCommands(deps: InfoDeps): void {
   deps.bot.command('diff', async (ctx: Context) => {
-    const base = safeBaseUrl(deps.baseUrl)
-    if (!base) {
-      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
-      return
-    }
     const last = deps.state.getLastSessionId()
     if (!last) {
       await ctx.reply('<b>📝 Diff</b>\n\nNo session yet.', { parse_mode: 'HTML' })
       return
     }
     try {
-      const res = await fetch(`${base}/session/${last}/diff`, {
-        signal: AbortSignal.timeout(5000),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const diffs = (await res.json()) as Array<{ path: string; patch?: string }>
+      const res = await deps.client.session.diff({ path: { id: last } })
+      const diffs = (res.data ?? []) as Array<{ file: string; additions?: number; deletions?: number }>
       if (diffs.length === 0) {
         await ctx.reply(`<b>📝 Diff — …${last.slice(-8)}</b>\n\nNo diffs yet.`, { parse_mode: 'HTML' })
         return
       }
-      const PER_FILE_MAX = 10
-      const MAX_CHARS = 4000
+      const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!))
       const lines: string[] = [`<b>📝 Diff — …${last.slice(-8)}</b>`, '']
-      let total = 0
-      for (const d of diffs) {
-        lines.push(`<b>${d.path}</b>`)
-        const patch = (d.patch ?? '').split('\n').slice(0, PER_FILE_MAX)
-        const block = '<pre>' + patch.join('\n').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!)) + '</pre>'
-        total += block.length
-        if (total > MAX_CHARS) { lines.push('…(truncated)'); break }
-        lines.push(block)
-        lines.push('')
+      let totalAdd = 0
+      let totalDel = 0
+      for (const d of diffs.slice(0, 40)) {
+        const add = d.additions ?? 0
+        const del = d.deletions ?? 0
+        totalAdd += add
+        totalDel += del
+        lines.push(`<code>+${add} -${del}</code>  ${esc(d.file)}`)
       }
-      lines.push(`<i>${diffs.length} file${diffs.length > 1 ? 's' : ''}</i>`)
+      if (diffs.length > 40) lines.push(`…and ${diffs.length - 40} more`)
+      lines.push('', `<i>${diffs.length} file${diffs.length > 1 ? 's' : ''} · +${totalAdd} -${totalDel}</i>`)
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
+      log.error('diff failed', err as Error)
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
     }
   })
 
   deps.bot.command('todo', async (ctx: Context) => {
-    const base = safeBaseUrl(deps.baseUrl)
-    if (!base) {
-      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
-      return
-    }
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const res = await fetch(`${base}/session/${last}/todo`, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const todos = (await res.json()) as Array<{ content: string; status: 'pending' | 'in_progress' | 'completed' }>
+      const res = await deps.client.session.todo({ path: { id: last } })
+      const todos = (res.data ?? []) as Array<{ content: string; status: 'pending' | 'in_progress' | 'completed' }>
       if (todos.length === 0) {
         await ctx.reply(`<b>✅ Todos — …${last.slice(-8)}</b>\n\nNo todos.`, { parse_mode: 'HTML' })
         return
@@ -80,27 +66,23 @@ export function registerInfoCommands(deps: InfoDeps): void {
       }
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
+      log.error('todo failed', err as Error)
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
     }
   })
 
   deps.bot.command('context', async (ctx: Context) => {
-    const base = safeBaseUrl(deps.baseUrl)
-    if (!base) {
-      await ctx.reply('This command requires opencode HTTP API. Use legacy sidecar mode.', { parse_mode: 'HTML' })
-      return
-    }
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const sRes = await fetch(`${base}/session/${last}`, { signal: AbortSignal.timeout(5000) })
-      const s = (await sRes.json()) as {
+      const sRes = await deps.client.session.get({ path: { id: last } })
+      const s = (sRes.data ?? {}) as {
         agent?: string
         tokens?: { input?: number; output?: number; cache?: number }
         cost?: number
       }
-      const cRes = await fetch(`${base}/config`, { signal: AbortSignal.timeout(5000) })
-      const c = (await cRes.json()) as { agent?: Record<string, { model?: string }> }
+      const cRes = await deps.client.config.get()
+      const c = (cRes.data ?? {}) as { agent?: Record<string, { model?: string }> }
       const model = s.agent && c.agent?.[s.agent]?.model
       const nextAgent = deps.state.getNextAgent()
       const nextModel = deps.state.getNextModel()
@@ -121,6 +103,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
       }
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
     } catch (err) {
+      log.error('context failed', err as Error)
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
     }
   })

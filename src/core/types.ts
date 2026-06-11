@@ -17,6 +17,12 @@ export interface IncomingMessage {
   chatId: string
   text: string
   messageId: string
+  /**
+   * Target session this message should be relayed into. Web sets it to the
+   * session the UI is viewing; Telegram leaves it unset and the relay falls
+   * back to the (global) pinned/last session. The relay validates it exists.
+   */
+  sessionId?: string
 }
 
 export interface ChannelCapabilities {

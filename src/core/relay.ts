@@ -160,10 +160,13 @@ export function createRelay(deps: RelayDeps) {
       const pinnedSession = deps.state.getPinnedSessionId()
       const tuiSession = deps.tuiVisible ? deps.state.getTuiSelectedSession() : undefined
       const lastSession = deps.state.getLastSessionId()
-      // A persisted target (pinned/tui/last) may point at a deleted session —
-      // validate it before submitting, otherwise submitWithRetry burns 5 retries
-      // against a 404. A fresh pickSessionFallback() result is trusted as-is.
-      let resolvedId = pinnedSession ?? tuiSession ?? lastSession
+      // A per-message target (msg.sessionId, set by web to the session the UI is
+      // viewing) wins over the global pinned/tui/last fallback, so web and
+      // Telegram can drive different sessions at once. Any persisted target may
+      // point at a deleted session — validate before submitting, otherwise
+      // submitWithRetry burns 5 retries against a 404. A fresh
+      // pickSessionFallback() result is trusted as-is.
+      let resolvedId = msg.sessionId ?? pinnedSession ?? tuiSession ?? lastSession
       if (resolvedId && !(await sessionExists(deps.client, resolvedId))) {
         log.warn(`target session ${resolvedId.slice(-8)} no longer exists, falling back to newest`)
         resolvedId = undefined

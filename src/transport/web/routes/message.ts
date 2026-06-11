@@ -19,6 +19,9 @@ export function registerMessage(
       chatId: `web:${user.email}`,
       text: body.text,
       messageId,
+      // Route to the session the web UI is viewing, not the global pinned one,
+      // so web and Telegram can converse with different sessions independently.
+      sessionId: typeof body.sessionId === 'string' && body.sessionId ? body.sessionId : undefined,
     }
     void onMessage(msg)
     return c.json({ messageId })
