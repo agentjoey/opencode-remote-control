@@ -27,6 +27,7 @@ import { registerMcp } from './routes/mcp.js'
 import { registerCatalog } from './routes/catalog.js'
 import { registerOverrides } from './routes/overrides.js'
 import { registerWorkspaces } from './routes/workspaces.js'
+import { registerCreateSession } from './routes/create-session.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -73,5 +74,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerCatalog(app, opts.client)
   registerOverrides(app, opts.state)
   registerWorkspaces(app, opts.client)
+  registerCreateSession(app, opts.client)
   return app
 }
