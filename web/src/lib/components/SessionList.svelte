@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { sessionList, feeds } from '../stores/sessions.js'
   import { pinnedSessions } from '../stores/pins.js'
-  import { activeWorkspace } from '../stores/workspaces.js'
+  import { activeWorkspace, workspaces } from '../stores/workspaces.js'
   import { filterByWorkspace } from '../nav/workspaceFilter.js'
   import { api } from '../api/client.js'
   import type { SessionSummary } from '../api/types.js'
@@ -66,6 +66,7 @@
     try {
       await api.deleteSession(id)
       sessionList.set(await api.sessions())
+      workspaces.set(await api.workspaces())
       if (activeId === id) goto('/')
     } catch (err) {
       alert(`删除失败：${(err as Error).message}`)
