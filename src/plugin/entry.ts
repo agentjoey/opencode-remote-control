@@ -139,10 +139,9 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       }
     }, 15000)
 
-    // Unified event dispatch. Driven by the PRIMARY's cross-workspace global
-    // event stream (startGlobalEvents below), so this runs for events from every
-    // workspace — not just this plugin instance's directory. The per-instance
-    // `event` hook is intentionally inert (see below) to avoid double-processing.
+    // Unified event dispatch. Driven primarily by the per-instance `event` hook
+    // (opencode pushes events to the plugin — reliable in the worker), and
+    // supplemented by the global stream for OTHER workspaces only.
     async function dispatchEvent(ev: OcEvent): Promise<void> {
       const eventType = ev.type
       if (!eventType) return
@@ -197,22 +196,25 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       }
     }
 
+    // The pulled `/global/event` SSE stream connects but does NOT reliably
+    // deliver events inside opencode's plugin worker (verified at runtime),
+    // whereas the per-instance `event` hook below — opencode PUSHING events to
+    // the plugin — works. So the hook is the primary dispatch source for THIS
+    // workspace; the global stream is best-effort for OTHER workspaces only
+    // (directory !== our worktree), which also prevents double-processing.
     const globalEvents = startGlobalEvents({
       client: ctx.client,
-      // dispatchEvent is intentionally detached (void): events are not serialized
-      // against each other. relay.handleEvent's hot streaming paths
-      // (message.part.updated/delta) mutate per-session state synchronously, so
-      // there is no ordering hazard today. If relay.handleEvent ever awaits I/O on
-      // streaming events, this will need a serialising queue.
-      onEvent: (ev) => { void dispatchEvent(ev) },
+      onEvent: (ev, directory) => {
+        if (directory && ctx.worktree && directory !== ctx.worktree) void dispatchEvent(ev)
+      },
     })
 
     return {
-      event: async () => {
-        // Events are consumed via the PRIMARY's global event stream
-        // (startGlobalEvents), which covers every workspace — not just this
-        // instance's. The per-instance hook is intentionally inert to avoid
-        // double-processing local events.
+      event: async ({ event }) => {
+        // opencode pushes this workspace's events here; this is the reliable
+        // in-worker path that drives streaming/finalization. (The global SSE
+        // stream above only supplements with other workspaces' events.)
+        await dispatchEvent(event as unknown as OcEvent)
       },
       tool: {
         'rc-status': tool({

@@ -124,13 +124,11 @@ describe('remoteControlPlugin', () => {
   let globalStop: ReturnType<typeof vi.fn>
   // Captured onEvent callback from startGlobalEvents — drives dispatch in tests.
   let onEvent: (ev: any, directory?: string | undefined) => void
-  // Emit an unwrapped OcEvent payload through the global stream (matching how
-  // opencode's cross-workspace stream delivers events to the PRIMARY). The
-  // plugin's onEvent fires dispatchEvent as a detached promise (`void`), so we
-  // flush the microtask queue a few times to let its awaits settle before the
-  // test asserts.
+  // Events are dispatched via the per-instance `event` hook — the reliable
+  // in-worker path (opencode pushes events to the plugin). Drive the hook
+  // directly and flush the microtask queue so dispatchEvent's awaits settle.
   const emit = async (ev: any) => {
-    onEvent(ev, undefined)
+    await plug.event({ event: ev })
     await new Promise((resolve) => setImmediate(resolve))
   }
 
