@@ -64,6 +64,15 @@ describe('SessionState', () => {
     expect(b.getCurrentAgent()).toBe('build')
   })
 
+  it('persists activeWorkspace', () => {
+    const s = createFileBackedState(join(dir, 'state.json'))
+    expect(s.getActiveWorkspace()).toBeUndefined()
+    s.setActiveWorkspace('/Users/x/repo')
+    expect(s.getActiveWorkspace()).toBe('/Users/x/repo')
+    s.setActiveWorkspace(undefined)
+    expect(s.getActiveWorkspace()).toBeUndefined()
+  })
+
   it('tracks active generation via the abort registry', () => {
     const s = createFileBackedState(join(dir, 'state.json'))
     expect(s.hasActiveGeneration()).toBe(false)

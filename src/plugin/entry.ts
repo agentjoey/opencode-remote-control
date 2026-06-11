@@ -230,6 +230,20 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
             return lines.join('\n')
           },
         }),
+        notify: tool({
+          description: 'Send the user a push notification (e.g. when a long task or tests finish).',
+          args: { message: tool.schema.string().describe('The notification text to push to the user') },
+          async execute(args: { message: string }) {
+            const sid = state.getLastSessionId()
+            cardBus.publish({
+              kind: 'info',
+              title: 'Notification',
+              sections: [{ body: `🔔 ${args.message}` }],
+              ...(sid ? { sessionId: sid } : {}),
+            })
+            return 'notification sent'
+          },
+        }),
       },
       dispose: async () => {
         log.info('plugin disposing, stopping transports...')

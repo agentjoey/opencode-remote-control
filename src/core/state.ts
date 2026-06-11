@@ -11,6 +11,7 @@ interface PersistedState {
   nextModel?: { providerID: string; modelID: string }
   tuiSelectedSession?: string
   currentAgent?: string
+  activeWorkspace?: string
 }
 
 export interface SessionState {
@@ -26,6 +27,8 @@ export interface SessionState {
   setTuiSelectedSession(id: string | undefined): void
   getCurrentAgent(): string | undefined
   setCurrentAgent(name: string | undefined): void
+  getActiveWorkspace(): string | undefined
+  setActiveWorkspace(dir: string | undefined): void
   getActiveAbort(sessionId: string): AbortController | undefined
   setActiveAbort(sessionId: string, ac: AbortController | undefined): void
   /** True while any session has an in-flight generation (abort registered). */
@@ -112,6 +115,12 @@ export function createFileBackedState(path: string): SessionState {
     setCurrentAgent: (name) => {
       if (name === undefined) delete cache.currentAgent
       else cache.currentAgent = name
+      void persist()
+    },
+    getActiveWorkspace: () => cache.activeWorkspace,
+    setActiveWorkspace: (dir) => {
+      if (dir === undefined) delete cache.activeWorkspace
+      else cache.activeWorkspace = dir
       void persist()
     },
     getActiveAbort: (sid) => aborts.get(sid),
