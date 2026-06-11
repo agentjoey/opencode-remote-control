@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { Telegraf, Context } from 'telegraf'
 import { Markup } from 'telegraf'
 import type { OpencodeClient } from '@opencode-ai/sdk'
@@ -160,6 +161,15 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
 }
 
 export function registerHandlers(deps: HandlersDeps): void {
+  // Maps a short token -> workspace directory, so callback_data stays under
+  // Telegram's 64-byte limit. Stable per directory (sha1-derived).
+  const wsTokens = new Map<string, string>()
+  const wsToken = (dir: string) => {
+    const t = createHash('sha1').update(dir).digest('base64url').slice(0, 16)
+    wsTokens.set(t, dir)
+    return t
+  }
+
   // ── Commands ──
 
   deps.bot.command('start', async (ctx: Context) => {
@@ -517,7 +527,7 @@ export function registerHandlers(deps: HandlersDeps): void {
         lines.push(`${mark}<b>${w.name}</b>  ·  ${w.sessionCount} session${w.sessionCount === 1 ? '' : 's'}`)
         lines.push(`   <code>${w.directory}</code>`)
       }
-      const rows = ws.slice(0, 20).map((w) => [Markup.button.callback(`📂 ${w.name}`, `ws:set:${w.directory}`)])
+      const rows = ws.slice(0, 20).map((w) => [Markup.button.callback(`📂 ${w.name}`, `ws:set:${wsToken(w.directory)}`)])
       await ctx.reply(lines.join('\n'), { parse_mode: 'HTML', ...Markup.inlineKeyboard(rows) })
     } catch (err) {
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -525,7 +535,8 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   deps.bot.action(/^ws:set:(.+)$/, async (ctx) => {
-    const dir = ctx.match[1]
+    const dir = wsTokens.get(ctx.match[1])
+    if (!dir) { await ctx.answerCbQuery('Stale — re-run /workspaces'); return }
     deps.state.setActiveWorkspace(dir)
     await ctx.answerCbQuery(`Workspace → ${dir.split('/').pop()}`)
     try { await ctx.editMessageText(`📍 <b>Active workspace</b>\n\n<code>${dir}</code>\n\nUse /new to start a session here.`, { parse_mode: 'HTML' }) } catch { /* ignore */ }

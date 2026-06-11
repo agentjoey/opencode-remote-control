@@ -233,8 +233,8 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         notify: tool({
           description: 'Send the user a push notification (e.g. when a long task or tests finish).',
           args: { message: tool.schema.string().describe('The notification text to push to the user') },
-          async execute(args: { message: string }) {
-            const sid = state.getLastSessionId()
+          async execute(args: { message: string }, context: any) {
+            const sid = context?.sessionID || state.getLastSessionId()
             cardBus.publish({
               kind: 'info',
               title: 'Notification',
