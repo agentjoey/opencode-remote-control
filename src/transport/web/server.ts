@@ -28,6 +28,7 @@ import { registerCatalog } from './routes/catalog.js'
 import { registerOverrides } from './routes/overrides.js'
 import { registerWorkspaces } from './routes/workspaces.js'
 import { registerCreateSession } from './routes/create-session.js'
+import { registerCommands } from './routes/commands.js'
 
 export interface WsHub {
   attach(ws: any, user: { email: string }): void
@@ -75,5 +76,6 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerOverrides(app, opts.state)
   registerWorkspaces(app, opts.client)
   registerCreateSession(app, opts.client)
+  registerCommands(app, opts.client)
   return app
 }

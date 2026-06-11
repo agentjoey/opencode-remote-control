@@ -1,0 +1,25 @@
+import { describe, it, expect, vi } from 'vitest'
+import { Hono } from 'hono'
+import { registerCommands } from '../../../src/transport/web/routes/commands'
+
+describe('commands routes', () => {
+  it('GET /api/commands lists opencode commands', async () => {
+    const client = { command: { list: async () => ({ data: [{ name: 'review', description: 'Review code' }] }) } } as any
+    const app = new Hono(); registerCommands(app, client)
+    const res = await app.request('/api/commands')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([{ name: 'review', description: 'Review code' }])
+  })
+  it('POST /api/command runs a command on a session', async () => {
+    const command = vi.fn(async () => ({ data: {} }))
+    const app = new Hono(); registerCommands(app, { session: { command } } as any)
+    const res = await app.request('/api/command', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sessionId: 'ses_1', command: 'review', arguments: 'x' }) })
+    expect(res.status).toBe(200)
+    expect(command).toHaveBeenCalledWith({ path: { id: 'ses_1' }, body: { command: 'review', arguments: 'x' } })
+  })
+  it('POST /api/command 400s without sessionId or command', async () => {
+    const app = new Hono(); registerCommands(app, { session: { command: vi.fn() } } as any)
+    const res = await app.request('/api/command', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+    expect(res.status).toBe(400)
+  })
+})
