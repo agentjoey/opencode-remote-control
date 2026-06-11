@@ -24,4 +24,17 @@ describe('POST /api/session', () => {
     const res = await app.request('/api/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
     expect(res.status).toBe(400)
   })
+
+  it('omits title → body {} when no title is provided', async () => {
+    const create = vi.fn(async () => ({ data: { id: 'ses_x' } }))
+    const app = new Hono()
+    registerCreateSession(app, { session: { create } } as any)
+    const res = await app.request('/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ directory: '/Users/x/repo' }),
+    })
+    expect(res.status).toBe(200)
+    expect(create).toHaveBeenCalledWith({ query: { directory: '/Users/x/repo' }, body: {} })
+  })
 })

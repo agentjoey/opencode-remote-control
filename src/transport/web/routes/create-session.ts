@@ -7,6 +7,8 @@ export function registerCreateSession(app: Hono, client: OpencodeClient) {
     if (typeof body.directory !== 'string' || !body.directory.trim()) {
       return c.json({ error: 'directory required' }, 400)
     }
+    // `as any`: the SDK's generated create() type omits the `directory` query
+    // param, but opencode accepts it (creates the session in that directory).
     const res = await client.session.create({
       query: { directory: body.directory },
       body: body.title ? { title: body.title } : {},
