@@ -8,6 +8,7 @@ export interface PluginConfig {
   webEnabled: boolean
   webHost: string
   webPort: number
+  webPublicUrl: string
   webStaticRoot: string
   webCacheSize: number
   webCfAccessTeam: string
@@ -89,6 +90,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
     webHost,
     webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 7081),
+    webPublicUrl: env('WEB_PUBLIC_URL', options?.webPublicUrl as string) ?? '',
     webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? resolve(PLUGIN_ROOT, 'web', 'dist'),
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
     webCfAccessTeam: env('WEB_CF_ACCESS_TEAM', options?.webCfAccessTeam as string) ?? '',
