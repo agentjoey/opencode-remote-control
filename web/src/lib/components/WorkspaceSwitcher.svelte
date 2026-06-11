@@ -29,6 +29,7 @@
     try {
       const res = await api.createSession({ directory: $activeWorkspace })
       sessionList.set(await api.sessions())
+      workspaces.set(await api.workspaces())
       goto(`/${res.id}/`)
     } catch (e) {
       error = (e as Error).message
