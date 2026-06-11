@@ -60,6 +60,7 @@ function extractJwt(headers: Record<string, string | string[] | undefined>, quer
 export async function verifyUpgradeJwt(
   req: { headers: Record<string, string | string[] | undefined>; url?: string; socket?: { remoteAddress?: string } },
   opts: CfAccessOpts,
+  jwks?: ReturnType<typeof createRemoteJWKSet>,
 ): Promise<{ email: string; sub: string } | null> {
   if (devBypassAllowed(req.socket?.remoteAddress, opts)) {
     return { email: opts.devEmail ?? 'dev@localhost', sub: 'dev' }
@@ -68,8 +69,8 @@ export async function verifyUpgradeJwt(
   const jwt = extractJwt(req.headers, query)
   if (!jwt) return null
   try {
-    const jwks = createRemoteJWKSet(new URL(`https://${opts.team}.cloudflareaccess.com/cdn-cgi/access/certs`))
-    const { payload } = await jwtVerify(jwt, jwks, {
+    const keys = jwks ?? createRemoteJWKSet(new URL(`https://${opts.team}.cloudflareaccess.com/cdn-cgi/access/certs`))
+    const { payload } = await jwtVerify(jwt, keys, {
       issuer: `https://${opts.team}.cloudflareaccess.com`,
       audience: opts.aud,
     })

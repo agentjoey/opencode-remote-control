@@ -178,6 +178,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       '  /sessions  List all sessions',
       '  /agent     Set next-message agent',
       '  /model     Set next-message model',
+      '  /pair      Pair a new device',
       '  /files     Files touched this session',
       '  /diff      Pending git diff',
       '  /todo      Session todo list',
@@ -458,6 +459,19 @@ export function registerHandlers(deps: HandlersDeps): void {
     )
   })
 
+  deps.bot.command('pair', async (ctx) => {
+    try {
+      const { buildPairContext, buildPairUrl } = await import('../../connectivity/pairing.js')
+      const { token, url } = await buildPairContext()
+      const pairUrl = buildPairUrl(url, token)
+      // The token travels in the URL fragment. Sending it over Telegram is
+      // acceptable: the user already trusts this bot channel for control.
+      await ctx.reply(`🔗 <b>Pair a device</b>\n\nOpen this once on the device:\n<code>${pairUrl}</code>`, { parse_mode: 'HTML' })
+    } catch (err) {
+      await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
+    }
+  })
+
   deps.bot.command('help', async (ctx: Context) => {
     await ctx.reply(
       [
@@ -468,6 +482,7 @@ export function registerHandlers(deps: HandlersDeps): void {
         '  /status  Server health + session',
         '  /sessions List all sessions',
         '  /session Pin a session',
+        '  /pair    Pair a device (URL + token)',
         '  /files   Files touched in last session',
         '  /diff    Pending git diff',
         '  /todo    Session todo list',
@@ -505,6 +520,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       { command: 'current', description: 'Last session used' },
       { command: 'abort', description: 'Stop the current generation' },
       { command: 'version', description: 'Bot version + uptime' },
+      { command: 'pair', description: 'Pair a device (URL + token)' },
       { command: 'help', description: 'Show help' },
     ])
     .catch((err) => log.warn('setMyCommands failed', err))

@@ -8,12 +8,15 @@ export interface PluginConfig {
   webEnabled: boolean
   webHost: string
   webPort: number
+  webPublicUrl: string
   webStaticRoot: string
   webCacheSize: number
   webCfAccessTeam: string
   webCfAccessAud: string
   webCfAccessDevBypass: boolean
   webCfAccessDevEmail: string
+  webAuth: 'token' | 'cf-access'
+  webToken: string
   statePath: string
   tuiVisible: boolean
   transport: string
@@ -86,7 +89,8 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     allowedUserIds: ids,
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
     webHost,
-    webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 7081),
+    webPort: Number(options?.webPort ?? process.env.WEB_PORT ?? 17081),
+    webPublicUrl: env('WEB_PUBLIC_URL', options?.webPublicUrl as string) ?? '',
     webStaticRoot: env('WEB_STATIC_ROOT', options?.webStaticRoot as string) ?? resolve(PLUGIN_ROOT, 'web', 'dist'),
     webCacheSize: Number(options?.webCacheSize ?? process.env.WEB_SESSION_CACHE_SIZE ?? 100),
     webCfAccessTeam: env('WEB_CF_ACCESS_TEAM', options?.webCfAccessTeam as string) ?? '',
@@ -96,6 +100,8 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     // must opt in explicitly with WEB_CF_ACCESS_DEV_BYPASS=true.
     webCfAccessDevBypass: devBypassExplicit ?? (devBypassEnv !== undefined ? devBypassEnv === 'true' : false),
     webCfAccessDevEmail: env('WEB_CF_ACCESS_DEV_EMAIL', options?.webCfAccessDevEmail as string) ?? 'dev@localhost',
+    webAuth: (env('WEB_AUTH', options?.webAuth as string) ?? 'token') === 'cf-access' ? 'cf-access' : 'token',
+    webToken: env('WEB_TOKEN', options?.webToken as string) ?? '',
     statePath: env('STATE_PATH', options?.statePath as string) ?? './data/state.json',
     tuiVisible: bool(options?.tuiVisible as string) ?? process.env.TUI_VISIBLE !== 'false',
     transport: env('TRANSPORT', options?.transport as string) ?? 'telegram',

@@ -13,6 +13,7 @@ COMMANDS:
   init          Interactive setup wizard (writes .env)
   install       Install as opencode plugin
   uninstall     Remove from opencode plugin config
+  pair          Show QR + URL to pair a device
   --help, -h    Show this help
 `
 
@@ -40,6 +41,11 @@ async function main() {
 
   if (cmd === 'uninstall') {
     await import('./uninstall.js').then((m) => m.main())
+    return
+  }
+
+  if (cmd === 'pair') {
+    await import('./pair.js').then((m) => m.main())
     return
   }
 

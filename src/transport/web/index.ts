@@ -10,7 +10,7 @@ import type { StructuredCard } from '../../core/structured-card.js'
 import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
-import { verifyUpgradeJwt } from './middleware/cf-access.js'
+import type { AuthStrategy } from '../../connectivity/auth/index.js'
 
 const log = createLogger('web')
 
@@ -18,7 +18,7 @@ export interface WebTransportConfig {
   host: string
   port: number
   client: OpencodeClient
-  cfAccess: { team: string; aud: string; devBypass?: boolean; devEmail?: string; host?: string }
+  auth: AuthStrategy
   staticRoot: string
   cacheSize: number
   /** opencode server base URL (the in-process plugin server) — for raw /config reads. */
@@ -44,7 +44,7 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
       }
       const wsHub = createWsHub({ cardBus: deps.cardBus, client: cfg.client, state: deps.state })
       const app = buildServer({
-        cfAccess: { ...cfg.cfAccess, host: cfg.cfAccess.host ?? cfg.host },
+        auth: cfg.auth,
         client: cfg.client,
         state: deps.state,
         cardBus: deps.cardBus,
@@ -89,10 +89,9 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
           socket.destroy()
           return
         }
-        // Auth: CF Access JWT from the cookie / header / query (PWA path).
-        const user = await verifyUpgradeJwt(
+        // Auth: delegate to the configured strategy (token or CF Access).
+        const user = await cfg.auth.verifyUpgrade(
           { headers: req.headers, url: req.url, socket: req.socket },
-          { team: cfg.cfAccess.team, aud: cfg.cfAccess.aud, devBypass: cfg.cfAccess.devBypass, devEmail: cfg.cfAccess.devEmail, host: cfg.host },
         )
         if (!user) {
           log.warn(`ws upgrade rejected: JWT verify failed (cookie=${hasCookie} cf-access-hdr=${hasAccessHdr})`)

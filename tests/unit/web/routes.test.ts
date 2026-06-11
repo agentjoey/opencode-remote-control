@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { buildServer } from '../../../src/transport/web/server'
+import { createTokenAuth } from '../../../src/connectivity/auth/token'
 
 function fakeState() {
   const costs = new Map<string, number>([['ses_a', 0.1], ['ses_b', 0.05]])
@@ -46,7 +47,7 @@ function fakeClient(config: any = {}, providers: any[] = []) {
 }
 
 const baseOpts = (state: any, client: any) => ({
-  cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
+  auth: createTokenAuth({ token: 'test-token', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' }),
   client, state,
   cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,

@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createWebTransport } from '../../../src/transport/web/index'
+import { createTokenAuth } from '../../../src/connectivity/auth/token'
 
 describe('createWebTransport', () => {
   it('exposes name + capabilities.streaming=true', () => {
     const t = createWebTransport({
       host: '127.0.0.1', port: 7081,
       client: {} as any,
-      cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
+      auth: createTokenAuth({ token: 'test-token', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' }),
       staticRoot: '/tmp/nonexistent',
       cacheSize: 100,
     })
@@ -18,7 +19,7 @@ describe('createWebTransport', () => {
     const t = createWebTransport({
       host: '127.0.0.1', port: 0,
       client: {} as any,
-      cfAccess: { team: '', aud: '', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' },
+      auth: createTokenAuth({ token: 'test-token', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' }),
       staticRoot: '/tmp/definitely-not-here-xyz',
       cacheSize: 100,
     })
