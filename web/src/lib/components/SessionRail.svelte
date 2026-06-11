@@ -1,6 +1,7 @@
 <!-- src/lib/components/SessionRail.svelte -->
 <script lang="ts">
   import SessionList from './SessionList.svelte'
+  import WorkspaceSwitcher from './WorkspaceSwitcher.svelte'
   import { api } from '$lib/api/client.js'
   import { sessionList } from '$lib/stores/sessions.js'
   export let activeId: string | undefined = undefined
@@ -57,6 +58,7 @@
           </button>
         </span>
       </div>
+      <WorkspaceSwitcher />
       <div class="list"><SessionList {activeId} /></div>
     </div>
   {/if}
