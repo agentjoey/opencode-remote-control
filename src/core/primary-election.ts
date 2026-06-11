@@ -37,9 +37,18 @@ function passive(): PrimaryLock {
  * singletons — exactly one instance may own them. Creating the lock with O_EXCL
  * ('wx') is the election: the writer wins, everyone else runs PASSIVE. A lock
  * whose owner pid is dead is reclaimed.
+ *
+ * Note: the stale-lock reclaim path (EEXIST -> dead pid -> unlink -> retry) has
+ * a narrow TOCTOU window where two concurrent callers may both unlink. Only one
+ * can win the subsequent O_EXCL open, so correctness is preserved, but the
+ * function is not formally lock-free in the stale path.
  */
 export function tryBecomePrimary(lockPath = defaultLockPath()): PrimaryLock {
-  try { mkdirSync(dirname(lockPath), { recursive: true }) } catch { /* ignore */ }
+  try {
+    mkdirSync(dirname(lockPath), { recursive: true })
+  } catch (err) {
+    log.warn(`election: cannot create lock dir ${dirname(lockPath)}: ${(err as Error).message}`)
+  }
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {

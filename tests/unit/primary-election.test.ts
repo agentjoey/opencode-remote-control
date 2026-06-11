@@ -30,9 +30,25 @@ describe('tryBecomePrimary', () => {
     a.release()
   })
 
+  it('reclaims a corrupt lock file (non-JSON content)', () => {
+    writeFileSync(lock, 'not-json-garbage')
+    const a = tryBecomePrimary(lock)
+    expect(a.isPrimary).toBe(true)
+    a.release()
+  })
+
   it('release frees the lock so a later caller can win', () => {
     const a = tryBecomePrimary(lock)
     a.release()
+    const b = tryBecomePrimary(lock)
+    expect(b.isPrimary).toBe(true)
+    b.release()
+  })
+
+  it('release is idempotent', () => {
+    const a = tryBecomePrimary(lock)
+    a.release()
+    a.release() // must not throw or corrupt state
     const b = tryBecomePrimary(lock)
     expect(b.isPrimary).toBe(true)
     b.release()
