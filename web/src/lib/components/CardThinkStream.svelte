@@ -14,15 +14,23 @@
     padding: 2px 0 6px 14px;
     margin: 2px 0 8px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-3);
   }
-  .think summary { cursor: pointer; color: #a78bfa; user-select: none; }
+  .think summary {
+    cursor: pointer;
+    color: var(--text-3);
+    user-select: none;
+    font-size: 11px;
+    opacity: 0.85;
+  }
   .body {
     margin: 6px 0 0;
     white-space: pre-wrap;
     word-break: break-word;
-    line-height: 1.55;
+    line-height: 1.5;
+    font-size: 11px;
     color: var(--text-3);
+    opacity: 0.85;
   }
 </style>
