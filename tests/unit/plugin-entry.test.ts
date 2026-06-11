@@ -123,7 +123,7 @@ describe('remoteControlPlugin', () => {
   // test asserts.
   const emit = async (ev: any) => {
     onEvent(ev, undefined)
-    for (let i = 0; i < 5; i++) await Promise.resolve()
+    await new Promise((resolve) => setImmediate(resolve))
   }
 
   beforeEach(async () => {

@@ -189,6 +189,11 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
 
     const globalEvents = startGlobalEvents({
       client: ctx.client,
+      // dispatchEvent is intentionally detached (void): events are not serialized
+      // against each other. relay.handleEvent's hot streaming paths
+      // (message.part.updated/delta) mutate per-session state synchronously, so
+      // there is no ordering hazard today. If relay.handleEvent ever awaits I/O on
+      // streaming events, this will need a serialising queue.
       onEvent: (ev) => { void dispatchEvent(ev) },
     })
 
