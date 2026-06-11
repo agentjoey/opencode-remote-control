@@ -56,6 +56,7 @@
     background: var(--bg-input);
     padding: 0.1em 0.3em;
     border-radius: 4px;
+    color: var(--hl-green);
   }
   .md :global(pre code) { background: transparent; padding: 0; }
   .md :global(a) { color: var(--accent); }

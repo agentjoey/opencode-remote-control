@@ -27,7 +27,9 @@
   },
   "dependencies": {
     "dompurify": "^3.1.0",
-    "marked": "^14.0.0"
+    "highlight.js": "^11.11.1",
+    "marked": "^14.0.0",
+    "marked-highlight": "^2.2.4"
   },
   "type": "module"
 }

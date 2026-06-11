@@ -10,6 +10,26 @@
   // "in progress" — earlier ones may just not be marked done yet during a
   // stream. Blink only that one; the rest stay static.
   $: lastRunning = shown.reduce((acc, t, i) => (t.status === 'running' ? i : acc), -1)
+
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  }
+
+  function formatArgs(args: string): string {
+    try {
+      const obj = JSON.parse(args) as Record<string, unknown>
+      if (obj.filePath && typeof obj.filePath === 'string') {
+        const fp = escapeHtml(obj.filePath)
+        obj.filePath = `__FP__${fp}__FP__`
+        const json = JSON.stringify(obj)
+        return escapeHtml(json).replace(
+          /__FP__(.+?)__FP__/g,
+          '<span class="fp">$1</span>'
+        )
+      }
+    } catch {}
+    return escapeHtml(args)
+  }
 </script>
 
 {#if tools.length > 0}
@@ -18,7 +38,7 @@
       <div class="t {t.status}" class:live={i === lastRunning}>
         <span class="dot"></span>
         <span class="name">{t.tool}</span>
-        {#if t.args}<span class="args">{t.args}</span>{/if}
+        {#if t.args}<span class="args">{@html formatArgs(t.args)}</span>{/if}
       </div>
     {/each}
     {#if tools.length > LIMIT && !expanded}
@@ -50,6 +70,7 @@
   }
   .name { flex-shrink: 0; }
   .args { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+  .args :global(.fp) { color: var(--hl-green); }
 
   /* running (not the active one): static emerald dot, neutral text */
   .t.running .dot { background: var(--accent); }
