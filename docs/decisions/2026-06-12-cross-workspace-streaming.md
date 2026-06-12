@@ -14,7 +14,7 @@ and a separate TUI doesn't mirror them.
 
 | Finding | Evidence |
 |---|---|
-| The user's setup is **multi-process** (one `opencode` per directory) → **multiple separate servers** | `pid 70108` cwd `/Users/redacted/AgentWorks` distinct from the hub |
+| The user's setup is **multi-process** (one `opencode` per directory) → **multiple separate servers** | `pid 70108` cwd `~/AgentWorks` distinct from the hub |
 | A **TUI `opencode` cannot even submit** to a session outside its own directory | driving a hub-created `/tmp` session produced **no `submitting` log** — `client.session.get` hangs (sessions are directory-bound to a live server) |
 | `opencode serve` **can** submit cross-directory (multi-dir) and exposes a **reachable API port** | a throwaway serve prompted a repo-dir session fine; listened on `:39094` |
 | **`client.global.event()` connects but delivers ZERO events inside the plugin worker** — even in serve | instrumented probe: `PROBE global recv` count = **0** after a cross-dir prompt |
