@@ -36,7 +36,7 @@ browser and watch the assistant work — even when you're away from your desk.
 │  │                  │  │  └─ relay + CardBus        │ │
 │  └──────────────────┘  └──────────┬────────────────┘ │
 │                                   ▼                   │
-│                          Telegram / Web / Extension   │
+│                          Telegram / Web (PWA)         │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -127,6 +127,9 @@ signed in.
 | `/status` | Server health, session count, pinned session |
 | `/sessions` | List all sessions with pin buttons |
 | `/session <id>` | Pin a specific session |
+| `/workspaces` | List known workspaces (directories) |
+| `/new` | Start a new session in the active workspace |
+| `/rename <title>` | Rename the pinned session |
 | `/files` | Files touched in the last session |
 | `/diff` | Pending git diff for the session |
 | `/todo` | Session todo list |
@@ -135,6 +138,7 @@ signed in.
 | `/model` | Set next model (sticky until cleared) |
 | `/current` | Show pinned session |
 | `/abort` | Stop the current generation |
+| `/pair` | Pair a device (URL + QR with token) for the Web PWA |
 | `/version` | Plugin version + uptime |
 | `/help` | Show this list |
 
@@ -160,8 +164,7 @@ relaying output to every connected channel in real time.
 | Transport | Status | Notes |
 |---|---|---|
 | Telegram | ✅ Stable | Final-result delivery, pagination, approvals |
-| Web (PWA) | ✅ | SvelteKit, full streaming, Cloudflare Access |
-| Chrome Extension | ✅ | Side panel + context menu |
+| Web (PWA) | ✅ Stable | SvelteKit, full streaming, token auth (default) / Cloudflare Access |
 
 To add another channel, see
 [`docs/transports/CONTRIBUTING-NEW-TRANSPORT.md`](docs/transports/CONTRIBUTING-NEW-TRANSPORT.md).
@@ -186,7 +189,7 @@ To add another channel, see
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | — (required) | Telegram bot token from @BotFather |
 | `ALLOWED_USER_IDS` | — (required) | Comma-separated allowed Telegram user IDs |
-| `OPENCODE_BASE_URL` | `http://localhost:4096` | opencode server URL |
+| `OPENCODE_BASE_URL` | — | opencode server URL. Unused in plugin mode (the SDK client is injected); legacy/sidecar only |
 | `CHAT_TIMEOUT_MS` | `600000` | Per-message timeout (ms) |
 | `TUI_VISIBLE` | `true` | Navigate the TUI to the target session; `false` = pure direct API |
 | `STATE_PATH` | `./data/state.json` | Persistent state file |

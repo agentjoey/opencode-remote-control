@@ -1,10 +1,21 @@
 #!/usr/bin/env node
 import { createInterface } from 'node:readline'
-import { writeFileSync, existsSync } from 'node:fs'
+import { writeFileSync, existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { runInitWizard, defaultTestConnection } from './init.js'
 
+const VERSION = (() => {
+  try {
+    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), '../../package.json')
+    return (JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version: string }).version
+  } catch {
+    return 'unknown'
+  }
+})()
+
 const HELP = `
-opencode-remote-control v0.6.0
+opencode-remote-control v${VERSION}
 
 USAGE:
   oprc <command>

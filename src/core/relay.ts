@@ -135,7 +135,7 @@ interface PluginSessionCtx {
 }
 
 export function createRelay(deps: RelayDeps) {
-  /** Plugin mode: per-session response contexts. Only used when eventStream is undefined. */
+  /** Per-session response contexts, keyed by session id. */
   const pluginSessions = new Map<string, PluginSessionCtx>()
 
   function cleanupPluginSession(sessionId: string) {

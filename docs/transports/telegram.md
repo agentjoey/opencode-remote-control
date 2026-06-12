@@ -1,7 +1,8 @@
 # Telegram Transport Setup
 
 This guide walks through setting up the Telegram transport for
-opencode-remote-control.
+opencode-remote-control. It runs as an **opencode plugin** (in-process), so
+there is no separate daemon to manage — it starts and stops with `opencode`.
 
 ## 1. Create a bot with BotFather
 
@@ -14,74 +15,58 @@ opencode-remote-control.
 
 Message [@userinfobot](https://t.me/userinfobot) and copy your numeric ID.
 
-## 3. Configure the bot
+## 3. Configure
 
 ```bash
 cp .env.example .env
 # Edit .env:
-# TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
-# ALLOWED_USER_ID=12345678
+#   TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+#   ALLOWED_USER_IDS=12345678            # comma-separated for multiple users
 ```
 
-## 4. Start opencode
+The interactive `oprc init` wizard can write these for you (it also runs from
+the installer).
+
+## 4. Build and install the plugin
+
+Requires opencode 1.17+.
 
 ```bash
-opencode serve --port 4096
+npm install && npm run build
+node dist/cli/install.js        # or: oprc install
 ```
 
-## 5. Start the bot
+The installer writes a plugin bridge to `~/.config/opencode/plugins/` (opencode
+1.17 loads local plugins from there) and saves your `.env` values.
+
+## 5. Run opencode
 
 ```bash
-npm install
-npm run build
-npm start
+opencode                        # from any directory — the plugin loads globally
 ```
 
-You should see log output like:
-```
-[INFO] [main] starting, transport=telegram, opencode=http://localhost:4096
-[INFO] [main] opencode healthy at http://localhost:4096
-```
+The plugin auto-starts. Send **"hello"** in Telegram → the assistant responds.
+For an always-on hub, run `opencode` from a small/empty directory so the file
+watcher stays fast. Multiple instances elect one PRIMARY to own the bot (see
+[OPS.md](../OPS.md)).
 
 ## Common errors
 
-### "409 Conflict"
+### "409 Conflict" / bot silent
+Only one process can long-poll a given bot token. Within one machine, PRIMARY
+election handles this automatically. Across machines, run the bot on only one,
+or use a different token per machine.
 
-Another process is already polling Telegram with the same token. Stop the
-other process, or use a different bot token.
+### "Unauthorized" / no response
+The sending Telegram user ID isn't in `ALLOWED_USER_IDS`. Check your ID with
+@userinfobot and confirm it's listed (comma-separated, no spaces).
 
-### "Unauthorized"
-
-The Telegram user ID sending messages doesn't match `ALLOWED_USER_ID`. Check
-your ID with @userinfobot.
-
-### "💭 thinking..." stuck forever
-
-- Is `opencode serve` running?
-- Is the port correct (`OPENCODE_BASE_URL`)?
-- Check `data/state.json` — is `lastSessionId` pointing to a valid session?
-
-### "No opencode sessions found"
-
-Open the opencode TUI and start a conversation first. The bot needs at least
-one session to attach to.
-
-## Running as a launchd service (macOS)
-
-```bash
-cp deploy/ai.opencode.remote-control.telegram.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/ai.opencode.remote-control.telegram.plist
-launchctl start ai.opencode.remote-control.telegram
-```
-
-Logs:
-```bash
-tail -f /tmp/opencode-remote-control-telegram.log
-tail -f /tmp/opencode-remote-control-telegram.err
-```
+### No sessions found
+Start a conversation in opencode (TUI or web) first, or use `/new` to create one
+in the active workspace.
 
 ## See also
 
 - [Main README](../../README.md)
-- [OPS.md](../../docs/OPS.md) — full operations manual
+- [OPS.md](../OPS.md) — operations manual (restart, env vars, web/PWA, cache)
 - [CONTRIBUTING-NEW-TRANSPORT.md](CONTRIBUTING-NEW-TRANSPORT.md) — adding a new transport

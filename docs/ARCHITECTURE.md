@@ -3,7 +3,7 @@
 > Plain-language explanation of how `opencode-remote-control` is structured,
 > what it talks to, and how to extend it.
 >
-> Updated for v0.6.0 (Plugin Registry mode as primary deployment).
+> Updated for v0.6.1 (plugin mode, PRIMARY election, token auth).
 
 ## Deployment models
 
@@ -24,8 +24,10 @@
 └──────────────────────────────────────────────────────┘
 ```
 
-Install once: `npx opencode-remote-control install`
-Then: `opencode` — bot auto-starts, no extra terminal, no launchd.
+Install once: `npm install && npm run build && node dist/cli/install.js`
+(or `oprc install` once linked). Then: `opencode` — the plugin auto-starts, no
+extra terminal, no launchd. Multiple instances elect one PRIMARY to own the
+web/Telegram singletons.
 
 > **v0.6.0:** the standalone sidecar / `EventStream` SSE path was removed. The
 > plugin runs in-process and consumes the opencode plugin **event hook**
@@ -172,9 +174,12 @@ env vars (`.env` is auto-loaded):
 | `ALLOWED_USER_IDS` | — (required) | Comma-separated allowed Telegram user ids |
 | `WEB_ENABLED` | `false` | Enable the Web/PWA transport |
 | `WEB_HOST` | `127.0.0.1` | Web bind address |
-| `WEB_PORT` | `7081` | Web port |
-| `WEB_CF_ACCESS_TEAM` / `_AUD` | — | Cloudflare Access team + audience for JWT verification |
-| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass CF Access **only for a loopback socket peer**. Off by default — a loopback bind is not safe behind a tunnel |
+| `WEB_PORT` | `17081` | Web port (opencode 1.17 occupies `7081`) |
+| `WEB_AUTH` | `token` | Auth strategy: `token` (default, device pairing) or `cf-access` |
+| `WEB_TOKEN` | auto | App token; auto-generated + persisted `0600` at `~/.opencode/oprc-token` |
+| `WEB_PUBLIC_URL` | — | Public URL for pairing links; auto-detects cloudflared, else LAN/loopback |
+| `WEB_CF_ACCESS_TEAM` / `_AUD` | — | Cloudflare Access team + audience (when `WEB_AUTH=cf-access`) |
+| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass auth **only for a loopback socket peer**. Off by default — a loopback bind is not safe behind a tunnel |
 | `CHAT_TIMEOUT_MS` | `600000` | Per-message timeout |
 | `TUI_VISIBLE` | `true` | Navigate the TUI to the target session via `/tui/select-session` |
 | `STATE_PATH` | `./data/state.json` | Persistent state location |
