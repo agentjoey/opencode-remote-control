@@ -76,19 +76,48 @@ Full deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ## Web UI (PWA)
 
 The Web UI runs alongside Telegram and shows the same sessions in real time
-(full streaming), installable as a desktop PWA. Front it with a Cloudflare
-Tunnel + Cloudflare Access for HTTPS and auth — see [`docs/OPS.md`](docs/OPS.md).
+(full streaming), installable as a desktop/mobile PWA.
 
 1. Set `WEB_ENABLED=true` (and `WEB_PORT` — default `17081`, since opencode's
    own server occupies `7081`).
 2. Build the web app: `cd web && npm run build`.
-3. The plugin serves the PWA at `http://127.0.0.1:17081`. Point your Cloudflare
-   tunnel ingress at that port.
-4. Behind Cloudflare Access, install it to your home screen from Chrome/Safari.
+3. The plugin serves the PWA at `http://127.0.0.1:17081`.
 
-> **Cloudflare Access note:** a browser WebSocket can't carry service-token
-> headers, so put `/ws` on a CF Access **Bypass** policy — the app then gates
-> the socket itself with the CF cookie. Details in [`docs/OPS.md`](docs/OPS.md).
+### Auth — pair a device (default, no Cloudflare Access needed)
+
+Auth defaults to an app **token** (`WEB_AUTH=token`). Onboard a device with
+`oprc pair` (or Telegram `/pair`): it prints a URL + QR with the token in the
+fragment (`https://<host>/#token=…`). Open it once — the app stores the token
+and attaches it to every request thereafter. The token is persisted at
+`~/.opencode/oprc-token`, so it survives restarts and re-installs.
+
+> Behind a tunnel, keep `WEB_CF_ACCESS_DEV_BYPASS=false`: `cloudflared` connects
+> from loopback, so a loopback bypass would trust all tunnel traffic.
+
+Prefer Cloudflare Access instead? Set `WEB_AUTH=cf-access` with
+`WEB_CF_ACCESS_TEAM` / `WEB_CF_ACCESS_AUD` — see [`docs/OPS.md`](docs/OPS.md).
+
+### Remote access without a domain
+
+A PWA install needs a **secure context** (HTTPS, or `http://localhost`). To
+reach the hub from another machine without owning a domain:
+
+| Method | Command | Notes |
+|---|---|---|
+| **Tailscale** (recommended) | `tailscale serve 17081` | Stable `https://<host>.ts.net`, device-level auth, survives restarts |
+| **cloudflared quick tunnel** | `cloudflared tunnel --url http://localhost:17081` | Free `https://*.trycloudflare.com`; URL changes each run |
+| **SSH port-forward** | `ssh -L 17081:localhost:17081 <host>` | Then open `http://127.0.0.1:17081` (localhost = secure context) |
+
+Set `WEB_PUBLIC_URL` to the resulting HTTPS URL so `/pair` emits the right
+links. (If you already run a `cloudflared` tunnel to `:17081`, `/pair`
+auto-detects its hostname from `~/.cloudflared`.) Plain `http://<LAN-IP>` is
+**not** a secure context — Chrome won't install it as an app.
+
+### Install as an app
+
+In Chrome: the omnibox install icon, or **⋮ → Cast, save, and share → Install
+page as app…**. The installed PWA reuses the browser's stored token, so it stays
+signed in.
 
 ## Commands
 

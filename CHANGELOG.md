@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Token auth, end-to-end** — the web app captures a pairing token (`#token=…`)
+  on load, persists it to localStorage, strips it from the address bar, and
+  attaches it to every API request (`Authorization: Bearer`) and WebSocket
+  connect (`?token=`). Pairing now works **without Cloudflare Access**,
+  completing the P2 goal of decoupling auth from CF Access.
+- **Auto-detect the Cloudflare Tunnel hostname for `/pair`** — when
+  `WEB_PUBLIC_URL` is unset, scan `~/.cloudflared/*.{yml,yaml}` for an ingress
+  hostname mapped to the web port and emit that HTTPS URL instead of an
+  unreachable LAN IP. Resolution order: `WEB_PUBLIC_URL` > cloudflared hostname >
+  LAN IP > loopback.
+
+### Docs
+- README / OPS: token-default auth, device pairing, and **remote access without
+  a domain** (Tailscale, cloudflared quick tunnel, or SSH port-forward).
+
 ## v0.6.0 — 2026-06-12
 
 Headline: **multi-instance ready**. A single-machine fleet of opencode instances

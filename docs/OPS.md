@@ -96,10 +96,13 @@ cd web && npm run check && npm run build && npm run test
 | `TUI_VISIBLE` | `true` | 把对话同步到 TUI；`false` 走直连 API |
 | `WEB_ENABLED` | `false` | 启用 Web 服务 |
 | `WEB_HOST` | `127.0.0.1` | Web 绑定地址（隧道回源；勿对公网裸监听） |
-| `WEB_PORT` | `7081` | Web 端口 |
-| `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team 名 |
-| `WEB_CF_ACCESS_AUD` | — | Cloudflare Access AUD tag |
-| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | 本地开发跳过 JWT（仅对 loopback 对端放行） |
+| `WEB_PORT` | `17081` | Web 端口（opencode 1.17 自身占用 `7081`） |
+| `WEB_AUTH` | `token` | 认证策略：`token`（默认，免 CF Access）/ `cf-access` |
+| `WEB_TOKEN` | 自动 | 留空则自动生成并持久化到 `~/.opencode/oprc-token`（`0600`） |
+| `WEB_PUBLIC_URL` | — | 配对链接/二维码用的公开地址；未设则自动探测 cloudflared，再退回 LAN/loopback |
+| `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team 名（仅 `WEB_AUTH=cf-access`） |
+| `WEB_CF_ACCESS_AUD` | — | Cloudflare Access AUD tag（仅 `WEB_AUTH=cf-access`） |
+| `WEB_CF_ACCESS_DEV_BYPASS` | `false` | 跳过认证，仅对 loopback 对端放行。**隧道后必须 false**（cloudflared 走 loopback） |
 | `TG_CHUNK_SOFT_LIMIT` | `3500` | 分页软限制（字符数） |
 
 ---
@@ -110,15 +113,15 @@ cd web && npm run check && npm run build && npm run test
 tail -f /tmp/opencode-remote-control-telegram.err   # bot 报错
 curl http://localhost:4096/global/health            # opencode 健康
 curl http://localhost:4096/session                  # 哪个 session busy
-lsof -i :4096 -i :7081                               # 端口占用
+lsof -i :4096 -i :17081                              # 端口占用
 ```
 
 ---
 
-## Web / PWA（Cloudflare Access）
+## Web / PWA
 
-Web 通过 cloudflared 隧道暴露，边缘用 **Cloudflare Access** 把关。装成桌面/手机
-app(PWA)远程访问;鉴权走浏览器交互登录的 CF Access cookie。
+Web 通过隧道/VPN 暴露,装成桌面/手机 app(PWA)远程访问。默认用 **token** 认证
+(免 Cloudflare Access);CF Access 作为可选策略保留。
 
 ### 启用 Web
 
@@ -126,26 +129,45 @@ app(PWA)远程访问;鉴权走浏览器交互登录的 CF Access cookie。
 # .env / opencode.json plugin options
 WEB_ENABLED=true
 WEB_HOST=127.0.0.1            # 隧道回源到本地；不要直接对公网监听
-WEB_PORT=7081
-WEB_CF_ACCESS_TEAM=<team>     # <team>.cloudflareaccess.com
-WEB_CF_ACCESS_AUD=<app-aud>  # Access 应用的 Application Audience (AUD) tag
-# 本地裸调试（无隧道）才需要，默认关闭：
-# WEB_CF_ACCESS_DEV_BYPASS=true   # 仅对 loopback 对端放行
+WEB_PORT=17081               # opencode 1.17 自身占用 7081
+WEB_AUTH=token               # 默认；免 CF Access
+WEB_PUBLIC_URL=https://<host>  # 配对链接用；未设则自动探测 cloudflared
+WEB_CF_ACCESS_DEV_BYPASS=false # 隧道后必须 false（cloudflared 走 loopback，否则全放行）
 ```
 
-### Cloudflare Access 配置
+### Token 认证 + 配对(默认)
 
-1. 给隧道主机名建一个 Access 应用（**整站，路径留空**），记下 **AUD**（填到
-   `WEB_CF_ACCESS_AUD`），策略 Allow 你的登录邮箱。
-2. 浏览器打开该主机名 → 交互式登录 → cookie 自动带上(REST 和 WS 握手都带)。
-   无需对 `/ws` 做任何特殊处理。
-3. 为减少重登,把 Access 应用的 session duration 设长(单用户)。
+```bash
+oprc pair                    # 打印 URL + 二维码（token 在 #fragment）
+# 或 Telegram 发 /pair
+```
 
-> 不再需要 Service Token / `/ws` Bypass —— 那是已移除的浏览器扩展才需要的。
+1. 浏览器打开 `https://<host>/#token=…` → app 存下 token、抹掉 fragment、正常加载。
+2. token 持久化在 `~/.opencode/oprc-token`,重启/重装不变。轮换:`rm` 该文件再重启。
+3. 配对链接的 host:优先 `WEB_PUBLIC_URL`,否则自动读 `~/.cloudflared/*.yml` 的
+   ingress 域名,再退回 LAN/loopback。
+
+### 远程访问(无自有域名)
+
+PWA 安装需要**安全上下文**(HTTPS 或 `http://localhost`)。任选其一:
+
+| 方式 | 命令 | 说明 |
+|---|---|---|
+| Tailscale(推荐) | `tailscale serve 17081` | 稳定 `https://<host>.ts.net`,设备级认证 |
+| cloudflared 快速隧道 | `cloudflared tunnel --url http://localhost:17081` | 免费 `*.trycloudflare.com`,URL 每次变 |
+| SSH 端口转发 | `ssh -L 17081:localhost:17081 <host>` | 然后开 `http://127.0.0.1:17081` |
+
+> 纯 `http://<内网IP>` 不是安全上下文 —— Chrome 不让装 app、也不注册 SW。
+
+### Cloudflare Access(可选)
+
+`WEB_AUTH=cf-access` + `WEB_CF_ACCESS_TEAM`/`WEB_CF_ACCESS_AUD`:给隧道主机名建一个
+整站 Access 应用(路径留空),记下 AUD,策略 Allow 你的邮箱。浏览器交互登录后 cookie
+自动带上(REST + WS 握手都带),无需对 `/ws` 特殊处理。
 
 ### 速查
 
 ```bash
-lsof -i :7081                                        # Web 是否监听
+lsof -i :17081                                       # Web 是否监听
 curl -s https://<host>/api/logs | jq -r '.lines[]' | tail -50   # 应用内日志（需鉴权）
 ```
