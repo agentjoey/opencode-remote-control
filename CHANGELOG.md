@@ -31,11 +31,11 @@ without Cloudflare Access. Plus real app icons and PWA cache fixes.
 - README / OPS: token-default auth, device pairing, and **remote access without
   a domain** (Tailscale, cloudflared quick tunnel, or SSH port-forward).
 
-### Ops (not in repo)
-- Cloudflare **Cache Rule** added for `agentjoey.ai`: bypass edge cache for
-  `/service-worker.js`, `/manifest.webmanifest`, `/icon-*`, `/apple-touch-icon.png`,
-  `/favicon.png` — so PWA updates propagate on `build` + restart without a manual
-  purge. (Hashed `_app/*` assets keep long caching.)
+### Ops
+- When fronting the PWA with a CDN (e.g. Cloudflare), add a **cache-bypass rule**
+  for `/service-worker.js`, `/manifest.webmanifest`, `/icon-*`,
+  `/apple-touch-icon.png`, `/favicon.png` so PWA updates propagate on `build` +
+  restart without a manual purge. (Hashed `_app/*` assets keep long caching.)
 
 ## v0.6.0 — 2026-06-12
 

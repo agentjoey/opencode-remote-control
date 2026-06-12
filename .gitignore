@@ -22,6 +22,10 @@ docs/COMPARISON_IM_HUB.md
 docs/WEB_DESIGN.md
 docs/reviews/
 docs/superpowers/
+.agent/
+
+# TypeScript incremental build cache — never commit
+tsconfig.tsbuildinfo
 
 # brainstorming visual-companion cache
 .superpowers/
