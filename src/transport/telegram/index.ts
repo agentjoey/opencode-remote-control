@@ -86,6 +86,10 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       origin: 'telegram',
     }
 
+    // DIAGNOSTIC: timestamp message receipt so the gap before "[timing] relay
+    // received" reveals delay on the Telegram-receive side (getUpdates) vs the
+    // opencode-submit side.
+    log.info(`[timing] telegram message received (len=${m.text.length}), dispatching to relay`)
     void messageHandler(msg)
   })
 

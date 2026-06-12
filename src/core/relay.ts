@@ -34,6 +34,37 @@ function isNetworkError(err: Error): boolean {
     msg.includes('socket hang up')
 }
 
+// DIAGNOSTIC (cold-start investigation): "fetch failed" is undici/Bun's generic
+// wrapper — the real reason hides in err.cause. Walk the chain so the log shows
+// the underlying code (ECONNREFUSED / ECONNRESET / timeout / …).
+function describeError(err: unknown): string {
+  const parts: string[] = []
+  let e: any = err
+  for (let depth = 0; e && depth < 6; depth++) {
+    const name = e.name ?? e?.constructor?.name ?? 'Error'
+    const code = e.code ?? e.errno ?? e.cause?.code ?? ''
+    parts.push(`${name}${code ? `(${code})` : ''}: ${e.message ?? String(e)}`)
+    e = e.cause
+  }
+  return parts.join(' <- ')
+}
+
+// DIAGNOSTIC: probe whether opencode itself is reachable during a submit-failure
+// window. If a cheap GET (config.get) ALSO fails → opencode is unreachable; if it
+// succeeds → only the prompt path (e.g. the model) is affected.
+async function probeOpencode(client: OpencodeClient): Promise<string> {
+  const t0 = Date.now()
+  try {
+    await Promise.race([
+      client.config.get(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout 3s')), 3000)),
+    ])
+    return `opencode reachable (config.get ok in ${Date.now() - t0}ms)`
+  } catch (e) {
+    return `opencode UNREACHABLE (config.get failed in ${Date.now() - t0}ms): ${describeError(e)}`
+  }
+}
+
 async function submitWithRetry(
   client: OpencodeClient,
   opts: { text: string; sessionId: string; agent?: string; model?: { providerID: string; modelID: string }; signal?: AbortSignal },
@@ -47,9 +78,11 @@ async function submitWithRetry(
       if (opts.signal?.aborted) throw e
       if (i < SUBMIT_MAX_RETRIES - 1 && isNetworkError(e)) {
         const delay = SUBMIT_RETRY_BASE_MS * Math.pow(2, i)
-        log.warn(`submit failed (attempt ${i + 1}/${SUBMIT_MAX_RETRIES}), retry in ${delay}ms: ${e.message}`)
+        log.warn(`submit failed (attempt ${i + 1}/${SUBMIT_MAX_RETRIES}), retry in ${delay}ms: ${describeError(e)}`)
+        if (i === 0) log.warn(`[probe] ${await probeOpencode(client)}`)
         await delayOrAbort(delay, opts.signal)
       } else {
+        log.warn(`submit giving up after ${i + 1} attempt(s): ${describeError(e)}`)
         throw e
       }
     }
@@ -149,6 +182,10 @@ export function createRelay(deps: RelayDeps) {
   const relay = async function handleIncoming(msg: IncomingMessage): Promise<void> {
     const ac = new AbortController()
     const timer = setTimeout(() => ac.abort(), deps.chatTimeoutMs)
+    // DIAGNOSTIC: mark relay entry so the cold-start gap can be split into
+    // resolve / select-tui / submit phases by comparing timestamps.
+    const t0 = Date.now()
+    log.info(`[timing] relay received message (origin=${msg.origin ?? '?'}), resolving session…`)
 
     let sessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
     deps.state.setActiveAbort(sessionId, ac)
@@ -172,10 +209,12 @@ export function createRelay(deps: RelayDeps) {
         resolvedId = undefined
       }
       if (!resolvedId) resolvedId = await pickSessionFallback(deps.client)
+      log.info(`[timing] session resolved in ${Date.now() - t0}ms → ${resolvedId.slice(-8)}`)
       log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
       if (deps.tuiVisible) {
         await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
       }
+      const tSubmit = Date.now()
       await submitWithRetry(deps.client, {
         text: msg.text,
         sessionId: resolvedId,
@@ -183,6 +222,7 @@ export function createRelay(deps: RelayDeps) {
         model: nextModel,
         signal: ac.signal,
       })
+      log.info(`[timing] submit accepted in ${Date.now() - tSubmit}ms (total ${Date.now() - t0}ms from relay entry)`)
 
       sessionId = resolvedId
       deps.state.setLastSessionId(sessionId)
