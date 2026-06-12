@@ -185,7 +185,7 @@ export function createRelay(deps: RelayDeps) {
     // DIAGNOSTIC: mark relay entry so the cold-start gap can be split into
     // resolve / select-tui / submit phases by comparing timestamps.
     const t0 = Date.now()
-    log.info(`[timing] relay received message (origin=${msg.origin ?? '?'}), resolving session…`)
+    log.warn(`[timing] relay received message (origin=${msg.origin ?? '?'}), resolving session…`)
 
     let sessionId = deps.state.getPinnedSessionId() ?? deps.state.getLastSessionId() ?? 'pending'
     deps.state.setActiveAbort(sessionId, ac)
@@ -209,7 +209,7 @@ export function createRelay(deps: RelayDeps) {
         resolvedId = undefined
       }
       if (!resolvedId) resolvedId = await pickSessionFallback(deps.client)
-      log.info(`[timing] session resolved in ${Date.now() - t0}ms → ${resolvedId.slice(-8)}`)
+      log.warn(`[timing] session resolved in ${Date.now() - t0}ms → ${resolvedId.slice(-8)}`)
       log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
       if (deps.tuiVisible) {
         await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
@@ -222,7 +222,7 @@ export function createRelay(deps: RelayDeps) {
         model: nextModel,
         signal: ac.signal,
       })
-      log.info(`[timing] submit accepted in ${Date.now() - tSubmit}ms (total ${Date.now() - t0}ms from relay entry)`)
+      log.warn(`[timing] submit accepted in ${Date.now() - tSubmit}ms (total ${Date.now() - t0}ms from relay entry)`)
 
       sessionId = resolvedId
       deps.state.setLastSessionId(sessionId)
