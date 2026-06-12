@@ -98,7 +98,10 @@
 <div class="app">
   <header class="titlebar">
     <span class="brand">OCRC</span>
-    <span class="sep mono">▸ {$page.params.sessionId ? '…' + $page.params.sessionId.slice(-8) : 'no session'}</span>
+    <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
+      <span class="ico" aria-hidden="true">⌕</span>
+      <span class="ph">Search sessions & commands…</span>
+    </button>
     <ConnectionBadge />
     {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
     <span class="email">{email}</span>
@@ -116,7 +119,21 @@
   .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
   .titlebar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; font-size: 13px; }
   .brand { font-weight: 800; color: var(--accent); letter-spacing: .08em; font-size: 14px; }
-  .sep { color: var(--text-3); }
+  .topsearch {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: text;
+    min-width: 200px;
+    max-width: 340px;
+    transition: border-color .15s ease;
+  }
+  .topsearch:hover { border-color: var(--text-3); }
+  .topsearch .ico { font-size: 13px; opacity: .8; }
   .email { margin-left: auto; font-size: 0.8em; color: var(--text-3); }
   .install { background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius-sm); padding: 4px 12px; font-size: 0.8em; font-weight: 600; cursor: pointer; }
   .body { display: flex; flex: 1; overflow: hidden; }

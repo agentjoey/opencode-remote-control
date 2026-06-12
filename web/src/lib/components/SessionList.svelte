@@ -5,12 +5,20 @@
   import { activeWorkspace, workspaces } from '../stores/workspaces.js'
   import { filterByWorkspace } from '../nav/workspaceFilter.js'
   import { api } from '../api/client.js'
+  import { connection } from '../stores/connection.js'
   import type { SessionSummary } from '../api/types.js'
 
   // PWA passes activeId from $page.params and relies on <a href> for routing.
   // Extension passes onSelect (and no <a href> navigation happens).
   export let activeId: string | undefined = undefined
   export let onSelect: ((id: string) => void) | undefined = undefined
+
+  // Status dot: blinking green while busy; solid green when connected + active
+  // recently; hollow gray when disconnected or inactive.
+  const ACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000
+  function isOnline(lastActiveAt: number, conn: string): boolean {
+    return conn === 'connected' && Date.now() - lastActiveAt < ACTIVE_WINDOW_MS
+  }
 
   // A session is "busy" if the tail of its live feed is a thinking/streaming card.
   function isBusy(sid: string, all: typeof $feeds): boolean {
@@ -139,7 +147,7 @@
           on:click={(e) => handleClick(e, s.id)}
         >
           <div class="line1">
-            <span class="dot" class:busy={isBusy(s.id, $feeds)}></span>
+            <span class="dot" class:busy={isBusy(s.id, $feeds)} class:on={!isBusy(s.id, $feeds) && isOnline(s.lastActiveAt, $connection)}></span>
             {#if editing === s.id}
               <input
                 class="rename-input"
@@ -243,6 +251,12 @@
     flex-shrink: 0;
     box-sizing: border-box;
   }
+  /* solid green = connected + recently active (no animation) */
+  .dot.on {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  /* blinking green = a turn is actively streaming */
   .dot.busy {
     border-color: var(--accent);
     background: var(--accent);
