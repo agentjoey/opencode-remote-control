@@ -1,0 +1,13 @@
+# Present so npm does NOT fall back to web/.gitignore (which excludes dist/).
+# The root package.json "files" allowlist already restricts what ships from web/
+# to web/dist — this file just stops the built PWA from being ignored at pack time.
+node_modules
+src
+tests
+static
+.svelte-kit
+*.config.js
+*.config.ts
+tsconfig.json
+package.json
+package-lock.json

@@ -143,12 +143,13 @@ export async function runInstall(options: InstallOptions): Promise<void> {
 
   console.log(`\nInstallation complete!`)
   console.log(`\nNext steps:`)
-  console.log(`   1. Point your Cloudflare tunnel ingress at http://localhost:${port}`)
-  console.log(`   2. Run \`opencode\` from any directory — the plugin loads globally.`)
-  console.log(`      Tip: for a always-on remote-control hub, run it from a small/empty`)
-  console.log(`      dir (e.g. ~/ocrc-hub) so opencode's file watcher stays fast.`)
-  console.log(`   3. Only run ONE opencode instance for remote control — web (:${port}) and`)
-  console.log(`      the Telegram bot are global singletons.`)
+  console.log(`   1. Run \`opencode\` from any directory — the plugin loads globally.`)
+  console.log(`      Tip: for an always-on hub, run it from a small/empty dir so the`)
+  console.log(`      file watcher stays fast. Multiple instances elect one PRIMARY.`)
+  console.log(`   2. Send "hello" in Telegram to confirm the bot responds.`)
+  console.log(`   3. For the Web PWA: \`oprc pair\` (or /pair in Telegram) → open the`)
+  console.log(`      URL/QR. To reach it from another device, expose http://localhost:${port}`)
+  console.log(`      over a tunnel or VPN (e.g. \`tailscale serve ${port}\`).`)
 }
 
 export async function main(args: string[] = process.argv.slice(2)): Promise<void> {

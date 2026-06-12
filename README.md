@@ -5,6 +5,27 @@ opencode from **Telegram** or a **Web UI (PWA)**. Install
 once; it auto-starts in-process with opencode. Send a message from your phone or
 browser and watch the assistant work — even when you're away from your desk.
 
+## ⚡ Quick start (5 minutes)
+
+Requires **opencode 1.17+** and **Node 20+** (or Bun).
+
+```bash
+# 1. Clone, build (backend + PWA), and install the plugin
+git clone https://github.com/agentjoey/opencode-remote-control
+cd opencode-remote-control
+npm install && npm run build:all
+node dist/cli/install.js     # interactive — paste your Telegram bot token + user id
+
+# 2. Run opencode from any directory — the plugin auto-starts
+opencode
+```
+
+- **Telegram:** make a bot with [@BotFather](https://t.me/BotFather); get your numeric id from [@userinfobot](https://t.me/userinfobot) (the installer asks for both). Send "hello" → the assistant replies.
+- **Web PWA:** the installer enables it by default. Run `oprc pair` (or send `/pair` in Telegram) → open the URL/QR it prints. Auth is a device **token** — no Cloudflare Access needed.
+- **From another device:** the web binds to `localhost`, so expose it over a tunnel or VPN — e.g. `tailscale serve 17081`. See [Remote access without a domain](#remote-access-without-a-domain).
+
+> Once published to npm, steps collapse to `npx opencode-remote-control install`.
+
 ## How we're different
 
 - **Runs as an opencode plugin, in-process.** One install, no extra process, no

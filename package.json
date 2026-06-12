@@ -24,6 +24,9 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:web": "npm --prefix web install && npm --prefix web run build",
+    "build:all": "npm run build && npm run build:web",
+    "prepublishOnly": "npm run build:all",
     "postinstall": "patch-package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -37,7 +40,8 @@
   "files": [
     "dist",
     "bin",
-    "patches"
+    "patches",
+    "web/dist"
   ],
   "dependencies": {
     "@hono/node-server": "^2.0.2",
@@ -46,6 +50,7 @@
     "dotenv": "^16.4.5",
     "hono": "^4.12.19",
     "jose": "^6.2.3",
+    "patch-package": "^8.0.1",
     "qrcode": "^1.5.4",
     "telegraf": "^4.16.3",
     "ws": "^8.20.1",
@@ -55,7 +60,6 @@
     "@types/node": "^20.14.0",
     "@types/qrcode": "^1.5.6",
     "@types/ws": "^8.18.1",
-    "patch-package": "^8.0.1",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
