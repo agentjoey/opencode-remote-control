@@ -29,7 +29,10 @@
     border-left: 2px solid var(--accent);
     padding-left: 14px;
   }
-  .text { color: var(--text); font-size: 15px; line-height: 1.7; }
+  /* In-progress streaming reads as muted "thinking"; the finalized answer
+     (CardAssistant) renders full-size in normal text. */
+  .text { color: var(--text-2); font-size: 13px; line-height: 1.6; }
+  .text :global(.md) { font-size: 13px; color: var(--text-2); }
   .stop {
     margin-top: 10px;
     background: transparent;
