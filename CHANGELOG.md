@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## v0.6.1 — 2026-06-12
+
+Headline: **token auth works end-to-end** — pair a device and run the web PWA
+without Cloudflare Access. Plus real app icons and PWA cache fixes.
 
 ### Added
 - **Token auth, end-to-end** — the web app captures a pairing token (`#token=…`)
@@ -13,10 +16,26 @@
   hostname mapped to the web port and emit that HTTPS URL instead of an
   unreachable LAN IP. Resolution order: `WEB_PUBLIC_URL` > cloudflared hostname >
   LAN IP > loopback.
+- **Real PWA app icons** — replace the 1×1 placeholder icons with a rendered
+  brand mark (rounded `any` + full-bleed `maskable` 512, apple-touch 180,
+  favicon 48); add the missing favicon and an `apple-touch-icon` link. PWA
+  `name`/`short_name` → `OCRC`.
+
+### Fixed
+- **Service worker precache no longer captures stale assets** — `addAll` honored
+  the browser HTTP cache, so a precache could pin an asset still under a CDN
+  `max-age` (icons showed mixed old/new generations). Each entry is now fetched
+  with `cache: 'reload'`, straight from the network.
 
 ### Docs
 - README / OPS: token-default auth, device pairing, and **remote access without
   a domain** (Tailscale, cloudflared quick tunnel, or SSH port-forward).
+
+### Ops (not in repo)
+- Cloudflare **Cache Rule** added for `agentjoey.ai`: bypass edge cache for
+  `/service-worker.js`, `/manifest.webmanifest`, `/icon-*`, `/apple-touch-icon.png`,
+  `/favicon.png` — so PWA updates propagate on `build` + restart without a manual
+  purge. (Hashed `_app/*` assets keep long caching.)
 
 ## v0.6.0 — 2026-06-12
 

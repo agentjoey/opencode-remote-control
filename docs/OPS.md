@@ -165,6 +165,17 @@ PWA 安装需要**安全上下文**(HTTPS 或 `http://localhost`)。任选其一
 整站 Access 应用(路径留空),记下 AUD,策略 Allow 你的邮箱。浏览器交互登录后 cookie
 自动带上(REST + WS 握手都带),无需对 `/ws` 特殊处理。
 
+### 前端更新与缓存
+
+更新前端/图标只需 `cd web && npm run build` + 重启 hub。CF 已配 **Cache Rule**:
+`/service-worker.js`、`/manifest.webmanifest`、`/icon-*`、`/apple-touch-icon.png`、
+`/favicon.png` 边缘 **bypass cache**(回源取最新),所以**无需手动 purge**。带 hash 的
+`_app/*` 资源仍走长缓存(文件名带 hash,天然安全)。SW 预缓存用 `cache:'reload'`,不会
+被浏览器 HTTP 缓存污染。
+
+> 浏览器若仍显示旧 SW:Application → Service Workers → Unregister(只清 SW,**别**用
+> Clear site data —— 那会连 localStorage 里的 token 一起清掉,需要重新 `/pair`)。
+
 ### 速查
 
 ```bash
