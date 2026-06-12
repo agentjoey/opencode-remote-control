@@ -40,8 +40,12 @@
   }
 
   function onKeydown(e: KeyboardEvent) {
-    // Send only on Cmd/Ctrl+Enter; plain Enter inserts a newline.
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send() }
+    // Enter sends; Shift+Enter inserts a newline. Skip while an IME is
+    // composing (e.g. Chinese input) — Enter there commits the candidate.
+    if (e.key !== 'Enter' || e.shiftKey) return
+    if (e.isComposing || e.keyCode === 229) return // IME composition in progress
+    e.preventDefault()
+    send()
   }
 
   function autoGrow() {
@@ -64,7 +68,7 @@
         on:input={autoGrow}
         on:focus={() => (focused = true)}
         on:blur={() => (focused = false)}
-        placeholder={$connection === 'connected' ? 'Message opencode…  (⌘/Ctrl+Enter 发送)' : 'Disconnected…'}
+        placeholder={$connection === 'connected' ? 'Message opencode…  (Enter 发送, Shift+Enter 换行)' : 'Disconnected…'}
         rows={1}
       ></textarea>
       <div class="controls">

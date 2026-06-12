@@ -257,6 +257,28 @@ describe('createRelay', () => {
       expect(cards.some(c => c.kind === 'error')).toBe(false)
     })
 
+    it('adopts an externally-initiated turn (no prior submit) and streams it', async () => {
+      const cardBus = createCardBus()
+      const cards: StructuredCard[] = []
+      cardBus.subscribeAll((c) => cards.push(c))
+      const relay = createRelay({
+        cardBus,
+        client: fakeClient(),
+        state: fakeState(),
+        chatTimeoutMs: 5000,
+        tuiVisible: false,
+        baseUrl: 'http://localhost:4096',
+      })
+      // No relay() submit — simulate a command/TUI-initiated turn arriving as events.
+      await relay.handleEvent({
+        type: 'message.part.updated',
+        properties: { sessionID: 'ses_external', part: { id: 'x1', type: 'text', text: 'from a command' } },
+      })
+      const streaming = cards.filter((c) => c.kind === 'streaming') as any[]
+      expect(streaming.length).toBeGreaterThan(0)
+      expect(streaming[streaming.length - 1].sessionId).toBe('ses_external')
+    })
+
     it('publishes streaming card via handleEvent for message.part.updated', async () => {
       const cardBus = createCardBus()
       const cards: StructuredCard[] = []

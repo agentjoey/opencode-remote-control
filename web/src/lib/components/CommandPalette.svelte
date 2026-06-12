@@ -29,17 +29,19 @@
     api.commands().then((list) => { commands = list }).catch(() => { commandsLoaded = false })
   }
 
-  export function close() { open = false; query = '' }
+  export function close() { open = false; query = ''; cmdError = '' }
   function choose(id: string) { goto(`/${id}/`); close() }
 
+  let cmdError = ''
   async function runCommand(name: string) {
     if (!activeSessionId || running) return
     running = name
+    cmdError = ''
     try {
       await api.runCommand({ sessionId: activeSessionId, command: name })
-      close()
+      close() // reveal the chat — the command's turn streams there now
     } catch (err) {
-      console.warn('[palette] runCommand failed', err)
+      cmdError = `/${name} failed: ${(err as Error).message}`
     } finally {
       running = ''
     }
@@ -82,6 +84,7 @@
             </button>
           {/each}
           {#if !activeSessionId}<div class="empty label">Open a session to run commands</div>{/if}
+          {#if cmdError}<div class="empty" style="color: var(--err)">{cmdError}</div>{/if}
         {/if}
       </div>
     </div>

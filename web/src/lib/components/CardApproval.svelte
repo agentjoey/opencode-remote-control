@@ -16,7 +16,7 @@
   {:else}
     <div class="acts">
       <button class="a allow" on:click={() => decide('once')}>Allow</button>
-      <button class="a" on:click={() => decide('always')}>Always</button>
+      <button class="a always" on:click={() => decide('always')}>Always</button>
       <button class="a rej" on:click={() => decide('reject')}>Reject</button>
     </div>
   {/if}
@@ -71,8 +71,17 @@
     border-color: var(--accent);
     color: var(--accent-ink);
   }
-  .a.allow:hover { opacity: .9; color: var(--accent-ink); }
-  .a.rej:hover { border-color: var(--err); color: var(--err); }
+  .a.always {
+    background: var(--hl-purple);
+    border-color: var(--hl-purple);
+    color: var(--bg);
+  }
+  .a.rej {
+    background: var(--err);
+    border-color: var(--err);
+    color: var(--bg);
+  }
+  .a.allow:hover, .a.always:hover, .a.rej:hover { opacity: .88; }
   .done {
     font-size: 11px;
     color: var(--text-3);

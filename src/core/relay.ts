@@ -305,7 +305,26 @@ export function createRelay(deps: RelayDeps) {
 
     {
       const sid = sessionIdOf(raw)
-      const ctx = sid ? pluginSessions.get(sid) : undefined
+      let ctx = sid ? pluginSessions.get(sid) : undefined
+
+      // Adopt externally-initiated turns: a streaming event arrives for a session
+      // we never submitted to (an opencode command run from the palette, or a
+      // message typed directly in the TUI), so there's no context — create one
+      // so it streams/renders in Web/Telegram like any other turn. The signal
+      // never aborts (we don't own this turn); the card's stop button still
+      // calls opencode's abort directly.
+      if (!ctx && sid && (eventType === 'message.part.updated' || eventType === 'message.part.delta')) {
+        ctx = {
+          sessionId: sid,
+          cardId: `turn:${sid}:${Date.now()}`,
+          acc: createStreamAccumulator(),
+          processedPartIds: new Set(),
+          partTextAcc: new Map(),
+          signal: new AbortController().signal,
+          timer: setTimeout(() => {}, deps.chatTimeoutMs),
+        }
+        pluginSessions.set(sid, ctx)
+      }
 
       if (eventType === 'message.part.updated') {
         const part = p?.part
