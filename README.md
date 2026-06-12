@@ -67,8 +67,10 @@ Full deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
    ```
    The plugin auto-starts. For an always-on remote-control hub, run it from a
    small/empty directory (e.g. `~/ocrc-hub`) so opencode's file watcher stays
-   fast. Run only **one** instance — web (`:17081`) and the Telegram bot are
-   global singletons.
+   fast. You can run several opencode instances — they elect one **PRIMARY**
+   (atomic lock at `~/.opencode/oprc-primary.lock`) to own the web (`:17081`) and
+   Telegram singletons; the rest stand down PASSIVE. The web/bot can switch
+   between the workspaces of the running instances.
 5. **Send "hello"** in Telegram → the assistant responds.
 
 ## Web UI (PWA)
@@ -143,8 +145,11 @@ To add another channel, see
   stores state in a local JSON file (`data/state.json`).
 - **No secrets in repo.** `.env` is gitignored; `.env.example` documents every
   variable.
-- **Web auth via Cloudflare Access.** The dev bypass only trusts a real loopback
-  peer (never the configured bind address) and is **off by default**.
+- **Web auth is pluggable.** Default is an app **token** (auto-generated,
+  persisted `0600` at `~/.opencode/oprc-token`), verified on HTTP and WS with a
+  constant-time compare; `WEB_AUTH=cf-access` switches to Cloudflare Access. The
+  dev bypass only trusts a real loopback peer (never the bind address) and is
+  **off by default**.
 
 ## Environment variables
 
@@ -162,10 +167,13 @@ To add another channel, see
 | `WEB_ENABLED` | `false` | Enable the Web transport |
 | `WEB_HOST` | `127.0.0.1` | Web bind address (keep loopback; front with a tunnel) |
 | `WEB_PORT` | `17081` | Web port (opencode 1.17's own server occupies `7081`) |
+| `WEB_AUTH` | `token` | Auth strategy: `token` (app token) or `cf-access` |
+| `WEB_TOKEN` | auto | App token; auto-generated and persisted `0600` at `~/.opencode/oprc-token` if unset |
+| `WEB_PUBLIC_URL` | — | Public URL for pairing/QR; falls back to LAN, then loopback |
 | `WEB_STATIC_ROOT` | `<repo>/web/dist` | Built PWA path (resolved from the plugin dir, cwd-independent) |
 | `WEB_SESSION_CACHE_SIZE` | `100` | Per-session card ring-buffer size |
-| `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team name |
-| `WEB_CF_ACCESS_AUD` | — | Cloudflare Access app AUD tag |
+| `WEB_CF_ACCESS_TEAM` | — | Cloudflare Access team name (when `WEB_AUTH=cf-access`) |
+| `WEB_CF_ACCESS_AUD` | — | Cloudflare Access app AUD tag (when `WEB_AUTH=cf-access`) |
 | `WEB_CF_ACCESS_DEV_BYPASS` | `false` | Bypass auth **only for a loopback socket peer** |
 
 ## opencode 1.17+ notes
@@ -182,9 +190,10 @@ opencode 1.17 changed plugin loading; this project accounts for all of it:
   The plugin installs absorbing guards so it survives.
 - **Web runs on `17081`** because opencode's own server occupies `7081`. Point
   your tunnel ingress at `17081`.
-- **Single instance.** Web (`:17081`) and the Telegram bot are global
-  singletons — run one opencode for remote control, ideally from a small/empty
-  directory so the file watcher stays fast.
+- **PRIMARY election.** Web (`:17081`) and the Telegram bot are global
+  singletons. Multiple opencode instances elect one PRIMARY (atomic lock at
+  `~/.opencode/oprc-primary.lock`) to own them; the others stand down PASSIVE.
+  Run the hub from a small/empty directory so the file watcher stays fast.
 
 ## Testing
 

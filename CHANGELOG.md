@@ -1,5 +1,80 @@
 # Changelog
 
+## v0.6.0 — 2026-06-12
+
+Headline: **multi-instance ready**. A single-machine fleet of opencode instances
+now elects one PRIMARY to own the global web/Telegram singletons; the web/bot can
+switch between workspaces; auth and public exposure are pluggable (no longer
+Cloudflare-Access-only); and the web chat got a substantial UX pass.
+
+### Added — Multi-instance foundation (P1)
+- **PRIMARY election** (`src/core/primary-election.ts`) — atomic lock file
+  (`~/.opencode/oprc-primary.lock`, `openSync(path,'wx')`) elects one instance to
+  own the global web/Telegram singletons; others stand down PASSIVE. Stale-PID
+  reclaim; lock released on construction failure or shutdown.
+- **Cross-workspace global event stream** (`src/opencode/global-events.ts`) —
+  `startGlobalEvents()` subscribes `client.global.event()` with reconnect, so the
+  PRIMARY observes events from sibling workspaces over HTTP.
+- Plugin entry gates web/bot on election; the per-instance `event` hook remains
+  the in-worker dispatch source (the global stream does not deliver inside the
+  plugin worker — see `docs/decisions/2026-06-12-cross-workspace-streaming.md`).
+
+### Added — Pluggable connectivity & auth (P2)
+- **Auth strategies** (`src/connectivity/auth/`) — `WEB_AUTH=token` (default) or
+  `cf-access`. `TokenAuth` generates/persists an app token (0600 at
+  `~/.opencode/oprc-token`), verifies HTTP + WS with `timingSafeEqual`. CF Access
+  is now optional, decoupled from transport.
+- **Exposure provider** (`src/connectivity/exposure/`) — `resolvePublicUrl()`
+  prefers `WEB_PUBLIC_URL` > physical LAN > loopback.
+- **Device pairing** (`src/connectivity/pairing.ts`) — `oprc pair` / `/pair`
+  emit a QR + URL (token in the URL fragment) to onboard a device.
+
+### Added — Workspace UX (P3)
+- **Workspace switcher** — `GET /api/workspaces`, sidebar switcher; sessions
+  filter to the active workspace.
+- **Create session in a workspace** — `POST /api/session`; Telegram `/new`.
+- **`/workspaces`** Telegram command lists known workspaces.
+- **Custom commands in the web command palette** — `GET/POST /api/commands`
+  run opencode custom commands against the active session (⌘K).
+- **Session rename** — inline rename in the web sidebar +
+  `POST /api/sessions/:id/rename` + Telegram `/rename`.
+
+### Added — Web chat UX
+- **Syntax highlighting** — highlight.js + marked-highlight; inline `` `code` ``
+  renders green (file/command/path), fenced code blocks get full multi-color
+  highlighting (keywords purple, functions yellow, classes cyan, numbers orange,
+  comments gray, strings green).
+- **GFM table rendering** — markdown tables now styled (borders, header band,
+  zebra rows, horizontal scroll).
+- **Top search box** — replaces the top-bar session ID; opens the command
+  palette (sessions + commands), matching ⌘K.
+- **Session status dots** — solid green = connected + recently active, blinking
+  green = a turn is streaming, hollow gray = disconnected/inactive.
+- **De-emphasized in-progress streaming** — thinking/streaming text renders
+  smaller and gray; the finalized answer stays full-size.
+- **Redesigned system cards** — compact status/approval/abort/info cards;
+  approval buttons are filled (Allow / Always / Reject).
+- **Enter-to-send** — Enter sends, Shift+Enter newlines (IME-safe).
+
+### Fixed
+- Restore the per-instance event hook as the in-worker dispatch source after P1
+  routed dispatch through the global stream (which delivers zero events inside
+  the worker) — this had broken web/Telegram message receipt and streaming.
+- Adopt externally-initiated turns in the relay so TUI- and command-initiated
+  turns stream to the web (previously dropped for lack of a session ctx).
+- `theme.css` syntax colors were dropped because `:global()` is Svelte-only and
+  invalid in plain CSS — rewrote the 25 hljs rules without it.
+- Default `WEB_PORT` to `17081` (was `7081`, opencode 1.17's own server port).
+- Telegram `ws:set` callback exceeded the 64-byte limit (short-token map);
+  `notify` tool uses the tool context's `sessionID`.
+
+### Docs
+- `docs/decisions/2026-06-12-cross-workspace-streaming.md` — records that
+  cross-workspace *streaming* is not supported with current opencode (worker SSE
+  doesn't deliver; sessions are directory-bound). Accepted as a known limit.
+
+---
+
 ## v0.6.0-rc.1 — 2026-05-31
 
 ### Added
