@@ -1,5 +1,6 @@
 import { networkInterfaces } from 'node:os'
 import type { ExposureInfo } from './index.js'
+import { detectCloudflaredHostname } from './cloudflared.js'
 
 export interface ResolveOptions {
   /** Configured public URL (e.g. the Cloudflare Tunnel hostname). */
@@ -8,6 +9,8 @@ export interface ResolveOptions {
   port: number
   /** Override for tests; defaults to the first non-internal IPv4 address. */
   lanIpResolver?: () => string | undefined
+  /** Override for tests; defaults to scanning ~/.cloudflared for the web port. */
+  cloudflaredResolver?: () => string | undefined
 }
 
 function firstLanIpv4(): string | undefined {
@@ -30,7 +33,10 @@ function firstLanIpv4(): string | undefined {
   return undefined
 }
 
-/** Resolve the best public base URL: explicit publicUrl (cf-tunnel) > LAN IP > loopback. */
+/**
+ * Resolve the best public base URL:
+ * explicit publicUrl > auto-detected cloudflared hostname > LAN IP > loopback.
+ */
 export async function resolvePublicUrl(opts: ResolveOptions): Promise<string> {
   return (await resolveExposure(opts)).url
 }
@@ -41,6 +47,10 @@ export async function resolveExposure(opts: ResolveOptions): Promise<ExposureInf
     if (!/^https?:\/\//i.test(u)) u = `https://${u}`
     return { url: u, provider: 'cf-tunnel' }
   }
+  // No explicit URL: if a local cloudflared tunnel already maps a hostname to
+  // this port, prefer that reachable HTTPS URL over an unreachable LAN IP.
+  const cfHost = (opts.cloudflaredResolver ?? (() => detectCloudflaredHostname(opts.port)))()
+  if (cfHost) return { url: `https://${cfHost.replace(/\/+$/, '')}`, provider: 'cf-tunnel' }
   const lan = (opts.lanIpResolver ?? firstLanIpv4)()
   if (lan) return { url: `http://${lan}:${opts.port}`, provider: 'lan' }
   return { url: `http://127.0.0.1:${opts.port}`, provider: 'loopback' }
