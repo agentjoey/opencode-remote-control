@@ -18,7 +18,12 @@ const PRECACHE = [...build, ...files]
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => sw.skipWaiting()),
+    caches.open(CACHE)
+      // `cache: 'reload'` bypasses the HTTP disk cache so a precache never
+      // captures a stale asset (e.g. an icon still under a CDN max-age). Each
+      // entry is fetched straight from the network.
+      .then((cache) => cache.addAll(PRECACHE.map((p) => new Request(p, { cache: 'reload' }))))
+      .then(() => sw.skipWaiting()),
   )
 })
 
