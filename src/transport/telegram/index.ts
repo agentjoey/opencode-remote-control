@@ -83,6 +83,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
       chatId: String(ctx.chat!.id),
       text: m.text,
       messageId: String(m.message_id),
+      origin: 'telegram',
     }
 
     void messageHandler(msg)

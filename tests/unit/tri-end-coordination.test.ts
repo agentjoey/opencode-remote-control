@@ -74,6 +74,25 @@ describe('Tri-End Coordination (CardBus)', () => {
     expect(bot.sent[0].text).toContain('Sent from Web UI')
   })
 
+  it('does NOT echo a user card that originated from Telegram (no duplicate)', async () => {
+    const bot = fakeBot()
+    const r = new TelegramSessionRenderer({ chatId: '101', sessionId: 'ses_tg', bot: bot as any })
+
+    cardBus.subscribeAll((c) => r.onCard(c).catch(() => {}))
+
+    cardBus.publish({
+      kind: 'user',
+      sessionId: 'ses_tg',
+      text: 'typed directly in Telegram',
+      ts: Date.now(),
+      origin: 'telegram',
+    })
+
+    // Give the async onCard a chance to run; it should send nothing.
+    await new Promise((res) => setTimeout(res, 50))
+    expect(bot.sent.length).toBe(0)
+  })
+
   // ── Approval flow → CardBus → Web ──
 
   it('approval card published to CardBus is visible to Web subscriber', () => {

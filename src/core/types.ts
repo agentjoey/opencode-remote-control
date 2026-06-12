@@ -23,6 +23,11 @@ export interface IncomingMessage {
    * back to the (global) pinned/last session. The relay validates it exists.
    */
   sessionId?: string
+  /**
+   * Which transport the message came from. Used so a transport can avoid
+   * echoing the user's own message back to them (e.g. Telegram already shows it).
+   */
+  origin?: 'telegram' | 'web'
 }
 
 export interface ChannelCapabilities {

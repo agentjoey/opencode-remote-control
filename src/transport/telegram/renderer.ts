@@ -152,6 +152,10 @@ export class TelegramSessionRenderer {
       case 'assistant':    return this.finalize(card.blocks, card.meta)
       case 'error':        return this.markError(card.message)
       case 'user':         {
+        // The user already sees their own message in the Telegram chat — don't
+        // echo it back. Still show prompts that originated elsewhere (e.g. web),
+        // so a Telegram observer sees what was asked from another surface.
+        if (card.origin === 'telegram') return
         const userText = card.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         await this.sendTimed(`<i>${userText.slice(0, 200)}${userText.length > 200 ? '…' : ''}</i>`, { parse_mode: 'HTML' })
         return

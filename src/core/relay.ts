@@ -192,7 +192,7 @@ export function createRelay(deps: RelayDeps) {
       // id is derived from the incoming messageId so a web client's optimistic
       // user card (same id) reconciles in place instead of duplicating.
       deps.cardBus.publish({ kind: 'thinking', sessionId, showStop: true })
-      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now(), id: `user:${msg.messageId}` })
+      deps.cardBus.publish({ kind: 'user', sessionId, text: msg.text, ts: Date.now(), id: `user:${msg.messageId}`, origin: msg.origin })
 
       // The response arrives asynchronously via handleEvent() (opencode plugin
       // event hook). Store per-session context and return; finalization happens
