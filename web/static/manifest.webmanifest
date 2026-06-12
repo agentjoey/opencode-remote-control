@@ -1,6 +1,6 @@
 {
-  "name": "opencode-remote-control",
-  "short_name": "oprc",
+  "name": "OCRC",
+  "short_name": "OCRC",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
