@@ -1,5 +1,6 @@
 import type { StructuredCard, SessionSummary } from './types.js'
 import { handleAuthFailure, clearAuthReloadFlag } from '../auth-reload.js'
+import { getToken } from '../auth-token.js'
 
 let base = ''
 
@@ -7,8 +8,17 @@ export function setBaseUrl(url: string) {
   base = url.replace(/\/$/, '')
 }
 
+// Attach the app token as a Bearer header when present (token-auth mode);
+// `credentials: 'include'` keeps the CF Access cookie working when that mode is on.
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const h: Record<string, string> = { ...(extra ?? {}) }
+  const t = getToken()
+  if (t) h['authorization'] = `Bearer ${t}`
+  return h
+}
+
 async function jsonGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${base}${path}`, { credentials: 'include' })
+  const res = await fetch(`${base}${path}`, { credentials: 'include', headers: authHeaders() })
   if (res.status === 401) { handleAuthFailure(); throw new Error(`GET ${path} 401`) }
   if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
   clearAuthReloadFlag()
@@ -18,7 +28,7 @@ async function jsonGet<T>(path: string): Promise<T> {
 async function jsonPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: authHeaders({ 'content-type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify(body),
   })

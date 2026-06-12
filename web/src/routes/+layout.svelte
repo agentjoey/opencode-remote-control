@@ -8,6 +8,7 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
+  import { captureToken } from '$lib/auth-token.js'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import SessionRail from '$lib/components/SessionRail.svelte'
@@ -47,6 +48,10 @@
   }
 
   onMount(() => {
+    // Capture a pairing token (#token=… in the URL) before any API/WS call, then
+    // strip it from the address bar. Stored in localStorage for subsequent loads.
+    captureToken()
+
     api.me().then((m) => { email = m.email }).catch(() => {})
     api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
 

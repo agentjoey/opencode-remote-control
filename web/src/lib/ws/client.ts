@@ -1,6 +1,17 @@
 import { connection, type ConnectionStatus } from '../stores/connection.js'
+import { getToken } from '../auth-token.js'
 
 const BACKOFF = [2000, 4000, 8000, 16000, 30000]
+
+// A browser WebSocket can't carry an Authorization header, so token-auth rides
+// in the query string (the server reads `?token=` on upgrade). Read it fresh on
+// every (re)connect so a token captured after construction still applies.
+function withToken(url: string): string {
+  const t = getToken()
+  if (!t) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}token=${encodeURIComponent(t)}`
+}
 
 export interface WsClientOpts {
   url: string
@@ -49,7 +60,7 @@ export function createWsClient(opts: WsClientOpts): WsClient {
     if (closed) return
     setStatus('reconnecting')
     try {
-      ws = new WebSocket(opts.url)
+      ws = new WebSocket(withToken(opts.url))
     } catch {
       reconnect()
       return
