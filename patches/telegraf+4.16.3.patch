@@ -47,15 +47,24 @@ index 25fbbbb..c88df61 100644
  }
  class ApiClient {
 diff --git a/node_modules/telegraf/lib/core/network/polling.js b/node_modules/telegraf/lib/core/network/polling.js
-index 42f20a5..44fc99e 100644
+index 42f20a5..548c862 100644
 --- a/node_modules/telegraf/lib/core/network/polling.js
 +++ b/node_modules/telegraf/lib/core/network/polling.js
-@@ -42,7 +42,7 @@ class Polling {
+@@ -42,7 +42,16 @@ class Polling {
                  const err = error;
                  if (err.name === 'AbortError')
                      return;
 -                if (err.name === 'FetchError' ||
-+                if (err.name === 'TimeoutError' || err.name === 'FetchError' ||
++                // Under Bun's native fetch a dropped long-poll connection throws a
++                // plain Error (e.g. "The socket connection was closed unexpectedly" /
++                // "Unable to connect") whose name is NOT 'FetchError'/'TimeoutError',
++                // so without this it propagates and crashes bot.launch() instead of
++                // being retried internally (Node's node-fetch raised 'FetchError').
++                // Match these transient network errors by message and self-heal.
++                const transientNet = !(err instanceof error_1.TelegramError) &&
++                    /socket connection was closed|unable to connect|fetch failed|econnreset|econnrefused|etimedout|enotfound|socket hang up|network|terminated|other side closed|connection closed/i
++                        .test(String((err && err.message) || ''));
++                if (err.name === 'TimeoutError' || err.name === 'FetchError' || transientNet ||
                      (err instanceof error_1.TelegramError && err.code === 429) ||
                      (err instanceof error_1.TelegramError && err.code >= 500)) {
                      const retryAfter = (_b = (_a = err.parameters) === null || _a === void 0 ? void 0 : _a.retry_after) !== null && _b !== void 0 ? _b : 5;
