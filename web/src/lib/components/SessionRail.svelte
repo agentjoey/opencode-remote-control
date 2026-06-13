@@ -5,6 +5,9 @@
   import { api } from '$lib/api/client.js'
   import { sessionList } from '$lib/stores/sessions.js'
   export let activeId: string | undefined = undefined
+  // Drawer mode (mobile): no spine toggle, list always shown — opened by the
+  // top-bar ☰ instead of the rail's own toggle.
+  export let drawer = false
   let expanded = false
   let cleaning = false
   let refreshing = false
@@ -37,14 +40,16 @@
   }
 </script>
 
-<div class="rail" class:expanded>
-  <div class="spine">
-    <button class="toggle" class:on={expanded} title="Sessions" aria-label="Toggle sessions"
-            on:click={() => (expanded = !expanded)}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    </button>
-  </div>
-  {#if expanded}
+<div class="rail" class:expanded class:drawer>
+  {#if !drawer}
+    <div class="spine">
+      <button class="toggle" class:on={expanded} title="Sessions" aria-label="Toggle sessions"
+              on:click={() => (expanded = !expanded)}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  {/if}
+  {#if expanded || drawer}
     <div class="panel">
       <div class="phead">
         <span class="label">Sessions</span>
@@ -66,6 +71,9 @@
 
 <style>
   .rail { display: flex; height: 100%; border-right: 1px solid var(--border-2); background: var(--bg-panel); }
+  /* Drawer mode (mobile): spine hidden, panel fills — drop the inner dividers. */
+  .rail.drawer { border-right: none; }
+  .rail.drawer .panel { border-left: none; }
   .spine { width: 46px; display: flex; justify-content: center; padding-top: 10px; flex-shrink: 0; }
   .toggle {
     width: 32px; height: 32px;

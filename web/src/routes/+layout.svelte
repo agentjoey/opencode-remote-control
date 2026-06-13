@@ -19,7 +19,11 @@
   // inspector (right). No effect on the desktop 3-pane layout.
   let drawerLeft = false
   let drawerRight = false
+  let isMobile = false
   function closeDrawers() { drawerLeft = false; drawerRight = false }
+  // ☰ / ⓘ toggle their drawer (tap again to close) and close the other.
+  function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
+  function toggleRight() { drawerRight = !drawerRight; drawerLeft = false }
   function onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen = true }
     if (e.key === 'Escape') closeDrawers()
@@ -90,8 +94,16 @@
     const onBeforeInstall = (e: Event) => { e.preventDefault(); installEvent = e }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
 
+    // Track the mobile breakpoint so SessionRail can render in drawer mode
+    // (panel-only, no spine toggle).
+    const mq = window.matchMedia('(max-width: 820px)')
+    isMobile = mq.matches
+    const onMq = (e: MediaQueryListEvent) => { isMobile = e.matches; if (!e.matches) closeDrawers() }
+    mq.addEventListener('change', onMq)
+
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+      mq.removeEventListener('change', onMq)
       wsClient?.close()
     }
   })
@@ -109,7 +121,7 @@
 
 <div class="app">
   <header class="titlebar">
-    <button class="iconbtn" on:click={() => (drawerLeft = true)} aria-label="Open sessions">☰</button>
+    <button class="iconbtn" class:active={drawerLeft} on:click={toggleLeft} aria-label="Sessions">☰</button>
     <span class="brand">OCRC</span>
     <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
       <span class="ico" aria-hidden="true">⌕</span>
@@ -118,7 +130,7 @@
     <span class="spacer"></span>
     <ConnectionBadge />
     {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
-    <button class="iconbtn" on:click={() => (drawerRight = true)} aria-label="Open inspector">ⓘ</button>
+    <button class="iconbtn" class:active={drawerRight} on:click={toggleRight} aria-label="Inspector">ⓘ</button>
     <span class="email">{email}</span>
   </header>
   <OfflineBanner />
@@ -127,7 +139,7 @@
       <button class="backdrop" aria-label="Close" on:click={closeDrawers}></button>
     {/if}
     <div class="rail-wrap" class:open={drawerLeft}>
-      <SessionRail activeId={$page.params.sessionId} />
+      <SessionRail activeId={$page.params.sessionId} drawer={isMobile} />
     </div>
     <main><slot /></main>
     <div class="inspector-wrap" class:open={drawerRight}>
@@ -168,6 +180,7 @@
   /* Hamburger / inspector toggles — desktop hidden, shown on mobile. */
   .iconbtn { display: none; background: transparent; border: none; color: var(--text-2); font-size: 18px; line-height: 1; padding: 4px 6px; cursor: pointer; border-radius: var(--radius-sm); }
   .iconbtn:hover { color: var(--text); background: var(--bg-elev); }
+  .iconbtn.active { color: var(--accent); background: var(--accent-2); }
   .body { display: flex; flex: 1; overflow: hidden; position: relative; }
   main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
   /* Drawer wrappers are transparent on desktop (SessionRail/Inspector are the
@@ -185,9 +198,13 @@
       transition: transform .22s ease;
       box-shadow: 0 0 40px rgba(0,0,0,.55);
     }
-    .rail-wrap { left: 0; transform: translateX(-100%); }
-    .inspector-wrap { right: 0; transform: translateX(100%); }
+    .rail-wrap { left: 0; width: min(84vw, 300px); transform: translateX(-100%); }
+    .inspector-wrap { right: 0; width: min(82vw, 290px); transform: translateX(100%); }
     .rail-wrap.open, .inspector-wrap.open { transform: translateX(0); }
+    /* Inner components fill the drawer so its width is exactly the wrapper's,
+       leaving a reliable backdrop strip to tap. */
+    .rail-wrap :global(.rail), .rail-wrap :global(.panel) { width: 100%; }
+    .inspector-wrap :global(.inspector) { width: 100%; }
     .backdrop {
       display: block; position: absolute; inset: 0; z-index: 20;
       background: rgba(0,0,0,.5); border: none; padding: 0; cursor: default;
