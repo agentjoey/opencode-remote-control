@@ -37,19 +37,20 @@ export function clearToken(): void {
 }
 
 /**
- * On app load: if the URL fragment carries a token, persist it and strip the
- * fragment from the address bar (so it isn't bookmarked or shoulder-surfed),
- * without reloading or pushing a history entry. Returns the active token —
- * the one just captured, or the previously stored one — if any.
+ * On app load: if the URL fragment carries a token, persist it to localStorage.
+ * Returns the active token — the one just captured, or the previously stored one.
+ *
+ * NOTE: we intentionally KEEP `#token` in the URL (we don't strip it). iOS Safari
+ * "Add to Home Screen" bookmarks the current URL, and an installed iOS PWA does
+ * NOT share localStorage with Safari — so the token must stay in the URL for the
+ * home-screen app to receive it on launch. The fragment is never sent to the
+ * server (so it can't leak via logs/proxies); on the user's own device the
+ * address-bar exposure is acceptable, and in standalone mode the bar is hidden.
  */
-export function captureToken(
-  loc: Location = window.location,
-  hist: History = window.history,
-): string | null {
+export function captureToken(loc: Location = window.location): string | null {
   const fromHash = readTokenFromHash(loc.hash)
   if (fromHash) {
     setToken(fromHash)
-    try { hist.replaceState(null, '', loc.pathname + loc.search) } catch { /* ignore */ }
     return fromHash
   }
   return getToken()

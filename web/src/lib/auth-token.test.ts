@@ -27,28 +27,20 @@ describe('captureToken', () => {
     return { hash, pathname: '/', search: '' } as Location
   }
 
-  it('persists a fragment token and strips the fragment', () => {
-    const replaceState = vi.fn()
-    const tok = captureToken(fakeLoc('#token=secret'), { replaceState } as unknown as History)
+  it('persists a fragment token AND keeps it in the URL (iOS home-screen needs the bookmarked URL)', () => {
+    const loc = fakeLoc('#token=secret')
+    const tok = captureToken(loc)
     expect(tok).toBe('secret')
     expect(getToken()).toBe('secret')
-    expect(replaceState).toHaveBeenCalledWith(null, '', '/')
-  })
-
-  it('preserves the query string when stripping the fragment', () => {
-    const replaceState = vi.fn()
-    const loc = { hash: '#token=t', pathname: '/x', search: '?a=1' } as Location
-    captureToken(loc, { replaceState } as unknown as History)
-    expect(replaceState).toHaveBeenCalledWith(null, '', '/x?a=1')
+    expect(loc.hash).toBe('#token=secret') // not stripped
   })
 
   it('falls back to the stored token when no fragment', () => {
     setToken('stored')
-    const tok = captureToken(fakeLoc(''), { replaceState: vi.fn() } as unknown as History)
-    expect(tok).toBe('stored')
+    expect(captureToken(fakeLoc(''))).toBe('stored')
   })
 
   it('returns null when neither fragment nor storage has a token', () => {
-    expect(captureToken(fakeLoc(''), { replaceState: vi.fn() } as unknown as History)).toBeNull()
+    expect(captureToken(fakeLoc(''))).toBeNull()
   })
 })
