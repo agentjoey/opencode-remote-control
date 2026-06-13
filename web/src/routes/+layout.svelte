@@ -107,25 +107,9 @@
     const onMq = (e: MediaQueryListEvent) => { isMobile = e.matches; if (!e.matches) closeDrawers() }
     mq.addEventListener('change', onMq)
 
-    // Drive the app height from the visual viewport so the layout always sits in
-    // the visible area: the composer stays just above the iOS keyboard (no gap,
-    // not covered), and the header isn't pushed under the status bar.
-    const vv = window.visualViewport
-    const syncVV = () => {
-      if (!vv) return
-      document.documentElement.style.setProperty('--app-h', `${vv.height}px`)
-      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      document.body.classList.toggle('kb-open', kb > 80)
-    }
-    syncVV()
-    vv?.addEventListener('resize', syncVV)
-    vv?.addEventListener('scroll', syncVV)
-
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall)
       mq.removeEventListener('change', onMq)
-      vv?.removeEventListener('resize', syncVV)
-      vv?.removeEventListener('scroll', syncVV)
       wsClient?.close()
     }
   })
@@ -173,7 +157,7 @@
 {#if needsPairing}<PairGate />{/if}
 
 <style>
-  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; height: var(--app-h, 100dvh); overflow: hidden; background: var(--bg); }
+  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
   .titlebar {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px;
