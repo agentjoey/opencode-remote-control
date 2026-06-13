@@ -90,6 +90,13 @@
     background: var(--bg);
     padding: 0 24px 22px;
   }
+  /* Phones: tighter side padding + respect the home-bar safe area. */
+  @media (max-width: 820px) {
+    .composer {
+      padding: 0 12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+  }
   .dock {
     max-width: 760px;
     margin: 0 auto;

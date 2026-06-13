@@ -15,8 +15,14 @@
   import Inspector from '$lib/components/Inspector.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   let paletteOpen = false
+  // Mobile off-canvas drawers (≤820px): ☰ opens sessions (left), ⓘ opens the
+  // inspector (right). No effect on the desktop 3-pane layout.
+  let drawerLeft = false
+  let drawerRight = false
+  function closeDrawers() { drawerLeft = false; drawerRight = false }
   function onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen = true }
+    if (e.key === 'Escape') closeDrawers()
   }
 
   let email = ''
@@ -94,6 +100,7 @@
   // so it never collides with the navigation's own page-store updates
   // (which used to cause an effect-update loop in the previous design).
   afterNavigate((nav) => {
+    closeDrawers() // selecting a session in the drawer closes it
     loadSession(nav.to?.params?.sessionId)
   })
 </script>
@@ -102,28 +109,45 @@
 
 <div class="app">
   <header class="titlebar">
+    <button class="iconbtn" on:click={() => (drawerLeft = true)} aria-label="Open sessions">☰</button>
     <span class="brand">OCRC</span>
     <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
       <span class="ico" aria-hidden="true">⌕</span>
       <span class="ph">Search sessions & commands…</span>
     </button>
+    <span class="spacer"></span>
     <ConnectionBadge />
     {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
+    <button class="iconbtn" on:click={() => (drawerRight = true)} aria-label="Open inspector">ⓘ</button>
     <span class="email">{email}</span>
   </header>
   <OfflineBanner />
   <div class="body">
-    <SessionRail activeId={$page.params.sessionId} />
+    {#if drawerLeft || drawerRight}
+      <button class="backdrop" aria-label="Close" on:click={closeDrawers}></button>
+    {/if}
+    <div class="rail-wrap" class:open={drawerLeft}>
+      <SessionRail activeId={$page.params.sessionId} />
+    </div>
     <main><slot /></main>
-    <Inspector sessionId={$page.params.sessionId} />
+    <div class="inspector-wrap" class:open={drawerRight}>
+      <Inspector sessionId={$page.params.sessionId} />
+    </div>
   </div>
 </div>
 <CommandPalette bind:open={paletteOpen} />
 
 <style>
   .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
-  .titlebar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; font-size: 13px; }
+  .titlebar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    border-bottom: 1px solid var(--border); background: var(--bg-panel);
+    flex-shrink: 0; font-size: 13px;
+  }
   .brand { font-weight: 800; color: var(--accent); letter-spacing: .08em; font-size: 14px; }
+  .spacer { flex: 1; }
   .topsearch {
     display: flex; align-items: center; gap: 6px;
     background: var(--bg-input);
@@ -139,8 +163,36 @@
   }
   .topsearch:hover { border-color: var(--text-3); }
   .topsearch .ico { font-size: 13px; opacity: .8; }
-  .email { margin-left: auto; font-size: 0.8em; color: var(--text-3); }
+  .email { font-size: 0.8em; color: var(--text-3); }
   .install { background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius-sm); padding: 4px 12px; font-size: 0.8em; font-weight: 600; cursor: pointer; }
-  .body { display: flex; flex: 1; overflow: hidden; }
+  /* Hamburger / inspector toggles — desktop hidden, shown on mobile. */
+  .iconbtn { display: none; background: transparent; border: none; color: var(--text-2); font-size: 18px; line-height: 1; padding: 4px 6px; cursor: pointer; border-radius: var(--radius-sm); }
+  .iconbtn:hover { color: var(--text); background: var(--bg-elev); }
+  .body { display: flex; flex: 1; overflow: hidden; position: relative; }
   main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+  /* Drawer wrappers are transparent on desktop (SessionRail/Inspector are the
+     flex children directly), and become off-canvas drawers on mobile. */
+  .rail-wrap, .inspector-wrap { display: contents; }
+  .backdrop { display: none; }
+
+  @media (max-width: 820px) {
+    .topsearch, .email { display: none; }
+    .iconbtn { display: inline-flex; align-items: center; }
+    .rail-wrap, .inspector-wrap {
+      display: block;
+      position: absolute; top: 0; bottom: 0; z-index: 30;
+      overflow: hidden;
+      transition: transform .22s ease;
+      box-shadow: 0 0 40px rgba(0,0,0,.55);
+    }
+    .rail-wrap { left: 0; transform: translateX(-100%); }
+    .inspector-wrap { right: 0; transform: translateX(100%); }
+    .rail-wrap.open, .inspector-wrap.open { transform: translateX(0); }
+    .backdrop {
+      display: block; position: absolute; inset: 0; z-index: 20;
+      background: rgba(0,0,0,.5); border: none; padding: 0; cursor: default;
+      animation: fade .18s ease;
+    }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  }
 </style>

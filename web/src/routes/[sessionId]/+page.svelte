@@ -47,6 +47,9 @@
     display: flex;
     flex-direction: column;
   }
+  @media (max-width: 820px) {
+    .stream { padding: 14px 12px 8px; }
+  }
   .empty {
     color: var(--text-3);
     text-align: center;
