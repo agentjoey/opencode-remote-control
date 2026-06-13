@@ -96,7 +96,7 @@
   @media (max-width: 820px) {
     .composer {
       padding: 0 12px;
-      padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px));
+      padding-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px));
     }
   }
   .dock {
