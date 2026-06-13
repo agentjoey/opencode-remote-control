@@ -8,12 +8,15 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
-  import { captureToken } from '$lib/auth-token.js'
+  import { captureToken, getToken } from '$lib/auth-token.js'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import SessionRail from '$lib/components/SessionRail.svelte'
   import Inspector from '$lib/components/Inspector.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
+  import PairGate from '$lib/components/PairGate.svelte'
+  // No token (e.g. a fresh iOS home-screen PWA) → pair inside the app.
+  let needsPairing = false
   let paletteOpen = false
   // Mobile off-canvas drawers (≤820px): ☰ opens sessions (left), ⓘ opens the
   // inspector (right). No effect on the desktop 3-pane layout.
@@ -61,6 +64,9 @@
     // Capture a pairing token (#token=… in the URL) before any API/WS call, then
     // strip it from the address bar. Stored in localStorage for subsequent loads.
     captureToken()
+    // No token (fresh iOS PWA launched at start_url, separate storage) → gate
+    // on an in-app pairing screen instead of starting a token-less app.
+    if (!getToken()) { needsPairing = true; return }
 
     api.me().then((m) => { email = m.email }).catch(() => {})
     api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
@@ -148,6 +154,7 @@
   </div>
 </div>
 <CommandPalette bind:open={paletteOpen} />
+{#if needsPairing}<PairGate />{/if}
 
 <style>
   .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
