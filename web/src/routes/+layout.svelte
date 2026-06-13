@@ -157,7 +157,7 @@
 {#if needsPairing}<PairGate />{/if}
 
 <style>
-  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
+  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
   .titlebar {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px;

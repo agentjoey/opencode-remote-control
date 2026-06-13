@@ -29,8 +29,15 @@
   --font-mono: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
 }
 html { background: var(--bg); }
+/* Lock the document so only inner panes scroll — prevents the whole app (and its
+   fixed header/composer) from being dragged under the iOS status bar / off-screen
+   by document-level scroll or rubber-band overscroll. */
+html, body { height: 100%; }
 body {
   margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);

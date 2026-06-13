@@ -39,6 +39,8 @@
   .chat {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .stream {
     max-width: 760px;
