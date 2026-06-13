@@ -36,7 +36,8 @@ opencode
 - **Web PWA:** the installer enables it by default. Run `oprc pair` (or send `/pair` in Telegram) → open the URL/QR it prints. Auth is a device **token** — no Cloudflare Access needed.
 - **From another device:** the web binds to `localhost`, so expose it over a tunnel or VPN — e.g. `tailscale serve 17081`. See [Remote access without a domain](#remote-access-without-a-domain).
 
-> Once published to npm, steps collapse to `npx opencode-remote-control install`.
+> **Not on npm yet** — build from source as above. (Once published, this will
+> collapse to `npx opencode-remote-control install`.)
 
 ## How we're different
 
