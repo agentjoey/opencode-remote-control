@@ -90,12 +90,16 @@
     background: var(--bg);
     padding: 0 24px 22px;
   }
-  /* Phones: tighter side padding + respect the home-bar safe area. */
+  /* Phones: tighter side padding + clear the home-bar (max, not additive). */
   @media (max-width: 820px) {
     .composer {
       padding: 0 12px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     }
+    /* Keyboard up (no home indicator visible): sit right above the keyboard. */
+    :global(body.kb-open) .composer { padding-bottom: 8px; }
+    /* ≥16px so iOS doesn't auto-zoom the page when the field is focused. */
+    textarea { font-size: 16px; }
   }
   .dock {
     max-width: 760px;

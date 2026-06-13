@@ -68,7 +68,7 @@
     width: 100%; box-sizing: border-box;
     background: var(--bg-input); border: 1px solid var(--border);
     border-radius: var(--radius-sm); color: var(--text);
-    padding: 12px 14px; font-size: 14px; outline: none;
+    padding: 12px 14px; font-size: 16px; outline: none;
   }
   .field:focus { border-color: var(--accent); }
   .err { color: var(--err); font-size: 12px; }
