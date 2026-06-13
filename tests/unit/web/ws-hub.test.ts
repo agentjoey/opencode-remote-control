@@ -49,6 +49,30 @@ describe('WsHub', () => {
     expect(cardMsgs.length).toBe(0)
   })
 
+  it('does NOT broadcast proactive (push) cards to web — live', async () => {
+    const bus = createCardBus()
+    const hub = createWsHub({ cardBus: bus, client: fakeClient(), state: fakeState() })
+    const ws = fakeWs()
+    await hub.attach(ws as any, { email: 'u@x' } as any)
+    hub.handleClientMessage(ws as any, { type: 'subscribe', sessionId: 'ses_1' })
+    bus.publish({ kind: 'info', sessionId: 'ses_1', title: 'Test failure detected', sections: [], proactive: true })
+    bus.publish({ kind: 'info', sessionId: 'ses_1', title: 'Normal info', sections: [] })
+    const titles = ws.sent.filter((m: any) => m.type === 'card').map((m: any) => m.card.title)
+    expect(titles).toEqual(['Normal info']) // proactive one filtered out
+  })
+
+  it('does NOT replay proactive (push) cards on subscribe', async () => {
+    const bus = createCardBus()
+    bus.publish({ kind: 'info', sessionId: 'ses_1', title: 'Session finished', sections: [], proactive: true }) // seq 1
+    bus.publish({ kind: 'assistant', sessionId: 'ses_1', blocks: [], meta: {} })                                 // seq 2
+    const hub = createWsHub({ cardBus: bus, client: fakeClient(), state: fakeState() })
+    const ws = fakeWs()
+    await hub.attach(ws as any, { email: 'u@x' } as any)
+    hub.handleClientMessage(ws as any, { type: 'subscribe', sessionId: 'ses_1', sinceSeq: 0 })
+    const kinds = ws.sent.filter((m: any) => m.type === 'card').map((m: any) => m.card.kind)
+    expect(kinds).toEqual(['assistant']) // proactive info not replayed
+  })
+
   it('replies pong to ping', async () => {
     const hub = createWsHub({ cardBus: createCardBus(), client: fakeClient(), state: fakeState() })
     const ws = fakeWs()

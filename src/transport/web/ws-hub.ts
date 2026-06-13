@@ -21,7 +21,14 @@ export interface WsHub {
 export function createWsHub(opts: { cardBus: CardBus; client: OpencodeClient; state: SessionState }): WsHub {
   const clients = new Map<WebSocket, ClientState>()
 
+  // Proactive cards (push notifications: test-failure, session-finished) are a
+  // Telegram delivery concern. The web shows the full turn live, so rendering a
+  // late-arriving notification would just pile up at the feed end out of order.
+  // Telegram still gets them via its own CardBus subscription.
+  const isProactive = (card: StructuredCard): boolean => 'proactive' in card && card.proactive === true
+
   opts.cardBus.subscribeAll((card) => {
+    if (isProactive(card)) return
     const sid = 'sessionId' in card ? card.sessionId : undefined
     for (const state of clients.values()) {
       if (state.ws.readyState !== 1) continue
@@ -50,6 +57,7 @@ export function createWsHub(opts: { cardBus: CardBus; client: OpencodeClient; st
         // dropped any card that landed between the REST snapshot and subscribe.
         const since = typeof msg.sinceSeq === 'number' ? msg.sinceSeq : 0
         for (const card of opts.cardBus.recent(sid)) {
+          if (isProactive(card)) continue
           if ((card.seq ?? 0) > since && state.ws.readyState === 1) {
             try { state.ws.send(JSON.stringify({ type: 'card', card })) } catch {}
           }

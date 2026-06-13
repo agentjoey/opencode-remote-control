@@ -115,7 +115,7 @@ export function startPushNotifications(deps: PushDeps) {
         if (summary) {
           sections.push({ body: '<pre>' + summary.replace(/[<>&]/g, (c: string) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' })
         }
-        publish({ kind: 'info', sessionId: sid, title: 'Session finished', sections })
+        publish({ kind: 'info', sessionId: sid, title: 'Session finished', sections, proactive: true })
       }
     }
 
@@ -133,6 +133,7 @@ export function startPushNotifications(deps: PushDeps) {
               { body: `⚠️ Possible test failure in <code>…${sid.slice(-8)}</code>` },
               { body: '<pre>' + tail.replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!)) + '</pre>' },
             ],
+            proactive: true,
           })
         }
       }

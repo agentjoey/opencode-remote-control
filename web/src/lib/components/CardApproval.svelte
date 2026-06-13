@@ -7,20 +7,31 @@
   async function decide(decision: 'once' | 'always' | 'reject') {
     try { await api.approve(card.sessionId, card.requestId, decision); done = decision } catch { done = 'error' }
   }
+  // A resolved approval lands at the feed end (it occurred mid-turn). Collapse it
+  // to a compact, clearly-resolved line so it reads as a handled record rather
+  // than a stale pending prompt.
+  const LABEL: Record<string, string> = {
+    once: 'Allowed (once)', always: 'Always allowed', reject: 'Rejected', error: 'Failed',
+  }
+  $: resolved = !!done
 </script>
-<div class="appr">
-  <div class="ttl"><span class="ico" aria-hidden="true">⚠</span> {card.title}</div>
-  <pre class="args mono">{JSON.stringify(card.args, null, 2)}</pre>
-  {#if done}
-    <div class="done" class:err={done === 'error'}>{done === 'error' ? 'failed' : done}</div>
-  {:else}
+{#if resolved}
+  <div class="appr resolved" class:rej={done === 'reject' || done === 'error'}>
+    <span class="mark" aria-hidden="true">{done === 'reject' || done === 'error' ? '✗' : '✓'}</span>
+    <span class="rlabel">{LABEL[done] ?? done}</span>
+    <span class="rttl">{card.title}</span>
+  </div>
+{:else}
+  <div class="appr">
+    <div class="ttl"><span class="ico" aria-hidden="true">⚠</span> {card.title}</div>
+    <pre class="args mono">{JSON.stringify(card.args, null, 2)}</pre>
     <div class="acts">
       <button class="a allow" on:click={() => decide('once')}>Allow</button>
       <button class="a always" on:click={() => decide('always')}>Always</button>
       <button class="a rej" on:click={() => decide('reject')}>Reject</button>
     </div>
-  {/if}
-</div>
+  </div>
+{/if}
 <style>
   .appr {
     align-self: flex-start;
@@ -82,10 +93,20 @@
     color: var(--bg);
   }
   .a.allow:hover, .a.always:hover, .a.rej:hover { opacity: .88; }
-  .done {
+  /* Compact, de-emphasized record once the approval has been answered. */
+  .appr.resolved {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    margin: 2px 0;
     font-size: 11px;
     color: var(--text-3);
-    text-transform: capitalize;
   }
-  .done.err { color: var(--err); }
+  .appr.resolved .mark { color: var(--ok); font-weight: 700; }
+  .appr.resolved.rej .mark { color: var(--err); }
+  .appr.resolved .rlabel { color: var(--text-2); font-weight: 600; }
+  .appr.resolved .rttl { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

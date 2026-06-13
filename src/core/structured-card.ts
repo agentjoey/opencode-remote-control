@@ -47,6 +47,6 @@ export type StructuredCard = CardMeta & (
   | { kind: 'user';         sessionId: string;  text: string;  ts: number;  origin?: 'telegram' | 'web' }
   | { kind: 'error';        sessionId: string;  message: string }
   | { kind: 'status';       sessionId: string;  fields: Record<string, string>; buttons?: Button[][] }
-  | { kind: 'info';         title: string;      sections: InfoSection[]; sessionId?: string }
+  | { kind: 'info';         title: string;      sections: InfoSection[]; sessionId?: string;  proactive?: boolean }
   | { kind: 'approval';     sessionId: string;  title: string;  args: unknown;  requestId: string }
 )
