@@ -90,14 +90,14 @@
     background: var(--bg);
     padding: 0 24px 22px;
   }
-  /* Phones: tighter side padding + clear the home-bar (max, not additive). */
+  /* Phones: tighter side padding. In a browser tab the Safari toolbar sits below
+     us (safe-area-bottom ≈ 0) → ~10px gap. As a standalone PWA there's a home
+     indicator (safe-area-bottom ≈ 34px) → clear it but trim the float a bit. */
   @media (max-width: 820px) {
     .composer {
       padding: 0 12px;
-      padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+      padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px));
     }
-    /* ≥16px so iOS doesn't auto-zoom the page when the field is focused. */
-    textarea { font-size: 16px; }
   }
   .dock {
     max-width: 760px;
@@ -128,8 +128,8 @@
     padding: 4px 4px 2px;
     color: var(--text);
     font-family: var(--font-sans);
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 16px; /* ≥16px so iOS never auto-zooms the page on focus */
+    line-height: 1.5;
     resize: none;
     min-height: 24px;
     max-height: 200px;
