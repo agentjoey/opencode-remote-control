@@ -307,6 +307,11 @@
   .act.pin.on { opacity: 1; color: var(--accent); }
   .act.trash:hover { color: var(--err); }
   .act:disabled { opacity: .4; cursor: default; }
+  /* Touch: no hover to reveal the row actions, so show them with a real tap area. */
+  @media (hover: none), (max-width: 820px) {
+    .act { opacity: .6; padding: 8px; }
+    .actions { gap: 2px; }
+  }
 
   .meta {
     display: flex;

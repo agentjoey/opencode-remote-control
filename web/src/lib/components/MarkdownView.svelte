@@ -71,6 +71,8 @@
     width: max-content;
     max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain; /* horizontal scroll doesn't trigger back-swipe */
     border-collapse: collapse;
     margin: 0.6em 0;
     font-size: 13px;

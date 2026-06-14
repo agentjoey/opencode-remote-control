@@ -23,6 +23,7 @@
   let drawerLeft = false
   let drawerRight = false
   let isMobile = false
+  let appEl: HTMLElement
   function closeDrawers() { drawerLeft = false; drawerRight = false }
   // ☰ / ⓘ toggle their drawer (tap again to close) and close the other.
   function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
@@ -107,9 +108,24 @@
     const onMq = (e: MediaQueryListEvent) => { isMobile = e.matches; if (!e.matches) closeDrawers() }
     mq.addEventListener('change', onMq)
 
+    // Keyboard-follow: pin the app to the visual viewport so the composer sits
+    // just above the iOS keyboard. Handle BOTH height AND offsetTop — a previous
+    // attempt set only height, which mis-aligned/collapsed the app (black screen).
+    const vv = window.visualViewport
+    const syncVV = () => {
+      if (!vv || !appEl) return
+      appEl.style.height = `${vv.height}px`
+      appEl.style.transform = vv.offsetTop ? `translateY(${vv.offsetTop}px)` : ''
+    }
+    syncVV()
+    vv?.addEventListener('resize', syncVV)
+    vv?.addEventListener('scroll', syncVV)
+
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall)
       mq.removeEventListener('change', onMq)
+      vv?.removeEventListener('resize', syncVV)
+      vv?.removeEventListener('scroll', syncVV)
       wsClient?.close()
     }
   })
@@ -125,7 +141,7 @@
 
 <svelte:window on:keydown={onGlobalKey} />
 
-<div class="app">
+<div class="app" bind:this={appEl}>
   <header class="titlebar">
     <button class="iconbtn" class:active={drawerLeft} on:click={toggleLeft} aria-label="Sessions">☰</button>
     <span class="brand">OCRC</span>
@@ -157,7 +173,10 @@
 {#if needsPairing}<PairGate />{/if}
 
 <style>
-  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
+  /* position:fixed + JS visualViewport sizing pins the app to the visible area,
+     keeping the composer above the iOS keyboard. Inline height/transform from JS
+     win; the 100dvh here is the no-visualViewport fallback. */
+  .app { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
   .titlebar {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px;
@@ -197,7 +216,7 @@
 
   @media (max-width: 820px) {
     .topsearch, .email { display: none; }
-    .iconbtn { display: inline-flex; align-items: center; }
+    .iconbtn { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; font-size: 20px; }
     .rail-wrap, .inspector-wrap {
       display: block;
       position: absolute; top: 0; bottom: 0; z-index: 30;
