@@ -208,7 +208,7 @@
   .iconbtn:hover { color: var(--text); background: var(--bg-elev); }
   .iconbtn.active { color: var(--accent); background: var(--accent-2); }
   .body { display: flex; flex: 1; overflow: hidden; position: relative; }
-  main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+  main { position: relative; flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
   /* Drawer wrappers are transparent on desktop (SessionRail/Inspector are the
      flex children directly), and become off-canvas drawers on mobile. */
   .rail-wrap, .inspector-wrap { display: contents; }
