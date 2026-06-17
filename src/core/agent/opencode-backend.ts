@@ -12,6 +12,7 @@ import type {
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import { submitPrompt } from '../../opencode/submit.js'
 import { listAllSessions } from '../../opencode/list-sessions.js'
+import { listWorkspaces as listWorkspacesImpl } from '../../opencode/workspaces.js'
 import { cardsFromMessages } from '../history.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -224,6 +225,10 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     }))
   }
 
+  function listWorkspaces() {
+    return listWorkspacesImpl(client)
+  }
+
   async function listCommands(): Promise<CommandInfo[]> {
     const data = ((await client.command.list()).data ?? []) as Array<{ name: string; description?: string }>
     return data.map((d) => ({ name: d.name, description: d.description ?? '' }))
@@ -263,7 +268,7 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     prompt, abort,
     hasSession, listSessions, listSessionSummaries, createSession, deleteSession, renameSession,
     getSessionMeta, getContext, getHistory, getMessageBlocks, getDiff, getTodos, getSessionsStatus, ping,
-    getAgents, getModels, getMcp, listCommands, runCommand,
+    getAgents, getModels, getMcp, listWorkspaces, listCommands, runCommand,
     resolvePermission,
     selectTuiSession,
   }

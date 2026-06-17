@@ -7,7 +7,6 @@ import type { AgentBackend } from '../../core/agent/backend.js'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { StructuredCard } from '../../core/structured-card.js'
-import type { Workspace } from '../../opencode/workspaces.js'
 import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
@@ -23,7 +22,6 @@ export interface WebTransportConfig {
   staticRoot: string
   cacheSize: number
   baseUrl?: string
-  listWorkspaces?: () => Promise<Workspace[]>
 }
 
 const CAPS: ChannelCapabilities = {
@@ -53,7 +51,6 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
         cacheSize: cfg.cacheSize,
         baseUrl: cfg.baseUrl ?? '',
         onMessage: (msg) => messageHandler ? messageHandler(msg) : Promise.resolve(),
-        listWorkspaces: cfg.listWorkspaces,
       })
 
       app.use('/*', serveStatic({ root: cfg.staticRoot }))

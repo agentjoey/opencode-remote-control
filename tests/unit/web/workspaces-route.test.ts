@@ -3,21 +3,24 @@ import { Hono } from 'hono'
 import { registerWorkspaces } from '../../../src/transport/web/routes/workspaces'
 
 describe('GET /api/workspaces', () => {
-  it('returns workspaces from the callback', async () => {
-    const listWorkspaces = async () => [
-      { directory: '/Users/x/repo', name: 'repo', sessionCount: 1, lastActiveAt: 1 },
-    ]
+  it('returns workspaces from backend.listWorkspaces()', async () => {
+    const backend = {
+      listWorkspaces: async () => [
+        { directory: '/Users/x/repo', name: 'repo', sessionCount: 1, lastActiveAt: 1 },
+      ],
+    } as any
     const app = new Hono()
-    registerWorkspaces(app, listWorkspaces)
+    registerWorkspaces(app, backend)
     const res = await app.request('/api/workspaces')
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
     expect(body.some((w) => w.directory === '/Users/x/repo' && w.name === 'repo')).toBe(true)
   })
 
-  it('still returns 200 when no listWorkspaces is provided', async () => {
+  it('returns [] when the backend has no workspaces', async () => {
+    const backend = { listWorkspaces: async () => [] } as any
     const app = new Hono()
-    registerWorkspaces(app, undefined)
+    registerWorkspaces(app, backend)
     const res = await app.request('/api/workspaces')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([])

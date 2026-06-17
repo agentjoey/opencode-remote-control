@@ -1,17 +1,14 @@
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { basename } from 'node:path'
 import { directoriesFromDb, listAllSessions } from './list-sessions.js'
+// Canonical Workspace shape lives on the AgentBackend interface; re-export it so
+// existing importers of `opencode/workspaces` keep working.
+import type { Workspace } from '../core/agent/backend.js'
+export type { Workspace }
 
 /** Normalize a directory path by stripping a single trailing slash (except for root). */
 function normalizeDir(d: string): string {
   return d.endsWith('/') && d !== '/' ? d.replace(/\/+$/, '') : d
-}
-
-export interface Workspace {
-  directory: string
-  name: string
-  sessionCount: number
-  lastActiveAt: number
 }
 
 interface BuildInput {

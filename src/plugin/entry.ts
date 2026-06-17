@@ -11,7 +11,6 @@ import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
 import { tryBecomePrimary } from '../core/primary-election.js'
 import { startGlobalEvents } from '../opencode/global-events.js'
-import { listWorkspaces } from '../opencode/workspaces.js'
 import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
@@ -81,7 +80,6 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       state,
       baseUrl: serverUrl,
       tgChunkSoftLimit: config.tgChunkSoftLimit,
-      listWorkspaces: () => listWorkspaces(ctx.client),
     })
 
     const transports: Transport[] = [tgTransport]
@@ -112,8 +110,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         staticRoot: config.webStaticRoot,
         cacheSize: config.webCacheSize,
         baseUrl: serverUrl,
-        listWorkspaces: () => listWorkspaces(ctx.client),
-      })
+        })
       webTransport.onMessage(relay)
       transports.push(webTransport)
     }

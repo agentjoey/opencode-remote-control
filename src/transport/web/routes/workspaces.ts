@@ -1,10 +1,8 @@
 import type { Hono } from 'hono'
-import type { Workspace } from '../../../opencode/workspaces.js'
+import type { AgentBackend } from '../../../core/agent/backend.js'
 
-export function registerWorkspaces(app: Hono, listWorkspaces?: () => Promise<Workspace[]>) {
+export function registerWorkspaces(app: Hono, backend: AgentBackend) {
   app.get('/api/workspaces', async (c) => {
-    if (!listWorkspaces) return c.json([])
-    const ws = await listWorkspaces()
-    return c.json(ws)
+    return c.json(await backend.listWorkspaces())
   })
 }

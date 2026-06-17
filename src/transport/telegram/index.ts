@@ -23,8 +23,6 @@ export interface TelegramConfig {
   opencodeProject?: string
   /** Telegram chunk soft limit for message pagination (default 3500). */
   tgChunkSoftLimit?: number
-  /** List workspaces callback (injected from entry). */
-  listWorkspaces?: () => Promise<Array<{ name: string; directory: string; sessionCount: number }>>
 }
 
 const CAPS: ChannelCapabilities = {
@@ -105,7 +103,6 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     abortGeneration,
     pendingApprovals,
     opencodeProject: cfg.opencodeProject,
-    listWorkspaces: cfg.listWorkspaces,
   })
 
   // Error catch-all

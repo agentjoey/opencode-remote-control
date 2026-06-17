@@ -181,6 +181,15 @@ describe('OpencodeBackend', () => {
     ])
   })
 
+  it('listWorkspaces merges project worktrees + session dirs', async () => {
+    const client = fakeClient({
+      session: { list: vi.fn().mockResolvedValue({ data: [{ id: 's1', directory: '/repo', time: { updated: 5 } }] }) },
+      root: { project: { list: vi.fn().mockResolvedValue({ data: [{ worktree: '/repo' }] }) } },
+    })
+    const ws = await createOpencodeBackend({ client }).listWorkspaces()
+    expect(ws).toContainEqual({ directory: '/repo', name: 'repo', sessionCount: 1, lastActiveAt: 5 })
+  })
+
   it('listCommands maps name/description', async () => {
     const client = fakeClient({ command: {
       list: vi.fn().mockResolvedValue({ data: [{ name: 'init', description: 'd' }, { name: 'x' }] }),

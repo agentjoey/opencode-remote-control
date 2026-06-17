@@ -25,8 +25,6 @@ export interface HandlersDeps {
   cardBus?: CardBus
   /** Project directory where opencode.json lives, used as `directory` query param for /config endpoints. */
   opencodeProject?: string
-  /** List workspaces callback (injected from entry). */
-  listWorkspaces?: () => Promise<Array<{ name: string; directory: string; sessionCount: number }>>
 }
 
 /**
@@ -467,8 +465,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('workspaces', async (ctx) => {
     try {
-      if (!deps.listWorkspaces) { await ctx.reply('Workspace listing not available.', { parse_mode: 'HTML' }); return }
-      const ws = await deps.listWorkspaces()
+      const ws = await deps.backend.listWorkspaces()
       if (ws.length === 0) { await ctx.reply('No workspaces.', { parse_mode: 'HTML' }); return }
       const active = deps.state.getActiveWorkspace()
       const lines = ['<b>🗂 Workspaces</b>', '']

@@ -56,6 +56,7 @@ export interface AgentInfo { name: string; model: string; description: string }
 export interface ModelProvider { id: string; name: string; models: Array<{ id: string; name: string }> }
 export interface McpServer { name: string; type?: string; status: 'configured' | 'disabled' }
 export interface CommandInfo { name: string; description: string }
+export interface Workspace { directory: string; name: string; sessionCount: number; lastActiveAt: number }
 
 export interface PromptInput {
   text: string
@@ -117,6 +118,8 @@ export interface AgentBackend {
   getAgents(directory?: string): Promise<AgentInfo[]>
   getModels(directory?: string): Promise<ModelProvider[]>
   getMcp(directory?: string): Promise<McpServer[]>
+  /** Workspaces (directories with sessions) across all opencode projects. */
+  listWorkspaces(): Promise<Workspace[]>
   listCommands(): Promise<CommandInfo[]>
   runCommand(id: string, command: string, args?: string): Promise<void>
 

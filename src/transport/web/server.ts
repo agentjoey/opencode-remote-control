@@ -4,7 +4,6 @@ import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
 import type { AuthStrategy } from '../../connectivity/auth/index.js'
-import type { Workspace } from '../../opencode/workspaces.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('web')
@@ -48,7 +47,6 @@ export interface BuildServerOpts {
   cacheSize: number
   baseUrl: string
   onMessage?: (msg: IncomingMessage) => Promise<void>
-  listWorkspaces?: () => Promise<Workspace[]>
 }
 
 export function buildServer(opts: BuildServerOpts): Hono {
@@ -79,7 +77,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerMcp(app, opts.backend)
   registerCatalog(app, opts.backend)
   registerOverrides(app, opts.state)
-  registerWorkspaces(app, opts.listWorkspaces)
+  registerWorkspaces(app, opts.backend)
   registerCreateSession(app, opts.backend)
   registerCommands(app, opts.backend)
   registerRename(app, opts.backend)
