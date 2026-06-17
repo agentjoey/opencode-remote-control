@@ -3,15 +3,16 @@ import { createRelay } from '../../src/core/relay'
 import { createCardBus } from '../../src/core/card-bus'
 import type { StructuredCard } from '../../src/core/structured-card'
 
-function fakeClient() {
+function fakeBackend() {
   return {
-    session: {
-      promptAsync: vi.fn().mockResolvedValue({ data: {} }),
-      list: vi.fn().mockResolvedValue({ data: [{ id: 'ses_test', time: { created: 1 } }] }),
-      message: vi.fn().mockResolvedValue({ data: { parts: [{ type: 'text', text: 'done' }] } }),
-      messages: vi.fn().mockResolvedValue({ data: [] }),
-    },
-    tui: { appendPrompt: vi.fn() },
+    id: 'opencode',
+    capabilities: { liveMirror: true, tuiSelect: true },
+    prompt: vi.fn().mockResolvedValue(undefined),
+    hasSession: vi.fn().mockResolvedValue(true),
+    listSessions: vi.fn().mockResolvedValue([{ id: 'ses_test', createdAt: 1 }]),
+    getSessionMeta: vi.fn().mockResolvedValue({}),
+    getMessageBlocks: vi.fn().mockResolvedValue([{ type: 'text', text: 'done' }]),
+    selectTuiSession: vi.fn().mockResolvedValue(undefined),
   } as any
 }
 
@@ -52,11 +53,10 @@ describe('14.2 concurrent busy', () => {
     cardBus.subscribeAll((c) => cards.push(c))
     const relay = createRelay({
       cardBus,
-      client: fakeClient(),
+      backend: fakeBackend(),
       state: fakeState(),
       chatTimeoutMs: 5000,
       tuiVisible: false,
-      baseUrl: 'http://localhost:4096',
     })
 
     await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'msg1' })

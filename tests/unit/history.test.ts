@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { messageToCards, reconstructHistory, summarizeToolArgs } from '../../src/core/history'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import { messageToCards, cardsFromMessages, summarizeToolArgs } from '../../src/core/history'
 
 describe('messageToCards', () => {
   it('converts user message to user card', () => {
@@ -93,20 +92,14 @@ describe('summarizeToolArgs', () => {
   })
 })
 
-describe('reconstructHistory', () => {
-  it('returns flattened cards from mocked session messages', async () => {
-    const mockClient = {
-      session: {
-        messages: vi.fn().mockResolvedValue({
-          data: [
-            { role: 'user', parts: [{ type: 'text', text: 'hello' }], ts: 1234567890 },
-            { role: 'assistant', parts: [{ type: 'text', text: 'hi' }], agent: { name: 'build' } }
-          ]
-        })
-      }
-    } as unknown as OpencodeClient
+describe('cardsFromMessages', () => {
+  it('returns flattened cards from raw messages', () => {
+    const messages = [
+      { role: 'user', parts: [{ type: 'text', text: 'hello' }], ts: 1234567890 },
+      { role: 'assistant', parts: [{ type: 'text', text: 'hi' }], agent: { name: 'build' } }
+    ]
 
-    const cards = await reconstructHistory(mockClient, 'ses_1')
+    const cards = cardsFromMessages('ses_1', messages)
     expect(cards).toHaveLength(2)
     expect(cards[0].kind).toBe('user')
     expect(cards[1].kind).toBe('assistant')

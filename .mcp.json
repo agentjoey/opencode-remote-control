@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "pact": {
+      "args": [
+        "mcp"
+      ],
+      "command": "pactify",
+      "env": {
+        "PACT_AGENT_ID": "claude"
+      }
+    }
+  }
+}

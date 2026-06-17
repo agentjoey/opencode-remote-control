@@ -1,4 +1,3 @@
-import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { StructuredCard, ContentBlock, AssistantMeta } from './structured-card.js'
 
 export function summarizeToolArgs(tool: string, input: any): string {
@@ -79,15 +78,11 @@ export function messageToCards(sessionId: string, msg: any): StructuredCard[] {
  */
 const DEFAULT_HISTORY_LIMIT = 50
 
-export async function reconstructHistory(
-  client: OpencodeClient,
+export function cardsFromMessages(
   sessionId: string,
+  messages: any[],
   limit: number = DEFAULT_HISTORY_LIMIT,
-): Promise<StructuredCard[]> {
-  const res = await client.session.messages({ path: { id: sessionId } })
-  const messages = (res.data ?? []) as any[]
-  // Tail-N — recent messages are what users actually want to see when reopening
-  // a session. Pagination/scroll-back to older messages is a Phase-6 task.
+): StructuredCard[] {
   const recent = limit > 0 && messages.length > limit ? messages.slice(-limit) : messages
   const cards: StructuredCard[] = []
   for (const msg of recent) {

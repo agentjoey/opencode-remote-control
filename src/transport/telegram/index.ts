@@ -1,6 +1,6 @@
 import { Telegraf, Markup } from 'telegraf'
 import type { Context } from 'telegraf'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../core/agent/backend.js'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { SessionState } from '../../core/state.js'
@@ -15,7 +15,7 @@ const log = createLogger('telegram')
 export interface TelegramConfig {
   token: string
   allowedUserIds: number[]
-  client: OpencodeClient
+  backend: AgentBackend
   state: SessionState
   /** opencode server base URL (in-process plugin server). */
   baseUrl?: string
@@ -23,6 +23,8 @@ export interface TelegramConfig {
   opencodeProject?: string
   /** Telegram chunk soft limit for message pagination (default 3500). */
   tgChunkSoftLimit?: number
+  /** List workspaces callback (injected from entry). */
+  listWorkspaces?: () => Promise<Array<{ name: string; directory: string; sessionCount: number }>>
 }
 
 const CAPS: ChannelCapabilities = {
@@ -95,7 +97,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
   // Register commands + callbacks
   registerHandlers({
     bot,
-    client: cfg.client,
+    backend: cfg.backend,
     baseUrl: cfg.baseUrl ?? '',
     state: cfg.state,
     chatId: cfg.allowedUserIds[0],
@@ -103,6 +105,7 @@ export function createTelegramTransport(cfg: TelegramConfig): TelegramTransport 
     abortGeneration,
     pendingApprovals,
     opencodeProject: cfg.opencodeProject,
+    listWorkspaces: cfg.listWorkspaces,
   })
 
   // Error catch-all

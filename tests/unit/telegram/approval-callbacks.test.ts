@@ -21,10 +21,10 @@ function findApprove(bot: ReturnType<typeof captureBot>) {
 function makeDeps(overrides: Record<string, unknown> = {}) {
   const pendingApprovals = new Map<string, PendingApproval>()
   const bot = captureBot()
-  const client = { postSessionIdPermissionsPermissionId: vi.fn().mockResolvedValue({}) }
+  const backend = { resolvePermission: vi.fn().mockResolvedValue(undefined) }
   const deps: any = {
     bot,
-    client,
+    backend,
     state: {} as any,
     chatId: 1,
     isGenerating: () => false,
@@ -34,12 +34,12 @@ function makeDeps(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
   registerHandlers(deps)
-  return { bot, client, pendingApprovals, deps }
+  return { bot, backend, pendingApprovals, deps }
 }
 
 describe('approve: button callback', () => {
   it('replies the decision to opencode and clears the pending approval', async () => {
-    const { bot, client, pendingApprovals } = makeDeps()
+    const { bot, backend, pendingApprovals } = makeDeps()
     pendingApprovals.set('perm_1', { sessionId: 'ses_a', permissionId: 'perm_1', messageId: 42, title: 'Edit foo.ts' })
 
     const { trigger, handler } = findApprove(bot)
@@ -50,17 +50,14 @@ describe('approve: button callback', () => {
     }
     await handler(ctx)
 
-    expect(client.postSessionIdPermissionsPermissionId).toHaveBeenCalledWith({
-      path: { id: 'ses_a', permissionID: 'perm_1' },
-      body: { response: 'always' },
-    })
+    expect(backend.resolvePermission).toHaveBeenCalledWith('ses_a', 'perm_1', 'always')
     expect(pendingApprovals.has('perm_1')).toBe(false)
     expect(ctx.editMessageText).toHaveBeenCalled()
     expect(ctx.answerCbQuery).toHaveBeenCalled()
   })
 
   it('answers "already handled" when the approval is unknown', async () => {
-    const { bot, client } = makeDeps()
+    const { bot, backend } = makeDeps()
     const { trigger, handler } = findApprove(bot)
     const ctx = {
       match: 'approve:reject:gone'.match(trigger),
@@ -69,7 +66,7 @@ describe('approve: button callback', () => {
     }
     await handler(ctx)
 
-    expect(client.postSessionIdPermissionsPermissionId).not.toHaveBeenCalled()
+    expect(backend.resolvePermission).not.toHaveBeenCalled()
     expect(ctx.answerCbQuery).toHaveBeenCalledWith(expect.stringMatching(/already been handled/i))
   })
 })

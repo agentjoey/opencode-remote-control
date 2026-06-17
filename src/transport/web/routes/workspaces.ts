@@ -1,10 +1,10 @@
 import type { Hono } from 'hono'
-import type { OpencodeClient } from '@opencode-ai/sdk'
-import { listWorkspaces } from '../../../opencode/workspaces.js'
+import type { Workspace } from '../../../opencode/workspaces.js'
 
-export function registerWorkspaces(app: Hono, client: OpencodeClient) {
+export function registerWorkspaces(app: Hono, listWorkspaces?: () => Promise<Workspace[]>) {
   app.get('/api/workspaces', async (c) => {
-    const ws = await listWorkspaces(client)
+    if (!listWorkspaces) return c.json([])
+    const ws = await listWorkspaces()
     return c.json(ws)
   })
 }

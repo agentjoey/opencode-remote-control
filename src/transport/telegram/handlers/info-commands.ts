@@ -1,5 +1,5 @@
 import type { Telegraf, Context } from 'telegraf'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../../core/agent/backend.js'
 import type { SessionState } from '../../../core/state.js'
 import { createLogger } from '../../../utils/logger.js'
 
@@ -7,10 +7,7 @@ const log = createLogger('info-commands')
 
 interface InfoDeps {
   bot: Telegraf
-  // opencode API access via the in-process SDK client — opencode 1.17 runs
-  // plugins in a worker thread where Bun's fetch can't reach ctx.serverUrl, so
-  // raw fetch(baseUrl/...) is unusable.
-  client: OpencodeClient
+  backend: AgentBackend
   state: SessionState
 }
 
@@ -22,8 +19,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
       return
     }
     try {
-      const res = await deps.client.session.diff({ path: { id: last } })
-      const diffs = (res.data ?? []) as Array<{ file: string; additions?: number; deletions?: number }>
+      const diffs = (await deps.backend.getDiff(last)) as Array<{ file: string; additions?: number; deletions?: number }>
       if (diffs.length === 0) {
         await ctx.reply(`<b>📝 Diff — …${last.slice(-8)}</b>\n\nNo diffs yet.`, { parse_mode: 'HTML' })
         return
@@ -52,8 +48,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const res = await deps.client.session.todo({ path: { id: last } })
-      const todos = (res.data ?? []) as Array<{ content: string; status: 'pending' | 'in_progress' | 'completed' }>
+      const todos = (await deps.backend.getTodos(last)) as Array<{ content: string; status: 'pending' | 'in_progress' | 'completed' }>
       if (todos.length === 0) {
         await ctx.reply(`<b>✅ Todos — …${last.slice(-8)}</b>\n\nNo todos.`, { parse_mode: 'HTML' })
         return
@@ -75,15 +70,11 @@ export function registerInfoCommands(deps: InfoDeps): void {
     const last = deps.state.getLastSessionId()
     if (!last) { await ctx.reply('No session yet.', { parse_mode: 'HTML' }); return }
     try {
-      const sRes = await deps.client.session.get({ path: { id: last } })
-      const s = (sRes.data ?? {}) as {
-        agent?: string
-        tokens?: { input?: number; output?: number; cache?: number }
-        cost?: number
-      }
-      const cRes = await deps.client.config.get()
-      const c = (cRes.data ?? {}) as { agent?: Record<string, { model?: string }> }
-      const model = s.agent && c.agent?.[s.agent]?.model
+      const s = await deps.backend.getContext(last)
+      const agents = await deps.backend.getAgents()
+      const agentCfg = s.agent ? agents.find(a => a.name === s.agent) : undefined
+      const model = agentCfg?.model
+      const tokens = s.tokens as { input?: number; output?: number; cache?: number } | undefined
       const nextAgent = deps.state.getNextAgent()
       const nextModel = deps.state.getNextModel()
       const fmt = (n: number) => n >= 1000 ? `${(n/1000).toFixed(1)}k` : String(n)
@@ -93,7 +84,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
         '',
         row('Agent',  s.agent ?? '—'),
         row('Model',  model ? `<code>${model}</code>` : '—'),
-        row('Tokens', `↑${fmt(s.tokens?.input ?? 0)}  ↓${fmt(s.tokens?.output ?? 0)}  cached ${fmt(s.tokens?.cache ?? 0)}`),
+        row('Tokens', `↑${fmt(tokens?.input ?? 0)}  ↓${fmt(tokens?.output ?? 0)}  cached ${fmt(tokens?.cache ?? 0)}`),
         row('Cost',   `$${(s.cost ?? 0).toFixed(3)}`),
       ]
       if (nextAgent || nextModel) {

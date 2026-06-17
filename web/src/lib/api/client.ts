@@ -40,6 +40,7 @@ async function jsonPost<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   me: () => jsonGet<{ email: string }>('/api/me'),
+  capabilities: () => jsonGet<{ id: string; capabilities: Record<string, boolean> }>('/api/capabilities'),
   sessions: () => jsonGet<SessionSummary[]>('/api/sessions'),
   cleanupSubagents: () => jsonPost<{ deleted: number }>('/api/sessions/cleanup-subagents', {}),
   deleteSession: (id: string) => jsonPost<{ ok: boolean }>(`/api/sessions/${id}/delete`, {}),

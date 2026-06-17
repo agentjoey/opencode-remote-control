@@ -1,13 +1,10 @@
 import type { Hono } from 'hono'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend, PermissionDecision } from '../../../core/agent/backend.js'
 
-export function registerApproval(app: Hono, client: OpencodeClient) {
+export function registerApproval(app: Hono, backend: AgentBackend) {
   app.post('/api/approval', async (c) => {
-    const body = await c.req.json() as { sessionId: string; requestId: string; decision: 'once' | 'always' | 'reject' }
-    await (client as any).postSessionIdPermissionsPermissionId({
-      path: { id: body.sessionId, permissionID: body.requestId },
-      body: { response: body.decision },
-    })
+    const body = await c.req.json() as { sessionId: string; requestId: string; decision: PermissionDecision }
+    await backend.resolvePermission(body.sessionId, body.requestId, body.decision)
     return c.json({ ok: true })
   })
 }

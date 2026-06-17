@@ -6,10 +6,12 @@ import { createWebTransport } from '../transport/web/index.js'
 import { selectAuthStrategy } from '../connectivity/auth/select.js'
 import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
+import { createOpencodeBackend } from '../core/agent/opencode-backend.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
 import { tryBecomePrimary } from '../core/primary-election.js'
 import { startGlobalEvents } from '../opencode/global-events.js'
+import { listWorkspaces } from '../opencode/workspaces.js'
 import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
@@ -62,22 +64,24 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
 
     const serverUrl = ctx.serverUrl.toString().replace(/\/+$/, '')
 
+    const backend = createOpencodeBackend({ client: ctx.client, baseUrl: serverUrl })
+
     const relay = createRelay({
       cardBus,
-      client: ctx.client,
+      backend,
       state,
       chatTimeoutMs: config.chatTimeoutMs,
       tuiVisible: config.tuiVisible,
-      baseUrl: serverUrl,
     })
 
     const tgTransport = createTelegramTransport({
       token: config.telegramBotToken,
       allowedUserIds: config.allowedUserIds,
-      client: ctx.client,
+      backend,
       state,
       baseUrl: serverUrl,
       tgChunkSoftLimit: config.tgChunkSoftLimit,
+      listWorkspaces: () => listWorkspaces(ctx.client),
     })
 
     const transports: Transport[] = [tgTransport]
@@ -103,11 +107,12 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       webTransport = createWebTransport({
         host: config.webHost,
         port: config.webPort,
-        client: ctx.client,
+        backend,
         auth,
         staticRoot: config.webStaticRoot,
         cacheSize: config.webCacheSize,
         baseUrl: serverUrl,
+        listWorkspaces: () => listWorkspaces(ctx.client),
       })
       webTransport.onMessage(relay)
       transports.push(webTransport)
@@ -124,7 +129,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       })
 
     // Push notifications — driven by the plugin event hook
-    const push = startPushNotifications({ cardBus, client: ctx.client, state })
+    const push = startPushNotifications({ cardBus, backend, state })
 
     // Poll the TUI-selected session to keep the current agent in sync.
     const pollTimer = setInterval(async () => {

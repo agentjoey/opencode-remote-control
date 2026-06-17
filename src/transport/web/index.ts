@@ -3,10 +3,11 @@ import { join } from 'node:path'
 import { serve, type ServerType } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { serveStatic } from '@hono/node-server/serve-static'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../core/agent/backend.js'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { StructuredCard } from '../../core/structured-card.js'
+import type { Workspace } from '../../opencode/workspaces.js'
 import { buildServer } from './server.js'
 import { createWsHub } from './ws-hub.js'
 import { createLogger } from '../../utils/logger.js'
@@ -17,12 +18,12 @@ const log = createLogger('web')
 export interface WebTransportConfig {
   host: string
   port: number
-  client: OpencodeClient
+  backend: AgentBackend
   auth: AuthStrategy
   staticRoot: string
   cacheSize: number
-  /** opencode server base URL (the in-process plugin server) — for raw /config reads. */
   baseUrl?: string
+  listWorkspaces?: () => Promise<Workspace[]>
 }
 
 const CAPS: ChannelCapabilities = {
@@ -42,16 +43,17 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
       if (!existsSync(cfg.staticRoot)) {
         throw new Error(`Web static root not found: ${cfg.staticRoot}. Run 'cd web && npm run build' first.`)
       }
-      const wsHub = createWsHub({ cardBus: deps.cardBus, client: cfg.client, state: deps.state })
+      const wsHub = createWsHub({ cardBus: deps.cardBus, backend: cfg.backend, state: deps.state })
       const app = buildServer({
         auth: cfg.auth,
-        client: cfg.client,
+        backend: cfg.backend,
         state: deps.state,
         cardBus: deps.cardBus,
         wsHub,
         cacheSize: cfg.cacheSize,
         baseUrl: cfg.baseUrl ?? '',
         onMessage: (msg) => messageHandler ? messageHandler(msg) : Promise.resolve(),
+        listWorkspaces: cfg.listWorkspaces,
       })
 
       app.use('/*', serveStatic({ root: cfg.staticRoot }))

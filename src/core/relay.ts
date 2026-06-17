@@ -1,23 +1,20 @@
-import type { OpencodeClient } from '@opencode-ai/sdk'
 import type { CardBus } from './card-bus.js'
 import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
-import { submitPrompt } from '../opencode/submit.js'
-import { listAllSessions } from '../opencode/list-sessions.js'
 import { sessionIdOf, errorMessageOf, type OcEvent } from './opencode-events.js'
+import type { AgentBackend } from './agent/backend.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
 
 export interface RelayDeps {
   cardBus: CardBus
-  client: OpencodeClient
+  backend: AgentBackend
   state: SessionState
   chatTimeoutMs: number
+  /** Whether a local TUI is attached (navigate it to the active session). */
   tuiVisible: boolean
-  /** opencode server base URL — used to navigate the TUI when tuiVisible. */
-  baseUrl?: string
 }
 
 const SUBMIT_MAX_RETRIES = 5
@@ -35,12 +32,13 @@ function isNetworkError(err: Error): boolean {
 }
 
 async function submitWithRetry(
-  client: OpencodeClient,
-  opts: { text: string; sessionId: string; agent?: string; model?: { providerID: string; modelID: string }; signal?: AbortSignal },
+  backend: AgentBackend,
+  sessionId: string,
+  opts: { text: string; agent?: string; model?: { providerID: string; modelID: string }; signal?: AbortSignal },
 ): Promise<void> {
   for (let i = 0; i < SUBMIT_MAX_RETRIES; i++) {
     try {
-      await submitPrompt(client, opts)
+      await backend.prompt(sessionId, opts)
       return
     } catch (err) {
       const e = err as Error
@@ -68,55 +66,17 @@ function delayOrAbort(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-/**
- * Navigate the TUI to a specific session via POST /tui/select-session.
- * SDK v1 does not expose this as a typed method, so use raw fetch.
- * Best-effort: failures (TUI not attached, opencode unreachable) are non-fatal.
- */
-async function selectTuiSession(baseUrl: string | undefined, sessionID: string, signal?: AbortSignal): Promise<void> {
-  if (!baseUrl) return
-  try {
-    const normalized = baseUrl.replace(/\/+$/, '')
-    const timeoutSignal = AbortSignal.timeout(2000)
-    const combinedSignal = signal
-      ? AbortSignal.any([signal, timeoutSignal])
-      : timeoutSignal
-    const res = await fetch(`${normalized}/tui/select-session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionID }),
-      signal: combinedSignal,
-    })
-    if (!res.ok) {
-      log.debug(`tui/select-session HTTP ${res.status}`)
-    }
-  } catch (err) {
-    log.debug(`tui/select-session skipped: ${(err as Error).message}`)
-  }
-}
-
-async function sessionExists(client: OpencodeClient, id: string): Promise<boolean> {
-  try {
-    const res = await client.session.get({ path: { id } })
-    return !!res.data
-  } catch {
-    return false
-  }
-}
-
-async function pickSessionFallback(client: OpencodeClient): Promise<string> {
-  const sessions = await listAllSessions(client) as Array<{ id: string; parentID?: string; time?: { created?: number; updated?: number } }>
+async function pickSessionFallback(backend: AgentBackend): Promise<string> {
+  const sessions = await backend.listSessions()
   if (sessions.length === 0) throw new Error('No opencode sessions found — open TUI first')
-  // Sort by time.updated (most recently active) rather than time.created (newest).
-  // Prefer root sessions (no parentID) over child/subagent sessions to avoid
-  // accidentally connecting to a completed subagent session.
+  // Prefer root sessions (no parentID) over child/subagent sessions, then most
+  // recently active (updatedAt over createdAt) — avoids connecting to a completed
+  // subagent session.
   const sorted = [...sessions].sort((a, b) => {
     const aIsChild = !!a.parentID
     const bIsChild = !!b.parentID
-    // Root sessions come before child sessions
     if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
-    // Within same type, sort by most recent activity
-    return (b.time?.updated ?? b.time?.created ?? 0) - (a.time?.updated ?? a.time?.created ?? 0)
+    return (b.updatedAt ?? b.createdAt ?? 0) - (a.updatedAt ?? a.createdAt ?? 0)
   })
   return sorted[0].id
 }
@@ -167,18 +127,17 @@ export function createRelay(deps: RelayDeps) {
       // submitWithRetry burns 5 retries against a 404. A fresh
       // pickSessionFallback() result is trusted as-is.
       let resolvedId = msg.sessionId ?? pinnedSession ?? tuiSession ?? lastSession
-      if (resolvedId && !(await sessionExists(deps.client, resolvedId))) {
+      if (resolvedId && !(await deps.backend.hasSession(resolvedId))) {
         log.warn(`target session ${resolvedId.slice(-8)} no longer exists, falling back to newest`)
         resolvedId = undefined
       }
-      if (!resolvedId) resolvedId = await pickSessionFallback(deps.client)
+      if (!resolvedId) resolvedId = await pickSessionFallback(deps.backend)
       log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
       if (deps.tuiVisible) {
-        await selectTuiSession(deps.baseUrl, resolvedId, ac.signal)
+        await deps.backend.selectTuiSession?.(resolvedId, ac.signal)
       }
-      await submitWithRetry(deps.client, {
+      await submitWithRetry(deps.backend, resolvedId, {
         text: msg.text,
-        sessionId: resolvedId,
         agent: nextAgent,
         model: nextModel,
         signal: ac.signal,
@@ -238,49 +197,11 @@ export function createRelay(deps: RelayDeps) {
 
     let blocks = acc.finalize()
     if (blocks.length === 0 && assistantMessageId) {
-      try {
-        const mres = await deps.client.session.message({ path: { id: sessionId, messageID: assistantMessageId } })
-        const m = (mres.data ?? {}) as any
-        const parts = m.parts ?? []
-        for (const part of parts) {
-          if (part.type === 'text' && typeof part.text === 'string') {
-            blocks.push({ type: 'text', text: part.text })
-          }
-          if (part.type === 'tool' && typeof part.tool === 'string') {
-            const rawStatus = part.state?.status ?? 'running'
-            blocks.push({
-              type: 'tool',
-              tool: part.tool,
-              args: String(part.state?.input?.cmd ?? part.state?.input ?? '').slice(0, 60),
-              status: rawStatus === 'error' ? 'error' : rawStatus === 'done' || rawStatus === 'completed' ? 'done' : 'running',
-            })
-          }
-        }
-      } catch (err) {
-        log.info('fallback fetch message failed', (err as Error).message)
-      }
+      blocks = await deps.backend.getMessageBlocks(sessionId, assistantMessageId)
     }
 
-    const meta: { agent?: string; model?: string; cost?: number; tokens?: { input: number; output: number } } = {}
-    try {
-      const sres = await deps.client.session.get({ path: { id: sessionId } })
-      const s = (sres.data ?? {}) as any
-      const cost = typeof s.cost === 'number' ? s.cost : undefined
-      const tok = s.tokens
-      const tin = typeof tok?.input === 'number' ? tok.input : undefined
-      const tout = typeof tok?.output === 'number' ? tok.output : undefined
-      if (cost !== undefined) {
-        deps.state.setSessionCost(sessionId, cost)
-        meta.cost = cost
-      }
-      if (tin !== undefined && tout !== undefined) {
-        meta.tokens = { input: tin, output: tout }
-      }
-      if (s.agent?.name) meta.agent = s.agent.name
-      if (typeof s.model === 'string') meta.model = s.model.split('/').pop() ?? s.model
-    } catch {
-      // meta is optional
-    }
+    const meta = await deps.backend.getSessionMeta(sessionId)
+    if (meta.cost !== undefined) deps.state.setSessionCost(sessionId, meta.cost)
 
     if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]
 

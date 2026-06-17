@@ -231,14 +231,15 @@ describe('Plugin-mode Relay (no eventStream)', () => {
 
     const relay = createRelay({
       cardBus: bus,
-      client: {
-        session: {
-          promptAsync: vi.fn().mockResolvedValue({ data: {} }),
-          list: vi.fn().mockResolvedValue({
-            data: [{ id: 'ses_default', time: { created: Date.now(), updated: Date.now() } }],
-          }),
-        },
-        tui: { appendPrompt: vi.fn(), submitPrompt: vi.fn() },
+      backend: {
+        id: 'opencode',
+        capabilities: { liveMirror: true, tuiSelect: true },
+        prompt: vi.fn().mockResolvedValue(undefined),
+        hasSession: vi.fn().mockResolvedValue(true),
+        listSessions: vi.fn().mockResolvedValue([{ id: 'ses_default', createdAt: Date.now(), updatedAt: Date.now() }]),
+        getSessionMeta: vi.fn().mockResolvedValue({}),
+        getMessageBlocks: vi.fn().mockResolvedValue([]),
+        selectTuiSession: vi.fn().mockResolvedValue(undefined),
       } as any,
       state: {
         getPinnedSessionId: () => undefined,

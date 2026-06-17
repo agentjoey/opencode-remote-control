@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { startPushNotifications } from '../../src/core/push'
 import type { CardBus } from '../../src/core/card-bus'
 import type { StructuredCard } from '../../src/core/structured-card'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../src/core/agent/backend'
 
 function fakeCardBus() {
   const published: StructuredCard[] = []
@@ -15,15 +15,13 @@ function fakeCardBus() {
   }
 }
 
-function fakeClient(lastAssistantText?: string): OpencodeClient {
+function fakeBackend(lastAssistantText?: string): AgentBackend {
   return {
-    session: {
-      messages: vi.fn().mockResolvedValue({
-        data: lastAssistantText
-          ? [{ role: 'assistant', parts: [{ type: 'text', text: lastAssistantText }] }]
-          : [],
-      }),
-    },
+    getHistory: vi.fn().mockResolvedValue(
+      lastAssistantText
+        ? [{ kind: 'assistant', sessionId: 'test', blocks: [{ type: 'text', text: lastAssistantText }], meta: {} }]
+        : [],
+    ),
   } as any
 }
 
@@ -34,7 +32,7 @@ describe('startPushNotifications', () => {
   beforeEach(() => {
     cardBus = fakeCardBus()
     vi.useFakeTimers()
-    push = startPushNotifications({ cardBus: cardBus as any as CardBus, client: fakeClient() as any as OpencodeClient })
+    push = startPushNotifications({ cardBus: cardBus as any as CardBus, backend: fakeBackend() as any as AgentBackend })
   })
 
   it('publishes info card after 60s+ session finish', async () => {
@@ -73,7 +71,7 @@ describe('startPushNotifications', () => {
     const cb = fakeCardBus()
     const p = startPushNotifications({
       cardBus: cb as any as CardBus,
-      client: fakeClient() as any as OpencodeClient,
+      backend: fakeBackend() as any as AgentBackend,
       maxPerHour: 2,
     })
     for (let i = 0; i < 5; i++) {
@@ -106,7 +104,7 @@ describe('startPushNotifications', () => {
     const state = {
       getAssistantDeliveredAt: vi.fn((_sid: string) => Date.now()), // delivered just now
     } as any
-    const p = startPushNotifications({ cardBus: cb as any as CardBus, client: fakeClient('hi') as any as OpencodeClient, state })
+    const p = startPushNotifications({ cardBus: cb as any as CardBus, backend: fakeBackend('hi') as any as AgentBackend, state })
 
     const sid = 'ses_dedup'
     p.handleEvent({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })
@@ -119,9 +117,9 @@ describe('startPushNotifications', () => {
 
   it('includes assistant message summary in session finish notification', async () => {
     const summary = '我们实现了分页修复，在 TelegramSessionRenderer 中添加了 chunkStartOffset 追踪。renderStreaming 现在从 offset 切片 markdownSrc…'
-    const client = fakeClient(summary) as any as OpencodeClient
+    const backend = fakeBackend(summary) as any as AgentBackend
     const cb = fakeCardBus()
-    const p = startPushNotifications({ cardBus: cb as any as CardBus, client })
+    const p = startPushNotifications({ cardBus: cb as any as CardBus, backend })
 
     const sid = 'ses_summary'
     p.handleEvent({ type: 'session.status', properties: { sessionID: sid, status: { type: 'busy' } } })

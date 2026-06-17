@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../core/agent/backend.js'
 import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
 import type { AuthStrategy } from '../../connectivity/auth/index.js'
+import type { Workspace } from '../../opencode/workspaces.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('web')
@@ -40,13 +41,14 @@ export interface WsHub {
 
 export interface BuildServerOpts {
   auth: AuthStrategy
-  client: OpencodeClient
+  backend: AgentBackend
   state: SessionState
   cardBus: CardBus
   wsHub: WsHub
   cacheSize: number
   baseUrl: string
   onMessage?: (msg: IncomingMessage) => Promise<void>
+  listWorkspaces?: () => Promise<Workspace[]>
 }
 
 export function buildServer(opts: BuildServerOpts): Hono {
@@ -62,22 +64,24 @@ export function buildServer(opts: BuildServerOpts): Hono {
     if (!user) return c.json({ error: 'unauthorized' }, 401)
     return c.json({ email: user.email })
   })
-  registerSessions(app, opts.client, opts.state)
-  registerSession(app, opts.client, opts.cardBus)
+  app.get('/api/capabilities', (c) =>
+    c.json({ id: opts.backend.id, capabilities: opts.backend.capabilities }))
+  registerSessions(app, opts.backend, opts.state)
+  registerSession(app, opts.backend, opts.cardBus)
   if (opts.onMessage) registerMessage(app, opts.onMessage)
-  registerAbort(app, opts.client, opts.state)
-  registerDiff(app, opts.client)
-  registerTodo(app, opts.client)
-  registerContext(app, opts.client, opts.state)
-  registerApproval(app, opts.client)
+  registerAbort(app, opts.backend, opts.state)
+  registerDiff(app, opts.backend)
+  registerTodo(app, opts.backend)
+  registerContext(app, opts.backend, opts.state)
+  registerApproval(app, opts.backend)
   registerVersion(app)
   registerLogs(app)
-  registerMcp(app, opts.client)
-  registerCatalog(app, opts.client)
+  registerMcp(app, opts.backend)
+  registerCatalog(app, opts.backend)
   registerOverrides(app, opts.state)
-  registerWorkspaces(app, opts.client)
-  registerCreateSession(app, opts.client)
-  registerCommands(app, opts.client)
-  registerRename(app, opts.client)
+  registerWorkspaces(app, opts.listWorkspaces)
+  registerCreateSession(app, opts.backend)
+  registerCommands(app, opts.backend)
+  registerRename(app, opts.backend)
   return app
 }

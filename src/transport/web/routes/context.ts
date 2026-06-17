@@ -1,19 +1,18 @@
 import type { Hono } from 'hono'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../../core/agent/backend.js'
 import type { SessionState } from '../../../core/state.js'
 
-export function registerContext(app: Hono, client: OpencodeClient, state: SessionState) {
+export function registerContext(app: Hono, backend: AgentBackend, state: SessionState) {
   app.get('/api/session/:id/context', async (c) => {
     const id = c.req.param('id')
-    const res = await client.session.get({ path: { id } })
-    const s = (res.data ?? {}) as any
+    const ctx = await backend.getContext(id)
     return c.json({
       sessionId: id,
-      agent: s.agent?.name,
-      model: typeof s.model === 'string' ? s.model : undefined,
-      tokens: s.tokens,
-      cost: typeof s.cost === 'number' ? s.cost : state.getSessionCost(id),
-      directory: typeof s.directory === 'string' ? s.directory : undefined,
+      agent: ctx.agent,
+      model: ctx.model,
+      tokens: ctx.tokens,
+      cost: ctx.cost ?? state.getSessionCost(id),
+      directory: ctx.directory,
       nextAgent: state.getNextAgent(),
       nextModel: state.getNextModel(),
     })

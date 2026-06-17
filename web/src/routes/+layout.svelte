@@ -8,6 +8,7 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
+  import { capabilities, loadCapabilities } from '$lib/stores/capabilities.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
@@ -71,6 +72,7 @@
 
     api.me().then((m) => { email = m.email }).catch(() => {})
     api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
+    loadCapabilities()
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     wsClient = createWsClient({
@@ -185,6 +187,7 @@
   <header class="titlebar">
     <button class="iconbtn" class:active={drawerLeft} on:click={toggleLeft} aria-label="Sessions">☰</button>
     <span class="brand">OCRC</span>
+    {#if $capabilities}<span class="backend-chip mono" title="Backend: {$capabilities.id}">{$capabilities.id}</span>{/if}
     <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
       <span class="ico" aria-hidden="true">⌕</span>
       <span class="ph">Search sessions & commands…</span>
@@ -230,6 +233,22 @@
     flex-shrink: 0; font-size: 13px;
   }
   .brand { font-weight: 800; color: var(--accent); letter-spacing: .08em; font-size: 14px; }
+  .backend-chip {
+    color: var(--text-3);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: lowercase;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
   .spacer { flex: 1; }
   .topsearch {
     display: flex; align-items: center; gap: 6px;

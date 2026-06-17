@@ -1,19 +1,18 @@
 import { createHash } from 'node:crypto'
 import type { Telegraf, Context } from 'telegraf'
 import { Markup } from 'telegraf'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend, AgentInfo, ModelProvider } from '../../core/agent/backend.js'
 import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import { createLogger } from '../../utils/logger.js'
 import { getVersionInfo } from '../../utils/version.js'
 import { registerInfoCommands } from './handlers/info-commands.js'
-import { listAllSessions } from '../../opencode/list-sessions.js'
 
 const log = createLogger('handlers')
 
 export interface HandlersDeps {
   bot: Telegraf
-  client: OpencodeClient
+  backend: AgentBackend
   state: SessionState
   chatId: number
   isGenerating: () => boolean
@@ -26,53 +25,8 @@ export interface HandlersDeps {
   cardBus?: CardBus
   /** Project directory where opencode.json lives, used as `directory` query param for /config endpoints. */
   opencodeProject?: string
-}
-
-interface AgentConfig {
-  name: string
-  model: string
-  description: string
-}
-
-// All opencode API access goes through the in-process SDK client. opencode 1.17
-// runs plugins in a worker thread where Bun's fetch can't reach ctx.serverUrl
-// ("Unable to connect"), so raw fetch(baseUrl/...) is unusable — the client is.
-
-/** Check health via the in-process SDK client. */
-async function checkHealth(client: OpencodeClient): Promise<boolean> {
-  try {
-    await client.session.status()
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function fetchUserAgents(client: OpencodeClient, directory?: string): Promise<AgentConfig[]> {
-  const res = await client.config.get(directory ? { query: { directory } } : {})
-  const data = (res.data ?? {}) as {
-    agent?: Record<string, { model?: string; description?: string }>
-  }
-  const agents = data.agent ?? {}
-  return Object.entries(agents)
-    .filter(([, v]) => typeof v.model === 'string')
-    .map(([name, v]) => ({
-      name,
-      model: v.model as string,
-      description: v.description ?? '',
-    }))
-}
-
-interface ProviderInfo {
-  id: string
-  name: string
-  models: Record<string, { name: string }>
-}
-
-async function fetchProviders(client: OpencodeClient, directory?: string): Promise<ProviderInfo[]> {
-  const res = await client.config.providers(directory ? { query: { directory } } : {})
-  const data = (res.data ?? {}) as { providers?: ProviderInfo[] }
-  return data.providers ?? []
+  /** List workspaces callback (injected from entry). */
+  listWorkspaces?: () => Promise<Array<{ name: string; directory: string; sessionCount: number }>>
 }
 
 /**
@@ -105,13 +59,12 @@ interface StatusCard {
 }
 
 async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
-  const healthy = await checkHealth(deps.client)
+  const healthy = await deps.backend.ping()
   let busyCount = 0
   let totalSessions = 0
   let totalCost = 0
   try {
-    const res = await deps.client.session.status()
-    const data = (res.data ?? {}) as Record<string, { type: string }>
+    const data = (await deps.backend.getSessionsStatus()) as Record<string, { type: string }>
     totalSessions = Object.keys(data).length
     busyCount = Object.values(data).filter((s) => s.type === 'busy').length
     for (const sid of Object.keys(data)) {
@@ -120,7 +73,7 @@ async function buildStatusCard(deps: HandlersDeps): Promise<StatusCard> {
     }
   } catch {
     try {
-      totalSessions = ((await listAllSessions(deps.client)) as Array<{ id: string }>).length
+      totalSessions = (await deps.backend.listSessions()).length
     } catch {}
   }
   const pinnedSession = deps.state.getPinnedSessionId()
@@ -173,7 +126,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   // ── Commands ──
 
   deps.bot.command('start', async (ctx: Context) => {
-    const healthy = await checkHealth(deps.client)
+    const healthy = await deps.backend.ping()
     const username = ctx.from?.first_name ?? 'there'
     const nextAgent = deps.state.getNextAgent()
     const nextModel = deps.state.getNextModel()
@@ -220,7 +173,14 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('sessions', async (ctx: Context) => {
     try {
-      const sessions = await listAllSessions(deps.client) as Array<{ id: string; title?: string; time?: { created?: number } }>
+      const sessions = (await deps.backend.listSessionSummaries()).map(s => ({
+        ...s,
+        when: s.lastActiveAt
+          ? new Date(s.lastActiveAt).toLocaleString('en-US', {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+            })
+          : 'unknown',
+      }))
       if (sessions.length === 0) {
         await ctx.reply('No sessions.', { parse_mode: 'HTML' })
         return
@@ -229,14 +189,9 @@ export function registerHandlers(deps: HandlersDeps): void {
       const lines: string[] = ['<b>📋 Sessions</b>', '']
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]
-        const when = s.time?.created
-          ? new Date(s.time.created).toLocaleString('en-US', {
-              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-            })
-          : 'unknown'
         const pinEmoji = s.id === pinned ? '📌 ' : ''
         lines.push(`${i + 1}. ${pinEmoji}<code>…${s.id.slice(-8)}</code>`)
-        lines.push(`   ${s.title ?? 'Untitled'} · ${when}`)
+        lines.push(`   ${s.title ?? 'Untitled'} · ${s.when}`)
         lines.push('')
       }
       if (pinned) {
@@ -301,27 +256,18 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
 
     try {
-      const result = await deps.client.session.messages({ path: { id: last } })
-      const msgs = (result.data ?? []) as Array<{
-        parts?: Array<{ type?: string; tool?: string; files?: string[]; state?: { input?: { filePath?: string } } }>
-      }>
+      const cards = await deps.backend.getHistory(last, 0)
 
-      interface FileOp { emoji: string; path: string }
-      const fileOps = new Map<string, string>()
       const fileEmoji: Record<string, string> = {
         read: '📖', write: '🆕', edit: '✏️',
       }
+      const fileOps = new Map<string, string>()
 
-      for (const msg of msgs) {
-        for (const part of (msg.parts ?? [])) {
-          if (part.type === 'tool' && part.tool && fileEmoji[part.tool]) {
-            const fp = part.state?.input?.filePath
-            if (fp) fileOps.set(fp, fileEmoji[part.tool])
-          }
-          if (part.type === 'patch' && part.files) {
-            for (const f of part.files) {
-              if (!fileOps.has(f)) fileOps.set(f, '✏️')
-            }
+      for (const card of cards) {
+        if (card.kind !== 'assistant') continue
+        for (const block of card.blocks) {
+          if (block.type === 'tool' && fileEmoji[block.tool] && block.args) {
+            fileOps.set(block.args, fileEmoji[block.tool])
           }
         }
       }
@@ -357,7 +303,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('agent', async (ctx: Context) => {
     try {
-      const agents = await fetchUserAgents(deps.client, deps.opencodeProject)
+      const agents = await deps.backend.getAgents(deps.opencodeProject)
       if (agents.length === 0) {
         await ctx.reply(
           '🤖  <b>Agent</b>\n\nNo agents configured. Add them in <code>opencode.jsonc</code>.',
@@ -390,7 +336,7 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('model', async (ctx: Context) => {
     try {
-      const providers = await fetchProviders(deps.client, deps.opencodeProject)
+      const providers = await deps.backend.getModels(deps.opencodeProject)
       if (providers.length === 0) {
         await ctx.reply('<b>⚙️ Model</b>\n\nNo models configured.', { parse_mode: 'HTML' })
         return
@@ -401,7 +347,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
 
       for (const p of providers) {
-        const count = Object.keys(p.models ?? {}).length
+        const count = (p.models ?? []).length
         const hasSelected = nextModel?.providerID === p.id
         const marker = hasSelected ? '●' : '▸'
         lines.push(`${marker} <b>${p.name}</b>  ·  ${count} model${count !== 1 ? 's' : ''}`)
@@ -451,7 +397,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
     deps.abortGeneration()
     try {
-      await deps.client.session.abort({ path: { id: last } })
+      await deps.backend.abort(last)
       await ctx.reply(`<b>🛑 Aborted</b>\n\n<code>…${last.slice(-8)}</code>`, { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ Abort failed: ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -521,8 +467,8 @@ export function registerHandlers(deps: HandlersDeps): void {
 
   deps.bot.command('workspaces', async (ctx) => {
     try {
-      const { listWorkspaces } = await import('../../opencode/workspaces.js')
-      const ws = await listWorkspaces(deps.client)
+      if (!deps.listWorkspaces) { await ctx.reply('Workspace listing not available.', { parse_mode: 'HTML' }); return }
+      const ws = await deps.listWorkspaces()
       if (ws.length === 0) { await ctx.reply('No workspaces.', { parse_mode: 'HTML' }); return }
       const active = deps.state.getActiveWorkspace()
       const lines = ['<b>🗂 Workspaces</b>', '']
@@ -551,9 +497,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     if (!dir) { await ctx.reply('No active workspace. Use /workspaces first.', { parse_mode: 'HTML' }); return }
     try {
       const text = ctx.message && 'text' in ctx.message ? ctx.message.text.split(' ').slice(1).join(' ').trim() : ''
-      const res = await deps.client.session.create({ query: { directory: dir }, body: text ? { title: text.slice(0, 60) } : {} } as any)
-      const id = (res.data as { id?: string } | undefined)?.id
-      if (!id) throw new Error('create failed')
+      const { id } = await deps.backend.createSession({ directory: dir, ...(text ? { title: text.slice(0, 60) } : {}) })
       deps.state.setPinnedSessionId(id)
       await ctx.reply(`🆕 <b>New session</b> in <code>${dir.split('/').pop()}</code>\n<code>…${id.slice(-8)}</code> (pinned). Send a message to start.`, { parse_mode: 'HTML' })
     } catch (err) {
@@ -567,7 +511,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     if (!sid) { await ctx.reply('No active session. Pin one with /sessions first.', { parse_mode: 'HTML' }); return }
     if (!text) { await ctx.reply('Usage: <code>/rename New Title</code>', { parse_mode: 'HTML' }); return }
     try {
-      await deps.client.session.update({ path: { id: sid }, body: { title: text.slice(0, 100) } } as any)
+      await deps.backend.renameSession(sid, text.slice(0, 100))
       await ctx.reply(`✏️ Renamed <code>…${sid.slice(-8)}</code> → <b>${text.slice(0, 100)}</b>`, { parse_mode: 'HTML' })
     } catch (err) {
       await ctx.reply(`❌ ${(err as Error).message}`, { parse_mode: 'HTML' })
@@ -652,7 +596,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     const last = deps.state.getLastSessionId()
     if (last) {
       try {
-        await deps.client.session.abort({ path: { id: last } })
+        await deps.backend.abort(last)
       } catch {}
     }
     await ctx.answerCbQuery('Aborting…')
@@ -672,7 +616,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     // user doesn't end up running a new agent against a stale /model override.
     let modelSuffix = ''
     try {
-      const agents = await fetchUserAgents(deps.client, deps.opencodeProject)
+      const agents = await deps.backend.getAgents(deps.opencodeProject)
       const a = agents.find((x) => x.name === name)
       const parsed = a ? parseAgentModel(a.model) : undefined
       if (parsed) {
@@ -744,9 +688,9 @@ export function registerHandlers(deps: HandlersDeps): void {
   deps.bot.action(/^model:pick:(.+)$/, async (ctx) => {
     const providerID = ctx.match[1]
     try {
-      const providers = await fetchProviders(deps.client, deps.opencodeProject)
+      const providers = await deps.backend.getModels(deps.opencodeProject)
       const provider = providers.find(p => p.id === providerID)
-      if (!provider || Object.keys(provider.models ?? {}).length === 0) {
+      if (!provider || (provider.models ?? []).length === 0) {
         await ctx.answerCbQuery('No models for this provider')
         return
       }
@@ -758,10 +702,10 @@ export function registerHandlers(deps: HandlersDeps): void {
       ]
       const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
 
-      for (const [id, m] of Object.entries(provider.models ?? {})) {
-        const sel = nextModel?.providerID === providerID && nextModel?.modelID === id ? '●' : '○'
-        lines.push(`${sel} ${m.name ?? id}`)
-        rows.push([Markup.button.callback(m.name ?? id, `model:set:${providerID}:${id}`)])
+      for (const m of (provider.models ?? [])) {
+        const sel = nextModel?.providerID === providerID && nextModel?.modelID === m.id ? '●' : '○'
+        lines.push(`${sel} ${m.name ?? m.id}`)
+        rows.push([Markup.button.callback(m.name ?? m.id, `model:set:${providerID}:${m.id}`)])
       }
 
       rows.push([Markup.button.callback('◀ Back', 'model:back')])
@@ -780,13 +724,13 @@ export function registerHandlers(deps: HandlersDeps): void {
   // Back to provider list
   deps.bot.action('model:back', async (ctx) => {
     try {
-      const providers = await fetchProviders(deps.client, deps.opencodeProject)
+      const providers = await deps.backend.getModels(deps.opencodeProject)
       const nextModel = deps.state.getNextModel()
       const lines = ['<b>⚙️ Model — Select provider</b>', '']
       const rows: Array<Array<ReturnType<typeof Markup.button.callback>>> = []
 
       for (const p of providers) {
-        const count = Object.keys(p.models ?? {}).length
+        const count = (p.models ?? []).length
         const hasSelected = nextModel?.providerID === p.id
         const marker = hasSelected ? '●' : '▸'
         lines.push(`${marker} <b>${p.name}</b>  ·  ${count} model${count !== 1 ? 's' : ''}`)
@@ -829,7 +773,7 @@ export function registerHandlers(deps: HandlersDeps): void {
   })
 
   // ── Info commands (split to separate file) ──
-  registerInfoCommands({ bot: deps.bot, client: deps.client, state: deps.state })
+  registerInfoCommands({ bot: deps.bot, backend: deps.backend, state: deps.state })
 
   // ── Approval callbacks — always registered so buttons work in both modes ──
   deps.bot.action(/^approve:(once|always|reject):(.+)$/, async (ctx) => {
@@ -844,10 +788,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     }
 
     try {
-      await (deps.client as any).postSessionIdPermissionsPermissionId({
-        path: { id: p.sessionId, permissionID: p.permissionId },
-        body: { response },
-      })
+      await deps.backend.resolvePermission(p.sessionId, p.permissionId, response)
     } catch (err) {
       log.error(`failed to reply permission ${permId}`, err as Error)
       await ctx.answerCbQuery('Failed to reply. The request may have expired.')

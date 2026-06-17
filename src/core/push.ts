@@ -2,7 +2,7 @@ import type { CardBus } from '../core/card-bus.js'
 import type { StructuredCard } from '../core/structured-card.js'
 import type { SessionState } from '../core/state.js'
 import type { OcEvent } from '../core/opencode-events.js'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from './agent/backend.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('push')
@@ -12,7 +12,7 @@ const RELAY_DELIVERY_DEDUP_MS = 60_000
 
 export interface PushDeps {
   cardBus: CardBus
-  client: OpencodeClient
+  backend: AgentBackend
   /** Used to suppress duplicate notifications for sessions the relay just delivered. */
   state?: SessionState
   testFailuresEnabled?: boolean
@@ -52,24 +52,20 @@ export function startPushNotifications(deps: PushDeps) {
 
   async function fetchSummary(sid: string): Promise<string> {
     try {
-      const res = await deps.client.session.messages({ path: { id: sid } })
-      const messages = (res.data ?? []) as any[]
-      log.info(`fetchSummary: ${messages.length} messages for ${sid.slice(-8)}`)
-      const lastAssistant = [...messages].reverse().find((m: any) => m.role === 'assistant')
-      if (!lastAssistant) {
-        log.info(`fetchSummary: no assistant message in ${messages.length} messages`)
+      const cards = await deps.backend.getHistory(sid)
+      log.info(`fetchSummary: ${cards.length} cards for ${sid.slice(-8)}`)
+      const lastAssistant = [...cards].reverse().find((c) => c.kind === 'assistant')
+      if (!lastAssistant || lastAssistant.kind !== 'assistant') {
+        log.info(`fetchSummary: no assistant card in ${cards.length} cards`)
         return ''
       }
-      const parts = lastAssistant.parts ?? []
-      log.info(`fetchSummary: last assistant has ${parts.length} parts`)
+      log.info(`fetchSummary: last assistant has ${lastAssistant.blocks.length} blocks`)
       const texts: string[] = []
-      for (const p of parts) {
-        if (p.type === 'text' && typeof p.text === 'string') {
-          texts.push(p.text)
-        }
+      for (const block of lastAssistant.blocks) {
+        if (block.type === 'text') texts.push(block.text)
       }
       const combined = texts.join('')
-      log.info(`fetchSummary: ${combined.length} chars of text from ${texts.length} text parts`)
+      log.info(`fetchSummary: ${combined.length} chars of text from ${texts.length} text blocks`)
       return combined.length > 300 ? combined.slice(0, 300) + '…' : combined
     } catch (err) {
       log.warn('fetchSummary failed', (err as Error).message)

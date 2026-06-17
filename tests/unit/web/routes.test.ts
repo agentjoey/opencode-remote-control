@@ -24,44 +24,67 @@ function fakeState() {
   } as any
 }
 
-function fakeClient(config: any = {}, providers: any[] = []) {
+function fakeBackend(overrides: Record<string, any> = {}) {
   return {
-    session: {
-      list: vi.fn().mockResolvedValue({ data: [
-        { id: 'ses_a', title: 'A', time: { created: Date.now() - 2000, updated: Date.now() - 1000 }, agent: { name: 'build' }, model: 'k2p6' },
-        { id: 'ses_b', title: 'B', time: { created: Date.now() - 4000, updated: Date.now() - 3000 }, agent: { name: 'plan' } },
-      ]}),
-      messages: vi.fn().mockResolvedValue({ data: [
-        { role: 'user', parts: [{ type: 'text', text: 'hi' }], ts: 1 },
-      ]}),
-      promptAsync: vi.fn().mockResolvedValue({ data: { messageID: 'msg_1' } }),
-      abort: vi.fn().mockResolvedValue({ data: true }),
-      delete: vi.fn().mockResolvedValue({ data: true }),
-    },
-    config: {
-      get: vi.fn().mockResolvedValue({ data: config }),
-      providers: vi.fn().mockResolvedValue({ data: { providers } }),
-    },
-    project: { list: vi.fn().mockResolvedValue({ data: [] }) },
+    id: 'opencode',
+    capabilities: { liveMirror: false, tuiSelect: false },
+    listSessionSummaries: vi.fn().mockResolvedValue([
+      { id: 'ses_a', title: 'A', lastActiveAt: Date.now() - 1000, unread: false, agent: 'build', model: 'k2p6' },
+      { id: 'ses_b', title: 'B', lastActiveAt: Date.now() - 3000, unread: false, agent: 'plan' },
+    ]),
+    listSessions: vi.fn().mockResolvedValue([{ id: 'ses_a' }, { id: 'ses_b' }]),
+    deleteSession: vi.fn().mockResolvedValue(undefined),
+    getHistory: vi.fn().mockResolvedValue([
+      { kind: 'user', blocks: [{ type: 'text', text: 'hi' }] },
+    ]),
+    abort: vi.fn().mockResolvedValue(undefined),
+    getDiff: vi.fn().mockResolvedValue([{ path: 'a.ts', patch: '@@' }]),
+    getContext: vi.fn().mockResolvedValue({
+      agent: 'build', model: 'kimi/k2p6',
+      tokens: { input: 5000, output: 2000 }, cost: 0.04,
+      directory: '/home/u/proj',
+    }),
+    getMcp: vi.fn().mockResolvedValue([
+      { name: 'github', type: 'remote', status: 'configured' },
+      { name: 'figma', type: 'local', status: 'disabled' },
+    ]),
+    getAgents: vi.fn().mockResolvedValue([
+      { name: 'build', model: 'kimi/k2p6', description: 'code' },
+      { name: 'plan', model: 'google/g3', description: '' },
+    ]),
+    getModels: vi.fn().mockResolvedValue([
+      { id: 'kimi', name: 'Kimi', models: [{ id: 'k2p6', name: 'K2 P6' }] },
+    ]),
+    resolvePermission: vi.fn().mockResolvedValue(undefined),
+    createSession: vi.fn().mockResolvedValue({ id: 'ses_new' }),
+    renameSession: vi.fn().mockResolvedValue(undefined),
+    listCommands: vi.fn().mockResolvedValue([]),
+    runCommand: vi.fn().mockResolvedValue(undefined),
+    prompt: vi.fn().mockResolvedValue(undefined),
+    hasSession: vi.fn().mockResolvedValue(true),
+    getSessionMeta: vi.fn().mockResolvedValue({}),
+    getMessageBlocks: vi.fn().mockResolvedValue([]),
+    getTodos: vi.fn().mockResolvedValue([]),
+    getSessionsStatus: vi.fn().mockResolvedValue({}),
+    ping: vi.fn().mockResolvedValue(true),
+    ...overrides,
   } as any
 }
 
-const baseOpts = (state: any, client: any) => ({
+const baseOpts = (state: any, backend: any) => ({
   auth: createTokenAuth({ token: 'test-token', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' }),
-  client, state,
+  backend, state,
   cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
   baseUrl: 'http://localhost:4096',
 })
 
-// dev bypass now requires a loopback socket peer (not opts.host), so every
-// request must present a 127.0.0.1 peer to pass cfAccessMiddleware.
 const LOOPBACK = { incoming: { socket: { remoteAddress: '127.0.0.1' } } }
 
 describe('web routes', () => {
   it('GET /api/sessions returns bot-touched sessions sorted by created desc', async () => {
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const app = buildServer(baseOpts(fakeState(), fakeBackend()))
     const res = await app.request('/api/sessions', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
@@ -70,19 +93,19 @@ describe('web routes', () => {
   })
 
   it('POST /api/sessions/:id/delete deletes the session', async () => {
-    const client = fakeClient()
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend()
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/sessions/ses_a/delete', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: '{}',
     }, LOOPBACK)
     expect(res.status).toBe(200)
-    expect(client.session.delete).toHaveBeenCalledWith({ path: { id: 'ses_a' } })
+    expect(backend.deleteSession).toHaveBeenCalledWith('ses_a')
   })
 
   it('GET /api/session/:id returns history cards + lastSeq', async () => {
-    const app = buildServer(baseOpts(fakeState(), fakeClient()))
+    const app = buildServer(baseOpts(fakeState(), fakeBackend()))
     const res = await app.request('/api/session/ses_a', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as { cards: any[]; lastSeq: number }
@@ -91,8 +114,8 @@ describe('web routes', () => {
   })
 
   it('POST /api/message accepts a prompt', async () => {
-    const state = fakeState(); const client = fakeClient()
-    const opts = baseOpts(state, client)
+    const state = fakeState(); const backend = fakeBackend()
+    const opts = baseOpts(state, backend)
     const messageHandler = vi.fn(async () => {})
     const app = buildServer({ ...opts, onMessage: messageHandler } as any)
     const res = await app.request('/api/message', {
@@ -108,8 +131,8 @@ describe('web routes', () => {
     const state = fakeState()
     const ac = { abort: vi.fn() }
     state.getActiveAbort = () => ac as any
-    const client = fakeClient()
-    const app = buildServer(baseOpts(state, client))
+    const backend = fakeBackend()
+    const app = buildServer(baseOpts(state, backend))
     const res = await app.request('/api/abort', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -117,34 +140,28 @@ describe('web routes', () => {
     }, LOOPBACK)
     expect(res.status).toBe(200)
     expect(ac.abort).toHaveBeenCalled()
-    expect(client.session.abort).toHaveBeenCalledWith({ path: { id: 'ses_a' } })
+    expect(backend.abort).toHaveBeenCalledWith('ses_a')
   })
 
   it('GET /api/session/:id/diff passes through to opencode', async () => {
-    const client = {
-      session: {
-        ...fakeClient().session,
-        diff: vi.fn().mockResolvedValue({ data: [{ path: 'a.ts', patch: '@@' }] }),
-      },
-    } as any
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend({
+      getDiff: vi.fn().mockResolvedValue([{ path: 'a.ts', patch: '@@' }]),
+    })
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/session/ses_a/diff', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     expect((await res.json() as any[])[0].path).toBe('a.ts')
   })
 
   it('GET /api/session/:id/context composes session state', async () => {
-    const client = {
-      session: {
-        ...fakeClient().session,
-        get: vi.fn().mockResolvedValue({ data: {
-          agent: { name: 'build' }, model: 'kimi/k2p6',
-          tokens: { input: 5000, output: 2000 }, cost: 0.04,
-          directory: '/home/u/proj',
-        }}),
-      },
-    } as any
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend({
+      getContext: vi.fn().mockResolvedValue({
+        agent: 'build', model: 'kimi/k2p6',
+        tokens: { input: 5000, output: 2000 }, cost: 0.04,
+        directory: '/home/u/proj',
+      }),
+    })
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/session/ses_a/context', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const ctx = await res.json() as any
@@ -154,8 +171,13 @@ describe('web routes', () => {
   })
 
   it('GET /api/mcp lists configured MCP servers', async () => {
-    const client = fakeClient({ mcp: { github: { type: 'remote' }, figma: { type: 'local', enabled: false } } })
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend({
+      getMcp: vi.fn().mockResolvedValue([
+        { name: 'github', type: 'remote', status: 'configured' },
+        { name: 'figma', type: 'local', status: 'disabled' },
+      ]),
+    })
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/mcp', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([
@@ -165,8 +187,13 @@ describe('web routes', () => {
   })
 
   it('GET /api/agents returns configured agents (name, model, description)', async () => {
-    const client = fakeClient({ agent: { build: { model: 'kimi/k2p6', description: 'code' }, plan: { model: 'google/g3' } } })
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend({
+      getAgents: vi.fn().mockResolvedValue([
+        { name: 'build', model: 'kimi/k2p6', description: 'code' },
+        { name: 'plan', model: 'google/g3', description: '' },
+      ]),
+    })
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/agents', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
@@ -175,8 +202,12 @@ describe('web routes', () => {
   })
 
   it('GET /api/models returns providers with their models', async () => {
-    const client = fakeClient({}, [{ id: 'kimi', name: 'Kimi', models: { k2p6: { name: 'K2 P6' } } }])
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend({
+      getModels: vi.fn().mockResolvedValue([
+        { id: 'kimi', name: 'Kimi', models: [{ id: 'k2p6', name: 'K2 P6' }] },
+      ]),
+    })
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/models', undefined, LOOPBACK)
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
@@ -188,14 +219,14 @@ describe('web routes', () => {
     const state = fakeState()
     state.getNextAgent = () => 'build'
     state.getNextModel = () => ({ providerID: 'kimi', modelID: 'k2p6' })
-    const app = buildServer(baseOpts(state, fakeClient()))
+    const app = buildServer(baseOpts(state, fakeBackend()))
     const res = await app.request('/api/overrides', undefined, LOOPBACK)
     expect(await res.json()).toEqual({ agent: 'build', model: { providerID: 'kimi', modelID: 'k2p6' } })
   })
 
   it('POST /api/overrides sets agent + model on state', async () => {
     const state = fakeState()
-    const app = buildServer(baseOpts(state, fakeClient()))
+    const app = buildServer(baseOpts(state, fakeBackend()))
     const res = await app.request('/api/overrides', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ agent: 'plan', model: { providerID: 'google', modelID: 'g3' } }),
@@ -207,7 +238,7 @@ describe('web routes', () => {
 
   it('POST /api/overrides with nulls clears them', async () => {
     const state = fakeState()
-    const app = buildServer(baseOpts(state, fakeClient()))
+    const app = buildServer(baseOpts(state, fakeBackend()))
     await app.request('/api/overrides', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ agent: null, model: null }),
@@ -217,15 +248,14 @@ describe('web routes', () => {
   })
 
   it('POST /api/approval proxies the decision to opencode', async () => {
-    const respond = vi.fn().mockResolvedValue({})
-    const client = { ...fakeClient(), postSessionIdPermissionsPermissionId: respond } as any
-    const app = buildServer(baseOpts(fakeState(), client))
+    const backend = fakeBackend()
+    const app = buildServer(baseOpts(fakeState(), backend))
     const res = await app.request('/api/approval', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sessionId: 'ses_a', requestId: 'r1', decision: 'once' }),
     }, LOOPBACK)
     expect(res.status).toBe(200)
-    expect(respond).toHaveBeenCalled()
+    expect(backend.resolvePermission).toHaveBeenCalledWith('ses_a', 'r1', 'once')
   })
 })

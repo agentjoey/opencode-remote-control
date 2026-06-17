@@ -2,7 +2,7 @@ import type { WebSocket } from 'ws'
 import type { CardBus } from '../../core/card-bus.js'
 import type { StructuredCard } from '../../core/structured-card.js'
 import type { SessionState } from '../../core/state.js'
-import type { OpencodeClient } from '@opencode-ai/sdk'
+import type { AgentBackend } from '../../core/agent/backend.js'
 import { fetchSessionSummaries } from './session-summary.js'
 
 interface ClientState {
@@ -18,7 +18,7 @@ export interface WsHub {
   broadcast(card: StructuredCard): void
 }
 
-export function createWsHub(opts: { cardBus: CardBus; client: OpencodeClient; state: SessionState }): WsHub {
+export function createWsHub(opts: { cardBus: CardBus; backend: AgentBackend; state: SessionState }): WsHub {
   const clients = new Map<WebSocket, ClientState>()
 
   // Proactive cards (push notifications: test-failure, session-finished) are a
@@ -39,7 +39,7 @@ export function createWsHub(opts: { cardBus: CardBus; client: OpencodeClient; st
 
   return {
     async attach(ws, user) {
-      const sessions = await fetchSessionSummaries(opts.client, opts.state).catch(() => [])
+      const sessions = await fetchSessionSummaries(opts.backend, opts.state).catch(() => [])
       clients.set(ws, { ws, user })
       try { ws.send(JSON.stringify({ type: 'hello', sessions })) } catch {}
     },
