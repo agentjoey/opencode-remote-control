@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+Headline: **mobile web / PWA polish** — the input now follows the iOS keyboard
+smoothly, safe areas are correct, and a stale token self-heals.
+
+### Mobile web / PWA
+- **Composer follows the keyboard** — on phones (≤820px) the input floats over the
+  chat and tracks the keyboard/bottom-toolbar by translating a published `--kb`
+  inset on the GPU, so it glides rather than resizing the app each frame. The
+  home-indicator padding telescopes away once the box lifts, so there's no dead
+  gap above the keyboard.
+- **iOS safe areas fixed** — the app uses `height:100vh` (not `100dvh`/`100%`); on
+  standalone PWAs those mis-size on cold start and break `viewport-fit=cover`, so
+  `env(safe-area-inset-*)` resolved to 0 and a dark strip showed below the input.
+  Now the app fills to the physical screen bottom with real insets.
+- **Dim-under-input** — chat content fades to low brightness as it scrolls beneath
+  the floating input (a CSS fade mask, not a frosted panel).
+- **Latest message stays reachable** — the chat reserves the composer height (plus
+  the keyboard inset) and re-pins to the bottom, fixing the "can't scroll to the
+  newest message after switching sessions" bug.
+- Browser tabs and installed PWAs share the same `--kb` math; Safari's bottom
+  toolbar no longer hides the input at rest.
+
+### Fixed
+- **Stale web token self-heals** — a 401 while a token is stored now clears the
+  token and drops to the in-app PairGate to re-pair, instead of looping forever on
+  "reconnecting". The Cloudflare Access reload path is unchanged for that mode.
+
 ## v0.6.1 — 2026-06-12
 
 Headline: **token auth works end-to-end** — pair a device and run the web PWA
