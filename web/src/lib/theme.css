@@ -32,7 +32,10 @@ html { background: var(--bg); }
 /* Lock the document so only inner panes scroll — prevents the whole app (and its
    fixed header/composer) from being dragged under the iOS status bar / off-screen
    by document-level scroll or rubber-band overscroll. */
-html, body { height: 100%; }
+/* height:100vh (NOT 100%): on iOS standalone PWAs, percentage height breaks
+   viewport-fit=cover + black-translucent — the view never extends behind the
+   status bar / home indicator, so env(safe-area-inset-*) all resolve to 0. */
+html, body { height: 100vh; }
 body {
   margin: 0;
   overflow: hidden;

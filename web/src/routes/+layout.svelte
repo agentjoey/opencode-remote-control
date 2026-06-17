@@ -23,7 +23,7 @@
   let drawerLeft = false
   let drawerRight = false
   let isMobile = false
-  let appEl: HTMLElement
+  let appEl: HTMLElement // the 100vh app shell — its height is the full-screen reference for --kb
   function closeDrawers() { drawerLeft = false; drawerRight = false }
   // ☰ / ⓘ toggle their drawer (tap again to close) and close the other.
   function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
@@ -108,24 +108,64 @@
     const onMq = (e: MediaQueryListEvent) => { isMobile = e.matches; if (!e.matches) closeDrawers() }
     mq.addEventListener('change', onMq)
 
-    // Keyboard-follow: pin the app to the visual viewport so the composer sits
-    // just above the iOS keyboard. Handle BOTH height AND offsetTop — a previous
-    // attempt set only height, which mis-aligned/collapsed the app (black screen).
+    // (B) Keyboard-follow by TRANSLATING THE COMPOSER, not resizing the app.
+    // .app stays a constant 100vh (no per-frame reflow); we publish --kb = how
+    // much the bottom of the visual viewport is obscured (browser toolbar and/or
+    // keyboard) and the composer is transform: translateY(-kb) with a GPU
+    // transition, so the follow glides. --kb is 0 at rest, so the composer sits
+    // at the screen bottom (its env(safe-area-inset-bottom) padding clears the
+    // home indicator). vv.height shrinks when the toolbar/keyboard appear.
     const vv = window.visualViewport
-    const syncVV = () => {
-      if (!vv || !appEl) return
-      appEl.style.height = `${vv.height}px`
-      appEl.style.transform = vv.offsetTop ? `translateY(${vv.offsetTop}px)` : ''
+    // Full-screen reference = the .app's own 100vh height (the iOS "large
+    // viewport"). NOT documentElement.clientHeight: in Safari that ≈ the visible
+    // viewport (excludes the bottom toolbar), so it would miss the toolbar and the
+    // composer would sit behind it. The 100vh height is constant (keyboard/toolbar
+    // don't change it), so cache it and only re-measure on rotation.
+    let fullH = appEl ? appEl.offsetHeight : window.innerHeight
+    const setKb = () => {
+      if (!vv) return
+      // iOS Safari auto-scrolls the page to reveal a focused input; undo it so the
+      // fixed app stays pinned and offsetTop stays ~0.
+      if (window.scrollY !== 0) window.scrollTo(0, 0)
+      let kb = Math.round(fullH - vv.offsetTop - vv.height)
+      if (kb < 12) kb = 0 // ignore sub-pixel / negligible insets (PWA at rest)
+      else kb += 5        // small gap so the box never touches the keyboard/toolbar
+      document.documentElement.style.setProperty('--kb', `${kb}px`)
     }
-    syncVV()
-    vv?.addEventListener('resize', syncVV)
-    vv?.addEventListener('scroll', syncVV)
+    setKb()
+    vv?.addEventListener('resize', setKb)
+    vv?.addEventListener('scroll', setKb)
+    // 100vh changes only on rotation; re-measure after it settles.
+    const onOrient = () => setTimeout(() => { fullH = appEl ? appEl.offsetHeight : window.innerHeight; setKb() }, 300)
+    window.addEventListener('orientationchange', onOrient)
+
+    // (C) iOS fires only sparse visualViewport sizes during the keyboard
+    // animation, so after a focus change re-run setKb every frame for a short
+    // window — coalesced, and guaranteed to land on the final --kb (the transform
+    // transition smooths the steps; we never get stuck mid-animation).
+    let settleUntil = 0
+    let settleRAF = 0
+    const settleLoop = () => {
+      setKb()
+      if (Date.now() < settleUntil) settleRAF = requestAnimationFrame(settleLoop)
+      else settleRAF = 0
+    }
+    const startSettle = () => {
+      settleUntil = Date.now() + 650
+      if (!settleRAF) settleRAF = requestAnimationFrame(settleLoop)
+    }
+    window.addEventListener('focusin', startSettle)
+    window.addEventListener('focusout', startSettle)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall)
       mq.removeEventListener('change', onMq)
-      vv?.removeEventListener('resize', syncVV)
-      vv?.removeEventListener('scroll', syncVV)
+      vv?.removeEventListener('resize', setKb)
+      vv?.removeEventListener('scroll', setKb)
+      window.removeEventListener('focusin', startSettle)
+      window.removeEventListener('focusout', startSettle)
+      window.removeEventListener('orientationchange', onOrient)
+      if (settleRAF) cancelAnimationFrame(settleRAF)
       wsClient?.close()
     }
   })
@@ -176,7 +216,12 @@
   /* position:fixed + JS visualViewport sizing pins the app to the visible area,
      keeping the composer above the iOS keyboard. Inline height/transform from JS
      win; the 100dvh here is the no-visualViewport fallback. */
-  .app { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
+  /* height:100vh ONLY — NOT 100dvh. On iOS standalone PWAs 100dvh is mis-sized on
+     cold start (reports the screen MINUS the safe areas → a dark strip below the
+     app), whereas 100vh fills the true screen and lets viewport-fit=cover give
+     real env(safe-area-inset-*) values. JS overrides height only when the
+     keyboard is open. */
+  .app { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
   .titlebar {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px;

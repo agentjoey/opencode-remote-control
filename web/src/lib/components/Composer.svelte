@@ -90,13 +90,17 @@
     background: var(--bg);
     padding: 0 24px 22px;
   }
-  /* Phones: tighter side padding. In a browser tab the Safari toolbar sits below
-     us (safe-area-bottom ≈ 0) → ~10px gap. As a standalone PWA there's a home
-     indicator (safe-area-bottom ≈ 34px) → clear it but trim the float a bit. */
+  /* Phones: tighter side padding. Clear the home indicator with the FULL
+     safe-area inset (≈34px in a standalone PWA, 0 in a browser tab) plus a little
+     breathing room, so the controls never sit under the home bar. */
   @media (max-width: 820px) {
+    /* Floating input box: 12px side margins. The bottom padding clears the home
+       indicator AT REST, but telescopes away as the composer lifts off the bottom
+       (--kb > 0) — otherwise that ~44px of home-indicator space becomes dead gap
+       between the box and the keyboard (the indicator is hidden behind it anyway). */
     .composer {
       padding: 0 12px;
-      padding-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px));
+      padding-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 10px - var(--kb, 0px)));
     }
   }
   .dock {
