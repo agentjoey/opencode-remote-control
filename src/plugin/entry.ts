@@ -110,7 +110,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       webTransport = createWebTransport({
         host: config.webHost,
         port: config.webPort,
-        backend,
+        registry,
         auth,
         staticRoot: config.webStaticRoot,
         cacheSize: config.webCacheSize,
