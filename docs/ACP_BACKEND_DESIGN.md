@@ -342,7 +342,11 @@ is opencode-only *and* single-workspace.)
      spawned ACP agent with no opencode; `OCRC_ACP_CMD` config.
    - ✅ Validated live against `kimi acp`: `initialize → session/new → prompt →
      stream → request_permission → end_turn`, end-to-end through the web transport.
-   - ⏳ `/api/capabilities` + frontend gating (`liveMirror`/`tuiSelect` off).
+   - ✅ `/api/capabilities` + frontend gating. Expanded `BackendCapabilities`
+     beyond `liveMirror`/`tuiSelect` to feature flags (`workspaces`/`diff`/
+     `todos`/`catalog`/`mcp`/`commands`); web gates affordances via a `can()`
+     store helper and degrades cleanly on ACP (incl. fixing session creation
+     with no workspaces).
    - ⏳ Inline permission-approval wiring (host currently auto-approves once).
 3. **Breadth.** Flip `OCRC_ACP_CMD` to Gemini/Cursor; handle their gaps via
    capabilities (no code per agent).
