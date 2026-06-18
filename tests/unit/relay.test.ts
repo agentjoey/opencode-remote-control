@@ -31,6 +31,8 @@ function fakeState() {
   let agent: string | undefined
   let model: any
   const aborts = new Map<string, AbortController>()
+  const sessionBackends = new Map<string, string>()
+  let activeBackend: string | undefined
   return {
     getLastSessionId: () => sid,
     setLastSessionId: (id: string | undefined) => { sid = id },
@@ -51,6 +53,10 @@ function fakeState() {
     }),
     getSessionCost: () => undefined,
     setSessionCost: vi.fn(),
+    getSessionBackend: (id: string) => sessionBackends.get(id),
+    setSessionBackend: (id: string, b: string | undefined) => { if (b === undefined) sessionBackends.delete(id); else sessionBackends.set(id, b) },
+    getActiveBackend: () => activeBackend,
+    setActiveBackend: (b: string | undefined) => { activeBackend = b },
     flush: async () => {},
   } as any
 }
@@ -73,6 +79,21 @@ describe('createRelay', () => {
     expect(cards.some(c => c.kind === 'user' && (c as any).text === 'hi')).toBe(true)
     // assistant is published asynchronously via handleEvent on session.idle
     expect(cards.some(c => c.kind === 'assistant')).toBe(false)
+  })
+
+  it('routes a turn to the session-owning backend in a multi-backend registry', async () => {
+    const { createBackendRegistry } = await import('../../src/core/agent/registry')
+    const opencode = fakeBackend() // id 'opencode'
+    const kimi = fakeBackend(); kimi.id = 'acp:kimi'
+    const state = fakeState()
+    state.setSessionBackend('ses_kimi', 'acp:kimi')
+    const registry = createBackendRegistry({ state, backends: [
+      { id: 'opencode', backend: opencode }, { id: 'acp:kimi', backend: kimi },
+    ] })
+    const relay = createRelay({ cardBus: createCardBus(), registry, state, chatTimeoutMs: 5000, tuiVisible: false })
+    await relay({ userId: '1', chatId: '100', text: 'hi', messageId: 'm', sessionId: 'ses_kimi' })
+    expect(kimi.prompt).toHaveBeenCalledWith('ses_kimi', expect.objectContaining({ text: 'hi' }))
+    expect(opencode.prompt).not.toHaveBeenCalled()
   })
 
   it('routes to msg.sessionId (web-selected) over the global pinned session', async () => {

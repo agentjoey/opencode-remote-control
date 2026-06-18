@@ -4,13 +4,17 @@ import type { SessionState } from './state.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
 import type { AgentEvent } from './agent/event.js'
 import type { AgentBackend } from './agent/backend.js'
+import { singleBackendRegistry, type BackendRegistry } from './agent/registry.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('relay')
 
 export interface RelayDeps {
   cardBus: CardBus
-  backend: AgentBackend
+  /** Backends this instance serves; per-session routing resolves the owner. */
+  registry?: BackendRegistry
+  /** Convenience for single-backend callers/tests; wrapped into a registry. */
+  backend?: AgentBackend
   state: SessionState
   chatTimeoutMs: number
   /** Whether a local TUI is attached (navigate it to the active session). */
@@ -95,6 +99,9 @@ interface PluginSessionCtx {
 }
 
 export function createRelay(deps: RelayDeps) {
+  const registry = deps.registry ?? singleBackendRegistry(
+    deps.backend ?? (() => { throw new Error('createRelay needs registry or backend') })(),
+  )
   /** Per-session response contexts, keyed by session id. */
   const pluginSessions = new Map<string, PluginSessionCtx>()
 
@@ -127,16 +134,24 @@ export function createRelay(deps: RelayDeps) {
       // submitWithRetry burns 5 retries against a 404. A fresh
       // pickSessionFallback() result is trusted as-is.
       let resolvedId = msg.sessionId ?? pinnedSession ?? tuiSession ?? lastSession
-      if (resolvedId && !(await deps.backend.hasSession(resolvedId))) {
+      // Pick the backend: a known target routes to its owning backend; a brand-new
+      // turn (no resolvable target) goes to the active backend.
+      let backend: AgentBackend = resolvedId ? registry.forSession(resolvedId) : registry.active()
+      if (resolvedId && !(await backend.hasSession(resolvedId))) {
         log.warn(`target session ${resolvedId.slice(-8)} no longer exists, falling back to newest`)
         resolvedId = undefined
       }
-      if (!resolvedId) resolvedId = await pickSessionFallback(deps.backend)
-      log.info(`submitting to session=${resolvedId.slice(-8)}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
-      if (deps.tuiVisible) {
-        await deps.backend.selectTuiSession?.(resolvedId, ac.signal)
+      if (!resolvedId) {
+        backend = registry.active()
+        resolvedId = await pickSessionFallback(backend)
       }
-      await submitWithRetry(deps.backend, resolvedId, {
+      // Tag ownership so future turns/reads for this session route consistently.
+      registry.tag(resolvedId, backend.id)
+      log.info(`submitting to session=${resolvedId.slice(-8)} backend=${backend.id}, agent=${nextAgent ?? 'default'}, model=${nextModel ? `${nextModel.providerID}/${nextModel.modelID}` : 'default'}`)
+      if (deps.tuiVisible && backend.capabilities.tuiSelect) {
+        await backend.selectTuiSession?.(resolvedId, ac.signal)
+      }
+      await submitWithRetry(backend, resolvedId, {
         text: msg.text,
         agent: nextAgent,
         model: nextModel,
@@ -195,12 +210,13 @@ export function createRelay(deps: RelayDeps) {
     const { sessionId, acc, cardId } = params
     let { assistantMessageId } = params
 
+    const backend = registry.forSession(sessionId)
     let blocks = acc.finalize()
     if (blocks.length === 0 && assistantMessageId) {
-      blocks = await deps.backend.getMessageBlocks(sessionId, assistantMessageId)
+      blocks = await backend.getMessageBlocks(sessionId, assistantMessageId)
     }
 
-    const meta = await deps.backend.getSessionMeta(sessionId)
+    const meta = await backend.getSessionMeta(sessionId)
     if (meta.cost !== undefined) deps.state.setSessionCost(sessionId, meta.cost)
 
     if (blocks.length === 0) blocks = [{ type: 'text', text: '(empty response)' }]

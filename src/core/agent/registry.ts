@@ -50,6 +50,26 @@ export interface BackendRegistryOpts {
   primaryId?: string
 }
 
+/**
+ * A trivial registry over a single backend — every session resolves to it. For
+ * single-backend callers (the opencode plugin, a one-agent host) and tests that
+ * don't need session→backend persistence.
+ */
+export function singleBackendRegistry(backend: AgentBackend): BackendRegistry {
+  return {
+    list: () => [{ id: backend.id, capabilities: backend.capabilities }],
+    all: () => [{ id: backend.id, backend }],
+    get: (id) => (id === backend.id ? backend : undefined),
+    has: (id) => id === backend.id,
+    primaryId: () => backend.id,
+    activeId: () => backend.id,
+    active: () => backend,
+    idForSession: () => backend.id,
+    forSession: () => backend,
+    tag: () => {},
+  }
+}
+
 export function createBackendRegistry(opts: BackendRegistryOpts): BackendRegistry {
   const { state } = opts
   if (opts.backends.length === 0) throw new Error('BackendRegistry needs at least one backend')

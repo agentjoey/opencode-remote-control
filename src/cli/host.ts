@@ -15,6 +15,7 @@ import { createRelay } from '../core/relay.js'
 import { startPushNotifications } from '../core/push.js'
 import { createAcpBackend, type AcpPermissionRequest } from '../core/agent/acp-backend.js'
 import { makeAcpConnect, parseAcpCommand } from '../core/agent/acp-connect.js'
+import { createBackendRegistry } from '../core/agent/registry.js'
 import { createTelegramTransport } from '../transport/telegram/index.js'
 import { createWebTransport } from '../transport/web/index.js'
 import { selectAuthStrategy } from '../connectivity/auth/select.js'
@@ -89,10 +90,12 @@ export async function main(): Promise<void> {
     connect: makeAcpConnect(spawnCfg),
     onPermission,
   })
+  // Single-backend registry for now; the multi-backend host wires more here.
+  const registry = createBackendRegistry({ backends: [{ id: backend.id, backend }], state })
 
   const relay = createRelay({
     cardBus,
-    backend,
+    registry,
     state,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: false, // no local TUI in standalone mode
