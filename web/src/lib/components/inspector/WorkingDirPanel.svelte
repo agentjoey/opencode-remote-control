@@ -3,17 +3,26 @@
   import { api } from '$lib/api/client.js'
   export let sessionId: string | undefined = undefined
   export let tick = 0
+  /** Whether the backend produces a diff (kimi/ACP don't — show only the dir). */
+  export let showDiff = true
   let dir = ''
   let files: string[] = []
   async function load(id?: string) {
     if (!id) { dir = ''; files = []; return }
     try {
-      const [ctx, diff] = await Promise.all([api.context(id), api.diff(id)])
+      // The working dir comes from context (every backend has it); the diff file
+      // list only when the backend supports it.
+      const ctx = await api.context(id)
       dir = (ctx as any)?.directory ?? ''
-      files = (Array.isArray(diff) ? diff : []).map((d: any) => d?.path).filter(Boolean).slice(0, 8)
+      if (showDiff) {
+        const diff = await api.diff(id)
+        files = (Array.isArray(diff) ? diff : []).map((d: any) => d?.path).filter(Boolean).slice(0, 8)
+      } else {
+        files = []
+      }
     } catch { /* keep */ }
   }
-  $: load(sessionId), tick
+  $: load(sessionId), tick, showDiff
   function short(p: string) { const parts = p.split('/'); return parts.length > 3 ? '…/' + parts.slice(-3).join('/') : p }
 </script>
 <div class="wd">

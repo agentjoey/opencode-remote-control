@@ -32,10 +32,8 @@
       <div class="div"></div>
     {/if}
     <ContextPanel {sessionId} {tick} />
-    {#if $can('diff')}
-      <div class="div"></div>
-      <WorkingDirPanel {sessionId} {tick} />
-    {/if}
+    <div class="div"></div>
+    <WorkingDirPanel {sessionId} {tick} showDiff={$can('diff')} />
   </div>
 </aside>
 
