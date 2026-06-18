@@ -1,4 +1,16 @@
-# Phase 3 — In-UI multi-backend switching (设计稿，未实现)
+# Phase 3 — In-UI multi-backend switching
+
+> **状态（2026-06-18）**：piece 1–5 已实现并对 opencode+kimi 双后端 host 实测通过，
+> web 端界面内切换可演示。piece 6（Telegram 多后端）未做。分支 `phase3-multi-backend`，
+> 未并入 main（main 仍停在 Phase 2，tag `pre-phase3` 可回滚）。
+>
+> - ✅ piece 1 BackendRegistry + state 会话→后端 `cb0dfdf`
+> - ✅ piece 2 relay 按会话路由 `ca83288`
+> - ✅ piece 3 web 路由多后端 + /api/backends `19bec75`
+> - ✅ piece 4 多后端 host（spawn opencode + kimi，接事件源）`51dbc26`
+> - ✅ piece 5 前端切换器 + 按会话能力门控 `8b9ba83`
+> - ⏳ piece 6 Telegram /backend（其实是把 registry 串进 telegram transport 的较大改动）
+
 
 ## 目标
 一个 OCRC 实例同时挂多个后端（opencode + kimi + …），用户在界面里下拉切换；
