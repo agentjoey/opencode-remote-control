@@ -29,17 +29,22 @@ export async function main(): Promise<void> {
   process.on('unhandledRejection', (r) => log.warn(`unhandledRejection absorbed: ${(r as Error)?.stack ?? String(r)}`))
   process.on('uncaughtException', (e) => log.warn(`uncaughtException absorbed: ${e?.stack ?? String(e)}`))
 
-  const config = loadPluginConfig()
+  const config = loadPluginConfig(undefined, { requireTelegram: false })
   const spawnCfg = parseAcpCommand(config.acpCommand)
   const agentId = `acp:${spawnCfg.command}`
-  log.info(`standalone host starting — agent="${config.acpCommand}" (${agentId}), web=${config.webEnabled}, port=${config.webPort}`)
+  const telegramEnabled = !!config.telegramBotToken
+  if (!telegramEnabled && !config.webEnabled) {
+    throw new Error('ACP host: nothing to serve — set TELEGRAM_BOT_TOKEN and/or WEB_ENABLED=true')
+  }
+  log.info(`standalone host starting — agent="${config.acpCommand}" (${agentId}), telegram=${telegramEnabled}, web=${config.webEnabled}, port=${config.webPort}`)
 
   const state = createFileBackedState(config.statePath)
   const cardBus = createCardBus()
 
   // Late-bound so the permission bridge below can reach the Telegram transport
   // (which itself needs `backend`, which needs `onPermission` — a construction cycle).
-  let tgTransport: ReturnType<typeof createTelegramTransport>
+  // Undefined in web-only mode (no Telegram token).
+  let tgTransport: ReturnType<typeof createTelegramTransport> | undefined
 
   // ACP permission bridge → the SAME approve/deny UX as opencode permissions.
   // `handlePluginPermissionEvent` sends the Telegram inline buttons AND publishes
@@ -58,13 +63,19 @@ export async function main(): Promise<void> {
       log.warn(`auto-approving permission: ${req.title}`)
       return allow?.optionId ?? req.options[0]?.optionId ?? null
     }
-    // Surface the request on Telegram (buttons) + Web (approval card).
-    tgTransport
-      .handlePluginPermissionEvent({
-        type: 'permission.asked',
-        properties: { id: req.requestId, sessionID: req.sessionId, title: req.title },
-      })
-      .catch((err: unknown) => log.error('failed to surface permission', err as Error))
+    // Surface the request. With Telegram, handlePluginPermissionEvent sends the
+    // inline buttons AND publishes the Web approval card; web-only mode publishes
+    // the card directly. Either way the user's decision routes to resolvePermission.
+    if (tgTransport) {
+      tgTransport
+        .handlePluginPermissionEvent({
+          type: 'permission.asked',
+          properties: { id: req.requestId, sessionID: req.sessionId, title: req.title },
+        })
+        .catch((err: unknown) => log.error('failed to surface permission', err as Error))
+    } else {
+      cardBus.publish({ kind: 'approval', sessionId: req.sessionId, title: req.title, args: { options: req.options }, requestId: req.requestId })
+    }
     // Resolution arrives out-of-band via backend.resolvePermission (Telegram
     // button callback / Web POST /api/approval). Here we only enforce a timeout.
     return new Promise<string | null>((resolve) => {
@@ -97,16 +108,19 @@ export async function main(): Promise<void> {
     else if (e.kind === 'part' || e.kind === 'delta') push.handleEvent({ type: 'session.status', properties: { sessionID: e.sessionId, status: { type: 'busy' } } } as any)
   })
 
-  tgTransport = createTelegramTransport({
-    token: config.telegramBotToken,
-    allowedUserIds: config.allowedUserIds,
-    backend,
-    state,
-    baseUrl: '',
-    tgChunkSoftLimit: config.tgChunkSoftLimit,
-  })
-  const transports: Transport[] = [tgTransport]
-  tgTransport.onMessage(relay)
+  const transports: Transport[] = []
+  if (telegramEnabled) {
+    tgTransport = createTelegramTransport({
+      token: config.telegramBotToken,
+      allowedUserIds: config.allowedUserIds,
+      backend,
+      state,
+      baseUrl: '',
+      tgChunkSoftLimit: config.tgChunkSoftLimit,
+    })
+    tgTransport.onMessage(relay)
+    transports.push(tgTransport)
+  }
 
   if (config.webEnabled) {
     const auth = selectAuthStrategy({

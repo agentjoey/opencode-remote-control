@@ -58,11 +58,17 @@ function env(key: string, optionsVal?: string): string | undefined {
   return optionsVal ?? process.env[key]
 }
 
-export function loadPluginConfig(options?: Record<string, unknown>): PluginConfig {
+export function loadPluginConfig(
+  options?: Record<string, unknown>,
+  opts?: { requireTelegram?: boolean },
+): PluginConfig {
   loadDotEnv()
+  // The opencode plugin always needs Telegram; the standalone host can run
+  // web-only (no bot), so it passes requireTelegram=false.
+  const requireTelegram = opts?.requireTelegram ?? true
 
   const token = (options?.telegramBotToken as string) ?? process.env.TELEGRAM_BOT_TOKEN
-  if (!token) {
+  if (!token && requireTelegram) {
     throw new Error(
       'TELEGRAM_BOT_TOKEN is required. Set it via opencode.json plugin options or TELEGRAM_BOT_TOKEN environment variable.',
     )
@@ -77,7 +83,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     .map(Number)
     .filter((n) => Number.isFinite(n))
 
-  if (ids.length === 0) {
+  if (ids.length === 0 && requireTelegram) {
     throw new Error('ALLOWED_USER_IDS is required (comma-separated Telegram user IDs).')
   }
 
@@ -87,7 +93,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
   const devBypassEnv = process.env.WEB_CF_ACCESS_DEV_BYPASS
 
   return {
-    telegramBotToken: token,
+    telegramBotToken: token ?? '',
     allowedUserIds: ids,
     webEnabled: bool(options?.webEnabled as string) ?? process.env.WEB_ENABLED === 'true',
     webHost,

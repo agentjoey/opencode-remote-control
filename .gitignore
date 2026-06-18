@@ -30,3 +30,4 @@ tsconfig.tsbuildinfo
 # brainstorming visual-companion cache
 .superpowers/
 .pact/
+.env.acp
