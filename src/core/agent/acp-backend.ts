@@ -110,6 +110,12 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   const capabilities: BackendCapabilities = {
     liveMirror: false, // ACP agents have no concurrent local TUI session to mirror
     tuiSelect: false,
+    workspaces: false, // ACP has no workspace enumeration
+    diff: false,
+    todos: false,
+    catalog: false, // models come per-session from newSession, not a global catalog
+    mcp: false,
+    commands: false, // available_commands_update wiring is a follow-up
   }
 
   function emit(e: AgentEvent): void {

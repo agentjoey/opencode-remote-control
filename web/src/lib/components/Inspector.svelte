@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { sessionList, feeds } from '$lib/stores/sessions.js'
+  import { can } from '$lib/stores/capabilities.js'
   import TaskPanel from './inspector/TaskPanel.svelte'
   import McpPanel from './inspector/McpPanel.svelte'
   import ContextPanel from './inspector/ContextPanel.svelte'
@@ -24,13 +25,17 @@
     <div class="label">Session</div>
     <div class="name" title={title ?? sessionId}>{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</div>
   </div>
-  <TaskPanel {sessionId} {tick} />
+  {#if $can('todos')}<TaskPanel {sessionId} {tick} />{/if}
   <div class="fixed">
-    <McpPanel {tick} />
-    <div class="div"></div>
+    {#if $can('mcp')}
+      <McpPanel {tick} />
+      <div class="div"></div>
+    {/if}
     <ContextPanel {sessionId} {tick} />
-    <div class="div"></div>
-    <WorkingDirPanel {sessionId} {tick} />
+    {#if $can('diff')}
+      <div class="div"></div>
+      <WorkingDirPanel {sessionId} {tick} />
+    {/if}
   </div>
 </aside>
 

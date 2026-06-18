@@ -40,6 +40,12 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
   const capabilities: BackendCapabilities = {
     liveMirror: true, // opencode mirrors the user's live local session
     tuiSelect: !!baseUrl,
+    workspaces: true,
+    diff: true,
+    todos: true,
+    catalog: true,
+    mcp: true,
+    commands: true,
   }
 
   async function prompt(sessionId: string, input: PromptInput): Promise<void> {

@@ -2,6 +2,7 @@
   import { api } from '../api/client.js'
   import { connection } from '../stores/connection.js'
   import { upsertCard } from '../stores/sessions.js'
+  import { can } from '../stores/capabilities.js'
   import AgentModelChip from './AgentModelChip.svelte'
 
   export let sessionId: string
@@ -72,7 +73,7 @@
         rows={1}
       ></textarea>
       <div class="controls">
-        <AgentModelChip />
+        {#if $can('catalog')}<AgentModelChip />{/if}
         <span class="spacer"></span>
         <button class="send" on:click={send} aria-label="Send"
                 disabled={sending || !text.trim() || $connection !== 'connected'}>

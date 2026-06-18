@@ -77,6 +77,18 @@ export interface BackendCapabilities {
   liveMirror: boolean
   /** Can navigate a local TUI to a session (opencode `tui/select-session`). */
   tuiSelect: boolean
+  /** Enumerates workspaces (directories with sessions) — gates the workspace switcher. */
+  workspaces: boolean
+  /** Produces a working-dir diff — gates the diff panel. */
+  diff: boolean
+  /** Produces a todo/plan list — gates the task panel. */
+  todos: boolean
+  /** Exposes selectable agents/models — gates the agent/model override chip. */
+  catalog: boolean
+  /** Reports MCP servers — gates the MCP panel. */
+  mcp: boolean
+  /** Exposes slash-commands — gates the command-palette commands group. */
+  commands: boolean
 }
 
 export interface AgentBackend {

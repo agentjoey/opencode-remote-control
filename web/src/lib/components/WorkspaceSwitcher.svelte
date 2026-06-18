@@ -5,11 +5,17 @@
   import { api } from '$lib/api/client.js'
   import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
   import { sessionList } from '$lib/stores/sessions.js'
+  import { can } from '$lib/stores/capabilities.js'
 
   let creating = false
   let error: string | null = null
 
+  // Backends that don't enumerate workspaces (e.g. ACP) create in the backend's
+  // own default directory — show a plain "New session" button, no picker.
+  $: hasWorkspaces = $can('workspaces')
+
   onMount(async () => {
+    if (!hasWorkspaces) return
     try {
       workspaces.set(await api.workspaces())
     } catch (e) {
@@ -23,13 +29,16 @@
   }
 
   async function newSession() {
-    if (creating || !$activeWorkspace) return
+    if (creating) return
+    // With a picker, require a selection; without one, send '' and let the
+    // backend default the directory.
+    if (hasWorkspaces && !$activeWorkspace) return
     creating = true
     error = null
     try {
-      const res = await api.createSession({ directory: $activeWorkspace })
+      const res = await api.createSession({ directory: hasWorkspaces ? ($activeWorkspace as string) : '' })
       sessionList.set(await api.sessions())
-      workspaces.set(await api.workspaces())
+      if (hasWorkspaces) workspaces.set(await api.workspaces())
       goto(`/${res.id}/`)
     } catch (e) {
       error = (e as Error).message
@@ -41,20 +50,26 @@
 
 <div class="ws">
   <div class="row">
-    <select class="select" value={$activeWorkspace ?? ''} on:change={onSelect} title="Workspace">
-      <option value="">All workspaces</option>
-      {#each $workspaces as w (w.directory)}
-        <option value={w.directory}>{w.name} ({w.sessionCount})</option>
-      {/each}
-    </select>
-    <button
-      class="new"
-      title="New session in workspace"
-      disabled={!$activeWorkspace || creating}
-      on:click={newSession}
-    >
-      {creating ? '…' : '➕'}
-    </button>
+    {#if hasWorkspaces}
+      <select class="select" value={$activeWorkspace ?? ''} on:change={onSelect} title="Workspace">
+        <option value="">All workspaces</option>
+        {#each $workspaces as w (w.directory)}
+          <option value={w.directory}>{w.name} ({w.sessionCount})</option>
+        {/each}
+      </select>
+      <button
+        class="new"
+        title="New session in workspace"
+        disabled={!$activeWorkspace || creating}
+        on:click={newSession}
+      >
+        {creating ? '…' : '➕'}
+      </button>
+    {:else}
+      <button class="new wide" title="New session" disabled={creating} on:click={newSession}>
+        {creating ? '…' : '➕ New session'}
+      </button>
+    {/if}
   </div>
   {#if error}<div class="err">{error}</div>{/if}
 </div>
@@ -92,6 +107,7 @@
   }
   .new:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .new:disabled { opacity: .4; cursor: default; }
+  .new.wide { width: 100%; gap: 6px; font-size: 12px; color: var(--text-2); }
   .err {
     margin-top: 5px;
     font-size: 11px;
