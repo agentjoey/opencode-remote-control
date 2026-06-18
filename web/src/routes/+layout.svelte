@@ -8,7 +8,7 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { connection } from '$lib/stores/connection.js'
-  import { capabilities, loadCapabilities } from '$lib/stores/capabilities.js'
+  import { capabilities, loadCapabilities, backends, loadBackends, setActiveBackend, viewedSessionId } from '$lib/stores/capabilities.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
@@ -47,6 +47,8 @@
   let lastLoaded: string | null = null
 
   function loadSession(id: string | undefined) {
+    // Capability gating keys off the viewed session's backend.
+    viewedSessionId.set(id)
     if (!id || id === lastLoaded) return
     lastLoaded = id
     api.history(id)
@@ -73,6 +75,7 @@
     api.me().then((m) => { email = m.email }).catch(() => {})
     api.sessions().then((list) => { sessionList.set(list) }).catch(() => {})
     loadCapabilities()
+    loadBackends()
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     wsClient = createWsClient({
@@ -187,7 +190,20 @@
   <header class="titlebar">
     <button class="iconbtn" class:active={drawerLeft} on:click={toggleLeft} aria-label="Sessions">☰</button>
     <span class="brand">OCRC</span>
-    {#if $capabilities}<span class="backend-chip mono" title="Backend: {$capabilities.id}">{$capabilities.id}</span>{/if}
+    {#if $backends && $backends.backends.length > 1}
+      <select
+        class="backend-switch mono"
+        title="Active backend for new sessions"
+        value={$backends.activeId}
+        on:change={(e) => setActiveBackend((e.currentTarget as HTMLSelectElement).value)}
+      >
+        {#each $backends.backends as b (b.id)}
+          <option value={b.id}>{b.id}</option>
+        {/each}
+      </select>
+    {:else if $capabilities}
+      <span class="backend-chip mono" title="Backend: {$capabilities.id}">{$capabilities.id}</span>
+    {/if}
     <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
       <span class="ico" aria-hidden="true">⌕</span>
       <span class="ph">Search sessions & commands…</span>
@@ -249,6 +265,21 @@
     text-overflow: ellipsis;
     max-width: 120px;
   }
+  .backend-switch {
+    color: var(--text-2);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .02em;
+    cursor: pointer;
+    max-width: 140px;
+    flex-shrink: 0;
+    transition: border-color .12s, color .12s;
+  }
+  .backend-switch:hover { border-color: var(--accent); color: var(--text); }
   .spacer { flex: 1; }
   .topsearch {
     display: flex; align-items: center; gap: 6px;

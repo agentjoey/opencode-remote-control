@@ -33,4 +33,6 @@ export interface SessionSummary {
   directory?: string
   additions?: number
   deletions?: number
+  /** Multi-backend: which backend owns this session. */
+  backendId?: string
 }

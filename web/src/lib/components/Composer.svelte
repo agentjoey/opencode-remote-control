@@ -2,7 +2,7 @@
   import { api } from '../api/client.js'
   import { connection } from '../stores/connection.js'
   import { upsertCard } from '../stores/sessions.js'
-  import { can } from '../stores/capabilities.js'
+  import { can, backendName } from '../stores/capabilities.js'
   import AgentModelChip from './AgentModelChip.svelte'
 
   export let sessionId: string
@@ -69,7 +69,7 @@
         on:input={autoGrow}
         on:focus={() => (focused = true)}
         on:blur={() => (focused = false)}
-        placeholder={$connection === 'connected' ? 'Message opencode…  (Enter 发送, Shift+Enter 换行)' : 'Disconnected…'}
+        placeholder={$connection === 'connected' ? `Message ${$backendName}…  (Enter 发送, Shift+Enter 换行)` : 'Disconnected…'}
         rows={1}
       ></textarea>
       <div class="controls">

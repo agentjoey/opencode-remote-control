@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { Hono } from 'hono'
+import { singleBackendRegistry } from '../../../src/core/agent/registry'
 import { registerCreateSession } from '../../../src/transport/web/routes/create-session'
 
 describe('POST /api/session', () => {
@@ -7,7 +8,7 @@ describe('POST /api/session', () => {
     const createSession = vi.fn(async ({ directory, title }: any) => ({ id: 'ses_new' }))
     const backend = { createSession } as any
     const app = new Hono()
-    registerCreateSession(app, backend)
+    registerCreateSession(app, singleBackendRegistry(backend))
     const res = await app.request('/api/session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -20,7 +21,7 @@ describe('POST /api/session', () => {
 
   it('400s without a directory on a workspace-capable backend', async () => {
     const app = new Hono()
-    registerCreateSession(app, { createSession: vi.fn(), capabilities: { workspaces: true } } as any)
+    registerCreateSession(app, singleBackendRegistry({ id: 'opencode', createSession: vi.fn(), capabilities: { workspaces: true } } as any))
     const res = await app.request('/api/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
     expect(res.status).toBe(400)
   })
@@ -28,7 +29,7 @@ describe('POST /api/session', () => {
   it('allows an empty directory when the backend does not enumerate workspaces (ACP)', async () => {
     const createSession = vi.fn(async () => ({ id: 'ses_acp' }))
     const app = new Hono()
-    registerCreateSession(app, { createSession, capabilities: { workspaces: false } } as any)
+    registerCreateSession(app, singleBackendRegistry({ id: 'acp:kimi', createSession, capabilities: { workspaces: false } } as any))
     const res = await app.request('/api/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
     expect(res.status).toBe(200)
     expect(createSession).toHaveBeenCalledWith({ directory: '', title: undefined })
@@ -37,7 +38,7 @@ describe('POST /api/session', () => {
   it('omits title → createSession receives undefined title', async () => {
     const createSession = vi.fn(async () => ({ id: 'ses_x' }))
     const app = new Hono()
-    registerCreateSession(app, { createSession } as any)
+    registerCreateSession(app, singleBackendRegistry({ createSession } as any))
     const res = await app.request('/api/session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

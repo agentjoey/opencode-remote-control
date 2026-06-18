@@ -1,8 +1,9 @@
 import type { Hono } from 'hono'
-import type { AgentBackend } from '../../../core/agent/backend.js'
+import type { BackendRegistry } from '../../../core/agent/registry.js'
 
-export function registerWorkspaces(app: Hono, backend: AgentBackend) {
+export function registerWorkspaces(app: Hono, reg: BackendRegistry) {
   app.get('/api/workspaces', async (c) => {
-    return c.json(await backend.listWorkspaces())
+    const b = reg.get(c.req.query('backend') ?? '') ?? reg.active()
+    return c.json(await b.listWorkspaces())
   })
 }

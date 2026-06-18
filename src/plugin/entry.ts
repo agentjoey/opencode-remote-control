@@ -7,6 +7,7 @@ import { selectAuthStrategy } from '../connectivity/auth/select.js'
 import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createOpencodeBackend } from '../core/agent/opencode-backend.js'
+import { createBackendRegistry } from '../core/agent/registry.js'
 import { normalizeOpencodeEvent } from '../core/agent/opencode-normalizer.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
@@ -65,10 +66,13 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
     const serverUrl = ctx.serverUrl.toString().replace(/\/+$/, '')
 
     const backend = createOpencodeBackend({ client: ctx.client, baseUrl: serverUrl })
+    // The opencode plugin serves a single backend; wrap it so the relay's
+    // per-session routing has a registry to resolve against.
+    const registry = createBackendRegistry({ backends: [{ id: backend.id, backend }], state })
 
     const relay = createRelay({
       cardBus,
-      backend,
+      registry,
       state,
       chatTimeoutMs: config.chatTimeoutMs,
       tuiVisible: config.tuiVisible,
@@ -106,7 +110,7 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
       webTransport = createWebTransport({
         host: config.webHost,
         port: config.webPort,
-        backend,
+        registry,
         auth,
         staticRoot: config.webStaticRoot,
         cacheSize: config.webCacheSize,

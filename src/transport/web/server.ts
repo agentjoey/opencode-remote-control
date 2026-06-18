@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { AgentBackend } from '../../core/agent/backend.js'
+import type { BackendRegistry } from '../../core/agent/registry.js'
 import type { SessionState } from '../../core/state.js'
 import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
@@ -40,7 +40,7 @@ export interface WsHub {
 
 export interface BuildServerOpts {
   auth: AuthStrategy
-  backend: AgentBackend
+  registry: BackendRegistry
   state: SessionState
   cardBus: CardBus
   wsHub: WsHub
@@ -62,24 +62,38 @@ export function buildServer(opts: BuildServerOpts): Hono {
     if (!user) return c.json({ error: 'unauthorized' }, 401)
     return c.json({ email: user.email })
   })
-  app.get('/api/capabilities', (c) =>
-    c.json({ id: opts.backend.id, capabilities: opts.backend.capabilities }))
-  registerSessions(app, opts.backend, opts.state)
-  registerSession(app, opts.backend, opts.cardBus)
+  const reg = opts.registry
+  // Backwards-compatible single-backend shape: the ACTIVE backend (the one new
+  // sessions use). The frontend reads /api/backends for the full set + per-session
+  // capabilities (each session row carries its backendId).
+  app.get('/api/capabilities', (c) => {
+    const active = reg.get(reg.activeId())!
+    return c.json({ id: active.id, capabilities: active.capabilities })
+  })
+  // Multi-backend: the full backend set + which one new sessions go to.
+  app.get('/api/backends', (c) => c.json({ backends: reg.list(), activeId: reg.activeId() }))
+  app.post('/api/backends/active', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { backendId?: string }
+    if (!body.backendId || !reg.has(body.backendId)) return c.json({ error: 'unknown backendId' }, 400)
+    opts.state.setActiveBackend(body.backendId)
+    return c.json({ ok: true, activeId: reg.activeId() })
+  })
+  registerSessions(app, reg, opts.state)
+  registerSession(app, reg, opts.cardBus)
   if (opts.onMessage) registerMessage(app, opts.onMessage)
-  registerAbort(app, opts.backend, opts.state)
-  registerDiff(app, opts.backend)
-  registerTodo(app, opts.backend)
-  registerContext(app, opts.backend, opts.state)
-  registerApproval(app, opts.backend)
+  registerAbort(app, reg, opts.state)
+  registerDiff(app, reg)
+  registerTodo(app, reg)
+  registerContext(app, reg, opts.state)
+  registerApproval(app, reg)
   registerVersion(app)
   registerLogs(app)
-  registerMcp(app, opts.backend)
-  registerCatalog(app, opts.backend)
+  registerMcp(app, reg)
+  registerCatalog(app, reg)
   registerOverrides(app, opts.state)
-  registerWorkspaces(app, opts.backend)
-  registerCreateSession(app, opts.backend)
-  registerCommands(app, opts.backend)
-  registerRename(app, opts.backend)
+  registerWorkspaces(app, reg)
+  registerCreateSession(app, reg)
+  registerCommands(app, reg)
+  registerRename(app, reg)
   return app
 }

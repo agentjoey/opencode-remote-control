@@ -115,8 +115,11 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     todos: false,
     catalog: false, // models come per-session from newSession, not a global catalog
     mcp: false,
-    commands: false, // available_commands_update wiring is a follow-up
+    commands: true, // populated from available_commands_update; run via slash-prompt
   }
+
+  // Latest slash-commands the agent advertised (available_commands_update).
+  let commands: CommandInfo[] = []
 
   function emit(e: AgentEvent): void {
     for (const fn of listeners) {
@@ -127,6 +130,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   // Our ACP client: connection drives these as the agent streams.
   const client: AcpClient = {
     async sessionUpdate({ sessionId, update }) {
+      if (update.sessionUpdate === 'available_commands_update' && Array.isArray(update.availableCommands)) {
+        commands = update.availableCommands.map((c) => ({ name: c.name, description: c.description ?? '' }))
+        return
+      }
       const ae = normalizer.normalize(sessionId, update)
       if (ae) emit(ae)
     },
@@ -252,8 +259,13 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     getModels: async (): Promise<ModelProvider[]> => [],
     getMcp: async (): Promise<McpServer[]> => [],
     listWorkspaces: async (): Promise<Workspace[]> => [],
-    listCommands: async (): Promise<CommandInfo[]> => [],
-    runCommand: async () => { /* ACP slash-commands TBD */ },
+    listCommands: async (): Promise<CommandInfo[]> => commands,
+    runCommand: async (sessionId: string, command: string, args?: string) => {
+      // ACP has no dedicated command RPC; agents accept slash-commands as prompt
+      // text. Submit `/name [args]` as a turn (streams + idle via the event path).
+      const text = `/${command}${args ? ' ' + args : ''}`
+      await prompt(sessionId, { text })
+    },
     resolvePermission,
     onEvent(handler) {
       listeners.add(handler)

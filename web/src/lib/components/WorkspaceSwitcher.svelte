@@ -5,14 +5,14 @@
   import { api } from '$lib/api/client.js'
   import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
   import { sessionList } from '$lib/stores/sessions.js'
-  import { can } from '$lib/stores/capabilities.js'
+  import { canActive } from '$lib/stores/capabilities.js'
 
   let creating = false
   let error: string | null = null
 
   // Backends that don't enumerate workspaces (e.g. ACP) create in the backend's
   // own default directory — show a plain "New session" button, no picker.
-  $: hasWorkspaces = $can('workspaces')
+  $: hasWorkspaces = $canActive('workspaces')
 
   onMount(async () => {
     if (!hasWorkspaces) return

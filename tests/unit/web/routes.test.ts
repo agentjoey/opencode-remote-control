@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { buildServer } from '../../../src/transport/web/server'
 import { createTokenAuth } from '../../../src/connectivity/auth/token'
+import { singleBackendRegistry } from '../../../src/core/agent/registry'
 
 function fakeState() {
   const costs = new Map<string, number>([['ses_a', 0.1], ['ses_b', 0.05]])
@@ -19,6 +20,10 @@ function fakeState() {
     getTuiSelectedSession: () => undefined,
     setTuiSelectedSession: vi.fn(),
     setLastSessionId: vi.fn(),
+    getSessionBackend: () => undefined,
+    setSessionBackend: vi.fn(),
+    getActiveBackend: () => undefined,
+    setActiveBackend: vi.fn(),
     flush: async () => {},
     _costs: costs,
   } as any
@@ -73,7 +78,7 @@ function fakeBackend(overrides: Record<string, any> = {}) {
 
 const baseOpts = (state: any, backend: any) => ({
   auth: createTokenAuth({ token: 'test-token', devBypass: true, devEmail: 'd@l', host: '127.0.0.1' }),
-  backend, state,
+  registry: singleBackendRegistry(backend), state,
   cardBus: { publish: vi.fn(), subscribeAll: () => () => {}, currentSeq: () => 7 } as any,
   wsHub: { subscribe: () => () => {}, broadcast: vi.fn() } as any,
   cacheSize: 100,
@@ -83,6 +88,26 @@ const baseOpts = (state: any, backend: any) => ({
 const LOOPBACK = { incoming: { socket: { remoteAddress: '127.0.0.1' } } }
 
 describe('web routes', () => {
+  it('GET /api/backends lists backends + active; POST sets the active backend', async () => {
+    const { createBackendRegistry } = await import('../../../src/core/agent/registry')
+    let active: string | undefined
+    const state = { ...fakeState(), getActiveBackend: () => active, setActiveBackend: (b: string) => { active = b } } as any
+    const oc = fakeBackend(); const kimi = fakeBackend(); kimi.id = 'acp:kimi'; kimi.capabilities = { ...kimi.capabilities, commands: true }
+    const registry = createBackendRegistry({ state, backends: [{ id: 'opencode', backend: oc }, { id: 'acp:kimi', backend: kimi }] })
+    const app = buildServer({ ...baseOpts(state, oc), registry } as any)
+
+    const list = await (await app.request('/api/backends', undefined, LOOPBACK)).json() as any
+    expect(list.backends.map((b: any) => b.id)).toEqual(['opencode', 'acp:kimi'])
+    expect(list.activeId).toBe('opencode')
+
+    const set = await app.request('/api/backends/active', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ backendId: 'acp:kimi' }), ...LOOPBACK } as any)
+    expect(set.status).toBe(200)
+    expect(active).toBe('acp:kimi')
+
+    const bad = await app.request('/api/backends/active', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ backendId: 'ghost' }), ...LOOPBACK } as any)
+    expect(bad.status).toBe(400)
+  })
+
   it('GET /api/sessions returns bot-touched sessions sorted by created desc', async () => {
     const app = buildServer(baseOpts(fakeState(), fakeBackend()))
     const res = await app.request('/api/sessions', undefined, LOOPBACK)

@@ -1,12 +1,13 @@
 import type { Hono } from 'hono'
-import type { AgentBackend } from '../../../core/agent/backend.js'
+import type { BackendRegistry } from '../../../core/agent/registry.js'
 
-export function registerCatalog(app: Hono, backend: AgentBackend) {
+export function registerCatalog(app: Hono, reg: BackendRegistry) {
   app.get('/api/agents', async (c) => {
-    return c.json(await backend.getAgents())
+    const b = reg.get(c.req.query('backend') ?? '') ?? reg.active()
+    return c.json(await b.getAgents())
   })
-
   app.get('/api/models', async (c) => {
-    return c.json(await backend.getModels())
+    const b = reg.get(c.req.query('backend') ?? '') ?? reg.active()
+    return c.json(await b.getModels())
   })
 }
