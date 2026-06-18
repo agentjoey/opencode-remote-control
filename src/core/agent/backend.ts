@@ -12,6 +12,7 @@
  * when ACP — which models diffs/plans/status differently — is added in Phase 2.
  */
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
+import type { AgentEvent } from './event.js'
 
 /** Minimal session identity used for fallback resolution (newest/root-first). */
 export interface SessionRef {
@@ -125,6 +126,16 @@ export interface AgentBackend {
 
   // ── permissions ─────────────────────────────────────────────────────────────
   resolvePermission(id: string, requestId: string, decision: PermissionDecision): Promise<void>
+
+  // ── event source (backends that own their stream) ───────────────────────────
+  /**
+   * Subscribe to this backend's normalized event stream. Present only when the
+   * backend OWNS its event source (e.g. AcpBackend driving a spawned ACP agent
+   * over a ClientSideConnection). opencode omits this: its events arrive
+   * out-of-band via the plugin `event` hook, which the host normalizes and feeds
+   * to `relay.handleEvent` directly. Returns an unsubscribe fn.
+   */
+  onEvent?(handler: (e: AgentEvent) => void): () => void
 
   // ── opencode-only extras (present per capabilities) ─────────────────────────
   /** Navigate a local TUI to a session. Present only when capabilities.tuiSelect. */
