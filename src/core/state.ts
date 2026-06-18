@@ -12,6 +12,10 @@ interface PersistedState {
   tuiSelectedSession?: string
   currentAgent?: string
   activeWorkspace?: string
+  /** Multi-backend: which backend owns each session (sid → backendId). */
+  sessionBackends?: Record<string, string>
+  /** Multi-backend: the backend new sessions are created on (UI selection). */
+  activeBackend?: string
 }
 
 export interface SessionState {
@@ -41,6 +45,12 @@ export interface SessionState {
   dropSession(sessionId: string): void
   getSessionCost(sessionId: string): number | undefined
   setSessionCost(sessionId: string, cost: number | undefined): void
+  /** Multi-backend: the backend that owns a session (undefined → default). */
+  getSessionBackend(sessionId: string): string | undefined
+  setSessionBackend(sessionId: string, backendId: string | undefined): void
+  /** Multi-backend: the backend new sessions are created on. */
+  getActiveBackend(): string | undefined
+  setActiveBackend(backendId: string | undefined): void
   flush(): Promise<void>
 }
 
@@ -140,12 +150,28 @@ export function createFileBackedState(path: string): SessionState {
       if (cache.lastSessionId === sid) { delete cache.lastSessionId; dirty = true }
       if (cache.pinnedSessionId === sid) { delete cache.pinnedSessionId; dirty = true }
       if (cache.tuiSelectedSession === sid) { delete cache.tuiSelectedSession; dirty = true }
+      if (cache.sessionBackends?.[sid]) { delete cache.sessionBackends[sid]; dirty = true }
       if (dirty) void persist()
     },
     getSessionCost: (sid) => sessionCosts.get(sid),
     setSessionCost: (sid, cost) => {
       if (cost === undefined) sessionCosts.delete(sid)
       else sessionCosts.set(sid, cost)
+    },
+    getSessionBackend: (sid) => cache.sessionBackends?.[sid],
+    setSessionBackend: (sid, backendId) => {
+      if (backendId === undefined) {
+        if (cache.sessionBackends) delete cache.sessionBackends[sid]
+      } else {
+        ;(cache.sessionBackends ??= {})[sid] = backendId
+      }
+      void persist()
+    },
+    getActiveBackend: () => cache.activeBackend,
+    setActiveBackend: (backendId) => {
+      if (backendId === undefined) delete cache.activeBackend
+      else cache.activeBackend = backendId
+      void persist()
     },
     flush: async () => persist(),
   }

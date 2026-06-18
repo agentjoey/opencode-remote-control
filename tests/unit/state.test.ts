@@ -88,4 +88,28 @@ describe('SessionState', () => {
     s.setActiveAbort('ses_1', undefined)
     expect(s.hasActiveGeneration()).toBe(false)
   })
+
+  it('round-trips session→backend tags and active backend', async () => {
+    const path = join(dir, 'state.json')
+    const s = createFileBackedState(path)
+    expect(s.getSessionBackend('k1')).toBeUndefined()
+    expect(s.getActiveBackend()).toBeUndefined()
+    s.setSessionBackend('k1', 'acp:kimi')
+    s.setSessionBackend('o1', 'opencode')
+    s.setActiveBackend('acp:kimi')
+    await s.flush()
+    const r = createFileBackedState(path)
+    expect(r.getSessionBackend('k1')).toBe('acp:kimi')
+    expect(r.getSessionBackend('o1')).toBe('opencode')
+    expect(r.getActiveBackend()).toBe('acp:kimi')
+  })
+
+  it('dropSession clears its backend tag', async () => {
+    const path = join(dir, 'state.json')
+    const s = createFileBackedState(path)
+    s.setSessionBackend('k1', 'acp:kimi')
+    s.dropSession('k1')
+    await s.flush()
+    expect(createFileBackedState(path).getSessionBackend('k1')).toBeUndefined()
+  })
 })
