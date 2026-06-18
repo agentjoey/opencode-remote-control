@@ -121,7 +121,8 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   const capabilities: BackendCapabilities = {
     liveMirror: false, // ACP agents have no concurrent local TUI session to mirror
     tuiSelect: false,
-    workspaces: false, // ACP has no workspace enumeration
+    workspaces: true, // OCRC persists per-session directories (see store)
+    freeformWorkspace: true, // new sessions take a user-entered directory
     diff: false,
     todos: false,
     catalog: false, // models come per-session from newSession, not a global catalog
@@ -210,10 +211,11 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   }
 
   async function createSession(opts: { directory: string; title?: string }): Promise<{ id: string }> {
+    const dir = opts.directory || cwd
     const { conn } = await connection()
-    const res = await conn.newSession({ cwd: opts.directory || cwd, mcpServers: [] })
+    const res = await conn.newSession({ cwd: dir, mcpServers: [] })
     sessions.add(res.sessionId)
-    store?.create(res.sessionId, opts.title ?? '')
+    store?.create(res.sessionId, opts.title ?? '', dir)
     return { id: res.sessionId }
   }
 
@@ -230,7 +232,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
 
   async function listSessionSummaries(): Promise<SessionSummary[]> {
     if (store) {
-      return store.list().map((s) => ({ id: s.id, title: s.title, lastActiveAt: s.updatedAt, unread: false, directory: cwd }))
+      return store.list().map((s) => ({ id: s.id, title: s.title, lastActiveAt: s.updatedAt, unread: false, directory: s.directory || cwd }))
     }
     return [...sessions].map((id) => ({ id, title: '', lastActiveAt: 0, unread: false, directory: cwd }))
   }
@@ -264,7 +266,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     deleteSession,
     renameSession: async (sid: string, title: string) => { store?.rename(sid, title) },
     getSessionMeta: async (): Promise<SessionMeta> => ({}),
-    getContext: async (): Promise<SessionContext> => ({ directory: cwd }),
+    getContext: async (sid: string): Promise<SessionContext> => ({ directory: store?.directoryOf(sid) || cwd }),
     // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
     getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
@@ -275,7 +277,19 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     getAgents: async (): Promise<AgentInfo[]> => [],
     getModels: async (): Promise<ModelProvider[]> => [],
     getMcp: async (): Promise<McpServer[]> => [],
-    listWorkspaces: async (): Promise<Workspace[]> => [],
+    // Known directories (from persisted sessions) plus the host default cwd, so
+    // the picker always offers at least the default. name = basename.
+    listWorkspaces: async (): Promise<Workspace[]> => {
+      const dirs = new Map<string, Workspace>()
+      const add = (directory: string, sessionCount: number, lastActiveAt: number) => {
+        if (!directory) return
+        const name = directory.split('/').filter(Boolean).pop() ?? directory
+        dirs.set(directory, { directory, name, sessionCount, lastActiveAt })
+      }
+      for (const d of store?.listDirectories() ?? []) add(d.directory, d.sessionCount, d.lastActiveAt)
+      if (!dirs.has(cwd)) add(cwd, 0, 0)
+      return [...dirs.values()]
+    },
     listCommands: async (): Promise<CommandInfo[]> => commands,
     runCommand: async (sessionId: string, command: string, args?: string) => {
       // ACP has no dedicated command RPC; agents accept slash-commands as prompt

@@ -41,6 +41,7 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     liveMirror: true, // opencode mirrors the user's live local session
     tuiSelect: !!baseUrl,
     workspaces: true,
+    freeformWorkspace: false, // opencode enumerates projects; the UI uses a picker
     diff: true,
     todos: true,
     catalog: true,

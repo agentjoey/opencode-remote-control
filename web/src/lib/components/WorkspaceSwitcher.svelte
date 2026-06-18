@@ -9,15 +9,20 @@
 
   let creating = false
   let error: string | null = null
+  let dirInput = '' // freeform: the directory a new ACP session runs in
 
-  // Backends that don't enumerate workspaces (e.g. ACP) create in the backend's
-  // own default directory — show a plain "New session" button, no picker.
   $: hasWorkspaces = $canActive('workspaces')
+  // ACP agents take an arbitrary, user-entered directory; opencode picks from
+  // enumerated projects.
+  $: freeform = $canActive('freeformWorkspace')
 
   onMount(async () => {
     if (!hasWorkspaces) return
     try {
       workspaces.set(await api.workspaces())
+      // Seed the freeform input with the most-recent known directory (or the
+      // host default), so a first session is one click away.
+      if (freeform && !dirInput) dirInput = $workspaces[0]?.directory ?? ''
     } catch (e) {
       error = (e as Error).message
     }
@@ -28,17 +33,14 @@
     activeWorkspace.set(value === '' ? null : value)
   }
 
-  async function newSession() {
-    if (creating) return
-    // With a picker, require a selection; without one, send '' and let the
-    // backend default the directory.
-    if (hasWorkspaces && !$activeWorkspace) return
+  async function create(directory: string) {
+    if (creating || !directory.trim()) return
     creating = true
     error = null
     try {
-      const res = await api.createSession({ directory: hasWorkspaces ? ($activeWorkspace as string) : '' })
+      const res = await api.createSession({ directory: directory.trim() })
       sessionList.set(await api.sessions())
-      if (hasWorkspaces) workspaces.set(await api.workspaces())
+      workspaces.set(await api.workspaces())
       goto(`/${res.id}/`)
     } catch (e) {
       error = (e as Error).message
@@ -46,27 +48,39 @@
       creating = false
     }
   }
+  const newInWorkspace = () => create(($activeWorkspace as string) ?? '')
+  const newInDir = () => create(dirInput)
 </script>
 
 <div class="ws">
   <div class="row">
-    {#if hasWorkspaces}
+    {#if freeform}
+      <input
+        class="select"
+        list="ws-dirs"
+        bind:value={dirInput}
+        placeholder="Working directory…"
+        title="Directory the new session runs in"
+        on:keydown={(e) => { if (e.key === 'Enter') newInDir() }}
+      />
+      <datalist id="ws-dirs">
+        {#each $workspaces as w (w.directory)}<option value={w.directory}>{w.name}{w.sessionCount ? ` (${w.sessionCount})` : ''}</option>{/each}
+      </datalist>
+      <button class="new" title="New session in this directory" disabled={!dirInput.trim() || creating} on:click={newInDir}>
+        {creating ? '…' : '➕'}
+      </button>
+    {:else if hasWorkspaces}
       <select class="select" value={$activeWorkspace ?? ''} on:change={onSelect} title="Workspace">
         <option value="">All workspaces</option>
         {#each $workspaces as w (w.directory)}
           <option value={w.directory}>{w.name} ({w.sessionCount})</option>
         {/each}
       </select>
-      <button
-        class="new"
-        title="New session in workspace"
-        disabled={!$activeWorkspace || creating}
-        on:click={newSession}
-      >
+      <button class="new" title="New session in workspace" disabled={!$activeWorkspace || creating} on:click={newInWorkspace}>
         {creating ? '…' : '➕'}
       </button>
     {:else}
-      <button class="new wide" title="New session" disabled={creating} on:click={newSession}>
+      <button class="new wide" title="New session" disabled={creating} on:click={() => create('')}>
         {creating ? '…' : '➕ New session'}
       </button>
     {/if}

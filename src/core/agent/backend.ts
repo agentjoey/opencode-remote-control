@@ -81,6 +81,12 @@ export interface BackendCapabilities {
   tuiSelect: boolean
   /** Enumerates workspaces (directories with sessions) — gates the workspace switcher. */
   workspaces: boolean
+  /**
+   * New sessions take an arbitrary, user-entered working directory (ACP agents),
+   * vs opencode where workspaces are enumerated projects you pick from. Drives
+   * whether the new-session UI shows a free-form directory input or a picker.
+   */
+  freeformWorkspace: boolean
   /** Produces a working-dir diff — gates the diff panel. */
   diff: boolean
   /** Produces a todo/plan list — gates the task panel. */

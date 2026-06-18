@@ -29,7 +29,7 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: false, diff: false, todos: false, catalog: false, mcp: false, commands: true })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: false, todos: false, catalog: false, mcp: false, commands: true })
   })
 
   it('createSession returns the agent sessionId and tracks it', async () => {
@@ -198,6 +198,27 @@ describe('createAcpBackend', () => {
     expect(await b2.hasSession(id)).toBe(true)
     const hist = await b2.getHistory(id)
     expect(hist.map((c: any) => c.kind)).toEqual(['user', 'assistant'])
+  })
+
+  it('persists per-session directory; listWorkspaces derives dirs (+ cwd default)', async () => {
+    const { createAcpStore } = await import('../../../src/core/agent/acp-store')
+    const store = createAcpStore(`/tmp/acp-dir-${Math.floor(performance.now())}.json`)
+    const h = makeHarness()
+    let n = 0
+    ;(h.conn as any).newSession = vi.fn(async (p: { cwd: string }) => ({ sessionId: `ses_${p.cwd.split('/').pop()}_${n++}` }))
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/home/me/default', connect: h.connect, store })
+
+    // no sessions yet → workspaces is just the cwd default
+    expect((await b.listWorkspaces()).map((w) => w.directory)).toEqual(['/home/me/default'])
+
+    await b.createSession({ directory: '/work/proj-a' })
+    await b.createSession({ directory: '/work/proj-a' }) // same dir, 2 sessions
+    await b.createSession({ directory: '/work/proj-b' })
+    const ws = await b.listWorkspaces()
+    expect(ws.find((w) => w.directory === '/work/proj-a')?.sessionCount).toBe(2)
+    expect(ws.find((w) => w.directory === '/work/proj-b')?.name).toBe('proj-b')
+    // getContext returns the session's own directory
+    expect((await b.getContext('ses_proj-a_0')).directory).toBe('/work/proj-a')
   })
 
   it('resumes a persisted session before prompting it (host restart continuity)', async () => {

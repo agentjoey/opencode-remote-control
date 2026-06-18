@@ -50,22 +50,11 @@
   // backend: open its most-recent session, or start a fresh one if none exists.
   async function switchBackend(id: string) {
     await setActiveBackend(id)
-    const list = get(sessionList)
-    const existing = list.find((s) => s.backendId === id)
-    if (existing) { goto(`/${existing.id}/`); return }
-    // No session on this backend yet. ACP-style backends (no workspaces) can
-    // start one with an empty directory; opencode needs a workspace, so just
-    // drop to the empty state and let the user pick + New session.
-    const cap = get(backends)?.backends.find((b) => b.id === id)?.capabilities
-    if (cap && cap.workspaces === false) {
-      try {
-        const res = await api.createSession({ directory: '' })
-        sessionList.set(await api.sessions())
-        goto(`/${res.id}/`)
-      } catch (err) { console.warn('[switch] create failed', err) }
-    } else {
-      goto('/')
-    }
+    const existing = get(sessionList).find((s) => s.backendId === id)
+    // Open the backend's most-recent session; if it has none yet, drop to the
+    // empty state where the rail's New-session control (workspace picker / dir
+    // input) lets you start one.
+    goto(existing ? `/${existing.id}/` : '/')
   }
 
   function loadSession(id: string | undefined) {

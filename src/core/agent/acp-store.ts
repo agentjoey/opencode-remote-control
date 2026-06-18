@@ -19,6 +19,8 @@ const log = createLogger('acp-store')
 interface StoredSession {
   id: string
   title: string
+  /** Working directory the session runs in. */
+  directory: string
   createdAt: number
   updatedAt: number
   /** Finalized conversation cards (user + assistant), in order. */
@@ -30,9 +32,12 @@ interface Persisted {
 }
 
 export interface AcpStore {
-  list(): Array<{ id: string; title: string; createdAt: number; updatedAt: number }>
+  list(): Array<{ id: string; title: string; directory: string; createdAt: number; updatedAt: number }>
+  /** Distinct directories that have sessions, with counts (for the workspace picker). */
+  listDirectories(): Array<{ directory: string; sessionCount: number; lastActiveAt: number }>
+  directoryOf(id: string): string | undefined
   has(id: string): boolean
-  create(id: string, title?: string): void
+  create(id: string, title?: string, directory?: string): void
   rename(id: string, title: string): void
   remove(id: string): void
   getCards(id: string): StructuredCard[]
@@ -69,13 +74,26 @@ export function createAcpStore(path: string): AcpStore {
 
   return {
     list: () => Object.values(cache.sessions)
-      .map((s) => ({ id: s.id, title: s.title, createdAt: s.createdAt, updatedAt: s.updatedAt }))
+      .map((s) => ({ id: s.id, title: s.title, directory: s.directory ?? '', createdAt: s.createdAt, updatedAt: s.updatedAt }))
       .sort((a, b) => b.updatedAt - a.updatedAt),
+    listDirectories: () => {
+      const byDir = new Map<string, { sessionCount: number; lastActiveAt: number }>()
+      for (const s of Object.values(cache.sessions)) {
+        const dir = s.directory ?? ''
+        if (!dir) continue
+        const e = byDir.get(dir) ?? { sessionCount: 0, lastActiveAt: 0 }
+        e.sessionCount += 1
+        e.lastActiveAt = Math.max(e.lastActiveAt, s.updatedAt)
+        byDir.set(dir, e)
+      }
+      return [...byDir.entries()].map(([directory, e]) => ({ directory, ...e })).sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+    },
+    directoryOf: (id) => cache.sessions[id]?.directory,
     has: (id) => id in cache.sessions,
-    create: (id, title = '') => {
+    create: (id, title = '', directory = '') => {
       if (cache.sessions[id]) return
       const now = Date.now()
-      cache.sessions[id] = { id, title, createdAt: now, updatedAt: now, cards: [] }
+      cache.sessions[id] = { id, title, directory, createdAt: now, updatedAt: now, cards: [] }
       void persist()
     },
     rename: (id, title) => {
