@@ -28,6 +28,16 @@ smoothly, safe areas are correct, and a stale token self-heals.
   token and drops to the in-app PairGate to re-pair, instead of looping forever on
   "reconnecting". The Cloudflare Access reload path is unchanged for that mode.
 
+### Internal / foundation
+- **Pluggable agent backend (Phase 1)** — the relay, every web route, the Telegram
+  handlers, push, and history now run behind an `AgentBackend` interface; opencode
+  implements it (zero behavior change). Adds `GET /api/capabilities` and a
+  backend-id chip in the web titlebar. This is the groundwork for driving
+  non-opencode agents over ACP (Kimi/Gemini/Cursor/Codex/Claude) without touching
+  the card model or transports — see `docs/ACP_BACKEND_DESIGN.md`. Read-path
+  verified against a live opencode hub. Only the event stream stays
+  opencode-specific (Phase 2).
+
 ## v0.6.1 — 2026-06-12
 
 Headline: **token auth works end-to-end** — pair a device and run the web PWA
