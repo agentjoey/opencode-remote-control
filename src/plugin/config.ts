@@ -25,6 +25,13 @@ export interface PluginConfig {
   tgChunkSoftLimit: number
   /** Standalone host only: the ACP agent to spawn, e.g. "kimi acp" / "gemini --acp". */
   acpCommand: string
+  /**
+   * Standalone host multi-backend spec (overrides acpCommand when set). Comma-
+   * separated entries: `opencode` (spawns its own opencode server) or
+   * `<id>=<acp command>` (e.g. `kimi=kimi acp`). Example:
+   * `OCRC_BACKENDS="opencode, kimi=kimi acp"`.
+   */
+  backends: string
 }
 
 // Repo root resolved from this module's OWN location (<repo>/dist/plugin/config.js,
@@ -117,6 +124,7 @@ export function loadPluginConfig(
     baseUrl: env('OPENCODE_BASE_URL', options?.baseUrl as string) ?? '',
     tgChunkSoftLimit: Number(options?.tgChunkSoftLimit ?? process.env.TG_CHUNK_SOFT_LIMIT ?? 3500),
     acpCommand: env('OCRC_ACP_CMD', options?.acpCommand as string) ?? 'kimi acp',
+    backends: env('OCRC_BACKENDS', options?.backends as string) ?? '',
   }
 }
 

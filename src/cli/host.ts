@@ -13,14 +13,15 @@ import { createFileBackedState } from '../core/state.js'
 import { createCardBus } from '../core/card-bus.js'
 import { createRelay } from '../core/relay.js'
 import { startPushNotifications } from '../core/push.js'
-import { createAcpBackend, type AcpPermissionRequest } from '../core/agent/acp-backend.js'
-import { makeAcpConnect, parseAcpCommand } from '../core/agent/acp-connect.js'
+import type { AcpPermissionRequest } from '../core/agent/acp-backend.js'
 import { createBackendRegistry } from '../core/agent/registry.js'
+import { buildHostBackends, parseBackendsSpec } from './host-backends.js'
+import type { OcEvent } from '../core/opencode-events.js'
+// (AgentEvent wiring now lives in host-backends.ts)
 import { createTelegramTransport } from '../transport/telegram/index.js'
 import { createWebTransport } from '../transport/web/index.js'
 import { selectAuthStrategy } from '../connectivity/auth/select.js'
 import type { Transport } from '../transport/interface.js'
-import type { AgentEvent } from '../core/agent/event.js'
 import { createLogger } from '../utils/logger.js'
 
 const log = createLogger('acp-host')
@@ -31,13 +32,12 @@ export async function main(): Promise<void> {
   process.on('uncaughtException', (e) => log.warn(`uncaughtException absorbed: ${e?.stack ?? String(e)}`))
 
   const config = loadPluginConfig(undefined, { requireTelegram: false })
-  const spawnCfg = parseAcpCommand(config.acpCommand)
-  const agentId = `acp:${spawnCfg.command}`
+  const specs = parseBackendsSpec(config.backends, config.acpCommand)
   const telegramEnabled = !!config.telegramBotToken
   if (!telegramEnabled && !config.webEnabled) {
     throw new Error('ACP host: nothing to serve — set TELEGRAM_BOT_TOKEN and/or WEB_ENABLED=true')
   }
-  log.info(`standalone host starting — agent="${config.acpCommand}" (${agentId}), telegram=${telegramEnabled}, web=${config.webEnabled}, port=${config.webPort}`)
+  log.info(`standalone host starting — backends=[${specs.map((s) => s.id).join(', ')}], telegram=${telegramEnabled}, web=${config.webEnabled}, port=${config.webPort}`)
 
   const state = createFileBackedState(config.statePath)
   const cardBus = createCardBus()
@@ -84,14 +84,14 @@ export async function main(): Promise<void> {
     })
   }
 
-  const backend = createAcpBackend({
-    id: agentId,
-    cwd: process.cwd(),
-    connect: makeAcpConnect(spawnCfg),
-    onPermission,
+  // Build every backend (spawning opencode server(s) + ACP agents) and wire each
+  // one's event source to the relay below.
+  const built = await buildHostBackends(specs, { cwd: process.cwd(), onAcpPermission: onPermission })
+  const registry = createBackendRegistry({
+    backends: built.backends,
+    state,
+    primaryId: built.backends.find((b) => b.id === 'opencode')?.id,
   })
-  // Single-backend registry for now; the multi-backend host wires more here.
-  const registry = createBackendRegistry({ backends: [{ id: backend.id, backend }], state })
 
   const relay = createRelay({
     cardBus,
@@ -101,22 +101,34 @@ export async function main(): Promise<void> {
     tuiVisible: false, // no local TUI in standalone mode
   })
 
-  const push = startPushNotifications({ cardBus, backend, state })
+  // push needs a backend for the finish-summary history read; the primary backend
+  // is a best-effort source (wrong-backend reads for other sessions degrade to no
+  // summary, which the caller tolerates).
+  const push = startPushNotifications({ cardBus, backend: registry.get(registry.primaryId())!, state })
 
-  // The backend OWNS its event stream: drive the relay + push from onEvent.
-  backend.onEvent?.((e: AgentEvent) => {
-    relay.handleEvent(e).catch((err) => log.error('relay.handleEvent failed', err as Error))
-    // Feed push a minimal opencode-shaped busy/idle signal for "task done" pings.
-    if (e.kind === 'idle') push.handleEvent({ type: 'session.idle', properties: { sessionID: e.sessionId } } as any)
-    else if (e.kind === 'part' || e.kind === 'delta') push.handleEvent({ type: 'session.status', properties: { sessionID: e.sessionId, status: { type: 'busy' } } } as any)
-  })
+  // opencode permission events arrive on the SSE stream → forward to the same
+  // approval UX (Telegram buttons + Web card). Web-only: publish the card directly.
+  const onOpencodePermission = (ev: OcEvent) => {
+    if (tgTransport) {
+      tgTransport.handlePluginPermissionEvent({ type: ev.type!, properties: (ev as any).properties })
+        .catch((err: unknown) => log.error('opencode permission surface failed', err as Error))
+    } else {
+      const p = (ev as any).properties ?? {}
+      if (ev.type === 'permission.asked' && p.id && p.sessionID) {
+        cardBus.publish({ kind: 'approval', sessionId: p.sessionID, title: p.title ?? 'Permission', args: p.args ?? {}, requestId: p.id })
+      }
+    }
+  }
+  const disposeBackends = built.wire(relay, push, onOpencodePermission)
 
   const transports: Transport[] = []
   if (telegramEnabled) {
     tgTransport = createTelegramTransport({
       token: config.telegramBotToken,
       allowedUserIds: config.allowedUserIds,
-      backend,
+      // Telegram is single-backend for now (piece 6 migrates it to the registry):
+      // it drives the primary backend / pinned session.
+      backend: registry.get(registry.primaryId())!,
       state,
       baseUrl: '',
       tgChunkSoftLimit: config.tgChunkSoftLimit,
@@ -143,7 +155,7 @@ export async function main(): Promise<void> {
     const webTransport = createWebTransport({
       host: config.webHost,
       port: config.webPort,
-      backend,
+      registry,
       auth,
       staticRoot: config.webStaticRoot,
       cacheSize: config.webCacheSize,
@@ -154,11 +166,12 @@ export async function main(): Promise<void> {
   }
 
   await Promise.all(transports.map((t) => t.start({ cardBus, state })))
-  log.info(`${transports.length} transport(s) started; ACP backend ready`)
+  log.info(`${transports.length} transport(s) started; backends=[${registry.list().map((b) => b.id).join(', ')}]`)
 
   const dispose = async () => {
     log.info('shutting down…')
     push.stop()
+    await disposeBackends()
     await Promise.allSettled(transports.map((t) => t.stop()))
     process.exit(0)
   }
