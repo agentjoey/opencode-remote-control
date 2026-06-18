@@ -23,6 +23,8 @@ export interface PluginConfig {
   chatTimeoutMs: number
   baseUrl: string
   tgChunkSoftLimit: number
+  /** Standalone host only: the ACP agent to spawn, e.g. "kimi acp" / "gemini --acp". */
+  acpCommand: string
 }
 
 // Repo root resolved from this module's OWN location (<repo>/dist/plugin/config.js,
@@ -108,6 +110,7 @@ export function loadPluginConfig(options?: Record<string, unknown>): PluginConfi
     chatTimeoutMs: Number(options?.chatTimeoutMs ?? process.env.CHAT_TIMEOUT_MS ?? 600000),
     baseUrl: env('OPENCODE_BASE_URL', options?.baseUrl as string) ?? '',
     tgChunkSoftLimit: Number(options?.tgChunkSoftLimit ?? process.env.TG_CHUNK_SOFT_LIMIT ?? 3500),
+    acpCommand: env('OCRC_ACP_CMD', options?.acpCommand as string) ?? 'kimi acp',
   }
 }
 

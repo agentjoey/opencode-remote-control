@@ -25,6 +25,7 @@ COMMANDS:
   install       Install as opencode plugin
   uninstall     Remove from opencode plugin config
   pair          Show QR + URL to pair a device
+  host          Run standalone against an ACP agent (no opencode; OCRC_ACP_CMD)
   --help, -h    Show this help
 `
 
@@ -57,6 +58,11 @@ async function main() {
 
   if (cmd === 'pair') {
     await import('./pair.js').then((m) => m.main())
+    return
+  }
+
+  if (cmd === 'host') {
+    await import('./host.js').then((m) => m.main())
     return
   }
 
