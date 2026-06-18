@@ -342,6 +342,45 @@ is opencode-only *and* single-workspace.)
 4. **Native high-fidelity (optional).** `CodexAppServerBackend`,
    `ClaudeAgentBackend` where ACP is too thin.
 
+## 12b. Validated against live `kimi acp` (2026-06-18)
+
+Probed `kimi acp` (Kimi Code CLI 1.47.0, `@agentclientprotocol/sdk` 0.26.0,
+`PROTOCOL_VERSION=1`). Full `initialize → session/new → prompt → stream →
+request_permission → end_turn` round-trip works **while logged in**.
+
+**`initialize` reports:** `loadSession:true`, `sessionCapabilities.list/resume`,
+`promptCapabilities.{embeddedContext:true, image:true, audio:false}`,
+`mcpCapabilities.http:true`. Also advertises `authMethods:[{id:'login', terminal-auth: kimi login}]`.
+**Key finding: advertised `authMethods` ≠ auth required** — `session/new` succeeds
+without `authenticate` when credentials already exist. So the client must *attempt*
+`newSession` and only fall back to `authenticate({methodId})` on an auth error,
+not gate on `authMethods.length`.
+
+**`sessionUpdate` → `AgentEvent` mapping (observed payloads):**
+
+| ACP `sessionUpdate` | payload | → AgentEvent |
+|---|---|---|
+| `agent_message_chunk` | `{content:{type:'text',text}}` — **no part id** | text |
+| `agent_thought_chunk` | `{content:{type:'text',text}}` — **no part id** | reasoning |
+| `tool_call` | `{toolCallId, title:"Shell", status:'in_progress', content:[{content:{type:'text',text},type:'content'}]}` | tool (running) |
+| `tool_call_update` | same shape, status transitions | tool status |
+| `available_commands_update` | `{availableCommands:[{name,description}]}` | → `listCommands`, **not** a relay event |
+| `prompt` result | `{stopReason:'end_turn'}` | `idle` |
+
+**`requestPermission` (client method, not a sessionUpdate):**
+`{sessionId, toolCall:{toolCallId, title:"Shell: echo hello-acp", content:[…]}, options:[{optionId:'approve',kind:'allow_once'},{optionId:'approve_for_session',kind:'allow_always'},{optionId:'reject',kind:'reject_once'}]}`.
+Return `{outcome:{outcome:'selected', optionId}}`.
+
+**Two seam-impedance points the AcpBackend normalizer must absorb:**
+1. **No part ids on text/thought chunks** (opencode parts carry ids). The
+   normalizer must synthesize a stable per-turn part id per kind (text vs
+   reasoning) and reset it on `idle`, emitting `{kind:'part'}` on first chunk
+   then `{kind:'delta'}` thereafter. Tool chunks *do* carry `toolCallId` → use directly.
+2. **Permission model differs** — ACP uses `optionId`+`kind`
+   (`allow_once`/`allow_always`/`reject_once`); opencode uses its own permission
+   ids. The backend's `resolvePermission` maps OCRC's allow/deny → an ACP `optionId`
+   by `kind`.
+
 ## 13. Risks & open questions
 
 - **Per-agent ACP coverage is uneven and partly undocumented** (Kimi's
