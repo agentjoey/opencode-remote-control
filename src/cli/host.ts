@@ -37,23 +37,39 @@ export async function main(): Promise<void> {
   const state = createFileBackedState(config.statePath)
   const cardBus = createCardBus()
 
-  // ACP permission bridge. The full inline-approval wiring (Telegram/Web prompt →
-  // resolvePermission) is a follow-up; for now auto-approve once so tools run,
-  // and surface each request as a card so it's visible. SECURITY: this trusts the
-  // agent on a localhost-bound personal host — gate with OCRC_ACP_AUTO_APPROVE=false
-  // to reject instead.
-  const autoApprove = process.env.OCRC_ACP_AUTO_APPROVE !== 'false'
+  // Late-bound so the permission bridge below can reach the Telegram transport
+  // (which itself needs `backend`, which needs `onPermission` — a construction cycle).
+  let tgTransport: ReturnType<typeof createTelegramTransport>
+
+  // ACP permission bridge → the SAME approve/deny UX as opencode permissions.
+  // `handlePluginPermissionEvent` sends the Telegram inline buttons AND publishes
+  // the Web approval card; both surfaces route the user's decision to
+  // `backend.resolvePermission(sessionId, toolCallId, decision)`, which the
+  // AcpBackend maps to the ACP optionId. We surface the request, then wait for
+  // that decision — with a timeout so an unanswered prompt cancels the tool call
+  // instead of hanging the turn.
+  //
+  // OCRC_ACP_AUTO_APPROVE=true bypasses the prompt and approves once (unattended
+  // use). Default is interactive approval.
+  const autoApprove = process.env.OCRC_ACP_AUTO_APPROVE === 'true'
   const onPermission = async (req: AcpPermissionRequest): Promise<string | null> => {
-    cardBus.publish({
-      kind: 'info',
-      title: 'Permission request',
-      sections: [{ body: `🔐 ${req.title}\n${autoApprove ? 'auto-approved (once)' : 'rejected (auto-approve off)'}` }],
-      sessionId: req.sessionId,
+    if (autoApprove) {
+      const allow = req.options.find((o) => o.kind === 'allow_once') ?? req.options.find((o) => o.kind?.startsWith('allow'))
+      log.warn(`auto-approving permission: ${req.title}`)
+      return allow?.optionId ?? req.options[0]?.optionId ?? null
+    }
+    // Surface the request on Telegram (buttons) + Web (approval card).
+    tgTransport
+      .handlePluginPermissionEvent({
+        type: 'permission.asked',
+        properties: { id: req.requestId, sessionID: req.sessionId, title: req.title },
+      })
+      .catch((err: unknown) => log.error('failed to surface permission', err as Error))
+    // Resolution arrives out-of-band via backend.resolvePermission (Telegram
+    // button callback / Web POST /api/approval). Here we only enforce a timeout.
+    return new Promise<string | null>((resolve) => {
+      setTimeout(() => resolve(null), config.chatTimeoutMs)
     })
-    if (!autoApprove) return req.options.find((o) => /reject/.test(o.kind ?? ''))?.optionId ?? null
-    const allow = req.options.find((o) => o.kind === 'allow_once') ?? req.options.find((o) => o.kind?.startsWith('allow'))
-    log.warn(`auto-approving permission: ${req.title}`)
-    return allow?.optionId ?? req.options[0]?.optionId ?? null
   }
 
   const backend = createAcpBackend({
@@ -81,7 +97,7 @@ export async function main(): Promise<void> {
     else if (e.kind === 'part' || e.kind === 'delta') push.handleEvent({ type: 'session.status', properties: { sessionID: e.sessionId, status: { type: 'busy' } } } as any)
   })
 
-  const tgTransport = createTelegramTransport({
+  tgTransport = createTelegramTransport({
     token: config.telegramBotToken,
     allowedUserIds: config.allowedUserIds,
     backend,
