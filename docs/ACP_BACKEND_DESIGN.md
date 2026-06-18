@@ -330,13 +330,20 @@ is opencode-only *and* single-workspace.)
 
 ## 12. Phasing
 
-1. **Seam, no behavior change.** Extract `AgentBackend`; implement
+1. ✅ **Seam, no behavior change.** Extract `AgentBackend`; implement
    `OpencodeBackend` wrapping today's code; relay/routes/handlers call the
-   interface. Ship — users notice nothing. *This is the de-risking step and is
-   independently valuable (testability, future Discord/Slack transport work).*
-2. **`AcpBackend` + standalone host, Kimi first.** Prove `initialize → session/new
-   → prompt → stream → request_permission` against `kimi acp`. Add
-   `/api/capabilities` + frontend gating.
+   interface. *Shipped — the de-risking step, independently valuable.*
+   Plus the event seam (`AgentEvent` + opencode/acp normalizers) so the relay is
+   backend-agnostic on the event path too.
+2. **`AcpBackend` + standalone host, Kimi first.**
+   - ✅ `AcpBackend` (`acp-backend.ts`) + `connectAcp` (`acp-connect.ts`) +
+     `acp-normalizer.ts`; `AgentBackend.onEvent` for stream-owning backends.
+   - ✅ Standalone host (`oprc host`, `src/cli/host.ts`) — runs OCRC against a
+     spawned ACP agent with no opencode; `OCRC_ACP_CMD` config.
+   - ✅ Validated live against `kimi acp`: `initialize → session/new → prompt →
+     stream → request_permission → end_turn`, end-to-end through the web transport.
+   - ⏳ `/api/capabilities` + frontend gating (`liveMirror`/`tuiSelect` off).
+   - ⏳ Inline permission-approval wiring (host currently auto-approves once).
 3. **Breadth.** Flip `OCRC_ACP_CMD` to Gemini/Cursor; handle their gaps via
    capabilities (no code per agent).
 4. **Native high-fidelity (optional).** `CodexAppServerBackend`,
