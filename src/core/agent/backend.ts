@@ -34,6 +34,8 @@ export interface SessionSummary {
   directory?: string
   additions?: number
   deletions?: number
+  /** Multi-backend: which backend owns this session (set by the aggregator). */
+  backendId?: string
 }
 
 /** Normalized assistant-turn metadata for the final card. */

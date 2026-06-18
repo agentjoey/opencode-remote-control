@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from 'hono'
+import { singleBackendRegistry } from '../../../src/core/agent/registry'
 import { registerWorkspaces } from '../../../src/transport/web/routes/workspaces'
 
 describe('GET /api/workspaces', () => {
@@ -10,7 +11,7 @@ describe('GET /api/workspaces', () => {
       ],
     } as any
     const app = new Hono()
-    registerWorkspaces(app, backend)
+    registerWorkspaces(app, singleBackendRegistry(backend))
     const res = await app.request('/api/workspaces')
     expect(res.status).toBe(200)
     const body = await res.json() as any[]
@@ -20,7 +21,7 @@ describe('GET /api/workspaces', () => {
   it('returns [] when the backend has no workspaces', async () => {
     const backend = { listWorkspaces: async () => [] } as any
     const app = new Hono()
-    registerWorkspaces(app, backend)
+    registerWorkspaces(app, singleBackendRegistry(backend))
     const res = await app.request('/api/workspaces')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual([])

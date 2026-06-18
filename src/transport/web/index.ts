@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { serve, type ServerType } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { serveStatic } from '@hono/node-server/serve-static'
-import type { AgentBackend } from '../../core/agent/backend.js'
+import type { BackendRegistry } from '../../core/agent/registry.js'
 import type { IncomingMessage, ChannelCapabilities } from '../../core/types.js'
 import type { Transport, TransportStartDeps } from '../interface.js'
 import type { StructuredCard } from '../../core/structured-card.js'
@@ -17,7 +17,7 @@ const log = createLogger('web')
 export interface WebTransportConfig {
   host: string
   port: number
-  backend: AgentBackend
+  registry: BackendRegistry
   auth: AuthStrategy
   staticRoot: string
   cacheSize: number
@@ -41,10 +41,10 @@ export function createWebTransport(cfg: WebTransportConfig): Transport {
       if (!existsSync(cfg.staticRoot)) {
         throw new Error(`Web static root not found: ${cfg.staticRoot}. Run 'cd web && npm run build' first.`)
       }
-      const wsHub = createWsHub({ cardBus: deps.cardBus, backend: cfg.backend, state: deps.state })
+      const wsHub = createWsHub({ cardBus: deps.cardBus, registry: cfg.registry, state: deps.state })
       const app = buildServer({
         auth: cfg.auth,
-        backend: cfg.backend,
+        registry: cfg.registry,
         state: deps.state,
         cardBus: deps.cardBus,
         wsHub,
