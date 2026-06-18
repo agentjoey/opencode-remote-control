@@ -17,7 +17,7 @@ import type { OcEvent } from '../core/opencode-events.js'
 import type { Transport } from '../transport/interface.js'
 import { createLogger } from '../utils/logger.js'
 
-const VERSION = '0.6.0'
+const VERSION = '0.7.0'
 const log = createLogger('plugin')
 
 // opencode 1.17 runs plugins in a worker thread. Any unhandled rejection or

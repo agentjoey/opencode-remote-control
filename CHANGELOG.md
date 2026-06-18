@@ -1,8 +1,31 @@
 # Changelog
 
-## Unreleased
+## v0.7.0 — 2026-06-18
 
-Headline: **mobile web / PWA polish** — the input now follows the iOS keyboard
+Headline: **multi-agent** — OCRC can now drive non-opencode agents over ACP
+(validated live with Kimi), and one standalone instance can serve **opencode + an
+ACP agent at once** with an in-UI backend switcher. Plus the earlier mobile/PWA
+polish.
+
+### Multi-agent (ACP + multi-backend)
+- **ACP backend** — a second `AgentBackend` (`AcpBackend`) drives any Agent Client
+  Protocol agent over stdio (`@agentclientprotocol/sdk`); validated end-to-end
+  against `kimi acp` (streaming text + reasoning, tool calls, permission approval).
+  Normalizes ACP `session/update` → the relay's `AgentEvent` (Phase 2 event seam).
+- **Standalone host** (`oprc host`) — run OCRC against spawned agents with **no
+  opencode**, web-only or with Telegram. `scripts/run-acp-host.sh` + `.env.acp`
+  make it turnkey; `OCRC_ACP_AUTO_APPROVE` gates tool approval.
+- **In-UI backend switching** — set `OCRC_BACKENDS="opencode, kimi=kimi acp"` and
+  one host serves both: the host spawns its own opencode server, the web titlebar
+  shows a backend switcher (sets where new sessions go), `/api/sessions`
+  aggregates across backends, and each session routes to its owning agent.
+- **Per-backend capability gating** — the UI hides affordances a backend can't
+  serve (workspaces/diff/todos/agent-model/MCP/commands), keyed off the *viewed*
+  session's backend. ACP slash-commands are surfaced from `available_commands_update`.
+
+### Mobile web / PWA
+Headline: the input now follows the iOS keyboard smoothly, safe areas are correct,
+and a stale token self-heals.
 smoothly, safe areas are correct, and a stale token self-heals.
 
 ### Mobile web / PWA
