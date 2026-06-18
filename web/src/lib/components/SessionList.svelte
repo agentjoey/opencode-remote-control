@@ -3,6 +3,7 @@
   import { sessionList, feeds } from '../stores/sessions.js'
   import { pinnedSessions } from '../stores/pins.js'
   import { activeWorkspace, workspaces } from '../stores/workspaces.js'
+  import { backends } from '../stores/capabilities.js'
   import { filterByWorkspace } from '../nav/workspaceFilter.js'
   import { api } from '../api/client.js'
   import { connection } from '../stores/connection.js'
@@ -127,9 +128,13 @@
     }
   }
 
+  // With multiple backends, the session list shows only the SELECTED backend's
+  // sessions (switching agent in the titlebar filters the list to that agent).
+  $: activeBackendId = $backends && $backends.backends.length > 1 ? $backends.activeId : null
+  $: byBackend = activeBackendId ? $sessionList.filter((s) => s.backendId === activeBackendId) : $sessionList
   // Filter to the active workspace (null = all), then sort most-recent first
   // and split into pinned / recent groups.
-  $: visible = filterByWorkspace($sessionList, $activeWorkspace)
+  $: visible = filterByWorkspace(byBackend, $activeWorkspace)
   $: byRecent = [...visible].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
   $: pinned = byRecent.filter((s) => $pinnedSessions.includes(s.id))
   $: recent = byRecent.filter((s) => !$pinnedSessions.includes(s.id))
