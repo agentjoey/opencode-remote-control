@@ -347,7 +347,15 @@ is opencode-only *and* single-workspace.)
      `todos`/`catalog`/`mcp`/`commands`); web gates affordances via a `can()`
      store helper and degrades cleanly on ACP (incl. fixing session creation
      with no workspaces).
-   - ⏳ Inline permission-approval wiring (host currently auto-approves once).
+   - ✅ Inline permission-approval wiring. The host surfaces ACP permission
+     requests through the existing Telegram buttons + Web approval card
+     (`handlePluginPermissionEvent`); decisions route to `resolvePermission` →
+     ACP optionId. Interactive by default; `OCRC_ACP_AUTO_APPROVE=true` for
+     unattended. Live-validated against kimi.
+
+   **Phase 2 complete** — OCRC runs end-to-end against a spawned ACP agent
+   (kimi) with no opencode: streaming, sessions, capability-gated UI, and
+   permission approval all validated live.
 3. **Breadth.** Flip `OCRC_ACP_CMD` to Gemini/Cursor; handle their gaps via
    capabilities (no code per agent).
 4. **Native high-fidelity (optional).** `CodexAppServerBackend`,
