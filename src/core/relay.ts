@@ -2,7 +2,7 @@ import type { CardBus } from './card-bus.js'
 import type { IncomingMessage } from './types.js'
 import type { SessionState } from './state.js'
 import { createStreamAccumulator, type PartInput } from './stream-accumulator.js'
-import { sessionIdOf, errorMessageOf, type OcEvent } from './opencode-events.js'
+import type { AgentEvent } from './agent/event.js'
 import type { AgentBackend } from './agent/backend.js'
 import { createLogger } from '../utils/logger.js'
 
@@ -218,143 +218,92 @@ export function createRelay(deps: RelayDeps) {
    * streaming/finalization for the in-flight session (message.part.updated,
    * message.part.delta, session.idle, session.error).
    */
-  relay.handleEvent = async function handleEvent(raw: OcEvent) {
-    const eventType = raw.type
-    if (!eventType) return
+  relay.handleEvent = async function handleEvent(e: AgentEvent) {
+    const sid = e.sessionId
+    let ctx = pluginSessions.get(sid)
 
-    const p = raw.properties ?? {}
-
-    {
-      const sid = sessionIdOf(raw)
-      let ctx = sid ? pluginSessions.get(sid) : undefined
-
-      // Adopt externally-initiated turns: a streaming event arrives for a session
-      // we never submitted to (an opencode command run from the palette, or a
-      // message typed directly in the TUI), so there's no context — create one
-      // so it streams/renders in Web/Telegram like any other turn. The signal
-      // never aborts (we don't own this turn); the card's stop button still
-      // calls opencode's abort directly.
-      if (!ctx && sid && (eventType === 'message.part.updated' || eventType === 'message.part.delta')) {
-        ctx = {
-          sessionId: sid,
-          cardId: `turn:${sid}:${Date.now()}`,
-          acc: createStreamAccumulator(),
-          processedPartIds: new Set(),
-          partTextAcc: new Map(),
-          signal: new AbortController().signal,
-          timer: setTimeout(() => {}, deps.chatTimeoutMs),
-        }
-        pluginSessions.set(sid, ctx)
+    // Adopt externally-initiated turns: a streaming event arrives for a session
+    // we never submitted to (a TUI/command turn), so there's no context — create
+    // one so it streams/renders in Web/Telegram like any other turn. The signal
+    // never aborts (we don't own this turn); the card's stop button still calls
+    // the backend's abort directly.
+    if (!ctx && (e.kind === 'part' || e.kind === 'delta')) {
+      ctx = {
+        sessionId: sid,
+        cardId: `turn:${sid}:${Date.now()}`,
+        acc: createStreamAccumulator(),
+        processedPartIds: new Set(),
+        partTextAcc: new Map(),
+        signal: new AbortController().signal,
+        timer: setTimeout(() => {}, deps.chatTimeoutMs),
       }
+      pluginSessions.set(sid, ctx)
+    }
 
-      if (eventType === 'message.part.updated') {
-        const part = p?.part
-        if (part && ctx) {
-          if (!ctx.assistantMessageId && typeof part.messageID === 'string') {
-            ctx.assistantMessageId = part.messageID
-          }
-
-          const partId = typeof part.id === 'string' ? part.id : undefined
-          const effectiveId = partId ?? `${part.type ?? 'unknown'}:${JSON.stringify(part.state?.input ?? {}).slice(0, 60)}`
-
-          const isNewPart = partId ? !ctx.processedPartIds.has(partId) : true
-          if (partId && isNewPart) ctx.processedPartIds.add(partId)
-
-          const input: PartInput = {
-            id: effectiveId,
-            type: part.type ?? 'unknown',
-            text: part.text,
-            tool: part.tool,
-            state: part.state,
-          }
-          const blocks = ctx.acc.update([input])
-
-          if (part.type === 'text') {
-            if (isNewPart && typeof part.text === 'string' && partId) {
-              ctx.partTextAcc.set(partId, part.text)
-            }
-          }
-
-          if (!ctx.signal.aborted) {
-            deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
-          }
-        }
-        return
+    if (e.kind === 'part') {
+      if (!ctx) return
+      if (!ctx.assistantMessageId && e.messageId) ctx.assistantMessageId = e.messageId
+      const part = e.part
+      const isNewPart = !ctx.processedPartIds.has(part.id)
+      if (isNewPart) ctx.processedPartIds.add(part.id)
+      const input: PartInput = { id: part.id, type: part.type, text: part.text, tool: part.tool, args: part.args, status: part.status }
+      const blocks = ctx.acc.update([input])
+      if (part.type === 'text' && isNewPart && typeof part.text === 'string') {
+        ctx.partTextAcc.set(part.id, part.text)
       }
+      if (!ctx.signal.aborted) {
+        deps.cardBus.publish({ kind: 'streaming', sessionId: sid, blocks, id: ctx.cardId })
+      }
+      return
+    }
 
-      if (eventType === 'message.part.delta') {
-        if (ctx) {
-          const partId = p?.partID as string | undefined
-          const field = p?.field as string | undefined
-          const delta = p?.delta as string | undefined
-          if (partId && field === 'text' && typeof delta === 'string') {
-            const prev = ctx.partTextAcc.get(partId) ?? ''
-            const fullText = prev + delta
-            ctx.partTextAcc.set(partId, fullText)
-            if (!ctx.signal.aborted) {
-              const blocks = ctx.acc.update([{ id: partId, type: 'text', text: fullText }])
-              deps.cardBus.publish({ kind: 'streaming', sessionId: ctx.sessionId, blocks, id: ctx.cardId })
-            }
+    if (e.kind === 'delta') {
+      if (!ctx) return
+      const prev = ctx.partTextAcc.get(e.partId) ?? ''
+      const fullText = prev + e.text
+      ctx.partTextAcc.set(e.partId, fullText)
+      if (!ctx.signal.aborted) {
+        const blocks = ctx.acc.update([{ id: e.partId, type: 'text', text: fullText }])
+        deps.cardBus.publish({ kind: 'streaming', sessionId: sid, blocks, id: ctx.cardId })
+      }
+      if (!ctx.assistantMessageId && e.messageId) ctx.assistantMessageId = e.messageId
+      return
+    }
+
+    if (e.kind === 'idle') {
+      if (ctx) {
+        log.info(`[plugin] session idle: ${sid.slice(-8)}, finalizing`)
+        // Capture acc/msgId locally: cleanupPluginSession() runs synchronously
+        // below, and a new message for the same session would install a fresh ctx
+        // with a fresh accumulator — so this deferred finalize must read the
+        // snapshot it captured, not pluginSessions.get(sid).
+        const acc = ctx.acc
+        const msgId = ctx.assistantMessageId
+        const cardId = ctx.cardId
+        setTimeout(async () => {
+          try {
+            await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId, cardId })
+          } catch (err) {
+            log.error(`[plugin] publishAssistantCard failed`, err as Error)
           }
-          if (!ctx.assistantMessageId && typeof p?.messageID === 'string') {
-            ctx.assistantMessageId = p.messageID
-          }
-        }
-        return
+        }, 0)
+        cleanupPluginSession(sid)
+        deps.state.setActiveAbort(sid, undefined)
+      } else {
+        log.info(`[plugin] session idle (no ctx): ${sid.slice(-8)}`)
+        deps.cardBus.publish({ kind: 'status', sessionId: sid, fields: { status: 'idle' } })
       }
+      return
+    }
 
-      if (eventType === 'session.idle') {
-        if (ctx) {
-          log.info(`[plugin] session idle: ${ctx.sessionId.slice(-8)}, finalizing`)
-          // Capture acc/msgId locally: cleanupPluginSession() runs synchronously
-          // below, and a new message for the same session would install a fresh
-          // ctx with a fresh accumulator — so this deferred finalize must read
-          // the snapshot it captured, not pluginSessions.get(sid).
-          const sid = ctx.sessionId
-          const acc = ctx.acc
-          const msgId = ctx.assistantMessageId
-          const cardId = ctx.cardId
-          // Defer SDK calls to next tick to avoid blocking the event hook
-          setTimeout(async () => {
-            try {
-              await publishAssistantCard({ sessionId: sid, acc, assistantMessageId: msgId, cardId })
-            } catch (err) {
-              log.error(`[plugin] publishAssistantCard failed`, err as Error)
-            }
-          }, 0)
-          cleanupPluginSession(ctx.sessionId)
-          deps.state.setActiveAbort(ctx.sessionId, undefined)
-        } else if (sid) {
-          log.info(`[plugin] session idle (no ctx): ${sid.slice(-8)}`)
-          deps.cardBus.publish({ kind: 'status', sessionId: sid, fields: { status: 'idle' } })
-        }
-        return
+    if (e.kind === 'error') {
+      log.warn(`[plugin] session error${ctx ? '' : ' (no ctx)'}: ${e.message}`)
+      deps.cardBus.publish({ kind: 'error', sessionId: sid, message: e.message })
+      if (ctx) {
+        cleanupPluginSession(sid)
+        deps.state.setActiveAbort(sid, undefined)
       }
-
-      if (eventType === 'session.error') {
-        if (ctx) {
-          const errMsg = errorMessageOf(p)
-          log.warn(`[plugin] session error: ${errMsg}`)
-          deps.cardBus.publish({ kind: 'error', sessionId: ctx.sessionId, message: errMsg })
-          cleanupPluginSession(ctx.sessionId)
-          deps.state.setActiveAbort(ctx.sessionId, undefined)
-        } else {
-          const errMsg = errorMessageOf(p)
-          const fallbackSid = sid || 'unknown'
-          log.warn(`[plugin] session error (no ctx): ${String(errMsg)}`)
-          deps.cardBus.publish({ kind: 'error', sessionId: fallbackSid, message: String(errMsg) })
-        }
-        return
-      }
-
-      // message.updated — debug-trace only; finalization is driven by session.idle
-      if (eventType === 'message.updated') {
-        const info = p?.info
-        if (info?.sessionID && !sid) {
-          log.debug(`[plugin] message.updated session=${info.sessionID.slice(-8)}`)
-        }
-        return
-      }
+      return
     }
   }
 

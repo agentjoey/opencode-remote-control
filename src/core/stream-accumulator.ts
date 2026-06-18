@@ -28,30 +28,24 @@ export interface StreamAccumulator {
   reset(): void
 }
 
-/** Minimal subset of SDK Part fields that the accumulator needs. */
+/**
+ * Normalized part fields (backend-agnostic). `args`/`status` are already
+ * summarized/mapped by the per-backend normalizer — the accumulator no longer
+ * reaches into an opencode-shaped `state` object.
+ */
 export interface PartInput {
   id: string
   type: 'text' | 'tool' | 'reasoning' | string
   text?: string
   tool?: string
-  state?: { status?: string; input?: Record<string, unknown> }
+  args?: string
+  status?: 'running' | 'done' | 'error'
 }
 
 export function createStreamAccumulator(): StreamAccumulator {
   const blocks: InternalBlock[] = []
   const order: string[] = []
   const index = new Map<string, number>()
-
-  function summarizeArgs(tool: string, input?: Record<string, unknown>): string {
-    if (!input) return ''
-    if (tool === 'bash' && typeof input.cmd === 'string') {
-      return input.cmd.length > 60 ? input.cmd.slice(0, 57) + '...' : input.cmd
-    }
-    const keys = Object.keys(input)
-    if (keys.length === 0) return ''
-    const first = String(input[keys[0]])
-    return first.length > 60 ? first.slice(0, 57) + '...' : first
-  }
 
   function upsert(block: InternalBlock, partId: string): void {
     const existing = index.get(partId)
@@ -89,18 +83,13 @@ export function createStreamAccumulator(): StreamAccumulator {
         }
 
         if (p.type === 'tool' && typeof p.tool === 'string') {
-          const status = p.state?.status ?? 'running'
-          const mapped: InternalBlock['status'] =
-            status === 'error' ? 'error' :
-            status === 'done' || status === 'completed' ? 'done' :
-            'running'
           upsert({
             type: 'tool',
             partId,
             tool: p.tool,
             text: '',
-            args: summarizeArgs(p.tool, p.state?.input),
-            status: mapped,
+            args: p.args ?? '',
+            status: p.status ?? 'running',
           }, partId)
         }
 

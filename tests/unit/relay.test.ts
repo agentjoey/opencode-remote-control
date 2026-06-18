@@ -208,7 +208,7 @@ describe('createRelay', () => {
     expect(state.setActiveAbort).toHaveBeenCalledWith('ses_test', expect.any(AbortController))
     expect(state.getActiveAbort('ses_test')).toBeInstanceOf(AbortController)
     // session idle clears it
-    await relay.handleEvent({ type: 'session.idle', properties: { sessionID: 'ses_test' } })
+    await relay.handleEvent({ kind: 'idle', sessionId: 'ses_test' })
     expect(state.setActiveAbort).toHaveBeenCalledWith('ses_test', undefined)
     expect(state.getActiveAbort('ses_test')).toBeUndefined()
   })
@@ -249,8 +249,8 @@ describe('createRelay', () => {
         tuiVisible: false,      })
       // No relay() submit — simulate a command/TUI-initiated turn arriving as events.
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: { sessionID: 'ses_external', part: { id: 'x1', type: 'text', text: 'from a command' } },
+        kind: 'part', sessionId: 'ses_external',
+        part: { id: 'x1', type: 'text', text: 'from a command' },
       })
       const streaming = cards.filter((c) => c.kind === 'streaming') as any[]
       expect(streaming.length).toBeGreaterThan(0)
@@ -273,11 +273,8 @@ describe('createRelay', () => {
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p2' })
 
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: {
-          sessionID: 'ses_plugin',
-          part: { id: 't1', type: 'text', text: 'hello world' },
-        },
+        kind: 'part', sessionId: 'ses_plugin',
+        part: { id: 't1', type: 'text', text: 'hello world' },
       })
 
       const streamingCards = cards.filter(c => c.kind === 'streaming')
@@ -302,17 +299,11 @@ describe('createRelay', () => {
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p3' })
 
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: {
-          sessionID: 'ses_plugin',
-          part: { id: 't1', type: 'text', text: 'response text' },
-        },
+        kind: 'part', sessionId: 'ses_plugin',
+        part: { id: 't1', type: 'text', text: 'response text' },
       })
 
-      await relay.handleEvent({
-        type: 'session.idle',
-        properties: { sessionID: 'ses_plugin' },
-      })
+      await relay.handleEvent({ kind: 'idle', sessionId: 'ses_plugin' })
 
       // publishAssistantCard is deferred via setTimeout(0); wait for it
       await new Promise((r) => setTimeout(r, 10))
@@ -339,10 +330,7 @@ describe('createRelay', () => {
 
       cards.length = 0
 
-      await relay.handleEvent({
-        type: 'session.error',
-        properties: { sessionID: 'ses_plugin', error: { message: 'something broke' } },
-      })
+      await relay.handleEvent({ kind: 'error', sessionId: 'ses_plugin', message: 'something broke' })
 
       const errorCard = cards.find(c => c.kind === 'error') as any
       expect(errorCard).toBeDefined()
@@ -365,24 +353,12 @@ describe('createRelay', () => {
       await relay({ userId: '1', chatId: '100', text: 'test', messageId: 'p5' })
 
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: {
-          sessionID: 'ses_plugin',
-          part: { id: 'd1', type: 'text', text: 'Hello' },
-        },
+        kind: 'part', sessionId: 'ses_plugin',
+        part: { id: 'd1', type: 'text', text: 'Hello' },
       })
-      await relay.handleEvent({
-        type: 'message.part.delta',
-        properties: { partID: 'd1', field: 'text', delta: ' world', sessionID: 'ses_plugin' },
-      })
-      await relay.handleEvent({
-        type: 'message.part.delta',
-        properties: { partID: 'd1', field: 'text', delta: '!', sessionID: 'ses_plugin' },
-      })
-      await relay.handleEvent({
-        type: 'session.idle',
-        properties: { sessionID: 'ses_plugin' },
-      })
+      await relay.handleEvent({ kind: 'delta', sessionId: 'ses_plugin', partId: 'd1', text: ' world' })
+      await relay.handleEvent({ kind: 'delta', sessionId: 'ses_plugin', partId: 'd1', text: '!' })
+      await relay.handleEvent({ kind: 'idle', sessionId: 'ses_plugin' })
       await new Promise((r) => setTimeout(r, 10))
 
       const assistantCard = cards.find(c => c.kind === 'assistant') as any
@@ -406,17 +382,14 @@ describe('createRelay', () => {
       await relay({ userId: '1', chatId: '100', text: 'x', messageId: 'p6' })
 
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: { sessionID: 'ses_plugin', part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'running' } } },
+        kind: 'part', sessionId: 'ses_plugin',
+        part: { id: 't1', type: 'tool', tool: 'bash', args: 'ls', status: 'running' },
       })
       await relay.handleEvent({
-        type: 'message.part.updated',
-        properties: { sessionID: 'ses_plugin', part: { type: 'tool', tool: 'bash', id: 't1', state: { input: { command: 'ls' }, status: 'done' } } },
+        kind: 'part', sessionId: 'ses_plugin',
+        part: { id: 't1', type: 'tool', tool: 'bash', args: 'ls', status: 'done' },
       })
-      await relay.handleEvent({
-        type: 'session.idle',
-        properties: { sessionID: 'ses_plugin' },
-      })
+      await relay.handleEvent({ kind: 'idle', sessionId: 'ses_plugin' })
       await new Promise((r) => setTimeout(r, 10))
 
       const final = cards.find(c => c.kind === 'assistant') as any

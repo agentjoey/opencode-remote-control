@@ -4,8 +4,8 @@ import { createStreamAccumulator } from '../../src/core/stream-accumulator'
 const textPart = (id: string, text: string): { id: string; type: 'text'; text: string } =>
   ({ id, type: 'text', text })
 
-const toolPart = (id: string, tool: string, args: string, status: string): { id: string; type: 'tool'; tool: string; state: { status: string; input: Record<string, unknown> } } =>
-  ({ id, type: 'tool', tool, state: { status, input: { cmd: args } } })
+const toolPart = (id: string, tool: string, args: string, status: 'running' | 'done' | 'error'): { id: string; type: 'tool'; tool: string; args: string; status: 'running' | 'done' | 'error' } =>
+  ({ id, type: 'tool', tool, args, status })
 
 const reasoningPart = (id: string, text: string): { id: string; type: 'reasoning'; text: string } =>
   ({ id, type: 'reasoning', text })

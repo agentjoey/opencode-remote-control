@@ -200,13 +200,13 @@ describe('remoteControlPlugin', () => {
   })
 
   it('routes message.part.updated to relay.handleEvent', async () => {
-    await emit({ type: 'message.part.updated', properties: { part: { text: 'ok' } } })
+    await emit({ type: 'message.part.updated', properties: { sessionID: 'ses_a', part: { id: 'prt_1', type: 'text', text: 'ok' } } })
     expect(relay.handleEvent).toHaveBeenCalled()
     expect(push.handleEvent).toHaveBeenCalled()
   })
 
   it('routes message.part.delta to relay.handleEvent', async () => {
-    await emit({ type: 'message.part.delta', properties: {} })
+    await emit({ type: 'message.part.delta', properties: { sessionID: 'ses_a', partID: 'prt_1', field: 'text', delta: 'hi' } })
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
@@ -215,14 +215,16 @@ describe('remoteControlPlugin', () => {
     expect(relay.handleEvent).toHaveBeenCalled()
   })
 
-  it('routes session.created to relay.handleEvent', async () => {
+  it('feeds session.created to push but not relay (normalizes to null)', async () => {
     await emit({ type: 'session.created', properties: {} })
-    expect(relay.handleEvent).toHaveBeenCalled()
+    expect(push.handleEvent).toHaveBeenCalled()
+    expect(relay.handleEvent).not.toHaveBeenCalled()
   })
 
-  it('routes command.executed to relay.handleEvent', async () => {
+  it('feeds command.executed to push but not relay (normalizes to null)', async () => {
     await emit({ type: 'command.executed', properties: {} })
-    expect(relay.handleEvent).toHaveBeenCalled()
+    expect(push.handleEvent).toHaveBeenCalled()
+    expect(relay.handleEvent).not.toHaveBeenCalled()
   })
 
   // ── tui.session.select ──
@@ -256,13 +258,11 @@ describe('remoteControlPlugin', () => {
   it('routes permission.asked to tgTransport.handlePluginPermissionEvent', async () => {
     await emit({ type: 'permission.asked', properties: { id: 'p1', sessionID: 'ses' } })
     expect(tgTransport.handlePluginPermissionEvent).toHaveBeenCalled()
-    expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes permission.updated to tgTransport.handlePluginPermissionEvent', async () => {
     await emit({ type: 'permission.updated', properties: { id: 'p2', sessionID: 'ses' } })
     expect(tgTransport.handlePluginPermissionEvent).toHaveBeenCalled()
-    expect(relay.handleEvent).toHaveBeenCalled()
   })
 
   it('routes permission.replied to tgTransport.handlePluginPermissionEvent', async () => {

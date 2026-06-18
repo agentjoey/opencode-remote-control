@@ -7,6 +7,7 @@ import { selectAuthStrategy } from '../connectivity/auth/select.js'
 import { createFileBackedState } from '../core/state.js'
 import { createRelay } from '../core/relay.js'
 import { createOpencodeBackend } from '../core/agent/opencode-backend.js'
+import { normalizeOpencodeEvent } from '../core/agent/opencode-normalizer.js'
 import { createCardBus } from '../core/card-bus.js'
 import { startPushNotifications } from '../core/push.js'
 import { tryBecomePrimary } from '../core/primary-election.js'
@@ -158,9 +159,6 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
           tgTransport.handlePluginPermissionEvent({ type: eventType, properties: (ev as any).properties } as any).catch((err) =>
             log.error('handlePluginPermissionEvent failed', err as Error),
           )
-          try { await relay.handleEvent(ev) } catch (err) {
-            log.error('relay.handleEvent failed', err as Error)
-          }
           break
         case 'tui.session.select': {
           const sid = (ev as any)?.properties?.sessionID
@@ -191,7 +189,10 @@ export const remoteControlPlugin: Plugin = async (ctx, options) => {
         case 'message.part.removed':
         case 'message.removed':
         case 'command.executed':
-          try { await relay.handleEvent(ev) } catch (err) {
+          try {
+            const ae = normalizeOpencodeEvent(ev)
+            if (ae) await relay.handleEvent(ae)
+          } catch (err) {
             log.error('relay.handleEvent failed', err as Error)
           }
           break
