@@ -15,7 +15,9 @@ import { createRelay } from '../core/relay.js'
 import { startPushNotifications } from '../core/push.js'
 import type { AcpPermissionRequest } from '../core/agent/acp-backend.js'
 import { createBackendRegistry } from '../core/agent/registry.js'
+import { createAcpStore } from '../core/agent/acp-store.js'
 import { buildHostBackends, parseBackendsSpec } from './host-backends.js'
+import { dirname, join } from 'node:path'
 import type { OcEvent } from '../core/opencode-events.js'
 // (AgentEvent wiring now lives in host-backends.ts)
 import { createTelegramTransport } from '../transport/telegram/index.js'
@@ -84,9 +86,13 @@ export async function main(): Promise<void> {
     })
   }
 
+  // Persistent ACP session+history store (next to the state file) so kimi
+  // sessions survive restarts and reopen with their history, like opencode.
+  const acpStore = createAcpStore(join(dirname(config.statePath), 'acp-sessions.json'))
+
   // Build every backend (spawning opencode server(s) + ACP agents) and wire each
   // one's event source to the relay below.
-  const built = await buildHostBackends(specs, { cwd: process.cwd(), onAcpPermission: onPermission })
+  const built = await buildHostBackends(specs, { cwd: process.cwd(), onAcpPermission: onPermission, store: acpStore })
   const registry = createBackendRegistry({
     backends: built.backends,
     state,
@@ -99,6 +105,14 @@ export async function main(): Promise<void> {
     state,
     chatTimeoutMs: config.chatTimeoutMs,
     tuiVisible: false, // no local TUI in standalone mode
+  })
+
+  // Persist finalized conversation cards for ACP sessions (recordCard no-ops for
+  // opencode sessions, which aren't in the store) so they reopen with history.
+  cardBus.subscribeAll((card) => {
+    if ((card.kind === 'user' || card.kind === 'assistant') && 'sessionId' in card && card.sessionId) {
+      acpStore.recordCard(card.sessionId, card, Date.now())
+    }
   })
 
   // push needs a backend for the finish-summary history read; the primary backend

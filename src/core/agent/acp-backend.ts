@@ -19,6 +19,7 @@ import type {
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import type { AgentEvent } from './event.js'
 import { createAcpNormalizer, type AcpUpdate } from './acp-normalizer.js'
+import type { AcpStore } from './acp-store.js'
 import { createLogger } from '../../utils/logger.js'
 
 const log = createLogger('acp-backend')
@@ -36,6 +37,8 @@ export interface AcpPermissionRequest {
 export interface AcpConnection {
   newSession(p: { cwd: string; mcpServers: unknown[] }): Promise<{ sessionId: string }>
   loadSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
+  /** Re-establish a previously-created session (kimi persists these across connections). */
+  resumeSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
   listSessions?(p?: unknown): Promise<{ sessions?: Array<{ sessionId: string; title?: string }> }>
   deleteSession?(p: { sessionId: string }): Promise<unknown>
   authenticate(p: { methodId: string }): Promise<unknown>
@@ -78,12 +81,20 @@ export interface AcpBackendDeps {
    * auto-rejects (safe default). The Telegram/Web permission UI provides this.
    */
   onPermission?: (req: AcpPermissionRequest) => Promise<string | null>
+  /**
+   * Persistent session+history store. ACP agents don't expose a session list or
+   * replay history, so OCRC persists both here to give kimi sessions the same
+   * long-lived, reopenable experience as opencode. When omitted, sessions are
+   * in-memory only (lost on restart).
+   */
+  store?: AcpStore
 }
 
 export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
-  const { id, cwd } = deps
+  const { id, cwd, store } = deps
   const normalizer = createAcpNormalizer()
   const listeners = new Set<(e: AgentEvent) => void>()
+  /** Sessions established in THIS process (so we know when to resume from the store). */
   const sessions = new Set<string>()
   /** Pending permission requests keyed by `${sessionId}:${toolCallId}`. */
   const pendingPerms = new Map<string, {
@@ -167,7 +178,11 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
 
   async function ensureSession(sessionId: string, conn: AcpConnection): Promise<void> {
     if (sessions.has(sessionId)) return
-    // Resume a known-to-the-agent session if it supports load; else assume created.
+    // Persisted session from a prior process (host restart) → resume it so the
+    // agent re-establishes context, then we can prompt it again.
+    if (conn.resumeSession) {
+      try { await conn.resumeSession({ sessionId, cwd, mcpServers: [] }); sessions.add(sessionId); return } catch (err) { log.warn(`resumeSession failed: ${String(err)}`) }
+    }
     if (conn.loadSession) {
       try { await conn.loadSession({ sessionId, cwd, mcpServers: [] }); sessions.add(sessionId) } catch { /* not loadable */ }
     }
@@ -198,32 +213,33 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     const { conn } = await connection()
     const res = await conn.newSession({ cwd: opts.directory || cwd, mcpServers: [] })
     sessions.add(res.sessionId)
+    store?.create(res.sessionId, opts.title ?? '')
     return { id: res.sessionId }
   }
 
+  /** Session ids known across restarts: the persistent store ∪ this process. */
+  function knownIds(): string[] {
+    const ids = new Set<string>(sessions)
+    if (store) for (const s of store.list()) ids.add(s.id)
+    return [...ids]
+  }
+
   async function listSessions(): Promise<SessionRef[]> {
-    const { conn } = await connection()
-    if (!conn.listSessions) return [...sessions].map((id) => ({ id }))
-    try {
-      const res = await conn.listSessions()
-      return (res.sessions ?? []).map((s) => ({ id: s.sessionId }))
-    } catch { return [...sessions].map((id) => ({ id })) }
+    return knownIds().map((id) => ({ id }))
   }
 
   async function listSessionSummaries(): Promise<SessionSummary[]> {
-    const summary = (sid: string, title = ''): SessionSummary => ({ id: sid, title, lastActiveAt: 0, unread: false, directory: cwd })
-    const { conn } = await connection()
-    if (!conn.listSessions) return [...sessions].map((id) => summary(id))
-    try {
-      const res = await conn.listSessions()
-      return (res.sessions ?? []).map((s) => summary(s.sessionId, s.title ?? ''))
-    } catch { return [...sessions].map((id) => summary(id)) }
+    if (store) {
+      return store.list().map((s) => ({ id: s.id, title: s.title, lastActiveAt: s.updatedAt, unread: false, directory: cwd }))
+    }
+    return [...sessions].map((id) => ({ id, title: '', lastActiveAt: 0, unread: false, directory: cwd }))
   }
 
   async function deleteSession(sessionId: string): Promise<void> {
     const { conn } = await connection()
     if (conn.deleteSession) { try { await conn.deleteSession({ sessionId }) } catch { /* best-effort */ } }
     sessions.delete(sessionId)
+    store?.remove(sessionId)
     normalizer.drop(sessionId)
   }
 
@@ -241,15 +257,16 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     capabilities,
     prompt,
     abort,
-    hasSession: async (sid: string) => sessions.has(sid),
+    hasSession: async (sid: string) => sessions.has(sid) || (store?.has(sid) ?? false),
     listSessions,
     listSessionSummaries,
     createSession,
     deleteSession,
-    renameSession: async () => { /* ACP has no rename; no-op */ },
+    renameSession: async (sid: string, title: string) => { store?.rename(sid, title) },
     getSessionMeta: async (): Promise<SessionMeta> => ({}),
     getContext: async (): Promise<SessionContext> => ({ directory: cwd }),
-    getHistory: async (): Promise<StructuredCard[]> => [],
+    // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
+    getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
     getDiff: EMPTY,
     getTodos: EMPTY,

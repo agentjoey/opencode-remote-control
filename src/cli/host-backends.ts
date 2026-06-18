@@ -14,6 +14,7 @@ import { createOpencodeServer, createOpencodeClient } from '@opencode-ai/sdk'
 import type { AgentEvent } from '../core/agent/event.js'
 import type { RegisteredBackend } from '../core/agent/registry.js'
 import { createAcpBackend, type AcpPermissionRequest } from '../core/agent/acp-backend.js'
+import type { AcpStore } from '../core/agent/acp-store.js'
 import { makeAcpConnect, parseAcpCommand } from '../core/agent/acp-connect.js'
 import { createOpencodeBackend } from '../core/agent/opencode-backend.js'
 import { normalizeOpencodeEvent } from '../core/agent/opencode-normalizer.js'
@@ -60,6 +61,8 @@ export interface BuildHostBackendsDeps {
   cwd: string
   /** ACP permission bridge (shared by all ACP backends). */
   onAcpPermission: (req: AcpPermissionRequest) => Promise<string | null>
+  /** Persistent session+history store, shared by all ACP backends. */
+  store?: AcpStore
   /** Base port for spawned opencode servers (each opencode backend gets one). */
   opencodePort?: number
 }
@@ -99,6 +102,7 @@ export async function buildHostBackends(specs: BackendSpec[], deps: BuildHostBac
         cwd: deps.cwd,
         connect: makeAcpConnect(parseAcpCommand(spec.command ?? 'kimi acp')),
         onPermission: deps.onAcpPermission,
+        store: deps.store,
       })
       backends.push({ id: spec.id, backend })
       log.info(`acp backend ready: ${spec.id} (${spec.command})`)

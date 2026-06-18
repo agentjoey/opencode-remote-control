@@ -170,10 +170,46 @@ describe('createAcpBackend', () => {
     expect(h.promptCalls).toContainEqual({ sessionId: 'ses_a', text: '/compact keep db' })
   })
 
-  it('listSessionSummaries returns degraded-but-valid rows', async () => {
+  it('without a store, listSessionSummaries reflects in-memory sessions', async () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
-    const rows = await b.listSessionSummaries()
-    expect(rows).toEqual([{ id: 'ses_1', title: 'One', lastActiveAt: 0, unread: false, directory: '/tmp' }])
+    expect(await b.listSessionSummaries()).toEqual([])
+    await b.createSession({ directory: '/tmp' }) // ses_new
+    expect(await b.listSessionSummaries()).toEqual([{ id: 'ses_new', title: '', lastActiveAt: 0, unread: false, directory: '/tmp' }])
+  })
+
+  it('with a store, sessions + history persist (survive a fresh backend / restart)', async () => {
+    const { createAcpStore } = await import('../../../src/core/agent/acp-store')
+    const path = `/tmp/acp-store-test-${Math.floor(performance.now())}.json`
+    const store = createAcpStore(path)
+
+    const h = makeHarness()
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect, store })
+    const { id } = await b.createSession({ directory: '/tmp', title: 'Chat' })
+    // record a couple of finalized cards (the host does this from the cardBus)
+    store.recordCard(id, { kind: 'user', sessionId: id, id: 'u1', text: 'hi', ts: 1 } as any, 100)
+    store.recordCard(id, { kind: 'assistant', sessionId: id, id: 'a1', blocks: [{ type: 'text', text: 'hello' }] } as any, 200)
+    await store.flush()
+
+    // a FRESH backend (simulating a host restart) sees the session + history
+    const h2 = makeHarness()
+    const b2 = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h2.connect, store: createAcpStore(path) })
+    expect((await b2.listSessionSummaries()).map((s) => ({ id: s.id, title: s.title }))).toEqual([{ id, title: 'Chat' }])
+    expect(await b2.hasSession(id)).toBe(true)
+    const hist = await b2.getHistory(id)
+    expect(hist.map((c: any) => c.kind)).toEqual(['user', 'assistant'])
+  })
+
+  it('resumes a persisted session before prompting it (host restart continuity)', async () => {
+    const { createAcpStore } = await import('../../../src/core/agent/acp-store')
+    const store = createAcpStore(`/tmp/acp-resume-${Math.floor(performance.now())}.json`)
+    store.create('ses_old', 'Old chat')
+    const resumed: string[] = []
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    ;(h.conn as any).resumeSession = vi.fn(async (p: { sessionId: string }) => { resumed.push(p.sessionId); return {} })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect, store })
+    await b.prompt('ses_old', { text: 'continue' })
+    expect(resumed).toEqual(['ses_old']) // resumeSession called before the prompt
+    expect(h.promptCalls).toContainEqual({ sessionId: 'ses_old', text: 'continue' })
   })
 })

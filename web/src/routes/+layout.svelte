@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
-  import { afterNavigate } from '$app/navigation'
+  import { afterNavigate, goto } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
@@ -45,6 +45,28 @@
     installEvent = null
   }
   let lastLoaded: string | null = null
+
+  // Switching the backend sets where new sessions go AND moves you to that
+  // backend: open its most-recent session, or start a fresh one if none exists.
+  async function switchBackend(id: string) {
+    await setActiveBackend(id)
+    const list = get(sessionList)
+    const existing = list.find((s) => s.backendId === id)
+    if (existing) { goto(`/${existing.id}/`); return }
+    // No session on this backend yet. ACP-style backends (no workspaces) can
+    // start one with an empty directory; opencode needs a workspace, so just
+    // drop to the empty state and let the user pick + New session.
+    const cap = get(backends)?.backends.find((b) => b.id === id)?.capabilities
+    if (cap && cap.workspaces === false) {
+      try {
+        const res = await api.createSession({ directory: '' })
+        sessionList.set(await api.sessions())
+        goto(`/${res.id}/`)
+      } catch (err) { console.warn('[switch] create failed', err) }
+    } else {
+      goto('/')
+    }
+  }
 
   function loadSession(id: string | undefined) {
     // Capability gating keys off the viewed session's backend.
@@ -195,7 +217,7 @@
         class="backend-switch mono"
         title="Active backend for new sessions"
         value={$backends.activeId}
-        on:change={(e) => setActiveBackend((e.currentTarget as HTMLSelectElement).value)}
+        on:change={(e) => switchBackend((e.currentTarget as HTMLSelectElement).value)}
       >
         {#each $backends.backends as b (b.id)}
           <option value={b.id}>{b.id}</option>
