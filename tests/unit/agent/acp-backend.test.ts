@@ -29,7 +29,7 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: false, diff: false, todos: false, catalog: false, mcp: false, commands: false })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: false, diff: false, todos: false, catalog: false, mcp: false, commands: true })
   })
 
   it('createSession returns the agent sessionId and tracks it', async () => {
@@ -149,6 +149,25 @@ describe('createAcpBackend', () => {
       options: [{ optionId: 'approve', kind: 'allow_once' }],
     })
     expect(outcome).toEqual({ outcome: { outcome: 'cancelled' } })
+  })
+
+  it('captures available_commands_update into listCommands', async () => {
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
+    await b.prompt('ses_a', { text: 'hi' }) // forces connection so the client exists
+    expect(await b.listCommands()).toEqual([])
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'available_commands_update', availableCommands: [{ name: 'compact', description: 'Compact the context' }, { name: 'clear' }] } })
+    expect(await b.listCommands()).toEqual([
+      { name: 'compact', description: 'Compact the context' },
+      { name: 'clear', description: '' },
+    ])
+  })
+
+  it('runCommand submits the slash-command as a prompt turn', async () => {
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
+    await b.runCommand('ses_a', 'compact', 'keep db')
+    expect(h.promptCalls).toContainEqual({ sessionId: 'ses_a', text: '/compact keep db' })
   })
 
   it('listSessionSummaries returns degraded-but-valid rows', async () => {

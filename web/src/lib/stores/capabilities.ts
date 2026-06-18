@@ -20,6 +20,15 @@ export const can = derived(capabilities, ($c) => (feature: string): boolean => {
   return caps[feature] !== false
 })
 
+/**
+ * Friendly backend name for UI copy. `acp:kimi` → `kimi`, `opencode` → `opencode`.
+ * Falls back to `opencode` before capabilities load (the flagship default).
+ */
+export const backendName = derived(capabilities, ($c) => {
+  const id = $c?.id ?? 'opencode'
+  return id.includes(':') ? id.split(':').pop()! : id
+})
+
 export async function loadCapabilities(): Promise<void> {
   try {
     const snapshot = await api.capabilities()

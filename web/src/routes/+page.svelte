@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { sessionList } from '$lib/stores/sessions.js'
+  import { backendName } from '$lib/stores/capabilities.js'
 
   // Auto-select the most recent session once the list loads (the layout fetches
   // it async). replaceState so Back doesn't return to this empty route.
@@ -13,7 +14,7 @@
 
 <div class="empty">
   {#if $sessionList.length === 0}
-    No sessions yet — start one in opencode.
+    No sessions yet — create one to start chatting with {$backendName}.
   {:else}
     Opening latest session…
   {/if}
