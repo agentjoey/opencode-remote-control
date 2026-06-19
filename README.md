@@ -19,7 +19,13 @@ losing context.
 
 ## ⚡ Quick start (5 minutes)
 
-Requires **opencode 1.17+** and **Node 20+** (or Bun).
+Requires **opencode 1.17+** and **Node 20+** (or Bun). **Build from source —
+OCRC is not published to npm** (the `opencode-remote-control` name on npm is an
+unrelated package; don't `npx` it).
+
+There are two ways to run it — pick one:
+
+### Mode A — Plugin (default; controls opencode)
 
 ```bash
 # 1. Clone, build (backend + PWA), and install the plugin
@@ -32,12 +38,34 @@ node dist/cli/install.js     # interactive — paste your Telegram bot token + u
 opencode
 ```
 
+`install.js` writes a plugin bridge to `~/.config/opencode/plugins/` and your
+config to `.env`. The plugin then loads in-process whenever opencode runs.
+
 - **Telegram:** make a bot with [@BotFather](https://t.me/BotFather); get your numeric id from [@userinfobot](https://t.me/userinfobot) (the installer asks for both). Send "hello" → the assistant replies.
-- **Web PWA:** the installer enables it by default. Run `oprc pair` (or send `/pair` in Telegram) → open the URL/QR it prints. Auth is a device **token** — no Cloudflare Access needed.
+- **Web PWA:** enabled by default. Run `oprc pair` (or send `/pair` in Telegram) → open the URL/QR it prints. Auth is a device **token** (persisted at `~/.opencode/oprc-token`) — no Cloudflare Access needed.
 - **From another device:** the web binds to `localhost`, so expose it over a tunnel or VPN — e.g. `tailscale serve 17081`. See [Remote access without a domain](#remote-access-without-a-domain).
 
-> **Not on npm yet** — build from source as above. (Once published, this will
-> collapse to `npx opencode-remote-control install`.)
+### Mode B — Standalone multi-backend host (opencode + ACP agents)
+
+Run OCRC as its own process serving **multiple agents at once** (opencode + any
+[ACP](https://agentclientprotocol.com) agent like Kimi) with an in-UI switcher —
+no opencode plugin needed. Requires the ACP agent to be installed and logged in
+(e.g. `kimi login`).
+
+```bash
+git clone https://github.com/agentjoey/opencode-remote-control
+cd opencode-remote-control
+npm install && npm run build:all
+
+cp .env.acp.example .env.acp   # set WEB_TOKEN; OCRC_BACKENDS="opencode, kimi=kimi acp"
+scripts/run-acp-host.sh        # run in a real terminal (needs full PATH to spawn agents)
+```
+
+For an always-on service (auto-start + crash-restart), install the launchd unit
+from `deploy/com.ocrc.host.plist`. Full runbook: [`docs/OPS.md`](docs/OPS.md).
+
+> Note: `oprc` isn't on your PATH by default — use `node dist/cli/index.js <cmd>`
+> (e.g. `node dist/cli/index.js pair`), or `npm link` to get the `oprc` shim.
 
 ## How we're different
 

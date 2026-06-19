@@ -2,6 +2,45 @@
 
 > Runbook for the `opencode-remote-control` (ocrc) services.
 
+## 新设备 / 新用户安装
+
+> OCRC **没有发布到 npm**（npm 上的同名包是别人的，别 `npx`）。安装 = git clone 构建。
+
+### 前置依赖
+| 依赖 | 必需性 | 备注 |
+|---|---|---|
+| Node.js 20+ | 必需 | 运行时 |
+| opencode 1.17+ | 必需 | AI 引擎（plugin 模式宿主；host 模式的 opencode 后端也用） |
+| Telegram bot | Telegram 通道需要 | [@BotFather](https://t.me/BotFather) 建 bot 拿 token；[@userinfobot](https://t.me/userinfobot) 拿数字 user id |
+| ACP agent（如 kimi） | 仅 host 模式用 ACP 时 | 装好 CLI + 登录一次（`kimi login`） |
+
+### 模式 A — Plugin（默认，只控 opencode）
+```bash
+git clone https://github.com/agentjoey/opencode-remote-control
+cd opencode-remote-control
+npm install && npm run build:all
+node dist/cli/install.js        # 交互：粘贴 Telegram bot token + user id
+opencode serve --port 4096      # 或正常启动 opencode —— 插件自动加载
+```
+`install.js` 写插件桥接到 `~/.config/opencode/plugins/`、配置到 `.env`。
+Web 默认开启 → `node dist/cli/index.js pair`（或 Telegram `/pair`）配对设备。
+
+### 模式 B — Standalone host（opencode + ACP 多后端）
+见下方「Standalone host 模式」+「launchd 自启服务」。一句话：
+`cp .env.acp.example .env.acp` → 填 `WEB_TOKEN` + `OCRC_BACKENDS` →
+`scripts/run-acp-host.sh`（或装 launchd 服务常驻）。
+
+### 公网访问（手机 PWA 需 HTTPS）
+`localhost` 仅本机有效。手机装 PWA 需 HTTPS → 挂隧道：cloudflared（自有域名）/
+`tailscale serve <port>` / `cloudflared tunnel --url http://localhost:<port>`（临时）。
+
+### 备注
+- `oprc` 默认不在 PATH：用 `node dist/cli/index.js <cmd>`，或 `npm link` 拿 `oprc`。
+- `init` 向导把 Telegram token **明文写进 `.env`**（已 gitignore）。生产可加固：
+  存 macOS Keychain，`.zshrc` 里 `security find-generic-password` 取（见现有部署）。
+
+---
+
 ## 进程结构（ocrc）
 
 ```
