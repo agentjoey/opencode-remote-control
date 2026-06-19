@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.7.1 — 2026-06-19
+
+Headline: **ACP sessions are now first-class** — kimi (and any ACP agent) gets
+persistent sessions with history, per-session working directories, and a session
+list scoped to the selected agent. The standalone multi-backend host now serves
+the production domain (`ocrc.agentjoey.ai`).
+
+### ACP sessions
+- **Persistent sessions + history** — ACP agents resume across connections but
+  don't list sessions or replay history, so they used to vanish on host restart.
+  OCRC now persists the session list (id/title/dir) and finalized conversation
+  cards itself (`acp-sessions.json`), and `resumeSession`s a session before
+  prompting it. kimi sessions survive restarts and reopen with their history,
+  like opencode.
+- **Per-session working directory** — new ACP sessions take a user-entered
+  directory (opencode-style workspace UX, applied to all ACP agents). The web
+  shows a free-form directory input with a datalist of known dirs; the agent runs
+  in that directory and the inspector shows it. New capability flags
+  `workspaces`/`freeformWorkspace` drive picker-vs-input.
+- **Slash-commands** — `listCommands` is populated from ACP
+  `available_commands_update` (kimi exposes `/init`, `/compact`, …).
+
+### Multi-backend UX
+- **Backend switcher moves you to that agent** — selecting a backend opens its
+  most-recent session (or the empty state to start one) instead of leaving you on
+  the previous session.
+- **Session list scoped to the selected backend** — pick acp:kimi and the sidebar
+  shows only kimi sessions (active only when >1 backend is served).
+- **Working dir shows for ACP** — the inspector's working-dir was wrongly gated on
+  the `diff` capability; now the directory always shows, only the diff file list
+  is gated.
+
+### Deployment
+- The standalone multi-backend host (`opencode + kimi`) now serves the production
+  domain; the cloudflared `ocrc` ingress points at the host's web port. Uses the
+  persisted web token, so paired devices need no re-pairing.
+
 ## v0.7.0 — 2026-06-18
 
 Headline: **multi-agent** — OCRC can now drive non-opencode agents over ACP

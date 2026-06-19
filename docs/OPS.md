@@ -36,6 +36,49 @@ node dist/cli/uninstall.js      # 或 oprc uninstall
 
 ---
 
+## Standalone host 模式（v0.7.0+，多 agent / 多后端）
+
+`oprc host`（= `node dist/cli/index.js host`）是与 plugin 模式并存的另一种部署：
+独立进程，不作为 opencode 插件，可同时挂多个后端（opencode + 任意 ACP agent）并在
+界面里切换。这是生产域名 `ocrc.agentjoey.ai` 当前背后的实例。
+
+```bash
+# 配置（一次）：复制 .env.acp.example → .env.acp，填 WEB_TOKEN 等
+cp .env.acp.example .env.acp
+
+# 启动（必须在有完整 PATH 的真实终端里跑——host 要 spawn opencode/kimi 子进程）
+scripts/run-acp-host.sh
+# 或直接：
+OCRC_BACKENDS="opencode, kimi=kimi acp" WEB_ENABLED=true WEB_PORT=17085 \
+  WEB_AUTH=token node dist/cli/index.js host
+```
+
+要点：
+- **后端来自 `OCRC_BACKENDS`**：`opencode`（host 自 spawn 一个 opencode server，
+  默认 4096）/ `<id>=<acp 命令>`（如 `kimi=kimi acp`）。空则退回 `OCRC_ACP_CMD` 单 ACP。
+- **前置条件是「登录过」，不是「先启动」**：ACP agent 需 `kimi login` 等做过一次；
+  opencode 需装好、配好模型。host 会自己 spawn 这些进程。
+- **端口冲突**：host spawn 的 opencode 用 4096，会与 plugin 模式的 `opencode serve
+  --port 4096` 撞——两者别同时跑 opencode。
+- **web token**：不设 `WEB_TOKEN` 则复用 plugin 模式持久化的 `~/.opencode/oprc-token`，
+  已配对设备无需重配。
+- **后台常驻**：`nohup node dist/cli/index.js host >log 2>&1 & disown`（前台进程随
+  终端关闭被 SIGHUP 杀）。崩溃不自启——建议做 launchd 服务。
+- **代码更新**：`npm run build:all`；前端是静态服务（改前端无需重启 host），后端改动
+  才需重启 host。
+- **ACP 会话持久化**：会话列表 + 历史存 `<state 目录>/acp-sessions.json`，重启不丢。
+
+### 把域名指向 host（cloudflared）
+```yaml
+# ~/.cloudflared/<tunnel>.yml ingress 里：
+  - hostname: ocrc.agentjoey.ai
+    service: http://localhost:17085   # host 的 WEB_PORT
+```
+改后 `kill -HUP <cloudflared-pid>` 热重载（不断隧道，不影响其它 service）。
+回滚：改回 plugin 模式端口（17081）+ 再 SIGHUP。配置改动前先备份 yml。
+
+---
+
 ## opencode（手动管理）
 
 ```bash

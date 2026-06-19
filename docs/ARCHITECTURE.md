@@ -3,11 +3,11 @@
 > Plain-language explanation of how `opencode-remote-control` is structured,
 > what it talks to, and how to extend it.
 >
-> Updated for v0.6.1 (plugin mode, PRIMARY election, token auth).
+> Updated for v0.7.1 (multi-agent: plugin mode + standalone multi-backend host).
 
 ## Deployment models
 
-### Plugin mode (v0.6.0+, recommended)
+### Plugin mode (v0.6.0+, single-backend opencode)
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -32,6 +32,29 @@ web/Telegram singletons.
 > **v0.6.0:** the standalone sidecar / `EventStream` SSE path was removed. The
 > plugin runs in-process and consumes the opencode plugin **event hook**
 > directly (`relay.handleEvent`). There is no `RC_MODE=legacy` anymore.
+
+### Standalone multi-backend host (v0.7.0+)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  oprc host (own process, NOT an opencode plugin)          │
+│                                                            │
+│  BackendRegistry ── forSession(sid) ──┐                    │
+│   ├─ OpencodeBackend ── spawns its own opencode server     │
+│   │                     (sidecar) + global SSE events      │
+│   └─ AcpBackend ─────── spawns `kimi acp` (stdio) +        │
+│                         onEvent stream                     │
+│  relay + CardBus ── Telegram / Web PWA (backend switcher)  │
+└──────────────────────────────────────────────────────────┘
+```
+
+One instance serves multiple backends (`OCRC_BACKENDS="opencode, kimi=kimi acp"`)
+with an in-UI switcher; each session routes to its owning backend. Two seams keep
+it pluggable: **`AgentBackend`** (command path — prompt/sessions/reads) and
+**`AgentEvent`** (event path — opencode SSE and ACP `onEvent` both normalize into
+it). ACP sessions are OCRC-persisted (`acp-store.ts`: list + history + per-session
+directory). This host serves the production domain today. See
+`docs/ACP_BACKEND_DESIGN.md` and `docs/PHASE3_MULTI_BACKEND.md`.
 
 ---
 

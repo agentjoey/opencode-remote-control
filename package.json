@@ -1,6 +1,6 @@
 {
   "name": "opencode-remote-control",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "OpenCode Plugin — remote-control your local opencode via Telegram + Web PWA. One npx install, auto-starts with opencode.",
   "type": "module",
   "main": "dist/plugin/entry.js",

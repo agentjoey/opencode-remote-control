@@ -1,15 +1,19 @@
 # Phase 3 — In-UI multi-backend switching
 
-> **状态（2026-06-18）**：piece 1–5 已实现并对 opencode+kimi 双后端 host 实测通过，
-> web 端界面内切换可演示。piece 6（Telegram 多后端）未做。分支 `phase3-multi-backend`，
-> 未并入 main（main 仍停在 Phase 2，tag `pre-phase3` 可回滚）。
+> **状态（2026-06-19）**：piece 1–5 已合并入 main 并随 **v0.7.0** 发版；多后端
+> host（opencode + kimi）现已是生产域名（`ocrc.agentjoey.ai`）背后的实例。
+> v0.7.1 又补齐了 ACP 会话的持久化、按会话工作目录、列表按后端过滤等。
+> piece 6（Telegram 多后端）仍未做。回滚点 tag `pre-phase3`。
 >
 > - ✅ piece 1 BackendRegistry + state 会话→后端 `cb0dfdf`
 > - ✅ piece 2 relay 按会话路由 `ca83288`
 > - ✅ piece 3 web 路由多后端 + /api/backends `19bec75`
 > - ✅ piece 4 多后端 host（spawn opencode + kimi，接事件源）`51dbc26`
 > - ✅ piece 5 前端切换器 + 按会话能力门控 `8b9ba83`
-> - ⏳ piece 6 Telegram /backend（其实是把 registry 串进 telegram transport 的较大改动）
+> - ✅ **v0.7.1 增量**：ACP 会话持久化 + 历史（`acp-store.ts`，`resumeSession`）
+>   `78182a3`；列表按后端过滤 `d3c3072`；ACP 工作目录显示修复 `8cf6dda`；
+>   ACP 按会话工作目录 + workspace 选择器 `8c705f4`。
+> - ⏳ piece 6 Telegram /backend（把 registry 串进 telegram transport 的较大改动）
 
 
 ## 目标
