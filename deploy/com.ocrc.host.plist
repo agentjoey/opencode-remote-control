@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd service for the OCRC standalone multi-backend host (opencode + ACP).
+  Template — replace __HOME__ with your home dir (e.g. /Users/you) before use.
+
+  Install:
+    sed "s#__HOME__#$HOME#g" deploy/com.ocrc.host.plist > ~/Library/LaunchAgents/com.ocrc.host.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocrc.host.plist
+
+  See docs/OPS.md → "launchd 自启服务" for restart/stop/logs.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ocrc.host</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>dist/cli/index.js</string>
+        <string>host</string>
+    </array>
+
+    <!-- repo dir: keeps the ACP store at data/acp-sessions.json and is the
+         default working dir for spawned opencode/kimi processes -->
+    <key>WorkingDirectory</key>
+    <string>__HOME__/AgentWorks/Code_Opencode/opencode-remote-control</string>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/.opencode/ocrc-host.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/.opencode/ocrc-host.err</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <!-- don't hammer-restart on a crash loop -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- PATH must include node + the agents the host spawns (kimi, opencode) -->
+        <key>PATH</key>
+        <string>__HOME__/.local/bin:__HOME__/.opencode/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+
+        <!-- multi-backend: opencode (own spawned server) + kimi over ACP -->
+        <key>OCRC_BACKENDS</key>
+        <string>opencode, kimi=kimi acp</string>
+
+        <!-- web-only (no Telegram token → no bot; avoids 409 with the plugin
+             hub's bot). web token auto-loads from ~/.opencode/oprc-token -->
+        <key>TELEGRAM_BOT_TOKEN</key>
+        <string></string>
+        <key>ALLOWED_USER_IDS</key>
+        <string>1</string>
+        <key>WEB_ENABLED</key>
+        <string>true</string>
+        <key>WEB_PORT</key>
+        <string>17085</string>
+        <key>WEB_AUTH</key>
+        <string>token</string>
+        <key>WEB_PUBLIC_URL</key>
+        <string>https://ocrc.agentjoey.ai</string>
+        <key>WEB_CF_ACCESS_DEV_BYPASS</key>
+        <string>false</string>
+    </dict>
+</dict>
+</plist>

@@ -77,6 +77,43 @@ OCRC_BACKENDS="opencode, kimi=kimi acp" WEB_ENABLED=true WEB_PORT=17085 \
 改后 `kill -HUP <cloudflared-pid>` 热重载（不断隧道，不影响其它 service）。
 回滚：改回 plugin 模式端口（17081）+ 再 SIGHUP。配置改动前先备份 yml。
 
+### launchd 自启服务（生产推荐）
+
+host 是前台进程，崩溃不自启、关终端被 SIGHUP 杀。生产用 launchd 常驻：
+`~/Library/LaunchAgents/com.ocrc.host.plist`（`RunAtLoad` + `KeepAlive`，崩溃
+~10s 自动重启；web-only，env 全在 plist 的 `EnvironmentVariables` 里，web token
+复用 `~/.opencode/oprc-token`）。日志 `~/.opencode/ocrc-host.{log,err}`。
+
+```bash
+# 首次加载（plist 已就位）
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocrc.host.plist
+
+# 代码更新后重启：先 build，再 kickstart
+npm run build:all && launchctl kickstart -k gui/$(id -u)/com.ocrc.host
+
+# 停（开机也不再起） / 启
+launchctl bootout   gui/$(id -u)/com.ocrc.host
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocrc.host.plist
+
+# 状态 / 日志
+launchctl list | grep ocrc            # pid + 上次退出码
+tail -f ~/.opencode/ocrc-host.log
+```
+
+> 改前端无需 kickstart（静态服务，build 后即生效）；改后端才需重启 host。
+> ⚠️ host 自启会 spawn 自己的 opencode（端口 4096）——别再手动 `opencode serve
+> --port 4096` 跑 plugin hub，否则撞端口（两者择一）。
+
+### 现在 OCRC 相关的 launchd 服务
+
+| 服务 | 作用 |
+|---|---|
+| `com.ocrc.host` | 多后端 host（opencode + kimi），serve web :17085 |
+| `com.home.cloudflared` | cloudflared 隧道：`ocrc.agentjoey.ai` → `localhost:17085` |
+
+两者一起 = 域名可访问；都开机自启，重启电脑后自动恢复。
+（opencode 插件 hub 的 `opencode serve` + TUI 仍是手动管理，跑 Telegram bot。）
+
 ---
 
 ## opencode（手动管理）
