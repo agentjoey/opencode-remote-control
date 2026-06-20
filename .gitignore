@@ -31,3 +31,5 @@ tsconfig.tsbuildinfo
 .superpowers/
 .pact/
 .env.acp
+
+.pact/orchestrate/
