@@ -228,7 +228,7 @@ describe('OpencodeBackend', () => {
 
   it('getDiff/getTodos/getSessionsStatus pass through data', async () => {
     const b = createOpencodeBackend({ client: fakeClient() })
-    expect(await b.getDiff('s')).toEqual([{ file: 'a.ts' }])
+    expect(await b.getDiff('s')).toEqual([{ path: 'a.ts', additions: 0, deletions: 0, lines: [] }])
     expect(await b.getTodos('s')).toEqual([{ content: 'todo' }])
     expect(await b.getSessionsStatus()).toEqual({ healthy: true })
   })

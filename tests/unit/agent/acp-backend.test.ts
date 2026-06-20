@@ -214,7 +214,10 @@ describe('createAcpBackend', () => {
     await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'tool_call_update', toolCallId: 'tc_1', title: 'Edit', content: [
       { type: 'diff', path: '/work/a.ts', oldText: 'y', newText: 'z' },
     ] } })
-    expect(await b.getDiff('ses_a')).toEqual([{ path: '/work/a.ts' }, { path: '/work/b.ts' }])
+    const d = await b.getDiff('ses_a')
+    expect(d.map((e) => e.path)).toEqual(['/work/a.ts', '/work/b.ts'])
+    expect(d.find((e) => e.path === '/work/a.ts')).toMatchObject({ additions: 1, deletions: 1 })
+    expect(d.find((e) => e.path === '/work/b.ts')).toMatchObject({ additions: 1, deletions: 0, lines: [{ kind: 'add', text: 'new' }] })
   })
 
   it('runCommand submits the slash-command as a prompt turn', async () => {

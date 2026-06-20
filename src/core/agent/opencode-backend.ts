@@ -6,9 +6,10 @@
  */
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import type {
-  AgentBackend, AgentInfo, BackendCapabilities, CommandInfo, McpServer, ModelProvider,
+  AgentBackend, AgentInfo, BackendCapabilities, CommandInfo, DiffEntry, McpServer, ModelProvider,
   PermissionDecision, PromptInput, SessionContext, SessionMeta, SessionRef, SessionSummary,
 } from './backend.js'
+import { buildDiffEntry } from './diff-util.js'
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import { submitPrompt } from '../../opencode/submit.js'
 import { listAllSessions } from '../../opencode/list-sessions.js'
@@ -189,9 +190,11 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     return blocks
   }
 
-  async function getDiff(id: string): Promise<unknown[]> {
+  async function getDiff(id: string): Promise<DiffEntry[]> {
     const res = await (client.session as any).diff({ path: { id } } as any)
-    return (res.data ?? []) as unknown[]
+    // opencode returns per-file diffs as { file/path, before, after }.
+    const raw = (res.data ?? []) as Array<{ file?: string; path?: string; before?: string; after?: string }>
+    return raw.map((d) => buildDiffEntry(d.file ?? d.path ?? '', d.before ?? '', d.after ?? ''))
   }
 
   async function getTodos(id: string): Promise<unknown[]> {

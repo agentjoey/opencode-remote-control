@@ -19,7 +19,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
       return
     }
     try {
-      const diffs = (await deps.backend.getDiff(last)) as Array<{ file: string; additions?: number; deletions?: number }>
+      const diffs = await deps.backend.getDiff(last)
       if (diffs.length === 0) {
         await ctx.reply(`<b>📝 Diff — …${last.slice(-8)}</b>\n\nNo diffs yet.`, { parse_mode: 'HTML' })
         return
@@ -33,7 +33,7 @@ export function registerInfoCommands(deps: InfoDeps): void {
         const del = d.deletions ?? 0
         totalAdd += add
         totalDel += del
-        lines.push(`<code>+${add} -${del}</code>  ${esc(d.file)}`)
+        lines.push(`<code>+${add} -${del}</code>  ${esc(d.path)}`)
       }
       if (diffs.length > 40) lines.push(`…and ${diffs.length - 40} more`)
       lines.push('', `<i>${diffs.length} file${diffs.length > 1 ? 's' : ''} · +${totalAdd} -${totalDel}</i>`)

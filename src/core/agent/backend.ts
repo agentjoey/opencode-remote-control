@@ -61,6 +61,11 @@ export interface McpServer { name: string; type?: string; status: 'configured' |
 export interface CommandInfo { name: string; description: string }
 export interface Workspace { directory: string; name: string; sessionCount: number; lastActiveAt: number }
 
+/** One rendered line of a normalized diff. `text` carries no trailing newline. */
+export interface DiffLine { kind: 'add' | 'del' | 'ctx'; text: string }
+/** A normalized, render-ready per-file diff (returned by getDiff for every backend). */
+export interface DiffEntry { path: string; additions: number; deletions: number; lines: DiffLine[] }
+
 export interface PromptInput {
   text: string
   agent?: string
@@ -127,7 +132,7 @@ export interface AgentBackend {
   /** Blocks for one assistant message — streaming-accumulator fallback only. */
   getMessageBlocks(sessionId: string, messageId: string): Promise<ContentBlock[]>
   /** opencode-shaped diff payload (passthrough; normalized when ACP lands). */
-  getDiff(id: string): Promise<unknown[]>
+  getDiff(id: string): Promise<DiffEntry[]>
   /** opencode-shaped todo payload (passthrough; → ACP plan later). */
   getTodos(id: string): Promise<unknown[]>
   /** Global/all-session status payload (passthrough; telegram `/status`). */

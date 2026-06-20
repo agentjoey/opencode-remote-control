@@ -19,6 +19,7 @@ import type {
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import type { AgentEvent } from './event.js'
 import { createAcpNormalizer, type AcpUpdate } from './acp-normalizer.js'
+import { buildDiffEntry } from './diff-util.js'
 import type { AcpStore } from './acp-store.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -354,9 +355,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
     getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
-    // Working-dir diff = the set of files the agent edited this session (from
-    // tool_call diff content). The inspector's dir panel lists these by path.
-    getDiff: async (sid: string) => [...(edits.get(sid)?.keys() ?? [])].map((path) => ({ path })),
+    // Working-dir diff = the files the agent edited this session (from tool_call
+    // diff content), each rendered to a normalized DiffEntry (red/green lines).
+    getDiff: async (sid: string) =>
+      [...(edits.get(sid)?.entries() ?? [])].map(([path, e]) => buildDiffEntry(path, e.oldText ?? '', e.newText ?? '')),
     // TODO list from ACP `plan` updates; summarizeTodos consumes {content,status}.
     getTodos: async (sid: string) => plans.get(sid) ?? [],
     getSessionsStatus: async () => ({}),
