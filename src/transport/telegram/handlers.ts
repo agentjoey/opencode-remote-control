@@ -537,6 +537,13 @@ export function registerHandlers(deps: HandlersDeps): void {
       { command: 'help', description: 'Show help' },
     ])
     .catch((err) => log.warn('setMyCommands failed', err))
+  // Clear narrower scopes so the default menu is not shadowed by stale overrides
+  deps.bot.telegram
+    .deleteMyCommands({ scope: { type: 'all_private_chats' } })
+    .catch((err) => log.warn('deleteMyCommands(all_private_chats) failed', err))
+  deps.bot.telegram
+    .deleteMyCommands({ scope: { type: 'all_group_chats' } })
+    .catch((err) => log.warn('deleteMyCommands(all_group_chats) failed', err))
 
   // ── Callbacks ──
 

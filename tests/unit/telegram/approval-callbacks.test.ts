@@ -8,7 +8,10 @@ function captureBot() {
     actions,
     command: vi.fn(),
     action: vi.fn((trigger: any, handler: (ctx: any) => any) => { actions.push({ trigger, handler }) }),
-    telegram: { setMyCommands: vi.fn().mockResolvedValue(undefined) },
+    telegram: {
+      setMyCommands: vi.fn().mockResolvedValue(undefined),
+      deleteMyCommands: vi.fn().mockResolvedValue(undefined),
+    },
   }
 }
 
@@ -36,6 +39,14 @@ function makeDeps(overrides: Record<string, unknown> = {}) {
   registerHandlers(deps)
   return { bot, backend, pendingApprovals, deps }
 }
+
+describe('command scope cleanup on init', () => {
+  it('clears all_private_chats and all_group_chats scopes so default menu is authoritative', () => {
+    const { bot } = makeDeps()
+    expect(bot.telegram.deleteMyCommands).toHaveBeenCalledWith({ scope: { type: 'all_private_chats' } })
+    expect(bot.telegram.deleteMyCommands).toHaveBeenCalledWith({ scope: { type: 'all_group_chats' } })
+  })
+})
 
 describe('approve: button callback', () => {
   it('replies the decision to opencode and clears the pending approval', async () => {
