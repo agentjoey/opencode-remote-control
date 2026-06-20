@@ -49,6 +49,28 @@
         <key>HOME</key>
         <string>__HOME__</string>
 
+        <!-- kimi-code 0.18 auth (the `kimi acp` ACP backend).
+             ⚠️ `kimi acp` returns -32000 authRequired with NO token, and it does
+             NOT read KIMI_API_KEY / ANTHROPIC_API_KEY from the environment.
+             The headless host shares its credential store with whatever shell ran
+             the one-time `/login`, via KIMI_CODE_HOME (default ~/.kimi-code). Keep
+             this dir user-owned + writable (OAuth refresh writes here).
+             Auth options — pick ONE:
+               (A) managed OAuth (default): run `kimi` once in a terminal → /login.
+                   The cached token under KIMI_CODE_HOME is reused by `kimi acp`.
+               (B) static Moonshot Platform key (most headless-robust, never expires):
+                   uncomment the KIMI_MODEL_* block below + set the key. -->
+        <key>KIMI_CODE_HOME</key>
+        <string>__HOME__/.kimi-code</string>
+        <!-- (B) static-key path — the ONLY env channel kimi-code reads for creds:
+        <key>KIMI_MODEL_NAME</key>
+        <string>kimi-for-coding</string>
+        <key>KIMI_MODEL_PROVIDER_TYPE</key>
+        <string>kimi</string>
+        <key>KIMI_MODEL_API_KEY</key>
+        <string>sk-REPLACE_ME</string>
+        -->
+
         <!-- multi-backend: opencode (own spawned server) + kimi over ACP -->
         <key>OCRC_BACKENDS</key>
         <string>opencode, kimi=kimi acp</string>

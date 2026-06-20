@@ -101,6 +101,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     resolve: (optionId: string | null) => void
     options: Array<{ optionId: string; kind?: string; name?: string }>
   }>()
+  /** Latest TODO list per session (ACP `plan`, full-replace) — served via getTodos. */
+  const plans = new Map<string, Array<{ content: string; status: string }>>()
+  /** Files edited per session, keyed by path (tool_call diff content) — served via getDiff. */
+  const edits = new Map<string, Map<string, { oldText?: string; newText?: string }>>()
 
   /** Map an OCRC decision → the ACP optionId by the option's `kind`. */
   function optionForDecision(
@@ -123,8 +127,8 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     tuiSelect: false,
     workspaces: true, // OCRC persists per-session directories (see store)
     freeformWorkspace: true, // new sessions take a user-entered directory
-    diff: false,
-    todos: false,
+    diff: true, // working-dir file list accumulated from tool_call diff content
+    todos: true, // TODO list from ACP `plan` updates
     catalog: false, // models come per-session from newSession, not a global catalog
     mcp: false,
     commands: true, // populated from available_commands_update; run via slash-prompt
@@ -145,6 +149,36 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
       if (update.sessionUpdate === 'available_commands_update' && Array.isArray(update.availableCommands)) {
         commands = update.availableCommands.map((c) => ({ name: c.name, description: c.description ?? '' }))
         return
+      }
+      // plan: the agent's TODO list (full replace each update). Served via getTodos;
+      // not a streaming part, so consume it here and stop.
+      if (update.sessionUpdate === 'plan') {
+        const entries = Array.isArray(update.entries) ? update.entries : []
+        plans.set(sessionId, entries.map((e) => ({
+          content: e.content ?? e.text ?? e.title ?? '',
+          status: e.status ?? 'pending',
+        })))
+        return
+      }
+      // tool_call diff content → accumulate per-file edits (served via getDiff).
+      // Still falls through to the normalizer so the tool card streams as usual.
+      if (update.sessionUpdate === 'tool_call' || update.sessionUpdate === 'tool_call_update') {
+        // kimi-code 0.18 ships the TODO list as a tool_call carrying rawInput.todos
+        // (older agents send an ACP `plan` update — handled above). Either → getTodos.
+        const todos = update.rawInput?.todos
+        if (Array.isArray(todos)) {
+          plans.set(sessionId, todos.map((t) => ({
+            content: t.content ?? t.title ?? t.text ?? '',
+            status: t.status ?? 'pending',
+          })))
+        }
+        for (const it of Array.isArray(update.content) ? update.content : []) {
+          if (it && it.type === 'diff' && it.path) {
+            let m = edits.get(sessionId)
+            if (!m) { m = new Map(); edits.set(sessionId, m) }
+            m.set(it.path, { oldText: it.oldText, newText: it.newText })
+          }
+        }
       }
       const ae = normalizer.normalize(sessionId, update)
       if (ae) emit(ae)
@@ -241,6 +275,8 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     const { conn } = await connection()
     if (conn.deleteSession) { try { await conn.deleteSession({ sessionId }) } catch { /* best-effort */ } }
     sessions.delete(sessionId)
+    plans.delete(sessionId)
+    edits.delete(sessionId)
     store?.remove(sessionId)
     normalizer.drop(sessionId)
   }
@@ -253,7 +289,6 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   }
 
   // ── degraded reads (no ACP equivalent; UI gates via capabilities) ───────────
-  const EMPTY = async () => []
   const backend: AgentBackend = {
     id,
     capabilities,
@@ -270,8 +305,11 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
     getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
-    getDiff: EMPTY,
-    getTodos: EMPTY,
+    // Working-dir diff = the set of files the agent edited this session (from
+    // tool_call diff content). The inspector's dir panel lists these by path.
+    getDiff: async (sid: string) => [...(edits.get(sid)?.keys() ?? [])].map((path) => ({ path })),
+    // TODO list from ACP `plan` updates; summarizeTodos consumes {content,status}.
+    getTodos: async (sid: string) => plans.get(sid) ?? [],
     getSessionsStatus: async () => ({}),
     ping: async () => { try { await connection(); return true } catch { return false } },
     getAgents: async (): Promise<AgentInfo[]> => [],

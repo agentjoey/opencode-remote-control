@@ -29,7 +29,7 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: false, todos: false, catalog: false, mcp: false, commands: true })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true })
   })
 
   it('createSession returns the agent sessionId and tracks it', async () => {
@@ -161,6 +161,60 @@ describe('createAcpBackend', () => {
       { name: 'compact', description: 'Compact the context' },
       { name: 'clear', description: '' },
     ])
+  })
+
+  it('captures ACP plan updates into getTodos (full replace per update)', async () => {
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
+    await b.prompt('ses_a', { text: 'hi' })
+    expect(await b.getTodos('ses_a')).toEqual([])
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'plan', entries: [
+      { content: 'Read the file', status: 'completed' },
+      { content: 'Edit it', status: 'in_progress' },
+      { content: 'Run tests', status: 'pending' },
+    ] } })
+    expect(await b.getTodos('ses_a')).toEqual([
+      { content: 'Read the file', status: 'completed' },
+      { content: 'Edit it', status: 'in_progress' },
+      { content: 'Run tests', status: 'pending' },
+    ])
+    // plan replaces wholesale
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'plan', entries: [{ content: 'Done', status: 'completed' }] } })
+    expect(await b.getTodos('ses_a')).toEqual([{ content: 'Done', status: 'completed' }])
+  })
+
+  it('captures kimi-code 0.18 todo tool_call (rawInput.todos) into getTodos', async () => {
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
+    await b.prompt('ses_a', { text: 'hi' })
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'tool_call_update', toolCallId: 'tc_todo', title: 'Updating todo list', rawInput: { todos: [
+      { title: 'Read', status: 'done' },
+      { title: 'Edit', status: 'in_progress' },
+      { title: 'Test', status: 'pending' },
+    ] } } })
+    expect(await b.getTodos('ses_a')).toEqual([
+      { content: 'Read', status: 'done' },
+      { content: 'Edit', status: 'in_progress' },
+      { content: 'Test', status: 'pending' },
+    ])
+  })
+
+  it('accumulates tool_call diff content into getDiff (deduped by path)', async () => {
+    const h = makeHarness({ promptResult: new Promise(() => {}) })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
+    await b.prompt('ses_a', { text: 'hi' })
+    expect(await b.getDiff('ses_a')).toEqual([])
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'tool_call', toolCallId: 'tc_1', title: 'Edit', content: [
+      { type: 'diff', path: '/work/a.ts', oldText: 'x', newText: 'y' },
+    ] } })
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'tool_call_update', toolCallId: 'tc_2', title: 'Write', content: [
+      { type: 'diff', path: '/work/b.ts', oldText: '', newText: 'new' },
+    ] } })
+    // re-editing the same path dedupes (keyed by path)
+    await h.getClient().sessionUpdate({ sessionId: 'ses_a', update: { sessionUpdate: 'tool_call_update', toolCallId: 'tc_1', title: 'Edit', content: [
+      { type: 'diff', path: '/work/a.ts', oldText: 'y', newText: 'z' },
+    ] } })
+    expect(await b.getDiff('ses_a')).toEqual([{ path: '/work/a.ts' }, { path: '/work/b.ts' }])
   })
 
   it('runCommand submits the slash-command as a prompt turn', async () => {

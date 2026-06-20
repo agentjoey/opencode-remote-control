@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.7.2 — 2026-06-20
+
+Headline: **ACP backends surface working-dir diffs and TODO lists** — kimi (and
+any ACP agent) now lights up the inspector's Task panel and changed-files list,
+matching opencode. Plus adaptation to the kimi-cli → kimi-code-cli 0.18 rewrite.
+
+### ACP capabilities (kimi + any future ACP agent, e.g. Claude Code)
+- **TODO / plan list** — the inspector Task panel now populates for ACP agents.
+  Reads both the ACP `plan` update (older kimi-cli / Gemini) and kimi-code 0.18's
+  todo tool call (`rawInput.todos`), so it works across agent versions.
+- **Working-dir diff** — files an ACP agent edits (captured from `tool_call`
+  `diff` content, deduped by path) now show in the inspector's working-dir panel.
+- The `diff`/`todos` capability flags flip to true for ACP backends — entirely
+  backend-side, no frontend change.
+
+### kimi-code-cli 0.18
+- kimi-cli (Python, `KimiCLI/1.47.0`) → kimi-code-cli (Node/TS, `0.18.0`). The
+  `kimi acp` ACP entrypoint is unchanged (no wire changes); the TODO list moved
+  from the ACP `plan` update to a tool call carrying `rawInput.todos` — handled
+  above.
+- Ops: data dir `~/.kimi` → `~/.kimi-code`, OAuth not migrated (re-run `/login`);
+  the launchd host template gains `KIMI_CODE_HOME` + a headless-auth note. See
+  docs/OPS.md → 升级 kimi → kimi-code 0.18.
+- `scripts/acp-field-probe.mjs` — a diagnostic that dumps live ACP `session/update`
+  payloads, for re-confirming field shapes when an agent's CLI changes.
+
 ## v0.7.1 — 2026-06-19
 
 Headline: **ACP sessions are now first-class** — kimi (and any ACP agent) gets

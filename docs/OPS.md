@@ -204,6 +204,36 @@ tail -f ~/.opencode/ocrc-host.log
 两者一起 = 域名可访问；都开机自启，重启电脑后自动恢复。
 （opencode 插件 hub 的 `opencode serve` + TUI 仍是手动管理，跑 Telegram bot。）
 
+### 升级 kimi → kimi-code 0.18（headless 鉴权）
+
+kimi-cli（Python, `KimiCLI/1.47.0`）已重写为 kimi-code-cli（Node/TS, `0.18.0`）。
+`kimi acp` 入口不变，OCRC 代码无需改；但安装位置、数据目录、登录态都变了。
+
+```bash
+# 1. 卸旧(uv 装的) + 装新。curl 安装器会把 binary 放 ~/.kimi-code/bin 且不进 PATH，
+#    旧 ~/.local/bin/kimi 被改名 kimi-legacy → 手动软链上去：
+uv tool uninstall kimi-cli
+npm i -g @moonshot-ai/kimi-code          # Node ≥22.19；或 curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash
+ln -sf ~/.kimi-code/bin/kimi ~/.local/bin/kimi
+which kimi && kimi --version             # 期望 0.18.x
+
+# 2. 迁移 config+session(OAuth 不复制) + 登录一次
+kimi migrate
+kimi                                     # 进 TUI 跑 /login(设备码 OAuth，交互式)
+
+# 3. 重渲染 plist(带 KIMI_CODE_HOME) + 重启 host(PATH 含 ~/.local/bin → 自动用 0.18)
+sed "s#__HOME__#$HOME#g" deploy/com.ocrc.host.plist > ~/Library/LaunchAgents/com.ocrc.host.plist
+launchctl bootout gui/$(id -u)/com.ocrc.host; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ocrc.host.plist
+```
+
+⚠️ **鉴权要点**：`kimi acp` 无 token 直接报 `-32000 authRequired`，且**不读**
+`KIMI_API_KEY`/`ANTHROPIC_API_KEY` 环境变量。headless 三选一：
+- (A) 终端 `/login` 一次，OAuth token 缓存进 `~/.kimi-code`（host 经 `KIMI_CODE_HOME` 复用）；
+- (B) `~/.kimi-code/config.toml` 写静态 `[providers.kimi] api_key`；
+- (C) plist 填 `KIMI_MODEL_*`（唯一读 env 的凭证通道，见 plist 模板注释）。
+
+数据目录 `~/.kimi` → `~/.kimi-code`；旧会话 id 不跨版本 resume（OCRC 已优雅容错）。
+
 ---
 
 ## opencode（手动管理）

@@ -16,7 +16,7 @@ import type { AgentEvent, NormalizedPart } from './event.js'
 /** The subset of ACP `session/update` payloads we consume. */
 export interface AcpUpdate {
   sessionUpdate: string
-  /** message/thought chunk: a single content block. */
+  /** message/thought chunk: a single content block. tool_call content: an array. */
   content?: AcpContentLike
   /** tool_call / tool_call_update. */
   toolCallId?: string
@@ -24,11 +24,23 @@ export interface AcpUpdate {
   status?: string
   /** available_commands_update (not relay-relevant; surfaced via listCommands). */
   availableCommands?: Array<{ name: string; description?: string }>
+  /**
+   * plan: the full TODO list for the turn (replace semantics). Consumed by the
+   * backend (→ getTodos), not the streaming part path. Entry field names vary by
+   * agent, so read defensively (content | text | title).
+   */
+  entries?: Array<{ content?: string; text?: string; title?: string; status?: string; priority?: string }>
+  /**
+   * tool_call rawInput. kimi-code 0.18 dropped the ACP `plan` update and instead
+   * carries the TODO list here (rawInput.todos) on its "update todo list" tool
+   * call. The backend reads it → getTodos (same target as `entries`).
+   */
+  rawInput?: { todos?: Array<{ content?: string; title?: string; text?: string; status?: string }> }
 }
 
 type AcpContentLike =
   | { type?: string; text?: string }
-  | Array<{ type?: string; content?: { type?: string; text?: string } }>
+  | Array<{ type?: string; text?: string; path?: string; oldText?: string; newText?: string; content?: { type?: string; text?: string } }>
 
 function chunkText(content: AcpContentLike | undefined): string {
   if (!content) return ''
