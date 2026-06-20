@@ -21,8 +21,30 @@ import { normalizeOpencodeEvent } from '../core/agent/opencode-normalizer.js'
 import { startGlobalEvents } from '../opencode/global-events.js'
 import type { OcEvent } from '../core/opencode-events.js'
 import { createLogger } from '../utils/logger.js'
+import { readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 const log = createLogger('host-backends')
+
+/**
+ * Discover the working directories kimi has sessions in, by reading its global
+ * session index ($KIMI_CODE_HOME/session_index.jsonl — one {sessionId, workDir,
+ * sessionDir} per line). ACP `session/list` is per-cwd, so this lets OCRC surface
+ * sessions you created in the kimi TUI in directories OCRC never used. Best-effort
+ * + kimi-specific (file absent / other agents → []).
+ */
+function kimiWorkDirs(): string[] {
+  try {
+    const home = process.env.KIMI_CODE_HOME || join(homedir(), '.kimi-code')
+    const dirs = new Set<string>()
+    for (const line of readFileSync(join(home, 'session_index.jsonl'), 'utf8').split('\n')) {
+      const t = line.trim(); if (!t) continue
+      try { const d = JSON.parse(t); if (typeof d.workDir === 'string') dirs.add(d.workDir) } catch { /* skip bad line */ }
+    }
+    return [...dirs]
+  } catch { return [] }
+}
 
 export interface BackendSpec {
   id: string
@@ -103,6 +125,7 @@ export async function buildHostBackends(specs: BackendSpec[], deps: BuildHostBac
         connect: makeAcpConnect(parseAcpCommand(spec.command ?? 'kimi acp')),
         onPermission: deps.onAcpPermission,
         store: deps.store,
+        discoverDirs: kimiWorkDirs,
       })
       backends.push({ id: spec.id, backend })
       log.info(`acp backend ready: ${spec.id} (${spec.command})`)

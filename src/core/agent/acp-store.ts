@@ -29,6 +29,9 @@ interface StoredSession {
 
 interface Persisted {
   sessions: Record<string, StoredSession>
+  /** Session ids the user deleted. ACP agents (kimi) have no session/delete, so we
+   *  hide these from session/list re-discovery instead of really deleting them. */
+  tombstones?: string[]
 }
 
 export interface AcpStore {
@@ -40,6 +43,10 @@ export interface AcpStore {
   create(id: string, title?: string, directory?: string): void
   rename(id: string, title: string): void
   remove(id: string): void
+  /** Mark a session deleted: remove it AND record a tombstone so session/list
+   *  re-discovery won't resurrect it (kimi exposes no session/delete). */
+  tombstone(id: string): void
+  isTombstoned(id: string): boolean
   getCards(id: string): StructuredCard[]
   /** Append/replace a finalized card (dedupe by card.id) and bump updatedAt. */
   recordCard(id: string, card: StructuredCard, now: number): void
@@ -103,6 +110,13 @@ export function createAcpStore(path: string): AcpStore {
     remove: (id) => {
       if (cache.sessions[id]) { delete cache.sessions[id]; void persist() }
     },
+    tombstone: (id) => {
+      cache.tombstones ??= []
+      if (!cache.tombstones.includes(id)) cache.tombstones.push(id)
+      delete cache.sessions[id]
+      void persist()
+    },
+    isTombstoned: (id) => cache.tombstones?.includes(id) ?? false,
     getCards: (id) => cache.sessions[id]?.cards ?? [],
     recordCard: (id, card, now) => {
       const s = cache.sessions[id]

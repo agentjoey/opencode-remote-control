@@ -39,7 +39,7 @@ export interface AcpConnection {
   loadSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
   /** Re-establish a previously-created session (kimi persists these across connections). */
   resumeSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
-  listSessions?(p?: unknown): Promise<{ sessions?: Array<{ sessionId: string; title?: string }> }>
+  listSessions?(p?: { cwd?: string }): Promise<{ sessions?: Array<{ sessionId: string; title?: string; cwd?: string; updatedAt?: string }>; nextCursor?: string | null }>
   deleteSession?(p: { sessionId: string }): Promise<unknown>
   authenticate(p: { methodId: string }): Promise<unknown>
   prompt(p: { sessionId: string; prompt: Array<{ type: 'text'; text: string }> }): Promise<{ stopReason: string }>
@@ -88,6 +88,12 @@ export interface AcpBackendDeps {
    * in-memory only (lost on restart).
    */
   store?: AcpStore
+  /**
+   * Optional: extra working directories to query via `session/list`, so OCRC can
+   * discover agent-native sessions (e.g. kimi TUI sessions) created in directories
+   * OCRC never used itself. Best-effort + agent-specific — the host wires it.
+   */
+  discoverDirs?: () => string[]
 }
 
 export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
@@ -96,6 +102,12 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   const listeners = new Set<(e: AgentEvent) => void>()
   /** Sessions established in THIS process (so we know when to resume from the store). */
   const sessions = new Set<string>()
+  /** cwd of kimi-owned sessions OCRC didn't create — discovered via session/list
+   *  (e.g. sessions you started in the kimi TUI). Lets us resume/open them. */
+  const nativeDirs = new Map<string, string>()
+  /** Session ids the user deleted — kimi has no session/delete, so we filter these
+   *  out of session/list re-discovery (also persisted in the store). */
+  const tombstones = new Set<string>()
   /** Pending permission requests keyed by `${sessionId}:${toolCallId}`. */
   const pendingPerms = new Map<string, {
     resolve: (optionId: string | null) => void
@@ -211,15 +223,19 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     return connP
   }
 
+  /** Working dir of a session: OCRC store, else native (TUI) cwd, else host default. */
+  function dirOf(sid: string): string { return store?.directoryOf(sid) || nativeDirs.get(sid) || cwd }
+
   async function ensureSession(sessionId: string, conn: AcpConnection): Promise<void> {
     if (sessions.has(sessionId)) return
-    // Persisted session from a prior process (host restart) → resume it so the
-    // agent re-establishes context, then we can prompt it again.
+    // Persisted/native session (host restart, or created in the kimi TUI) → resume
+    // it in ITS OWN directory so the agent re-establishes context, then prompt it.
+    const sdir = dirOf(sessionId)
     if (conn.resumeSession) {
-      try { await conn.resumeSession({ sessionId, cwd, mcpServers: [] }); sessions.add(sessionId); return } catch (err) { log.warn(`resumeSession failed: ${String(err)}`) }
+      try { await conn.resumeSession({ sessionId, cwd: sdir, mcpServers: [] }); sessions.add(sessionId); return } catch (err) { log.warn(`resumeSession failed: ${String(err)}`) }
     }
     if (conn.loadSession) {
-      try { await conn.loadSession({ sessionId, cwd, mcpServers: [] }); sessions.add(sessionId) } catch { /* not loadable */ }
+      try { await conn.loadSession({ sessionId, cwd: sdir, mcpServers: [] }); sessions.add(sessionId) } catch { /* not loadable */ }
     }
   }
 
@@ -264,20 +280,53 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     return knownIds().map((id) => ({ id }))
   }
 
-  async function listSessionSummaries(): Promise<SessionSummary[]> {
-    if (store) {
-      return store.list().map((s) => ({ id: s.id, title: s.title, lastActiveAt: s.updatedAt, unread: false, directory: s.directory || cwd }))
+  /** Enumerate kimi's OWN sessions (incl. TUI-created) via session/list, which is
+   *  per-cwd — so query every directory OCRC knows about, plus the host default. */
+  async function listNativeSummaries(): Promise<SessionSummary[]> {
+    let conn: AcpConnection
+    try { conn = (await connection()).conn } catch { return [] }
+    if (!conn.listSessions) return []
+    const dirs = new Set<string>([cwd])
+    for (const d of store?.listDirectories() ?? []) dirs.add(d.directory)
+    for (const sid of sessions) { const d = store?.directoryOf(sid); if (d) dirs.add(d) }
+    for (const d of deps.discoverDirs?.() ?? []) dirs.add(d) // agent-native dirs (e.g. kimi TUI)
+    const out: SessionSummary[] = []
+    for (const dir of dirs) {
+      try {
+        const res = await conn.listSessions({ cwd: dir })
+        for (const s of res?.sessions ?? []) {
+          if (tombstones.has(s.sessionId) || store?.isTombstoned(s.sessionId)) continue // user-deleted
+          const d = s.cwd || dir
+          nativeDirs.set(s.sessionId, d)
+          out.push({ id: s.sessionId, title: s.title ?? '', lastActiveAt: s.updatedAt ? Date.parse(s.updatedAt) : 0, unread: false, directory: d })
+        }
+      } catch { /* this dir isn't listable — skip */ }
     }
-    return [...sessions].map((id) => ({ id, title: '', lastActiveAt: 0, unread: false, directory: cwd }))
+    return out
+  }
+
+  async function listSessionSummaries(): Promise<SessionSummary[]> {
+    const storeRows: SessionSummary[] = store
+      ? store.list().map((s) => ({ id: s.id, title: s.title, lastActiveAt: s.updatedAt, unread: false, directory: s.directory || cwd }))
+      : [...sessions].map((id) => ({ id, title: '', lastActiveAt: 0, unread: false, directory: cwd }))
+    const native = await listNativeSummaries().catch(() => [])
+    // Merge: native (kimi-owned, incl. TUI sessions) first, OCRC store overrides
+    // (richer title/dir for sessions OCRC created). Dedup by id.
+    const byId = new Map<string, SessionSummary>()
+    for (const n of native) byId.set(n.id, n)
+    for (const s of storeRows) byId.set(s.id, s)
+    return [...byId.values()]
   }
 
   async function deleteSession(sessionId: string): Promise<void> {
     const { conn } = await connection()
     if (conn.deleteSession) { try { await conn.deleteSession({ sessionId }) } catch { /* best-effort */ } }
     sessions.delete(sessionId)
+    nativeDirs.delete(sessionId)
     plans.delete(sessionId)
     edits.delete(sessionId)
-    store?.remove(sessionId)
+    tombstones.add(sessionId) // kimi has no session/delete → hide from re-discovery
+    store?.tombstone(sessionId)
     normalizer.drop(sessionId)
   }
 
@@ -294,14 +343,14 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     capabilities,
     prompt,
     abort,
-    hasSession: async (sid: string) => sessions.has(sid) || (store?.has(sid) ?? false),
+    hasSession: async (sid: string) => sessions.has(sid) || (store?.has(sid) ?? false) || nativeDirs.has(sid),
     listSessions,
     listSessionSummaries,
     createSession,
     deleteSession,
     renameSession: async (sid: string, title: string) => { store?.rename(sid, title) },
     getSessionMeta: async (): Promise<SessionMeta> => ({}),
-    getContext: async (sid: string): Promise<SessionContext> => ({ directory: store?.directoryOf(sid) || cwd }),
+    getContext: async (sid: string): Promise<SessionContext> => ({ directory: dirOf(sid) }),
     // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
     getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
@@ -325,6 +374,9 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
         dirs.set(directory, { directory, name, sessionCount, lastActiveAt })
       }
       for (const d of store?.listDirectories() ?? []) add(d.directory, d.sessionCount, d.lastActiveAt)
+      // agent-native workdirs (e.g. kimi TUI folders) so the picker offers them all
+      for (const d of deps.discoverDirs?.() ?? []) if (!dirs.has(d)) add(d, 0, 0)
+      for (const d of nativeDirs.values()) if (!dirs.has(d)) add(d, 0, 0)
       if (!dirs.has(cwd)) add(cwd, 0, 0)
       return [...dirs.values()]
     },

@@ -9,7 +9,7 @@ function makeHarness(opts: { promptResult?: Promise<{ stopReason: string }> } = 
   const cancelCalls: string[] = []
   const conn: AcpConnection = {
     newSession: vi.fn(async () => ({ sessionId: 'ses_new' })),
-    listSessions: vi.fn(async () => ({ sessions: [{ sessionId: 'ses_1', title: 'One' }] })),
+    listSessions: vi.fn(async () => ({ sessions: [] })),
     deleteSession: vi.fn(async () => ({})),
     authenticate: vi.fn(async () => ({})),
     prompt: vi.fn(async (p: { sessionId: string; prompt: Array<{ text: string }> }) => {
@@ -252,6 +252,48 @@ describe('createAcpBackend', () => {
     expect(await b2.hasSession(id)).toBe(true)
     const hist = await b2.getHistory(id)
     expect(hist.map((c: any) => c.kind)).toEqual(['user', 'assistant'])
+  })
+
+  it('surfaces kimi-native sessions (e.g. TUI-created) via session/list', async () => {
+    const h = makeHarness()
+    ;(h.conn as any).listSessions = vi.fn(async (p: { cwd?: string }) =>
+      p?.cwd === '/work/proj'
+        ? { sessions: [{ sessionId: 'ses_tui', title: 'TUI chat', cwd: '/work/proj', updatedAt: '2026-06-20T10:00:00Z' }] }
+        : { sessions: [] })
+    const { createAcpStore } = await import('../../../src/core/agent/acp-store')
+    const store = createAcpStore(`/tmp/acp-native-${Math.floor(performance.now())}.json`)
+    store.create('ses_own', 'Mine', '/work/proj')
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/home/me', connect: h.connect, store })
+    const ids = (await b.listSessionSummaries()).map((s) => s.id).sort()
+    expect(ids).toContain('ses_tui')   // discovered from session/list in /work/proj
+    expect(ids).toContain('ses_own')   // from the OCRC store
+    // native session is openable: hasSession true + its cwd resolved for resume
+    expect(await b.hasSession('ses_tui')).toBe(true)
+    expect((await b.getContext('ses_tui')).directory).toBe('/work/proj')
+  })
+
+  it('tombstones deleted sessions so session/list re-discovery cannot resurrect them', async () => {
+    const h = makeHarness()
+    ;(h.conn as any).listSessions = vi.fn(async (p: { cwd?: string }) =>
+      p?.cwd === '/work'
+        ? { sessions: [{ sessionId: 'ses_x', title: 'X', cwd: '/work', updatedAt: '2026-06-20T00:00:00Z' }] }
+        : { sessions: [] })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/c', connect: h.connect, discoverDirs: () => ['/work'] })
+    expect((await b.listSessionSummaries()).map((s) => s.id)).toContain('ses_x')
+    await b.deleteSession('ses_x') // kimi keeps it (no session/delete); OCRC tombstones it
+    expect((await b.listSessionSummaries()).map((s) => s.id)).not.toContain('ses_x')
+  })
+
+  it('discoverDirs surfaces native sessions in dirs OCRC never used (TUI anywhere)', async () => {
+    const h = makeHarness()
+    ;(h.conn as any).listSessions = vi.fn(async (p: { cwd?: string }) =>
+      p?.cwd === '/home/me/secret'
+        ? { sessions: [{ sessionId: 'ses_far', title: 'Far', cwd: '/home/me/secret', updatedAt: '2026-06-20T09:00:00Z' }] }
+        : { sessions: [] })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/home/me', connect: h.connect, discoverDirs: () => ['/home/me/secret'] })
+    const ids = (await b.listSessionSummaries()).map((s) => s.id)
+    expect(ids).toContain('ses_far')
+    expect((await b.getContext('ses_far')).directory).toBe('/home/me/secret')
   })
 
   it('persists per-session directory; listWorkspaces derives dirs (+ cwd default)', async () => {

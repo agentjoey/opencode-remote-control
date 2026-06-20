@@ -1,32 +1,36 @@
 <!-- src/lib/components/WorkspaceSwitcher.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte'
   import { goto } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
   import { sessionList } from '$lib/stores/sessions.js'
-  import { canActive } from '$lib/stores/capabilities.js'
+  import { canActive, backends } from '$lib/stores/capabilities.js'
 
   let creating = false
   let error: string | null = null
   let dirInput = '' // freeform: the directory a new ACP session runs in
+  let loadedKey = ''
 
   $: hasWorkspaces = $canActive('workspaces')
   // ACP agents take an arbitrary, user-entered directory; opencode picks from
   // enumerated projects.
   $: freeform = $canActive('freeformWorkspace')
+  // (Re)load workspaces once capabilities are known AND whenever the active
+  // backend changes — so switching to kimi *after* mount still seeds the
+  // directory and enables the "+". Keyed → loads once per (backend, hasWorkspaces).
+  $: key = `${$backends?.activeId ?? 'single'}:${hasWorkspaces ? 1 : 0}`
+  $: if (hasWorkspaces && key !== loadedKey) { loadedKey = key; void loadWorkspaces() }
 
-  onMount(async () => {
-    if (!hasWorkspaces) return
+  async function loadWorkspaces() {
     try {
       workspaces.set(await api.workspaces())
-      // Seed the freeform input with the most-recent known directory (or the
-      // host default), so a first session is one click away.
-      if (freeform && !dirInput) dirInput = $workspaces[0]?.directory ?? ''
+      // Seed the freeform input with a known directory (or host default) so a new
+      // ACP session is one click away — the "+" is disabled while the input is empty.
+      if (freeform) dirInput = $workspaces[0]?.directory ?? dirInput
     } catch (e) {
       error = (e as Error).message
     }
-  })
+  }
 
   function onSelect(e: Event) {
     const value = (e.currentTarget as HTMLSelectElement).value
@@ -48,7 +52,9 @@
       creating = false
     }
   }
-  const newInWorkspace = () => create(($activeWorkspace as string) ?? '')
+  // Default to the selected workspace, else the most-recent one — so "+" works
+  // without forcing an explicit pick.
+  const newInWorkspace = () => create(($activeWorkspace as string) || $workspaces[0]?.directory || '')
   const newInDir = () => create(dirInput)
 </script>
 
@@ -76,7 +82,7 @@
           <option value={w.directory}>{w.name} ({w.sessionCount})</option>
         {/each}
       </select>
-      <button class="new" title="New session in workspace" disabled={!$activeWorkspace || creating} on:click={newInWorkspace}>
+      <button class="new" title="New session in workspace" disabled={creating || !($activeWorkspace || $workspaces[0]?.directory)} on:click={newInWorkspace}>
         {creating ? '…' : '➕'}
       </button>
     {:else}
