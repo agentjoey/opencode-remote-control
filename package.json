@@ -47,7 +47,7 @@
     "@agentclientprotocol/sdk": "^0.26.0",
     "@hono/node-server": "^2.0.2",
     "@opencode-ai/plugin": "^1.17.1",
-    "@opencode-ai/sdk": "^1.17.1",
+    "@opencode-ai/sdk": "^1.17.9",
     "diff": "^7.0.0",
     "dotenv": "^16.4.5",
     "hono": "^4.12.19",
