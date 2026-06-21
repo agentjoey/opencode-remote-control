@@ -61,7 +61,7 @@ export const api = {
   getOverrides: () => jsonGet<{ agent: string | null; model: { providerID: string; modelID: string } | null }>('/api/overrides'),
   setOverrides: (body: { agent?: string | null; model?: { providerID: string; modelID: string } | null }) =>
     jsonPost<{ ok: boolean }>('/api/overrides', body),
-  sendMessage: (body: { sessionId?: string; text: string; clientId?: string }) => jsonPost<{ messageId: string }>('/api/message', body),
+  sendMessage: (body: { sessionId?: string; text: string; clientId?: string; images?: Array<{ data: string; mimeType: string }> }) => jsonPost<{ messageId: string }>('/api/message', body),
   abort: (sessionId: string) => jsonPost<{ ok: boolean }>('/api/abort', { sessionId }),
   approve: (sessionId: string, requestId: string, decision: 'once' | 'always' | 'reject') =>
     jsonPost<{ ok: boolean }>('/api/approval', { sessionId, requestId, decision }),
