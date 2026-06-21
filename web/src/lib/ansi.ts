@@ -11,7 +11,9 @@ export function ansiToHtml(raw: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-  s = s.replace(/\x1b\[[0-9;]*[A-Za-z]/g, (m) => (m.endsWith('m') ? m : ''))
+  s = s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, (m) => (m.endsWith('m') ? m : ''))
+    .replace(/\x1b\][^\x07]*\x07/g, '')
+    .replace(/\x1b\][^\x1b]*\x1b\\/g, '')
 
   let open = 0
   const out: string[] = []
@@ -46,5 +48,7 @@ export function ansiToHtml(raw: string): string {
 }
 
 export function stripAnsi(raw: string): string {
-  return raw.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+  return raw.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
+    .replace(/\x1b\][^\x07]*\x07/g, '')
+    .replace(/\x1b\][^\x1b]*\x1b\\/g, '')
 }
