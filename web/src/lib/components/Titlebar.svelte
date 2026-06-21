@@ -1,10 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
-  import { get } from 'svelte/store'
   import { sessionList } from '$lib/stores/sessions.js'
+  import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
   import { connection, latency } from '$lib/stores/connection.js'
-  import { backends, capabilities, setActiveBackend } from '$lib/stores/capabilities.js'
+  import { api } from '$lib/api/client.js'
 
   export let email = ''
   export let onPalette: () => void
@@ -18,22 +17,23 @@
   $: userLabel = email || 'you@local'
   $: userInitial = userLabel.charAt(0).toUpperCase()
 
-  // Switching the backend sets where new sessions go AND moves you to that
-  // backend: open its most-recent session, or start a fresh one if none exists.
-  async function switchBackend(id: string) {
-    await setActiveBackend(id)
-    const existing = get(sessionList).find((s) => s.backendId === id)
-    goto(existing ? `/${existing.id}/` : '/')
+  let creating = false
+  async function newSession() {
+    if (creating) return
+    const directory = ($activeWorkspace as string | null) || $workspaces[0]?.directory || ''
+    creating = true
+    try {
+      const res = await api.createSession({ directory })
+      sessionList.set(await api.sessions())
+      workspaces.set(await api.workspaces())
+      goto(`/${res.id}/`)
+    } catch (e) {
+      alert(`创建会话失败：${(e as Error).message}`)
+    } finally {
+      creating = false
+    }
   }
 
-  $: backendId = $backends?.activeId ?? $capabilities?.id ?? 'opencode'
-  $: hasMultiBackend = ($backends?.backends.length ?? 0) > 1
-
-  function statusColor(status: string): string {
-    if (status === 'connected') return 'var(--ok)'
-    if (status === 'reconnecting') return 'var(--warn)'
-    return 'var(--err)'
-  }
   function statusText(status: string): string {
     if (status === 'connected') return 'live'
     if (status === 'reconnecting') return 'reconnecting'
@@ -55,29 +55,11 @@
     <span class="wordmark">OCRC</span>
   </div>
 
-  <!-- Backend selector chip -->
-  {#if hasMultiBackend}
-    <div class="backend-chip">
-      <span class="backend-swatch" aria-hidden="true"></span>
-      <span class="backend-name mono">{backendId}</span>
-      <span class="backend-caret" aria-hidden="true">▾</span>
-      <select
-        class="backend-select mono"
-        title="Active backend for new sessions"
-        value={backendId}
-        on:change={(e) => switchBackend((e.currentTarget as HTMLSelectElement).value)}
-      >
-        {#each $backends!.backends as b (b.id)}
-          <option value={b.id}>{b.id}</option>
-        {/each}
-      </select>
-    </div>
-  {:else}
-    <span class="backend-chip" title="Backend: {backendId}">
-      <span class="backend-swatch" aria-hidden="true"></span>
-      <span class="backend-name mono">{backendId}</span>
-    </span>
-  {/if}
+  <!-- New session button -->
+  <button class="new-session" on:click={newSession} disabled={creating} title="Create a new session">
+    <span class="new-icon" aria-hidden="true">+</span>
+    <span class="new-label">New</span>
+  </button>
 
   <!-- Command palette trigger -->
   <button class="palette-trigger" on:click={onPalette} title="Search sessions & commands (⌘K)">
@@ -165,41 +147,25 @@
     font-size: 13px;
   }
 
-  .backend-chip {
-    position: relative;
+  .new-session {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    color: var(--text-2);
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
-    flex-shrink: 0;
-  }
-  .backend-swatch {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
+    gap: 5px;
     background: var(--accent);
-    flex-shrink: 0;
-  }
-  .backend-name {
-    font-size: 11px;
-    text-transform: lowercase;
-    letter-spacing: .02em;
-  }
-  .backend-caret {
-    font-size: 9px;
-    color: var(--text-3);
-    margin-left: 2px;
-  }
-  .backend-select {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
+    color: var(--accent-ink);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 5px 11px;
+    font-size: 12px;
+    font-weight: 650;
     cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity .12s ease, transform .12s ease;
   }
+  .new-session:hover:not(:disabled) { opacity: .9; }
+  .new-session:disabled { opacity: .5; cursor: default; }
+  .new-icon { font-size: 14px; line-height: 1; }
+  .new-label { white-space: nowrap; }
 
   .palette-trigger {
     display: flex;
@@ -325,6 +291,7 @@
 
   @media (max-width: 820px) {
     .palette-trigger, .user-email { display: none; }
+    .new-label { display: none; }
     .iconbtn {
       display: inline-flex;
       align-items: center;

@@ -6,12 +6,11 @@
   import { sessionList } from '$lib/stores/sessions.js'
   import { filterSessions } from '$lib/nav/filterSessions.js'
   import { api } from '$lib/api/client.js'
-  import { can, currentBackendId, backendName } from '$lib/stores/capabilities.js'
+  import { can, currentBackendId, backendName, ACCENTS, agentAccent, setAgentAccent } from '$lib/stores/capabilities.js'
 
   export let open = false
 
   const dispatch = createEventDispatcher<{ close: void }>()
-  const ACCENTS = ['emerald', 'azure', 'amber', 'violet']
 
   let query = ''
   let active = 0
@@ -109,11 +108,10 @@
   }
 
   function cycleAccent() {
-    const root = document.documentElement
-    const current = root.getAttribute('data-accent') || 'emerald'
+    const id = $currentBackendId ?? 'opencode'
+    const current = agentAccent(id)
     const next = ACCENTS[(ACCENTS.indexOf(current) + 1) % ACCENTS.length]
-    root.setAttribute('data-accent', next)
-    try { localStorage.setItem('ocrc-accent', next) } catch { /* ignore */ }
+    setAgentAccent(id, next)
   }
 
   async function runCommand(name: string) {

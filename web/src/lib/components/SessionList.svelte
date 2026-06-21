@@ -3,7 +3,6 @@
   import { sessionList, feeds } from '../stores/sessions.js'
   import { pinnedSessions } from '../stores/pins.js'
   import { activeWorkspace } from '../stores/workspaces.js'
-  import { backends } from '../stores/capabilities.js'
   import { filterByWorkspace } from '../nav/workspaceFilter.js'
   import { connection } from '../stores/connection.js'
   import { api } from '../api/client.js'
@@ -13,6 +12,9 @@
   // Extension passes onSelect (and no <a href> navigation happens).
   export let activeId: string | undefined = undefined
   export let onSelect: ((id: string) => void) | undefined = undefined
+  // v2: the list shows only the selected agent's sessions.
+  export let agentId: string | undefined = undefined
+  export let agentName: string | undefined = undefined
 
   const ACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000
   function isOnline(lastActiveAt: number, conn: string): boolean {
@@ -139,11 +141,12 @@
     }
   }
 
-  // With multiple backends, the session list shows only the SELECTED backend's sessions.
-  $: activeBackendId = $backends && $backends.backends.length > 1 ? $backends.activeId : null
-  $: byBackend = activeBackendId ? $sessionList.filter((s) => s.backendId === activeBackendId) : $sessionList
+  // The session list shows only the selected agent's sessions (fallback for legacy sessions with no backendId).
+  $: byAgent = agentId
+    ? $sessionList.filter((s) => s.backendId === agentId || (!s.backendId && agentId === 'opencode'))
+    : $sessionList
   // Filter to the active workspace, then sort most-recent first and split pinned / recent.
-  $: visible = filterByWorkspace(byBackend, $activeWorkspace)
+  $: visible = filterByWorkspace(byAgent, $activeWorkspace)
   $: byRecent = [...visible].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
   $: pinned = byRecent.filter((s) => $pinnedSessions.includes(s.id))
   $: recent = byRecent.filter((s) => !$pinnedSessions.includes(s.id))
@@ -233,7 +236,7 @@
     {/if}
   {/each}
   {#if visible.length === 0}
-    <div class="empty mono">No sessions</div>
+    <div class="empty mono">no sessions on {agentName ?? 'this agent'} yet</div>
   {/if}
 </div>
 

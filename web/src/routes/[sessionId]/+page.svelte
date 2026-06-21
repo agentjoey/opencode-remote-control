@@ -2,6 +2,7 @@
   import { page } from '$app/stores'
   import { tick, onMount, onDestroy } from 'svelte'
   import { feeds, cardsOf, sessionList } from '$lib/stores/sessions.js'
+  import { leftPanelOpen } from '$lib/stores/ui.js'
   import { api } from '$lib/api/client.js'
   import Card from '$lib/components/Card.svelte'
   import Composer from '$lib/components/Composer.svelte'
@@ -75,6 +76,11 @@
 <div class="chat" bind:this={scrollEl} on:scroll={onChatScroll}>
   <div class="sub-header">
     <div class="left">
+      {#if !$leftPanelOpen}
+        <button class="expand" title="Expand left panel" aria-label="Expand left panel" on:click={() => leftPanelOpen.set(true)}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      {/if}
       <span class="title">{title}</span>
       {#if branch}<span class="branch mono">{branch}</span>{/if}
     </div>
@@ -137,6 +143,24 @@
     align-items: center;
     gap: 10px;
     min-width: 0;
+  }
+  .expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .expand:hover { color: var(--text); border-color: var(--accent); background: var(--accent-2); }
+  @media (max-width: 820px) {
+    .expand { display: none; }
   }
   .sub-header .title {
     font-size: 14px;

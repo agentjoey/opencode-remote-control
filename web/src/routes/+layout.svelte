@@ -7,12 +7,13 @@
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
-  import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId } from '$lib/stores/capabilities.js'
+  import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId, applyAgentTheme } from '$lib/stores/capabilities.js'
   import { paletteOpen } from '$lib/stores/palette.js'
+  import { leftPanelOpen } from '$lib/stores/ui.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import Titlebar from '$lib/components/Titlebar.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
-  import SessionRail from '$lib/components/SessionRail.svelte'
+  import AgentPanel from '$lib/components/AgentPanel.svelte'
   import Inspector from '$lib/components/Inspector.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   import PairGate from '$lib/components/PairGate.svelte'
@@ -105,7 +106,7 @@
     const onBeforeInstall = (e: Event) => { e.preventDefault(); installEvent = e }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
 
-    // Track the mobile breakpoint so SessionRail can render in drawer mode
+    // Track the mobile breakpoint so AgentPanel can render in drawer mode
     // (panel-only, no spine toggle).
     const mq = window.matchMedia('(max-width: 820px)')
     isMobile = mq.matches
@@ -174,6 +175,11 @@
     }
   })
 
+  // Keep the chrome accent in sync with the active agent.
+  $: if ($backends && typeof document !== 'undefined') {
+    applyAgentTheme($backends.activeId)
+  }
+
   // afterNavigate runs after each client-side navigation completes,
   // so it never collides with the navigation's own page-store updates
   // (which used to cause an effect-update loop in the previous design).
@@ -201,8 +207,8 @@
     {#if drawerLeft || drawerRight}
       <button class="backdrop" aria-label="Close" on:click={closeDrawers}></button>
     {/if}
-    <div class="rail-wrap" class:open={drawerLeft}>
-      <SessionRail activeId={$page.params.sessionId} drawer={isMobile} />
+    <div class="rail-wrap" class:collapsed={!$leftPanelOpen && !isMobile} class:open={drawerLeft}>
+      <AgentPanel activeId={$page.params.sessionId} drawer={isMobile} />
     </div>
     <main><slot /></main>
     <div class="inspector-wrap" class:open={drawerRight}>
@@ -225,9 +231,16 @@
   .app { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
   .body { display: flex; flex: 1; overflow: hidden; position: relative; }
   main { position: relative; flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
-  /* Drawer wrappers are transparent on desktop (SessionRail/Inspector are the
-     flex children directly), and become off-canvas drawers on mobile. */
-  .rail-wrap, .inspector-wrap { display: contents; }
+  /* Drawer wrappers hold the left panel on desktop and become off-canvas drawers on mobile. */
+  .rail-wrap {
+    display: block;
+    width: 250px;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width .22s ease;
+  }
+  .rail-wrap.collapsed { width: 0; }
+  .inspector-wrap { display: contents; }
   .backdrop { display: none; }
 
   @media (max-width: 820px) {
@@ -239,11 +252,12 @@
       box-shadow: 0 0 40px rgba(0,0,0,.55);
     }
     .rail-wrap { left: 0; width: min(268px, 84vw); transform: translateX(-100%); }
+    .rail-wrap.collapsed { width: min(268px, 84vw); }
     .inspector-wrap { right: 0; width: min(82vw, 290px); transform: translateX(100%); }
     .rail-wrap.open, .inspector-wrap.open { transform: translateX(0); }
     /* Inner components fill the drawer so its width is exactly the wrapper's,
        leaving a reliable backdrop strip to tap. */
-    .rail-wrap :global(.rail), .rail-wrap :global(.panel) { width: 100%; }
+    .rail-wrap :global(.agent-panel), .rail-wrap :global(.panel) { width: 100%; }
     .inspector-wrap :global(.inspector) { width: 100%; }
     .backdrop {
       display: block; position: absolute; inset: 0; z-index: 20;

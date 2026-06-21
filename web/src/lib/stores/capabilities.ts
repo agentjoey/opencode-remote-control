@@ -4,6 +4,12 @@ import { sessionList } from './sessions.js'
 
 export interface CapabilitiesSnapshot {
   id: string
+  /** Friendly agent name shown in the console chrome. */
+  name?: string
+  /** Host / instance label (e.g. "mac-studio"). */
+  host?: string
+  /** Connection status reported by the backend. */
+  status?: string
   capabilities: Record<string, boolean>
 }
 
@@ -79,6 +85,76 @@ export const backendName = derived(currentBackendId, ($id) => {
   return id.includes(':') ? id.split(':').pop()! : id
 })
 
+/** Accent themes available for per-agent chrome theming. */
+export const ACCENTS = ['emerald', 'azure', 'amber', 'violet'] as const
+export type Accent = (typeof ACCENTS)[number]
+
+const AGENT_ACCENT_KEY = 'ocrc.agentAccents'
+const DEFAULT_AGENT_ACCENT: Record<string, Accent> = {
+  opencode: 'emerald',
+  'acp:kimi': 'azure',
+}
+
+function hashString(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) >>> 0
+  }
+  return h
+}
+
+/** Default accent for an agent when the user has not overridden it. */
+export function defaultAccentForAgent(id: string): Accent {
+  if (DEFAULT_AGENT_ACCENT[id]) return DEFAULT_AGENT_ACCENT[id]
+  return ACCENTS[hashString(id) % ACCENTS.length]
+}
+
+function loadAgentAccentOverrides(): Record<string, Accent> {
+  if (typeof localStorage === 'undefined') return {}
+  try {
+    const raw = localStorage.getItem(AGENT_ACCENT_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return typeof parsed === 'object' && parsed !== null ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function persistAgentAccentOverrides(map: Record<string, Accent>): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(AGENT_ACCENT_KEY, JSON.stringify(map))
+  } catch {
+    /* ignore quota / privacy mode */
+  }
+}
+
+/** Resolved theme accent for a given agent (override or default). */
+export function agentAccent(id: string): Accent {
+  const overrides = loadAgentAccentOverrides()
+  return ACCENTS.includes(overrides[id] as Accent) ? overrides[id] as Accent : defaultAccentForAgent(id)
+}
+
+/** Override (or revert to default via `null`) an agent's chrome accent. */
+export function setAgentAccent(agentId: string, accent: Accent | null): void {
+  const overrides = loadAgentAccentOverrides()
+  if (accent && ACCENTS.includes(accent)) {
+    overrides[agentId] = accent
+  } else {
+    delete overrides[agentId]
+  }
+  persistAgentAccentOverrides(overrides)
+  if (get(backends)?.activeId === agentId) {
+    applyAgentTheme(agentId)
+  }
+}
+
+/** Apply an agent's resolved accent to the document root. */
+export function applyAgentTheme(agentId: string): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-accent', agentAccent(agentId))
+}
+
 export async function loadCapabilities(): Promise<void> {
   try {
     capabilities.set(await api.capabilities())
@@ -105,4 +181,5 @@ export async function setActiveBackend(backendId: string): Promise<void> {
     console.warn('[backends] setActive failed', err)
   }
   await loadBackends()
+  applyAgentTheme(backendId)
 }

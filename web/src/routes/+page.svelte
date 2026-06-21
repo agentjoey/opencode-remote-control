@@ -1,14 +1,20 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { sessionList } from '$lib/stores/sessions.js'
-  import { backendName } from '$lib/stores/capabilities.js'
+  import { backends, backendName } from '$lib/stores/capabilities.js'
 
-  // Auto-select the most recent session once the list loads (the layout fetches
-  // it async). replaceState so Back doesn't return to this empty route.
+  // Auto-select the most recent session of the active agent once the list loads.
+  // replaceState so Back doesn't return to this empty route.
   let redirected = false
-  $: if (!redirected && $sessionList.length > 0) {
+  $: activeBackendId = $backends?.activeId
+  $: agentSessions = activeBackendId
+    ? $sessionList
+        .filter((s) => s.backendId === activeBackendId || (!s.backendId && activeBackendId === 'opencode'))
+        .sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+    : [...$sessionList].sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+  $: if (!redirected && agentSessions.length > 0) {
     redirected = true
-    goto(`/${$sessionList[0].id}/`, { replaceState: true })
+    goto(`/${agentSessions[0].id}/`, { replaceState: true })
   }
 </script>
 
