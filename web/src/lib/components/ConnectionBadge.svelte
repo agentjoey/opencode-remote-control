@@ -25,7 +25,7 @@
     flex-shrink: 0;
   }
   .badge.connected { color: var(--text-2); }
-  .badge.connected .dot { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  .badge.connected .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
   .badge.reconnecting .dot { background: var(--warn); }
   .badge.offline .dot { background: var(--err); }
 </style>
