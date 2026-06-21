@@ -56,7 +56,7 @@ export interface AcpConnection {
   listSessions?(p?: { cwd?: string }): Promise<{ sessions?: Array<{ sessionId: string; title?: string; cwd?: string; updatedAt?: string }>; nextCursor?: string | null }>
   deleteSession?(p: { sessionId: string }): Promise<unknown>
   authenticate(p: { methodId: string }): Promise<unknown>
-  prompt(p: { sessionId: string; prompt: Array<{ type: 'text'; text: string }> }): Promise<{ stopReason: string }>
+  prompt(p: { sessionId: string; prompt: Array<{ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }> }): Promise<{ stopReason: string }>
   cancel(p: { sessionId: string }): Promise<unknown>
 }
 
@@ -203,6 +203,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     mcp: false,
     commands: true, // populated from available_commands_update; run via slash-prompt
     sessionControls: true, // mode (session/set_mode) + model (session/set_config_option)
+    imageInput: true, // kimi advertises promptCapabilities.image (verified live)
   }
 
   // Latest slash-commands the agent advertised (available_commands_update).
@@ -338,7 +339,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     await ensureSession(sessionId, conn)
     // ACP `prompt` resolves only at stopReason — kick it off in the background
     // and surface completion/error as idle/error events (the relay's contract).
-    conn.prompt({ sessionId, prompt: [{ type: 'text', text: input.text }] })
+    const blocks: Array<{ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }> = []
+    if (input.text) blocks.push({ type: 'text', text: input.text })
+    for (const img of input.images ?? []) blocks.push({ type: 'image', data: img.data, mimeType: img.mimeType })
+    conn.prompt({ sessionId, prompt: blocks.length ? blocks : [{ type: 'text', text: input.text }] })
       .then(() => { emit({ kind: 'idle', sessionId }); normalizer.reset(sessionId) })
       .catch((err) => {
         emit({ kind: 'error', sessionId, message: err?.message ?? String(err) })

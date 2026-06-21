@@ -77,10 +77,15 @@ export interface SessionControls {
   model?: { current?: string; options: ControlOption[] }
 }
 
+/** An image attached to a prompt: base64 `data` + its `mimeType` (e.g. image/png). */
+export interface PromptImage { data: string; mimeType: string }
+
 export interface PromptInput {
   text: string
   agent?: string
   model?: { providerID: string; modelID: string }
+  /** Images to send alongside the text (backends with `imageInput` capability). */
+  images?: PromptImage[]
   signal?: AbortSignal
 }
 
@@ -115,6 +120,8 @@ export interface BackendCapabilities {
   commands: boolean
   /** Exposes switchable session mode + model — gates the mode/model pickers. */
   sessionControls: boolean
+  /** Accepts image attachments in a prompt — gates the composer's image attach. */
+  imageInput: boolean
 }
 
 export interface AgentBackend {

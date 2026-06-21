@@ -44,7 +44,7 @@ describe('OpencodeBackend', () => {
   it('reports id + capabilities (tuiSelect gated on baseUrl)', () => {
     const withUrl = createOpencodeBackend({ client: fakeClient(), baseUrl: 'http://x' })
     expect(withUrl.id).toBe('opencode')
-    expect(withUrl.capabilities).toEqual({ liveMirror: true, tuiSelect: true, workspaces: true, freeformWorkspace: false, diff: true, todos: true, catalog: true, mcp: true, commands: true, sessionControls: false })
+    expect(withUrl.capabilities).toEqual({ liveMirror: true, tuiSelect: true, workspaces: true, freeformWorkspace: false, diff: true, todos: true, catalog: true, mcp: true, commands: true, sessionControls: false, imageInput: false })
     const noUrl = createOpencodeBackend({ client: fakeClient() })
     expect(noUrl.capabilities.tuiSelect).toBe(false)
   })

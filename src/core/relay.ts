@@ -38,7 +38,7 @@ function isNetworkError(err: Error): boolean {
 async function submitWithRetry(
   backend: AgentBackend,
   sessionId: string,
-  opts: { text: string; agent?: string; model?: { providerID: string; modelID: string }; signal?: AbortSignal },
+  opts: { text: string; agent?: string; model?: { providerID: string; modelID: string }; images?: Array<{ data: string; mimeType: string }>; signal?: AbortSignal },
 ): Promise<void> {
   for (let i = 0; i < SUBMIT_MAX_RETRIES; i++) {
     try {
@@ -155,6 +155,7 @@ export function createRelay(deps: RelayDeps) {
         text: msg.text,
         agent: nextAgent,
         model: nextModel,
+        images: msg.images,
         signal: ac.signal,
       })
 

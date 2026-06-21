@@ -49,6 +49,7 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     mcp: true,
     commands: true,
     sessionControls: false, // opencode keeps its own agent/model override chip
+    imageInput: false, // opencode prompt path is text-only here (out of scope)
   }
 
   async function prompt(sessionId: string, input: PromptInput): Promise<void> {

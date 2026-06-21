@@ -29,7 +29,25 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true, sessionControls: true })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true, sessionControls: true, imageInput: true })
+  })
+
+  it('sends image blocks alongside text (imageInput)', async () => {
+    let captured: unknown
+    const conn: AcpConnection = {
+      newSession: vi.fn(async () => ({ sessionId: 'ses_i' })),
+      authenticate: vi.fn(async () => ({})),
+      prompt: vi.fn(async (p: { prompt: unknown }) => { captured = p.prompt; return { stopReason: 'end_turn' } }),
+      cancel: vi.fn(async () => ({})),
+    }
+    const connect = async (_c: AcpClient) => ({ conn, authMethodId: 'login' })
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect })
+    await b.prompt('ses_i', { text: 'look', images: [{ data: 'BASE64', mimeType: 'image/png' }] })
+    await flush()
+    expect(captured).toEqual([
+      { type: 'text', text: 'look' },
+      { type: 'image', data: 'BASE64', mimeType: 'image/png' },
+    ])
   })
 
   it('captures + switches session controls (mode + model)', async () => {
