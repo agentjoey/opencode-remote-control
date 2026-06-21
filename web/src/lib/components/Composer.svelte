@@ -272,8 +272,14 @@
     align-items: center;
     gap: 8px;
     margin-top: 6px;
+    min-width: 0;
   }
-  .spacer { flex: 1; }
+  .spacer { flex: 1; min-width: 8px; }
+  /* Hide the keyboard-hint texts when the composer gets narrow so the chips +
+     send button never overflow the box (and the page). */
+  @media (max-width: 720px) {
+    .send-hint, .hint.command { display: none; }
+  }
   .hint {
     background: transparent;
     border: none;
@@ -282,6 +288,9 @@
     font-size: 11px;
     white-space: nowrap;
     padding: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .hint.command {
     cursor: pointer;

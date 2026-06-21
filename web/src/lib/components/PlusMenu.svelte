@@ -136,9 +136,11 @@
       pointer-events: auto;
       background: rgba(8, 7, 6, .45);
     }
-    .backdrop { display: none; }
+    /* backdrop stays tappable to dismiss the sheet (no Esc on touch). */
     .menu {
       position: relative;
+      top: auto !important;   /* ignore the desktop anchor coords */
+      left: auto !important;
       width: 100%;
       max-width: 100%;
       border-bottom-left-radius: 0;

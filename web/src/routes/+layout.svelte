@@ -232,7 +232,7 @@
 <CommandPalette open={$paletteOpen} on:close={() => paletteOpen.set(false)} />
 <PlusMenu anchor={newButtonAnchor} />
 <NewSessionModal />
-<MobileFab onInspector={toggleRight} />
+{#if !hasSession}<MobileFab />{/if}
 {#if needsPairing}<PairGate />{/if}
 
 <style>

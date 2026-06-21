@@ -12,7 +12,6 @@
 
   $: session = $sessionList.find((s) => s.id === sessionId)
   $: title = session?.title
-  $: agent = session?.agent
 
   // Debounced "activity tick": bump ~1s after the feed's lastSeq changes so
   // panels refetch when a turn produces output, without hammering per delta.
@@ -28,8 +27,6 @@
   <div class="head">
     <div class="section-label">Session</div>
     <div class="name" title={title ?? sessionId}>
-      {#if agent}<span class="agent mono">{agent}</span>{/if}
-      {#if agent && title}<span class="sep">·</span>{/if}
       <span class="title-text">{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</span>
     </div>
   </div>
@@ -39,11 +36,11 @@
       <McpPanel {tick} />
       <div class="divider"></div>
     {/if}
-    <WorkingDirPanel {sessionId} {tick} showDiff={$can('diff')} />
-    <div class="divider"></div>
     <UsagePanel {sessionId} {tick} />
     <div class="divider"></div>
     <ContextPanel {sessionId} {tick} />
+    <div class="divider"></div>
+    <WorkingDirPanel {sessionId} {tick} showDiff={$can('diff')} />
   </div>
 </aside>
 
@@ -75,16 +72,6 @@
     font-weight: 600;
     font-size: 13px;
     color: var(--text);
-  }
-  .agent {
-    flex-shrink: 0;
-    color: var(--text-2);
-    font-size: 12px;
-    font-weight: 500;
-  }
-  .sep {
-    flex-shrink: 0;
-    color: var(--text-3);
   }
   .title-text {
     min-width: 0;

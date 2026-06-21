@@ -4,18 +4,15 @@
   import { newSessionOpen } from '$lib/stores/ui.js'
   import { paletteOpen } from '$lib/stores/palette.js'
 
-  export let onInspector: () => void = () => {}
-
   let open = false
   const toggle = () => (open = !open)
   const close = () => (open = false)
 
   type Action = { label: string; icon: string; run: () => void }
-  $: actions = [
+  const actions: Action[] = [
     { label: 'New session', icon: '＋', run: () => newSessionOpen.set(true) },
     { label: 'Search & commands', icon: '⌕', run: () => paletteOpen.set(true) },
-    { label: 'Inspector', icon: 'ⓘ', run: onInspector },
-  ] as Action[]
+  ]
 
   function pick(a: Action) { a.run(); close() }
 </script>

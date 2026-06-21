@@ -5,6 +5,7 @@ import type { CardBus } from '../../core/card-bus.js'
 import type { IncomingMessage } from '../../core/types.js'
 import type { AuthStrategy } from '../../connectivity/auth/index.js'
 import { createLogger } from '../../utils/logger.js'
+import { hostname } from 'node:os'
 
 const log = createLogger('web')
 
@@ -86,7 +87,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
       return {
         id,
         name: id.startsWith('acp:') ? id.slice(4) : id,
-        host: 'local',
+        host: hostname(),
         status: online ? 'online' : 'offline',
         capabilities: backend.capabilities,
       }

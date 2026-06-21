@@ -152,13 +152,15 @@
   }
 
   .sub-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 11px 24px;
+    padding: 11px max(24px, calc((100% - 780px) / 2 + 24px));
+    background: var(--bg);
     border-bottom: 1px solid var(--border-2);
   }
   .sub-header .left {

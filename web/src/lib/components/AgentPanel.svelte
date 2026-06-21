@@ -314,7 +314,8 @@
     position: absolute;
     top: calc(100% + 6px);
     left: 12px;
-    width: min(280px, calc(100vw - 32px));
+    right: 12px;
+    width: auto;
     background: var(--bg-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius);
