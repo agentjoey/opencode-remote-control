@@ -1,4 +1,4 @@
-import { connection, type ConnectionStatus } from '../stores/connection.js'
+import { connection, latency, type ConnectionStatus } from '../stores/connection.js'
 import { getToken } from '../auth-token.js'
 
 const BACKOFF = [2000, 4000, 8000, 16000, 30000]
@@ -31,6 +31,7 @@ export function createWsClient(opts: WsClientOpts): WsClient {
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let pingTimer: ReturnType<typeof setTimeout> | null = null
   let pongTimer: ReturnType<typeof setTimeout> | null = null
+  let pingSentAt = 0
   let closed = false
 
   function setStatus(s: ConnectionStatus) {
@@ -47,6 +48,7 @@ export function createWsClient(opts: WsClientOpts): WsClient {
   function schedulePing() {
     pingTimer = setTimeout(() => {
       if (ws?.readyState === WebSocket.OPEN) {
+        pingSentAt = performance.now()
         ws.send(JSON.stringify({ type: 'ping' }))
         pongTimer = setTimeout(() => {
           ws?.close()
@@ -78,6 +80,7 @@ export function createWsClient(opts: WsClientOpts): WsClient {
         const msg = JSON.parse(ev.data)
         if (msg.type === 'pong') {
           if (pongTimer) { clearTimeout(pongTimer); pongTimer = null }
+          if (pingSentAt) { latency.set(Math.round(performance.now() - pingSentAt)) }
           schedulePing()
           return
         }

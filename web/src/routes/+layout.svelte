@@ -3,14 +3,13 @@
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
-  import { afterNavigate, goto } from '$app/navigation'
+  import { afterNavigate } from '$app/navigation'
   import { api } from '$lib/api/client.js'
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
-  import { connection } from '$lib/stores/connection.js'
-  import { capabilities, loadCapabilities, backends, loadBackends, setActiveBackend, viewedSessionId } from '$lib/stores/capabilities.js'
+  import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId } from '$lib/stores/capabilities.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
-  import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
+  import Titlebar from '$lib/components/Titlebar.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import SessionRail from '$lib/components/SessionRail.svelte'
   import Inspector from '$lib/components/Inspector.svelte'
@@ -45,17 +44,6 @@
     installEvent = null
   }
   let lastLoaded: string | null = null
-
-  // Switching the backend sets where new sessions go AND moves you to that
-  // backend: open its most-recent session, or start a fresh one if none exists.
-  async function switchBackend(id: string) {
-    await setActiveBackend(id)
-    const existing = get(sessionList).find((s) => s.backendId === id)
-    // Open the backend's most-recent session; if it has none yet, drop to the
-    // empty state where the rail's New-session control (workspace picker / dir
-    // input) lets you start one.
-    goto(existing ? `/${existing.id}/` : '/')
-  }
 
   function loadSession(id: string | undefined) {
     // Capability gating keys off the viewed session's backend.
@@ -198,33 +186,16 @@
 <svelte:window on:keydown={onGlobalKey} />
 
 <div class="app" bind:this={appEl}>
-  <header class="titlebar">
-    <button class="iconbtn" class:active={drawerLeft} on:click={toggleLeft} aria-label="Sessions">☰</button>
-    <span class="brand">OCRC</span>
-    {#if $backends && $backends.backends.length > 1}
-      <select
-        class="backend-switch mono"
-        title="Active backend for new sessions"
-        value={$backends.activeId}
-        on:change={(e) => switchBackend((e.currentTarget as HTMLSelectElement).value)}
-      >
-        {#each $backends.backends as b (b.id)}
-          <option value={b.id}>{b.id}</option>
-        {/each}
-      </select>
-    {:else if $capabilities}
-      <span class="backend-chip mono" title="Backend: {$capabilities.id}">{$capabilities.id}</span>
-    {/if}
-    <button class="topsearch" on:click={() => (paletteOpen = true)} title="Search sessions & commands (⌘K)">
-      <span class="ico" aria-hidden="true">⌕</span>
-      <span class="ph">Search sessions & commands…</span>
-    </button>
-    <span class="spacer"></span>
-    <ConnectionBadge />
-    {#if installEvent}<button class="install" on:click={install}>Install</button>{/if}
-    <button class="iconbtn" class:active={drawerRight} on:click={toggleRight} aria-label="Inspector">ⓘ</button>
-    <span class="email">{email}</span>
-  </header>
+  <Titlebar
+    {email}
+    onPalette={() => (paletteOpen = true)}
+    {installEvent}
+    onInstall={install}
+    {drawerLeft}
+    {drawerRight}
+    onToggleLeft={toggleLeft}
+    onToggleRight={toggleRight}
+  />
   <OfflineBanner />
   <div class="body">
     {#if drawerLeft || drawerRight}
@@ -252,67 +223,6 @@
      real env(safe-area-inset-*) values. JS overrides height only when the
      keyboard is open. */
   .app { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg); }
-  .titlebar {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 16px;
-    padding-top: calc(10px + env(safe-area-inset-top, 0px));
-    border-bottom: 1px solid var(--border); background: var(--bg-panel);
-    flex-shrink: 0; font-size: 13px;
-  }
-  .brand { font-weight: 800; color: var(--accent); letter-spacing: .08em; font-size: 14px; }
-  .backend-chip {
-    color: var(--text-3);
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 2px 8px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: lowercase;
-    letter-spacing: .02em;
-    white-space: nowrap;
-    flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-  }
-  .backend-switch {
-    color: var(--text-2);
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 2px 6px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: .02em;
-    cursor: pointer;
-    max-width: 140px;
-    flex-shrink: 0;
-    transition: border-color .12s, color .12s;
-  }
-  .backend-switch:hover { border-color: var(--accent); color: var(--text); }
-  .spacer { flex: 1; }
-  .topsearch {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-3);
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: text;
-    min-width: 200px;
-    max-width: 340px;
-    transition: border-color .15s ease;
-  }
-  .topsearch:hover { border-color: var(--text-3); }
-  .topsearch .ico { font-size: 13px; opacity: .8; }
-  .email { font-size: 0.8em; color: var(--text-3); }
-  .install { background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius-sm); padding: 4px 12px; font-size: 0.8em; font-weight: 600; cursor: pointer; }
-  /* Hamburger / inspector toggles — desktop hidden, shown on mobile. */
-  .iconbtn { display: none; background: transparent; border: none; color: var(--text-2); font-size: 18px; line-height: 1; padding: 4px 6px; cursor: pointer; border-radius: var(--radius-sm); }
-  .iconbtn:hover { color: var(--text); background: var(--bg-elev); }
-  .iconbtn.active { color: var(--accent); background: var(--accent-2); }
   .body { display: flex; flex: 1; overflow: hidden; position: relative; }
   main { position: relative; flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
   /* Drawer wrappers are transparent on desktop (SessionRail/Inspector are the
@@ -321,8 +231,6 @@
   .backdrop { display: none; }
 
   @media (max-width: 820px) {
-    .topsearch, .email { display: none; }
-    .iconbtn { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; font-size: 20px; }
     .rail-wrap, .inspector-wrap {
       display: block;
       position: absolute; top: 0; bottom: 0; z-index: 30;
