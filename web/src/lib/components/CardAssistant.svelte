@@ -44,7 +44,7 @@
         {#if m.cost !== undefined}<span class="chip cost mono">${m.cost.toFixed(3)}</span>{/if}
       </div>
       <div class="actions">
-        <button class="icon" title="Copy" aria-label="Copy" on:click={copy}>
+        <button class="icon" class:copied title="Copy" aria-label="Copy" on:click={copy}>
           {#if copied}✓{:else}⧉{/if}
         </button>
         <button class="icon" title="Retry" aria-label="Retry" on:click={() => dispatch('retry')}>
@@ -113,4 +113,5 @@
     transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
   .icon:hover { color: var(--text); border-color: var(--border); background: var(--bg-elev); }
+  .icon.copied { color: var(--accent); border-color: var(--accent-line); background: var(--accent-2); }
 </style>

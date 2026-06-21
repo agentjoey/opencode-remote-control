@@ -6,6 +6,7 @@
   import { api } from '$lib/api/client.js'
   import Card from '$lib/components/Card.svelte'
   import Composer from '$lib/components/Composer.svelte'
+  import SessionSwitcher from '$lib/components/SessionSwitcher.svelte'
 
   let scrollEl: HTMLDivElement
   let composerEl: HTMLElement
@@ -13,6 +14,10 @@
   let ro: ResizeObserver | undefined
   let vvCleanup: (() => void) | undefined
   let aborting = false
+  // Running-timer state for the busy pill.
+  let runStart = 0
+  let runElapsed = 0
+  let runTimer: ReturnType<typeof setInterval> | undefined
   // Whether the chat is scrolled to the bottom — gates the re-pin so the keyboard
   // opening/closing doesn't yank the view down while the user has scrolled up.
   let pinnedToBottom = true
@@ -28,13 +33,31 @@
   $: feed = $feeds[sessionId]
   $: cards = cardsOf(feed)
   $: session = $sessionList.find((s) => s.id === sessionId)
-  $: title = session?.title || 'Untitled session'
   $: branch = session?.directory ? session.directory.replace(/\/+$/, '').split('/').pop() || '' : ''
   $: busy = (() => {
     if (!feed || feed.order.length === 0) return false
     const last = feed.byId[feed.order[feed.order.length - 1]]
     return last?.kind === 'thinking' || last?.kind === 'streaming' || last?.kind === 'think-stream'
   })()
+
+  $: if (busy) {
+    if (!runStart && typeof window !== 'undefined') {
+      runStart = Date.now()
+      runElapsed = 0
+      runTimer = setInterval(() => { runElapsed = Math.floor((Date.now() - runStart) / 1000) }, 1000)
+    }
+  } else {
+    runStart = 0
+    runElapsed = 0
+    if (runTimer) { clearInterval(runTimer); runTimer = undefined }
+  }
+
+  function fmtRunTime(s: number): string {
+    if (s < 60) return `${s}s`
+    const m = Math.floor(s / 60)
+    const r = s % 60
+    return r === 0 ? `${m}m` : `${m}m ${r}s`
+  }
 
   async function abort() {
     if (!sessionId || aborting) return
@@ -70,7 +93,7 @@
     vv?.addEventListener('resize', onVV)
     vvCleanup = () => vv?.removeEventListener('resize', onVV)
   })
-  onDestroy(() => { ro?.disconnect(); vvCleanup?.() })
+  onDestroy(() => { ro?.disconnect(); vvCleanup?.(); if (runTimer) clearInterval(runTimer) })
 </script>
 
 <div class="chat" bind:this={scrollEl} on:scroll={onChatScroll}>
@@ -81,14 +104,14 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       {/if}
-      <span class="title">{title}</span>
+      <SessionSwitcher activeId={sessionId} />
       {#if branch}<span class="branch mono">{branch}</span>{/if}
     </div>
     <div class="right">
       {#if busy}
         <span class="pill running mono">
           <span class="dot" aria-hidden="true"></span>
-          running
+          running {fmtRunTime(runElapsed)}
         </span>
         <button class="abort" on:click={abort} disabled={aborting}>Abort</button>
       {:else}
@@ -96,7 +119,7 @@
       {/if}
     </div>
   </div>
-  <div class="stream">
+  <div class="stream conversation-emerald">
     {#each cards as card (card.id)}
       <Card {card} />
     {/each}
@@ -161,14 +184,6 @@
   .expand:hover { color: var(--text); border-color: var(--accent); background: var(--accent-2); }
   @media (max-width: 820px) {
     .expand { display: none; }
-  }
-  .sub-header .title {
-    font-size: 14px;
-    font-weight: 650;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .sub-header .branch {
     flex-shrink: 0;

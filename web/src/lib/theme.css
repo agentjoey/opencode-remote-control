@@ -82,6 +82,17 @@ body {
 .label { text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); font-size: 10px; }
 .mono { font-family: var(--font-mono); }
 
+/* Fixed conversation palette: the transcript/message-list re-declares emerald
+   accents so user bubbles, execution shimmer, streaming caret, bullets, and
+   approval/copy accents stay emerald regardless of the active agent's chrome theme. */
+.conversation-emerald {
+  --accent: #3fb27f;
+  --accent-2: #243029;
+  --accent-ink: #06140d;
+  --accent-line: #2e6e52;
+  --user-bubble: linear-gradient(135deg, #3fb27f 0%, #2e9468 100%);
+}
+
 /* syntax highlighting — scoped to .md via MarkdownView */
 .md .hljs-string,
 .md .hljs-regexp,
