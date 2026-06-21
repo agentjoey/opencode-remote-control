@@ -5,6 +5,7 @@
   import { sessionList } from '$lib/stores/sessions.js'
   import { filterSessions } from '$lib/nav/filterSessions.js'
   import { api } from '$lib/api/client.js'
+  import { can, currentBackendId, backendName } from '$lib/stores/capabilities.js'
 
   export let open = false
   let query = ''
@@ -12,10 +13,9 @@
   $: results = filterSessions($sessionList, query)
   $: if (active >= results.length) active = 0
 
-  // opencode custom commands run against the currently active session (the route param).
   $: activeSessionId = $page.params.sessionId as string | undefined
   let commands: Array<{ name: string; description: string }> = []
-  let commandsLoaded = false
+  let loadedForBackend: string | null = null
   let running = ''
   $: filteredCommands = commands.filter((cmd) => {
     const q = query.trim().toLowerCase()
@@ -23,10 +23,13 @@
     return cmd.name.toLowerCase().includes(q) || cmd.description.toLowerCase().includes(q)
   })
 
-  // Lazily load commands the first time the palette opens.
-  $: if (open && !commandsLoaded) {
-    commandsLoaded = true
-    api.commands().then((list) => { commands = list }).catch(() => { commandsLoaded = false })
+  $: if (open && $currentBackendId && $currentBackendId !== loadedForBackend) {
+    loadedForBackend = $currentBackendId
+    if ($can('commands')) {
+      api.commands($currentBackendId).then((list) => { commands = list }).catch(() => { loadedForBackend = null })
+    } else {
+      commands = []
+    }
   }
 
   export function close() { open = false; query = ''; cmdError = '' }
@@ -70,8 +73,8 @@
         {/each}
         {#if results.length === 0}<div class="empty label">No sessions</div>{/if}
 
-        {#if filteredCommands.length > 0}
-          <div class="group-label label">opencode commands</div>
+        {#if $can('commands') && filteredCommands.length > 0}
+          <div class="group-label label">{$backendName} commands</div>
           {#each filteredCommands as cmd (cmd.name)}
             <button
               class="row"

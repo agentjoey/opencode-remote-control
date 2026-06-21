@@ -54,7 +54,7 @@ export const api = {
   workspaces: () => jsonGet<Array<{ directory: string; name: string; sessionCount: number; lastActiveAt: number }>>('/api/workspaces'),
   createSession: (body: { directory: string; title?: string }) => jsonPost<{ id: string }>('/api/session', body),
   mcp: () => jsonGet<Array<{ name: string; type?: string; status: 'configured' | 'disabled' }>>('/api/mcp'),
-  commands: () => jsonGet<Array<{ name: string; description: string }>>('/api/commands'),
+  commands: (backendId?: string) => jsonGet<Array<{ name: string; description: string }>>(`/api/commands${backendId ? `?backend=${encodeURIComponent(backendId)}` : ''}`),
   runCommand: (body: { sessionId: string; command: string; arguments?: string }) => jsonPost<{ ok: boolean }>('/api/command', body),
   agents: () => jsonGet<Array<{ name: string; model: string; description: string }>>('/api/agents'),
   models: () => jsonGet<Array<{ id: string; name: string; models: Array<{ id: string; name: string }> }>>('/api/models'),
