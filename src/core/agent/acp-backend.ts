@@ -13,8 +13,8 @@
  */
 import type {
   AgentBackend, AgentInfo, BackendCapabilities, CommandInfo, McpServer, ModelProvider,
-  PermissionDecision, PromptInput, SessionContext, SessionMeta, SessionRef, SessionSummary,
-  Workspace,
+  PermissionDecision, PromptInput, SessionContext, SessionControls, SessionMeta, SessionRef,
+  SessionSummary, Workspace,
 } from './backend.js'
 import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import type { AgentEvent } from './event.js'
@@ -34,12 +34,24 @@ export interface AcpPermissionRequest {
   options: Array<{ optionId: string; kind?: string; name?: string }>
 }
 
+/** ACP session-modes block (newSession/loadSession response; current_mode_update). */
+export interface AcpModes { currentModeId?: string; availableModes?: Array<{ id: string; name: string }> }
+/** ACP session config option — the model is the one with `category:'model'` (type 'select'). */
+export interface AcpConfigOption {
+  id?: string; name?: string; category?: string; type?: string; currentValue?: string
+  options?: Array<{ value?: string; name?: string; options?: Array<{ value?: string; name?: string }> }>
+}
+
 /** The slice of an ACP ClientSideConnection AcpBackend depends on (injectable). */
 export interface AcpConnection {
-  newSession(p: { cwd: string; mcpServers: unknown[] }): Promise<{ sessionId: string }>
+  newSession(p: { cwd: string; mcpServers: unknown[] }): Promise<{ sessionId: string; modes?: AcpModes; configOptions?: AcpConfigOption[] }>
   loadSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
   /** Re-establish a previously-created session (kimi persists these across connections). */
   resumeSession?(p: { sessionId: string; cwd: string; mcpServers: unknown[] }): Promise<unknown>
+  /** ACP `session/set_mode`. */
+  setSessionMode?(p: { sessionId: string; modeId: string }): Promise<unknown>
+  /** ACP `session/set_config_option` (used for the model selector). */
+  setSessionConfigOption?(p: { sessionId: string; configId: string; value: string }): Promise<unknown>
   listSessions?(p?: { cwd?: string }): Promise<{ sessions?: Array<{ sessionId: string; title?: string; cwd?: string; updatedAt?: string }>; nextCursor?: string | null }>
   deleteSession?(p: { sessionId: string }): Promise<unknown>
   authenticate(p: { methodId: string }): Promise<unknown>
@@ -118,6 +130,47 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   const plans = new Map<string, Array<{ content: string; status: string }>>()
   /** Files edited per session, keyed by path (tool_call diff content) — served via getDiff. */
   const edits = new Map<string, Map<string, { oldText?: string; newText?: string }>>()
+  /** Switchable mode + model per session (ACP modes + config options). `modelConfigId`
+   *  is the config option id setModel must target. Served via getControls. */
+  const controls = new Map<string, SessionControls & { modelConfigId?: string }>()
+
+  /** Flatten ACP select options (which may be a flat list or grouped) to {value,name}. */
+  function flattenSelectOptions(opts: AcpConfigOption['options']): Array<{ value?: string; name?: string }> {
+    if (!Array.isArray(opts)) return []
+    const out: Array<{ value?: string; name?: string }> = []
+    for (const o of opts) {
+      if (o && Array.isArray(o.options)) out.push(...o.options) // a group
+      else if (o && o.value != null) out.push(o)
+    }
+    return out
+  }
+
+  /** Merge an ACP modes block + config options (from a session response or an update)
+   *  into the stored SessionControls for a session. */
+  function captureControls(sid: string, src: { modes?: AcpModes; configOptions?: AcpConfigOption[] } | undefined): void {
+    if (!src) return
+    const c = controls.get(sid) ?? {}
+    if (src.modes) {
+      c.mode = {
+        current: src.modes.currentModeId,
+        options: (src.modes.availableModes ?? []).map((m) => ({ id: m.id, name: m.name })),
+      }
+    }
+    if (Array.isArray(src.configOptions)) {
+      const model = src.configOptions.find((o) => o.category === 'model')
+        ?? src.configOptions.find((o) => o.type === 'select')
+      if (model?.id) {
+        c.modelConfigId = model.id
+        c.model = {
+          current: model.currentValue,
+          options: flattenSelectOptions(model.options)
+            .filter((o) => o.value != null)
+            .map((o) => ({ id: o.value!, name: o.name ?? o.value! })),
+        }
+      }
+    }
+    controls.set(sid, c)
+  }
 
   /** Map an OCRC decision → the ACP optionId by the option's `kind`. */
   function optionForDecision(
@@ -145,6 +198,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     catalog: false, // models come per-session from newSession, not a global catalog
     mcp: false,
     commands: true, // populated from available_commands_update; run via slash-prompt
+    sessionControls: true, // mode (session/set_mode) + model (session/set_config_option)
   }
 
   // Latest slash-commands the agent advertised (available_commands_update).
@@ -171,6 +225,18 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
           content: e.content ?? e.text ?? e.title ?? '',
           status: e.status ?? 'pending',
         })))
+        return
+      }
+      // Mode/model switches (ACP session controls) → stored for getControls. Not a
+      // streaming part, so consume here and stop.
+      if (update.sessionUpdate === 'current_mode_update' && update.currentModeId) {
+        const c = controls.get(sessionId) ?? {}
+        c.mode = { current: update.currentModeId, options: c.mode?.options ?? [] }
+        controls.set(sessionId, c)
+        return
+      }
+      if (update.sessionUpdate === 'config_option_update' && Array.isArray(update.configOptions)) {
+        captureControls(sessionId, { configOptions: update.configOptions })
         return
       }
       // tool_call diff content → accumulate per-file edits (served via getDiff).
@@ -233,10 +299,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     // it in ITS OWN directory so the agent re-establishes context, then prompt it.
     const sdir = dirOf(sessionId)
     if (conn.resumeSession) {
-      try { await conn.resumeSession({ sessionId, cwd: sdir, mcpServers: [] }); sessions.add(sessionId); return } catch (err) { log.warn(`resumeSession failed: ${String(err)}`) }
+      try { const r = await conn.resumeSession({ sessionId, cwd: sdir, mcpServers: [] }); captureControls(sessionId, r as { modes?: AcpModes; configOptions?: AcpConfigOption[] }); sessions.add(sessionId); return } catch (err) { log.warn(`resumeSession failed: ${String(err)}`) }
     }
     if (conn.loadSession) {
-      try { await conn.loadSession({ sessionId, cwd: sdir, mcpServers: [] }); sessions.add(sessionId) } catch { /* not loadable */ }
+      try { const r = await conn.loadSession({ sessionId, cwd: sdir, mcpServers: [] }); captureControls(sessionId, r as { modes?: AcpModes; configOptions?: AcpConfigOption[] }); sessions.add(sessionId) } catch { /* not loadable */ }
     }
   }
 
@@ -265,6 +331,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     const dir = opts.directory || cwd
     const { conn } = await connection()
     const res = await conn.newSession({ cwd: dir, mcpServers: [] })
+    captureControls(res.sessionId, res)
     sessions.add(res.sessionId)
     store?.create(res.sessionId, opts.title ?? '', dir)
     return { id: res.sessionId }
@@ -361,6 +428,26 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
       [...(edits.get(sid)?.entries() ?? [])].map(([path, e]) => buildDiffEntry(path, e.oldText ?? '', e.newText ?? '')),
     // TODO list from ACP `plan` updates; summarizeTodos consumes {content,status}.
     getTodos: async (sid: string) => plans.get(sid) ?? [],
+    // Switchable mode + model (captured from session responses + *_update events).
+    getControls: async (sid: string): Promise<SessionControls> => {
+      const c = controls.get(sid)
+      return c ? { mode: c.mode, model: c.model } : {}
+    },
+    setMode: async (sid: string, modeId: string): Promise<void> => {
+      const { conn } = await connection()
+      await conn.setSessionMode?.({ sessionId: sid, modeId })
+      const c = controls.get(sid) ?? {}
+      c.mode = { current: modeId, options: c.mode?.options ?? [] } // optimistic
+      controls.set(sid, c)
+    },
+    setModel: async (sid: string, modelId: string): Promise<void> => {
+      const c = controls.get(sid)
+      if (!c?.modelConfigId) throw new Error('session exposes no model config option')
+      const { conn } = await connection()
+      await conn.setSessionConfigOption?.({ sessionId: sid, configId: c.modelConfigId, value: modelId })
+      c.model = { current: modelId, options: c.model?.options ?? [] } // optimistic
+      controls.set(sid, c)
+    },
     getSessionsStatus: async () => ({}),
     ping: async () => { try { await connection(); return true } catch { return false } },
     getAgents: async (): Promise<AgentInfo[]> => [],

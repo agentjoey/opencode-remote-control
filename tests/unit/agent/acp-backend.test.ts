@@ -29,7 +29,52 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true, sessionControls: true })
+  })
+
+  it('captures + switches session controls (mode + model)', async () => {
+    const setMode = vi.fn(async () => ({}))
+    const setOpt = vi.fn(async () => ({}))
+    let client!: AcpClient
+    const conn: AcpConnection = {
+      newSession: vi.fn(async () => ({
+        sessionId: 'ses_c',
+        modes: { currentModeId: 'plan', availableModes: [{ id: 'plan', name: 'Plan' }, { id: 'code', name: 'Code' }] },
+        configOptions: [{
+          id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: 'k2',
+          options: [{ value: 'k2', name: 'Kimi K2' }, { value: 'k2-turbo', name: 'Kimi K2 Turbo' }],
+        }],
+      })),
+      authenticate: vi.fn(async () => ({})),
+      prompt: vi.fn(async () => ({ stopReason: 'end_turn' })),
+      cancel: vi.fn(async () => ({})),
+      setSessionMode: setMode,
+      setSessionConfigOption: setOpt,
+    }
+    const connect = async (c: AcpClient) => { client = c; return { conn, authMethodId: 'login' } }
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect })
+
+    await b.createSession({ directory: '/work' })
+    expect(await b.getControls!('ses_c')).toEqual({
+      mode: { current: 'plan', options: [{ id: 'plan', name: 'Plan' }, { id: 'code', name: 'Code' }] },
+      model: { current: 'k2', options: [{ id: 'k2', name: 'Kimi K2' }, { id: 'k2-turbo', name: 'Kimi K2 Turbo' }] },
+    })
+
+    // agent-initiated updates are reflected
+    await client.sessionUpdate({ sessionId: 'ses_c', update: { sessionUpdate: 'current_mode_update', currentModeId: 'code' } })
+    expect((await b.getControls!('ses_c')).mode?.current).toBe('code')
+    await client.sessionUpdate({ sessionId: 'ses_c', update: { sessionUpdate: 'config_option_update', configOptions: [
+      { id: 'model', category: 'model', type: 'select', currentValue: 'k2-turbo', options: [{ value: 'k2-turbo', name: 'Kimi K2 Turbo' }] },
+    ] } })
+    expect((await b.getControls!('ses_c')).model?.current).toBe('k2-turbo')
+
+    // setters call the connection with the right args (+ optimistic current)
+    await b.setMode!('ses_c', 'plan')
+    expect(setMode).toHaveBeenCalledWith({ sessionId: 'ses_c', modeId: 'plan' })
+    expect((await b.getControls!('ses_c')).mode?.current).toBe('plan')
+    await b.setModel!('ses_c', 'k2')
+    expect(setOpt).toHaveBeenCalledWith({ sessionId: 'ses_c', configId: 'model', value: 'k2' })
+    expect((await b.getControls!('ses_c')).model?.current).toBe('k2')
   })
 
   it('createSession returns the agent sessionId and tracks it', async () => {

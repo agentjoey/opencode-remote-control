@@ -66,6 +66,17 @@ export interface DiffLine { kind: 'add' | 'del' | 'ctx'; text: string }
 /** A normalized, render-ready per-file diff (returned by getDiff for every backend). */
 export interface DiffEntry { path: string; additions: number; deletions: number; lines: DiffLine[] }
 
+/** A selectable control value (a session mode, or a model). */
+export interface ControlOption { id: string; name: string }
+/**
+ * A session's switchable mode + model (ACP `session/set_mode` + `set_config_option`).
+ * Either may be absent when the backend/agent doesn't expose it.
+ */
+export interface SessionControls {
+  mode?: { current?: string; options: ControlOption[] }
+  model?: { current?: string; options: ControlOption[] }
+}
+
 export interface PromptInput {
   text: string
   agent?: string
@@ -102,6 +113,8 @@ export interface BackendCapabilities {
   mcp: boolean
   /** Exposes slash-commands — gates the command-palette commands group. */
   commands: boolean
+  /** Exposes switchable session mode + model — gates the mode/model pickers. */
+  sessionControls: boolean
 }
 
 export interface AgentBackend {
@@ -148,6 +161,14 @@ export interface AgentBackend {
   listWorkspaces(): Promise<Workspace[]>
   listCommands(): Promise<CommandInfo[]>
   runCommand(id: string, command: string, args?: string): Promise<void>
+
+  // ── session controls (present only when capabilities.sessionControls) ────────
+  /** Current switchable mode + model for a session (empty when nothing captured). */
+  getControls?(id: string): Promise<SessionControls>
+  /** Switch the session's operational mode. */
+  setMode?(id: string, modeId: string): Promise<void>
+  /** Switch the session's model. */
+  setModel?(id: string, modelId: string): Promise<void>
 
   // ── permissions ─────────────────────────────────────────────────────────────
   resolvePermission(id: string, requestId: string, decision: PermissionDecision): Promise<void>

@@ -48,6 +48,7 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
     catalog: true,
     mcp: true,
     commands: true,
+    sessionControls: false, // opencode keeps its own agent/model override chip
   }
 
   async function prompt(sessionId: string, input: PromptInput): Promise<void> {

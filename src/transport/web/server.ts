@@ -19,6 +19,7 @@ import { registerMessage } from './routes/message.js'
 import { registerAbort } from './routes/abort.js'
 import { registerDiff } from './routes/diff.js'
 import { registerTodo } from './routes/todo.js'
+import { registerControls } from './routes/controls.js'
 import { registerContext } from './routes/context.js'
 import { registerApproval } from './routes/approval.js'
 import { registerVersion } from './routes/version.js'
@@ -84,6 +85,7 @@ export function buildServer(opts: BuildServerOpts): Hono {
   registerAbort(app, reg, opts.state)
   registerDiff(app, reg)
   registerTodo(app, reg)
+  registerControls(app, reg)
   registerContext(app, reg, opts.state)
   registerApproval(app, reg)
   registerVersion(app)
