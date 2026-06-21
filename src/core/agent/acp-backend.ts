@@ -108,6 +108,12 @@ export interface AcpBackendDeps {
    * OCRC never used itself. Best-effort + agent-specific — the host wires it.
    */
   discoverDirs?: () => string[]
+  /**
+   * Optional: the MCP servers this agent itself has configured (e.g. read from
+   * kimi's ~/.kimi-code/mcp.json). ACP agents load their own MCP — OCRC surfaces
+   * them in the MCP panel. Agent-specific — the host wires it.
+   */
+  discoverMcp?: () => McpServer[]
 }
 
 export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
@@ -200,7 +206,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     diff: true, // working-dir file list accumulated from tool_call diff content
     todos: true, // TODO list from ACP `plan` updates
     catalog: false, // models come per-session from newSession, not a global catalog
-    mcp: false,
+    mcp: true, // the agent's own MCP servers, surfaced via discoverMcp (e.g. kimi mcp.json)
     commands: true, // populated from available_commands_update; run via slash-prompt
     sessionControls: true, // mode (session/set_mode) + model (session/set_config_option)
     imageInput: true, // kimi advertises promptCapabilities.image (verified live)
@@ -487,7 +493,7 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     ping: async () => { try { await connection(); return true } catch { return false } },
     getAgents: async (): Promise<AgentInfo[]> => [],
     getModels: async (): Promise<ModelProvider[]> => [],
-    getMcp: async (): Promise<McpServer[]> => [],
+    getMcp: async (): Promise<McpServer[]> => deps.discoverMcp?.() ?? [],
     // Known directories (from persisted sessions) plus the host default cwd, so
     // the picker always offers at least the default. name = basename.
     listWorkspaces: async (): Promise<Workspace[]> => {

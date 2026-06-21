@@ -29,7 +29,16 @@ describe('createAcpBackend', () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
     expect(b.id).toBe('acp:kimi')
-    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true, sessionControls: true, imageInput: true })
+    expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: true, commands: true, sessionControls: true, imageInput: true })
+  })
+
+  it('getMcp surfaces the agent-configured MCP servers via discoverMcp', async () => {
+    const b = createAcpBackend({
+      id: 'acp:kimi', cwd: '/tmp', connect: makeHarness().connect,
+      discoverMcp: () => [{ name: 'pact', type: 'stdio', status: 'configured' }],
+    })
+    expect(b.capabilities.mcp).toBe(true)
+    expect(await b.getMcp()).toEqual([{ name: 'pact', type: 'stdio', status: 'configured' }])
   })
 
   it('sends image blocks alongside text (imageInput)', async () => {

@@ -14,6 +14,7 @@ import { createOpencodeServer, createOpencodeClient } from '@opencode-ai/sdk'
 import type { AgentEvent } from '../core/agent/event.js'
 import type { RegisteredBackend } from '../core/agent/registry.js'
 import { createAcpBackend, type AcpPermissionRequest } from '../core/agent/acp-backend.js'
+import type { McpServer } from '../core/agent/backend.js'
 import type { AcpStore } from '../core/agent/acp-store.js'
 import { makeAcpConnect, parseAcpCommand } from '../core/agent/acp-connect.js'
 import { createOpencodeBackend } from '../core/agent/opencode-backend.js'
@@ -43,6 +44,21 @@ function kimiWorkDirs(): string[] {
       try { const d = JSON.parse(t); if (typeof d.workDir === 'string') dirs.add(d.workDir) } catch { /* skip bad line */ }
     }
     return [...dirs]
+  } catch { return [] }
+}
+
+/** kimi's own configured MCP servers (~/.kimi-code/mcp.json) — surfaced in the MCP panel. */
+function kimiMcp(): McpServer[] {
+  try {
+    const home = process.env.KIMI_CODE_HOME || join(homedir(), '.kimi-code')
+    const raw = JSON.parse(readFileSync(join(home, 'mcp.json'), 'utf8')) as {
+      mcpServers?: Record<string, { url?: string; type?: string; disabled?: boolean }>
+    }
+    return Object.entries(raw.mcpServers ?? {}).map(([name, cfg]) => ({
+      name,
+      type: cfg?.url ? (cfg.type ?? 'http') : 'stdio',
+      status: cfg?.disabled ? 'disabled' : 'configured',
+    }))
   } catch { return [] }
 }
 
@@ -126,6 +142,7 @@ export async function buildHostBackends(specs: BackendSpec[], deps: BuildHostBac
         onPermission: deps.onAcpPermission,
         store: deps.store,
         discoverDirs: kimiWorkDirs,
+        discoverMcp: kimiMcp,
       })
       backends.push({ id: spec.id, backend })
       log.info(`acp backend ready: ${spec.id} (${spec.command})`)
