@@ -288,8 +288,10 @@
 
     .rail-wrap :global(.agent-panel), .rail-wrap :global(.panel) { width: 100%; }
     .inspector-wrap :global(.inspector) { width: 100%; height: 100%; }
+    /* MUST sit below the rail (30) AND the inspector sheet (35) so taps on an open
+       drawer hit the drawer, not the backdrop. It only dims the content behind. */
     .backdrop {
-      display: block; position: absolute; inset: 0; z-index: 32;
+      display: block; position: absolute; inset: 0; z-index: 25;
       background: rgba(0,0,0,.5); border: none; padding: 0; cursor: default;
       animation: fade .18s ease;
     }
