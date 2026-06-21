@@ -36,6 +36,17 @@ export interface AcpUpdate {
    * call. The backend reads it → getTodos (same target as `entries`).
    */
   rawInput?: { todos?: Array<{ content?: string; title?: string; text?: string; status?: string }> }
+  /** current_mode_update: the session's new current mode id. Backend → getControls. */
+  currentModeId?: string
+  /**
+   * config_option_update: the full set of session config options (the model lives
+   * here as a `category:'model'` select). Backend → getControls (full replace).
+   */
+  configOptions?: Array<{
+    id?: string; name?: string; category?: string; type?: string
+    currentValue?: string
+    options?: Array<{ value?: string; name?: string; options?: Array<{ value?: string; name?: string }> }>
+  }>
 }
 
 type AcpContentLike =

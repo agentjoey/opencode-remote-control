@@ -65,4 +65,10 @@ export const api = {
   abort: (sessionId: string) => jsonPost<{ ok: boolean }>('/api/abort', { sessionId }),
   approve: (sessionId: string, requestId: string, decision: 'once' | 'always' | 'reject') =>
     jsonPost<{ ok: boolean }>('/api/approval', { sessionId, requestId, decision }),
+  controls: (id: string) =>
+    jsonGet<{ mode?: { current?: string; options: Array<{ id: string; name: string }> }; model?: { current?: string; options: Array<{ id: string; name: string }> } }>(`/api/session/${id}/controls`),
+  setMode: (id: string, modeId: string) =>
+    jsonPost<{ ok: boolean }>(`/api/session/${id}/mode`, { modeId }),
+  setModel: (id: string, modelId: string) =>
+    jsonPost<{ ok: boolean }>(`/api/session/${id}/model`, { modelId }),
 }
