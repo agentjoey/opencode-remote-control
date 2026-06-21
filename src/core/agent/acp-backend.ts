@@ -20,6 +20,7 @@ import type { ContentBlock, StructuredCard } from '../structured-card.js'
 import type { AgentEvent } from './event.js'
 import { createAcpNormalizer, type AcpUpdate } from './acp-normalizer.js'
 import { buildDiffEntry } from './diff-util.js'
+import { buildReplayCards } from './acp-replay.js'
 import type { AcpStore } from './acp-store.js'
 import { createLogger } from '../../utils/logger.js'
 
@@ -118,6 +119,9 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   const plans = new Map<string, Array<{ content: string; status: string }>>()
   /** Files edited per session, keyed by path (tool_call diff content) — served via getDiff. */
   const edits = new Map<string, Map<string, { oldText?: string; newText?: string }>>()
+  /** Sessions being history-loaded: their replayed session/update stream is buffered
+   *  here (→ buildReplayCards) instead of emitted as live events. */
+  const replayBuffers = new Map<string, AcpUpdate[]>()
 
   /** Map an OCRC decision → the ACP optionId by the option's `kind`. */
   function optionForDecision(
@@ -159,6 +163,10 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
   // Our ACP client: connection drives these as the agent streams.
   const client: AcpClient = {
     async sessionUpdate({ sessionId, update }) {
+      // History replay (session/load): buffer the replayed stream for getHistory, and
+      // do NOT emit it as live events.
+      const replay = replayBuffers.get(sessionId)
+      if (replay) { replay.push(update); return }
       if (update.sessionUpdate === 'available_commands_update' && Array.isArray(update.availableCommands)) {
         commands = update.availableCommands.map((c) => ({ name: c.name, description: c.description ?? '' }))
         return
@@ -226,6 +234,25 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
 
   /** Working dir of a session: OCRC store, else native (TUI) cwd, else host default. */
   function dirOf(sid: string): string { return store?.directoryOf(sid) || nativeDirs.get(sid) || cwd }
+
+  /** Rebuild a session's history by replaying it via session/load (kimi re-streams its
+   *  past updates; we buffer them and build cards). For native/unstreamed sessions
+   *  OCRC has no recorded cards for. Caches the result so later opens are instant. */
+  async function loadHistory(sid: string): Promise<StructuredCard[]> {
+    const { conn } = await connection()
+    if (!conn.loadSession) return []
+    const buffer: AcpUpdate[] = []
+    replayBuffers.set(sid, buffer)
+    try {
+      await conn.loadSession({ sessionId: sid, cwd: dirOf(sid), mcpServers: [] })
+      sessions.add(sid)
+    } catch (err) { log.warn(`history loadSession failed: ${String(err)}`) }
+    finally { replayBuffers.delete(sid) }
+    const now = Date.now()
+    const cards = buildReplayCards(sid, buffer, now)
+    if (store) for (const c of cards) store.recordCard(sid, c, now)
+    return cards
+  }
 
   async function ensureSession(sessionId: string, conn: AcpConnection): Promise<void> {
     if (sessions.has(sessionId)) return
@@ -353,7 +380,11 @@ export function createAcpBackend(deps: AcpBackendDeps): AgentBackend {
     getSessionMeta: async (): Promise<SessionMeta> => ({}),
     getContext: async (sid: string): Promise<SessionContext> => ({ directory: dirOf(sid) }),
     // History is OCRC-persisted (ACP doesn't replay it): return stored cards.
-    getHistory: async (sid: string): Promise<StructuredCard[]> => store?.getCards(sid) ?? [],
+    getHistory: async (sid: string): Promise<StructuredCard[]> => {
+      const cached = store?.getCards(sid)
+      if (cached && cached.length) return cached
+      return loadHistory(sid) // native/unstreamed session → replay via session/load
+    },
     getMessageBlocks: async (): Promise<ContentBlock[]> => [],
     // Working-dir diff = the files the agent edited this session (from tool_call
     // diff content), each rendered to a normalized DiffEntry (red/green lines).

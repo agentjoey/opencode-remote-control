@@ -32,6 +32,34 @@ describe('createAcpBackend', () => {
     expect(b.capabilities).toEqual({ liveMirror: false, tuiSelect: false, workspaces: true, freeformWorkspace: true, diff: true, todos: true, catalog: false, mcp: false, commands: true })
   })
 
+  it('getHistory replays a native (unstreamed) session via session/load → cards', async () => {
+    let client!: AcpClient
+    const events: AgentEvent[] = []
+    const conn: AcpConnection = {
+      newSession: vi.fn(async () => ({ sessionId: 'ses_n' })),
+      loadSession: vi.fn(async (p: { sessionId: string }) => {
+        // kimi replays the session's history as session/update during load
+        await client.sessionUpdate({ sessionId: p.sessionId, update: { sessionUpdate: 'user_message_chunk', content: { type: 'text', text: 'hi there' } } })
+        await client.sessionUpdate({ sessionId: p.sessionId, update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'hello back' } } })
+        return { configOptions: [] }
+      }),
+      authenticate: vi.fn(async () => ({})),
+      prompt: vi.fn(async () => ({ stopReason: 'end_turn' })),
+      cancel: vi.fn(async () => ({})),
+    }
+    const connect = async (c: AcpClient) => { client = c; return { conn, authMethodId: 'login' } }
+    const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect })
+    b.onEvent!((e) => events.push(e))
+
+    const cards = await b.getHistory('ses_native')
+    expect(conn.loadSession).toHaveBeenCalledWith({ sessionId: 'ses_native', cwd: '/tmp', mcpServers: [] })
+    expect(cards.map((c) => c.kind)).toEqual(['user', 'assistant'])
+    expect((cards[0] as { text: string }).text).toBe('hi there')
+    expect((cards[1] as { blocks: unknown }).blocks).toEqual([{ type: 'text', text: 'hello back' }])
+    // the replayed updates must NOT have leaked out as live streaming events
+    expect(events).toEqual([])
+  })
+
   it('createSession returns the agent sessionId and tracks it', async () => {
     const h = makeHarness()
     const b = createAcpBackend({ id: 'acp:kimi', cwd: '/tmp', connect: h.connect })
