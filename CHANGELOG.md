@@ -1,5 +1,39 @@
 # Changelog
 
+## v0.7.3 — 2026-06-21
+
+Headline: **the full ACP enhancement backlog (#1–9) ships** — kimi sessions reach
+near-parity with opencode across diffs, history, images, @-mentions, mode/model
+switching, MCP, the command palette, and terminal-style output. Built multi-agent via
+Pactify orchestration (backend by the orchestrator, frontend by the kimi seat).
+
+### Inspector & transcript
+- **Red/green diff viewer** — the working-dir panel expands each changed file to a
+  normalized, render-ready inline diff (`DiffEntry`: add/del/ctx lines) across all backends.
+- **tier-2 history replay** — opening a native/TUI kimi session (no OCRC-recorded cards)
+  now replays its history via `session/load` and rebuilds the conversation — fixes the
+  "no message" blank on agent-native sessions.
+- **terminal-style tool output** — tool-call output renders as a monospace terminal block
+  (ANSI-aware, collapsible) instead of plain text.
+
+### Composer & input
+- **Image input** — attach or paste images; sent as ACP image content blocks to backends
+  that advertise `promptCapabilities.image` (kimi). Gated by the `imageInput` capability.
+- **@-mention file picker** — typing `@` lists the session's workspace files
+  (`GET /api/session/:id/files`); selecting inserts an `@path` reference.
+- **Mode + model switching** — kimi sessions expose their mode (plan/acceptEdits/…) and
+  model via pickers (ACP `session/set_mode` + `set_config_option`); `sessionControls` cap.
+
+### Backend surfacing
+- **MCP** — the inspector MCP panel now shows an ACP agent's OWN configured servers
+  (e.g. kimi's `~/.kimi-code/mcp.json`); `mcp` capability flips on for ACP.
+- **Command palette** — lists the *viewed* session's backend commands with the right label
+  (no more hardcoded "opencode commands").
+
+### Telegram
+- **Command-menu self-heal** — bot init now clears stale narrower command scopes
+  (`all_private_chats`/`all_group_chats`) so the default 18-command menu can't be shadowed.
+
 ## v0.7.2 — 2026-06-20
 
 Headline: **ACP backends surface working-dir diffs and TODO lists** — kimi (and
