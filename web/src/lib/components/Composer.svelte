@@ -231,6 +231,10 @@
        desktop box, so a focused input doesn't read as a bulky floating block. */
     .box { padding: 7px 8px 7px 14px; border-radius: 22px; }
     .footer { margin-top: 4px; }
+    /* MUST be ≥16px: iOS Safari auto-zooms the whole page when a focused input is
+       smaller, which overflowed the box width on focus and left it oversized/clipped
+       after blur (the zoom didn't reset). 16px kills the zoom entirely. */
+    textarea { font-size: 16px; }
   }
   .dock {
     max-width: 780px;
