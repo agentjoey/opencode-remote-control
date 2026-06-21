@@ -78,6 +78,12 @@
     pickerOpen = !pickerOpen
   }
 
+  /** Mobile switcher row: change the active agent but STAY on the Sessions screen
+   *  (the list below re-renders for the new agent), unlike selectAgent which jumps. */
+  async function switchAgentOnly(id: string) {
+    await setActiveBackend(id)
+  }
+
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Escape') pickerOpen = false
   }
@@ -170,6 +176,19 @@
         </div>
       {/if}
     </div>
+    {#if drawer && agents.length > 1}
+      <div class="switcher-row">
+        {#each agents as a (a.id)}
+          {@const theme = agentAccent(a.id)}
+          <button class="switch-pill" class:active={a.id === activeBackendId} on:click={() => switchAgentOnly(a.id)}>
+            <span class="switch-tile" style="background:{ACCENT_BG[theme]}; color:{ACCENT_HEX[theme]}; border-color:{ACCENT_LINE[theme]}">{glyph(a)}</span>
+            <span class="status-dot {statusClass(a.status)}"></span>
+            <span class="switch-name mono">{a.name ?? a.id}</span>
+            <span class="switch-count mono">{sessionCount(a.id)}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
     <div class="list">
       <SessionList {activeId} agentId={activeBackendId} agentName={activeAgent?.name ?? activeAgent?.id} />
     </div>
@@ -412,6 +431,32 @@
     transition: color .12s ease, border-color .12s ease, background .12s ease;
   }
   .auto:hover, .auto.active { color: var(--text); border-color: var(--accent); background: var(--accent-2); }
+
+  .switcher-row {
+    display: flex; gap: 7px;
+    padding: 10px 12px; overflow-x: auto;
+    border-bottom: 1px solid var(--border-2);
+    flex-shrink: 0; scrollbar-width: none;
+  }
+  .switcher-row::-webkit-scrollbar { display: none; }
+  .switch-pill {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 5px 10px 5px 5px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius-pill); color: var(--text-2); cursor: pointer;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .switch-pill.active { background: var(--accent-2); border-color: var(--accent); }
+  .switch-tile {
+    width: 22px; height: 22px; display: inline-grid; place-items: center;
+    border-radius: 6px; border: 1px solid transparent;
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; flex-shrink: 0;
+  }
+  .switch-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .switch-count {
+    font-size: 10px; color: var(--text-3);
+    background: var(--bg); border-radius: 8px; padding: 1px 6px;
+  }
 
   .list { flex: 1; overflow-y: auto; min-height: 0; }
   .footer {

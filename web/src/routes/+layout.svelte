@@ -188,6 +188,10 @@
     applyAgentTheme($backends.activeId)
   }
 
+  // v2 mobile dual-screen: no active session → the Sessions screen (agent panel)
+  // fills the viewport; selecting one navigates to the Chat screen. ☰ re-opens it.
+  $: hasSession = !!$page.params.sessionId
+
   // afterNavigate runs after each client-side navigation completes,
   // so it never collides with the navigation's own page-store updates
   // (which used to cause an effect-update loop in the previous design).
@@ -216,7 +220,7 @@
     {#if drawerLeft || drawerRight}
       <button class="backdrop" aria-label="Close" on:click={closeDrawers}></button>
     {/if}
-    <div class="rail-wrap" class:collapsed={!$leftPanelOpen && !isMobile} class:open={drawerLeft}>
+    <div class="rail-wrap" class:collapsed={!$leftPanelOpen && !isMobile} class:open={drawerLeft || (isMobile && !hasSession)}>
       <AgentPanel activeId={$page.params.sessionId} drawer={isMobile} />
     </div>
     <main><slot /></main>
@@ -256,23 +260,36 @@
   .backdrop { display: none; }
 
   @media (max-width: 820px) {
-    .rail-wrap, .inspector-wrap {
+    /* v2 dual-screen: the agent panel is a FULL-SCREEN Sessions screen, shown when
+       there's no active session (or ☰), and slid away to reveal the Chat screen. */
+    .rail-wrap {
       display: block;
-      position: absolute; top: 0; bottom: 0; z-index: 30;
+      position: absolute; top: 0; bottom: 0; left: 0; z-index: 30;
+      width: 100%;
       overflow: hidden;
-      transition: transform .22s ease;
-      box-shadow: 0 0 40px rgba(0,0,0,.55);
+      transition: transform .24s ease;
+      transform: translateX(-100%);
     }
-    .rail-wrap { left: 0; width: min(268px, 84vw); transform: translateX(-100%); }
-    .rail-wrap.collapsed { width: min(268px, 84vw); }
-    .inspector-wrap { right: 0; width: min(82vw, 290px); transform: translateX(100%); }
-    .rail-wrap.open, .inspector-wrap.open { transform: translateX(0); }
-    /* Inner components fill the drawer so its width is exactly the wrapper's,
-       leaving a reliable backdrop strip to tap. */
+    .rail-wrap.collapsed { width: 100%; }
+    .rail-wrap.open { transform: translateX(0); }
+
+    /* Inspector = bottom sheet (rises over a scrim) per v2 mobile. */
+    .inspector-wrap {
+      display: block;
+      position: absolute; left: 0; right: 0; bottom: 0; top: auto; z-index: 35;
+      width: 100%; height: min(82vh, 580px);
+      overflow: hidden;
+      transition: transform .24s ease;
+      transform: translateY(100%);
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -10px 44px rgba(0,0,0,.55);
+    }
+    .inspector-wrap.open { transform: translateY(0); }
+
     .rail-wrap :global(.agent-panel), .rail-wrap :global(.panel) { width: 100%; }
-    .inspector-wrap :global(.inspector) { width: 100%; }
+    .inspector-wrap :global(.inspector) { width: 100%; height: 100%; }
     .backdrop {
-      display: block; position: absolute; inset: 0; z-index: 20;
+      display: block; position: absolute; inset: 0; z-index: 32;
       background: rgba(0,0,0,.5); border: none; padding: 0; cursor: default;
       animation: fade .18s ease;
     }
