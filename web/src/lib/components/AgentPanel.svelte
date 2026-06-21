@@ -171,6 +171,7 @@
       {/if}
     </div>
     {#if drawer && agents.length > 1}
+      <div class="agents-label">Agents</div>
       <div class="switcher-row">
         {#each agents as a (a.id)}
           {@const theme = agentThemes[a.id] ?? agentAccent(a.id)}
@@ -429,6 +430,12 @@
   }
   .auto:hover, .auto.active { color: var(--text); border-color: var(--accent); background: var(--accent-2); }
 
+  .agents-label {
+    padding: 12px 14px 6px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .14em;
+    color: var(--text-3);
+  }
   .switcher-row {
     display: flex; gap: 7px;
     padding: 10px 12px; overflow-x: auto;
