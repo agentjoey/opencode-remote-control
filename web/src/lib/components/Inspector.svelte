@@ -5,10 +5,14 @@
   import { can } from '$lib/stores/capabilities.js'
   import TaskPanel from './inspector/TaskPanel.svelte'
   import McpPanel from './inspector/McpPanel.svelte'
+  import UsagePanel from './inspector/UsagePanel.svelte'
   import ContextPanel from './inspector/ContextPanel.svelte'
   import WorkingDirPanel from './inspector/WorkingDirPanel.svelte'
   export let sessionId: string | undefined = undefined
-  $: title = $sessionList.find((s) => s.id === sessionId)?.title
+
+  $: session = $sessionList.find((s) => s.id === sessionId)
+  $: title = session?.title
+  $: agent = session?.agent
 
   // Debounced "activity tick": bump ~1s after the feed's lastSeq changes so
   // panels refetch when a turn produces output, without hammering per delta.
@@ -23,17 +27,23 @@
 <aside class="inspector">
   <div class="head">
     <div class="section-label">Session</div>
-    <div class="name" title={title ?? sessionId}>{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</div>
+    <div class="name" title={title ?? sessionId}>
+      {#if agent}<span class="agent mono">{agent}</span>{/if}
+      {#if agent && title}<span class="sep">·</span>{/if}
+      <span class="title-text">{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</span>
+    </div>
   </div>
   {#if $can('todos')}<TaskPanel {sessionId} {tick} />{/if}
-  <div class="fixed">
+  <div class="pinned">
     {#if $can('mcp')}
       <McpPanel {tick} />
       <div class="divider"></div>
     {/if}
-    <ContextPanel {sessionId} {tick} />
-    <div class="divider"></div>
     <WorkingDirPanel {sessionId} {tick} showDiff={$can('diff')} />
+    <div class="divider"></div>
+    <UsagePanel {sessionId} {tick} />
+    <div class="divider"></div>
+    <ContextPanel {sessionId} {tick} />
   </div>
 </aside>
 
@@ -58,14 +68,31 @@
   }
   .name {
     margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
     font-weight: 600;
     font-size: 13px;
     color: var(--text);
+  }
+  .agent {
+    flex-shrink: 0;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .sep {
+    flex-shrink: 0;
+    color: var(--text-3);
+  }
+  .title-text {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .fixed {
+  .pinned {
     border-top: 1px solid var(--border-2);
     padding: 14px 16px 18px;
     display: flex;
