@@ -6,7 +6,8 @@
   import { sessionList } from '$lib/stores/sessions.js'
   import { filterSessions } from '$lib/nav/filterSessions.js'
   import { api } from '$lib/api/client.js'
-  import { can, currentBackendId, backendName, ACCENTS, agentAccent, setAgentAccent } from '$lib/stores/capabilities.js'
+  import { can, currentBackendId, backendName, ACCENTS, agentAccent, setAgentAccent, backends, setActiveBackend, applyAgentTheme } from '$lib/stores/capabilities.js'
+  import { leftPanelOpen, newSessionOpen } from '$lib/stores/ui.js'
 
   export let open = false
 
@@ -22,7 +23,10 @@
   let backendCommands: BackendCommand[] = []
   let loadedForBackend: string | null = null
 
+  type AgentRow = { id: string; name?: string; status?: string }
   $: activeSessionId = $page.params.sessionId as string | undefined
+  $: agentList = (($backends?.backends ?? []) as AgentRow[])
+  $: filteredAgents = agentList.filter((a) => match(a.name ?? a.id, a.id, query))
   $: filteredSessions = filterSessions($sessionList, query)
   $: filteredBackend = backendCommands.filter((cmd) => match(cmd.name, cmd.description, query))
   $: filteredStatic = staticCommands.filter((cmd) => match(cmd.name, cmd.description, query))
@@ -38,7 +42,7 @@
     }
   }
 
-  $: flatItems = buildItems(filteredSessions, filteredBackend, filteredStatic, activeSessionId)
+  $: flatItems = buildItems(filteredAgents, filteredSessions, filteredBackend, filteredStatic, activeSessionId)
   $: selectableCount = flatItems.filter((i) => i.selectableIndex != null).length
   $: active = selectableCount ? Math.max(0, Math.min(active, selectableCount - 1)) : -1
 
@@ -51,20 +55,30 @@
   }
 
   const staticCommands = [
+    { name: 'new-session', description: 'New session' },
+    { name: 'toggle-panel', description: 'Collapse / expand the agent panel' },
     { name: 'cycle-accent', description: 'Cycle accent color' }
   ]
 
+  /** 2-letter agent glyph from its name. */
+  function glyph(name: string): string {
+    const parts = name.replace(/[^a-zA-Z0-9 ]/g, ' ').trim().split(/[\s-]+/).filter(Boolean)
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? parts[0]?.[1] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase()
+  }
+
   type FlatItem = {
-    type: 'group' | 'session' | 'command'
+    type: 'group' | 'session' | 'command' | 'agent'
     label?: string
     icon?: string
     session?: SessionRow
+    agent?: AgentRow
     command?: { name: string; description: string; kind?: 'backend' }
     disabled?: boolean
     selectableIndex?: number
   }
 
   function buildItems(
+    agents: AgentRow[],
     sessions: SessionRow[],
     backendCmds: BackendCommand[],
     staticCmds: BackendCommand[],
@@ -72,6 +86,13 @@
   ): FlatItem[] {
     const out: FlatItem[] = []
     let idx = 0
+
+    if (agents.length) {
+      out.push({ type: 'group', label: 'Agents', icon: '◆' })
+      for (const a of agents) {
+        out.push({ type: 'agent', agent: a, selectableIndex: idx++ })
+      }
+    }
 
     if (sessions.length) {
       out.push({ type: 'group', label: 'Sessions', icon: '#' })
@@ -114,12 +135,16 @@
     setAgentAccent(id, next)
   }
 
+  async function switchAgent(id: string) {
+    applyAgentTheme(id)
+    try { await setActiveBackend(id) } catch { /* optimistic; store reverts on failure */ }
+    close()
+  }
+
   async function runCommand(name: string) {
-    if (name === 'cycle-accent') {
-      cycleAccent()
-      close()
-      return
-    }
+    if (name === 'cycle-accent') { cycleAccent(); close(); return }
+    if (name === 'new-session') { newSessionOpen.set(true); close(); return }
+    if (name === 'toggle-panel') { leftPanelOpen.update((v) => !v); close(); return }
     if (!activeSessionId || running) return
     running = name
     cmdError = ''
@@ -134,7 +159,8 @@
   }
 
   function activateItem(item: FlatItem) {
-    if (item.type === 'session' && item.session) choose(item.session.id)
+    if (item.type === 'agent' && item.agent) switchAgent(item.agent.id)
+    else if (item.type === 'session' && item.session) choose(item.session.id)
     else if (item.type === 'command' && !item.disabled && item.command) runCommand(item.command.name)
   }
 
@@ -191,12 +217,23 @@
         {#if flatItems.length === 0}
           <div class="empty">No matches</div>
         {:else}
-          {#each flatItems as item (item.session?.id ?? item.command?.name ?? item.label ?? '')}
+          {#each flatItems as item (item.agent?.id ?? item.session?.id ?? item.command?.name ?? item.label ?? '')}
             {#if item.type === 'group'}
               <div class="group">
                 <span class="group-icon" aria-hidden="true">{item.icon}</span>
                 <span class="group-label mono">{item.label}</span>
               </div>
+            {:else if item.type === 'agent'}
+              <button
+                class="row"
+                class:active={item.selectableIndex === active}
+                on:click={() => { if (item.agent) switchAgent(item.agent.id) }}
+                on:mouseenter={() => { if (item.selectableIndex != null) active = item.selectableIndex }}
+              >
+                <span class="tile glyph" aria-hidden="true">{glyph(item.agent?.name ?? item.agent?.id ?? '')}</span>
+                <span class="label">{item.agent?.name ?? item.agent?.id ?? ''}</span>
+                <span class="hint mono">{item.agent?.id === $backends?.activeId ? 'active' : (item.agent?.status ?? '')}</span>
+              </button>
             {:else if item.type === 'session'}
               <button
                 class="row"
