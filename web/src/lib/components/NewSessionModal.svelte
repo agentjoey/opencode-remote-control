@@ -495,11 +495,15 @@
   @media (max-width: 820px) {
     .overlay {
       align-items: flex-end;
-      padding: 0 0 env(safe-area-inset-bottom, 0);
+      /* Lift the bottom sheet above the on-screen keyboard (--kb is published by the
+         layout's visualViewport tracker) so its inputs/buttons never sit behind it. */
+      padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + var(--kb, 0px));
+      transition: padding-bottom .2s ease-out;
     }
     .modal {
       width: 100%;
-      max-height: 86vh;
+      /* Shrink to the space left above the keyboard; the body scrolls if needed. */
+      max-height: calc(86vh - var(--kb, 0px));
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       animation: sheetin .22s ease;
