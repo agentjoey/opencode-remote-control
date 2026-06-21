@@ -15,7 +15,13 @@
   let expanded = new Set<string>()
 
   async function load(id?: string) {
-    if (!id) { dir = ''; files = []; expanded.clear(); expanded = expanded; return }
+    if (!id) {
+      dir = ''
+      files = []
+      expanded.clear()
+      expanded = expanded
+      return
+    }
     try {
       // The working dir comes from context (every backend has it); the diff file
       // list only when the backend supports it.
@@ -23,27 +29,51 @@
       dir = (ctx as any)?.directory ?? ''
       if (showDiff) {
         const diff = await api.diff(id)
-        files = (Array.isArray(diff) ? diff : []).map((d: any) => ({
-          path: String(d?.path ?? ''),
-          additions: Number(d?.additions ?? 0),
-          deletions: Number(d?.deletions ?? 0),
-          lines: Array.isArray(d?.lines) ? d.lines : [],
-        })).filter((d) => d.path).slice(0, 8)
+        files = (Array.isArray(diff) ? diff : [])
+          .map((d: any) => ({
+            path: String(d?.path ?? ''),
+            additions: Number(d?.additions ?? 0),
+            deletions: Number(d?.deletions ?? 0),
+            lines: Array.isArray(d?.lines) ? d.lines : [],
+          }))
+          .filter((d) => d.path)
+          .slice(0, 8)
       } else {
         files = []
       }
-    } catch { /* keep */ }
+    } catch {
+      /* keep last valid state on transient failures */
+    }
   }
 
   $: load(sessionId), tick, showDiff
+
+  $: totalAdds = files.reduce((a, f) => a + f.additions, 0)
+  $: totalDels = files.reduce((a, f) => a + f.deletions, 0)
+
+  function repoName(d?: string) {
+    if (!d) return ''
+    const parts = d.replace(/\/+$/, '').split('/')
+    return parts[parts.length - 1] || ''
+  }
 
   function short(p: string) {
     const parts = p.split('/')
     return parts.length > 3 ? '…/' + parts.slice(-3).join('/') : p
   }
 
-  function counts(entry: DiffEntry) {
-    return `+${entry.additions} / −${entry.deletions}`
+  function changeKind(entry: DiffEntry): 'add' | 'del' | 'mod' | 'none' {
+    if (entry.additions > 0 && entry.deletions > 0) return 'mod'
+    if (entry.additions > 0) return 'add'
+    if (entry.deletions > 0) return 'del'
+    return 'none'
+  }
+
+  function changeColor(kind: ReturnType<typeof changeKind>) {
+    if (kind === 'add') return 'var(--ok)'
+    if (kind === 'del') return 'var(--err)'
+    if (kind === 'mod') return 'var(--warn)'
+    return 'var(--text-4)'
   }
 
   function toggle(path: string) {
@@ -69,8 +99,13 @@
 </script>
 
 <div class="wd">
-  <div class="label">Working dir</div>
-  {#if dir}<div class="path mono">{short(dir)}</div>{/if}
+  <div class="hd">
+    <span class="section-label">Working dir</span>
+    {#if files.length}<span class="counts mono">+{totalAdds}/−{totalDels}</span>{/if}
+  </div>
+  {#if repoName(dir)}
+    <div class="repo-line mono">{repoName(dir)}</div>
+  {/if}
   {#if files.length}
     <div class="files mono">
       {#each files as entry (entry.path)}
@@ -82,7 +117,7 @@
             aria-expanded={expanded.has(entry.path)}
             on:click={() => toggle(entry.path)}
           >
-            <span class="m">M</span>
+            <span class="change" style="background: {changeColor(changeKind(entry))}"></span>
             <span class="nm">{short(entry.path)}</span>
             <span class="cnt">
               <span class="add">+{entry.additions}</span>
@@ -103,22 +138,54 @@
       {/each}
     </div>
   {/if}
-  {#if !dir && files.length === 0}<div class="label">—</div>{/if}
+  {#if !dir && files.length === 0}<div class="section-label">—</div>{/if}
 </div>
 
 <style>
-  .wd { font-size: 11px; }
-  .path { color: var(--text-2); margin: 4px 0 6px; }
-  .files { color: var(--text-2); display: flex; flex-direction: column; gap: 3px; }
+  .wd { display: flex; flex-direction: column; gap: 8px; }
+  .hd {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-label {
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    color: var(--text-3);
+    font-size: 10px;
+  }
+  .counts {
+    color: var(--text-2);
+    font-size: 11px;
+  }
+  .counts :global(*) {
+    color: inherit;
+  }
+  .repo-line {
+    color: var(--text-2);
+    font-size: 11px;
+  }
+  .files {
+    color: var(--text-2);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-  .entry { display: flex; flex-direction: column; }
+  .entry {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elev);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
 
   .f {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     width: 100%;
-    padding: 0;
+    padding: 6px 8px;
     margin: 0;
     border: none;
     background: transparent;
@@ -126,24 +193,44 @@
     font: inherit;
     text-align: left;
     white-space: nowrap;
-    overflow: hidden;
     cursor: pointer;
   }
-  .f:hover { color: var(--text); }
+  .f:hover { background: var(--bg-elev2); }
   .f:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 3px; }
 
-  .m { color: var(--warn); flex-shrink: 0; font-weight: 600; }
-  .nm { overflow: hidden; text-overflow: ellipsis; }
-  .cnt { margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; }
+  .change {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .nm {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: rtl;
+    text-align: left;
+    font-size: 11px;
+  }
+  .cnt {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+  }
   .cnt .add { color: var(--ok); }
   .cnt .del { color: var(--err); }
   .cnt .sep { color: var(--text-3); }
 
   .diff {
-    margin: 2px 0 6px 18px;
+    margin: 2px 6px 6px;
     padding: 4px 6px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
+    background: var(--bg);
+    border: 1px solid var(--border-2);
     border-radius: var(--radius-sm);
     overflow-x: auto;
   }

@@ -22,26 +22,42 @@
 
 <aside class="inspector">
   <div class="head">
-    <div class="label">Session</div>
+    <div class="section-label">Session</div>
     <div class="name" title={title ?? sessionId}>{title || (sessionId ? '…' + sessionId.slice(-8) : 'No session')}</div>
   </div>
   {#if $can('todos')}<TaskPanel {sessionId} {tick} />{/if}
   <div class="fixed">
     {#if $can('mcp')}
       <McpPanel {tick} />
-      <div class="div"></div>
+      <div class="divider"></div>
     {/if}
     <ContextPanel {sessionId} {tick} />
-    <div class="div"></div>
+    <div class="divider"></div>
     <WorkingDirPanel {sessionId} {tick} showDiff={$can('diff')} />
   </div>
 </aside>
 
 <style>
-  .inspector { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg-panel); border-left: 1px solid var(--border-2); }
-  .head { padding: 11px 14px; border-bottom: 1px solid var(--border-2); }
+  .inspector {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-2);
+  }
+  .head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-2);
+  }
+  .section-label {
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    color: var(--text-3);
+    font-size: 10px;
+  }
   .name {
-    margin-top: 3px;
+    margin-top: 4px;
     font-weight: 600;
     font-size: 13px;
     color: var(--text);
@@ -49,6 +65,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .fixed { border-top: 1px solid var(--border-2); padding: 12px 14px 18px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
-  .div { border-top: 1px solid var(--border-2); }
+  .fixed {
+    border-top: 1px solid var(--border-2);
+    padding: 14px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .divider {
+    border-top: 1px solid var(--border-2);
+  }
 </style>
