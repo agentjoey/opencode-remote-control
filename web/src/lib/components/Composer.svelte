@@ -227,6 +227,10 @@
       padding: 0 12px;
       padding-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 10px - var(--kb, 0px)));
     }
+    /* Compact pill on mobile (design = "pill + round send") instead of the taller
+       desktop box, so a focused input doesn't read as a bulky floating block. */
+    .box { padding: 7px 8px 7px 14px; border-radius: 22px; }
+    .footer { margin-top: 4px; }
   }
   .dock {
     max-width: 780px;
