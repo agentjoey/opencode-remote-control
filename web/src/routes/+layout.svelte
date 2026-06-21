@@ -18,6 +18,7 @@
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   import NewSessionModal from '$lib/components/NewSessionModal.svelte'
   import PlusMenu from '$lib/components/PlusMenu.svelte'
+  import MobileFab from '$lib/components/MobileFab.svelte'
   import PairGate from '$lib/components/PairGate.svelte'
   // No token (e.g. a fresh iOS home-screen PWA) → pair inside the app.
   let needsPairing = false
@@ -227,6 +228,7 @@
 <CommandPalette open={$paletteOpen} on:close={() => paletteOpen.set(false)} />
 <PlusMenu anchor={newButtonAnchor} />
 <NewSessionModal />
+<MobileFab onInspector={toggleRight} />
 {#if needsPairing}<PairGate />{/if}
 
 <style>
