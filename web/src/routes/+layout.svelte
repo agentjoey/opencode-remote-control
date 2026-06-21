@@ -8,6 +8,7 @@
   import { createWsClient } from '$lib/ws/client.js'
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId } from '$lib/stores/capabilities.js'
+  import { paletteOpen } from '$lib/stores/palette.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import Titlebar from '$lib/components/Titlebar.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
@@ -17,7 +18,6 @@
   import PairGate from '$lib/components/PairGate.svelte'
   // No token (e.g. a fresh iOS home-screen PWA) → pair inside the app.
   let needsPairing = false
-  let paletteOpen = false
   // Mobile off-canvas drawers (≤820px): ☰ opens sessions (left), ⓘ opens the
   // inspector (right). No effect on the desktop 3-pane layout.
   let drawerLeft = false
@@ -29,7 +29,7 @@
   function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
   function toggleRight() { drawerRight = !drawerRight; drawerLeft = false }
   function onGlobalKey(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen = true }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen.set(true) }
     if (e.key === 'Escape') closeDrawers()
   }
 
@@ -188,7 +188,7 @@
 <div class="app" bind:this={appEl}>
   <Titlebar
     {email}
-    onPalette={() => (paletteOpen = true)}
+    onPalette={() => paletteOpen.set(true)}
     {installEvent}
     onInstall={install}
     {drawerLeft}
@@ -210,7 +210,7 @@
     </div>
   </div>
 </div>
-<CommandPalette bind:open={paletteOpen} />
+<CommandPalette open={$paletteOpen} on:close={() => paletteOpen.set(false)} />
 {#if needsPairing}<PairGate />{/if}
 
 <style>
