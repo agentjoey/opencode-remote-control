@@ -238,7 +238,7 @@
       transition: transform .22s ease;
       box-shadow: 0 0 40px rgba(0,0,0,.55);
     }
-    .rail-wrap { left: 0; width: min(84vw, 300px); transform: translateX(-100%); }
+    .rail-wrap { left: 0; width: min(268px, 84vw); transform: translateX(-100%); }
     .inspector-wrap { right: 0; width: min(82vw, 290px); transform: translateX(100%); }
     .rail-wrap.open, .inspector-wrap.open { transform: translateX(0); }
     /* Inner components fill the drawer so its width is exactly the wrapper's,
