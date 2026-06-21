@@ -28,7 +28,7 @@
 
 <div class="gate">
   <div class="card">
-    <div class="brand">OCRC</div>
+    <div class="brand"><b>pactify</b> <span class="linx">linx</span></div>
     <h1>Pair this device</h1>
     <p>
       In Telegram, send <code>/pair</code> to your bot, then paste the

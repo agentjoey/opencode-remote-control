@@ -23,22 +23,22 @@
   let pickerOpen = false
 
   const ACCENT_HEX: Record<Accent, string> = {
-    emerald: '#3fb27f',
-    azure: '#4a9eed',
-    amber: '#e0a341',
-    violet: '#a98cf0',
+    emerald: '#54d398',
+    azure: '#5b9eff',
+    amber: '#ffc34d',
+    violet: '#b48cf0',
   }
   const ACCENT_BG: Record<Accent, string> = {
-    emerald: '#243029',
-    azure: '#1c2733',
-    amber: '#2e2716',
-    violet: '#221f33',
+    emerald: '#0f261b',
+    azure: '#101f33',
+    amber: '#2a2110',
+    violet: '#1d1733',
   }
   const ACCENT_LINE: Record<Accent, string> = {
-    emerald: '#2e6e52',
-    azure: '#2f5f8c',
-    amber: '#8c6e2f',
-    violet: '#5e4f8c',
+    emerald: '#236b49',
+    azure: '#2c5891',
+    amber: '#8a6a26',
+    violet: '#5a4790',
   }
 
   $: activeBackendId = $backends?.activeId ?? $backends?.backends[0]?.id ?? 'opencode'

@@ -1,35 +1,49 @@
-/* src/lib/theme.css — warm dark theme, claude.ai/code aesthetic */
+/* src/lib/theme.css — Pactify Linx · cool-slate dark theme */
 :root {
-  --bg:        #1c1b19;  /* warm charcoal — main canvas */
-  --bg-panel:  #181715;  /* side rails / titlebar — slightly deeper */
-  --bg-elev:   #262521;  /* elevated cards */
-  --bg-elev2:  #2d2b27;  /* hover-raised surfaces */
-  --bg-input:  #2a2824;  /* input surfaces */
-  --border:    #393631;  /* hairline borders */
-  --border-2:  #302d29;  /* secondary / inner divider */
-  --text:      #f2f0ec;  /* primary — warm off-white */
-  --text-2:    #c2bdb4;  /* secondary */
-  --text-3:    #8d877c;  /* muted / meta */
-  --text-4:    #6b665d;  /* faint / disabled */
-  --accent:    #3fb27f;  /* emerald — default theme */
-  --accent-2:  #243029;  /* subtle green-tinted hover/selected fill */
-  --accent-ink:#06140d;  /* dark text on emerald surfaces (buttons) */
-  --accent-line:#2e6e52; /* accent-tinted border */
-  --user-bubble: linear-gradient(135deg, #3fb27f 0%, #2e9468 100%);  /* user message */
-  --user-ink:  #f2fbf6;  /* text on the user bubble */
-  --ok:        #6cc08b;  /* success / done / idle */
-  --warn:      #e0b341;  /* awaiting input / approval pending */
-  --err:       #e0796b;  /* error / abort / reject */
-  --hl-purple: #b48cf0;  /* reasoning ("thinking") accent + branch name */
+  --bg:        #0a0e14;  /* cool slate — main canvas */
+  --bg-panel:  #0c1119;  /* rail / inspector / titlebar */
+  --bg-elev:   #10151e;  /* elevated cards / chips / buttons */
+  --bg-elev2:  #171e2a;  /* hover-raised / popover rows */
+  --bg-input:  #0f141d;  /* input / composer surfaces */
+  --border:    #222b3a;  /* primary hairline */
+  --border-2:  #171e2a;  /* secondary divider */
+  --text:      #eaeef5;  /* primary */
+  --text-2:    #c2cad8;  /* secondary */
+  --text-3:    #7e889b;  /* muted / meta */
+  --text-4:    #52617a;  /* faint / disabled */
+  /* chrome accent — emerald (default / opencode); per-agent via [data-accent] */
+  --accent:    #54d398;
+  --accent-2:  #0f261b;  /* accent-tinted fill (hover/selected) */
+  --accent-ink:#04140b;  /* dark text on accent surfaces (buttons) */
+  --accent-line:#236b49; /* accent-tinted border */
+  --user-bubble: linear-gradient(135deg, #54d398 0%, #37b377 100%);
+  --user-ink:  #04140b;
+  /* fixed conversation palette — NEVER themed (transcript stays emerald) */
+  --cv:        #54d398;
+  --cv-2:      #0f261b;
+  --cv-ink:    #04140b;
+  --cv-line:   #236b49;
+  --cv-bubble: linear-gradient(135deg, #54d398 0%, #37b377 100%);
+  /* semantic */
+  --ok:        #6ee7a0;  /* success / done / idle / online */
+  --warn:      #ffd479;  /* awaiting input / approval / connecting */
+  --err:       #f97066;  /* error / abort / reject / offline */
+  --info:      #8ab4ff;
+  --hl-purple: #b48cf0;  /* reasoning ("thinking") + branch name */
   --hl-green:  #6cc08b;  /* tool argument text */
   --hl-cyan:   #4ec9b0;  /* code-block language tag */
   --hl-orange: #dca87a;  /* misc highlight */
-  --hl-yellow: #e0b341;  /* function / method */
-  --hl-gray:   #8d877c;  /* comment / meta */
+  --hl-yellow: #ffd479;  /* function / method */
+  --hl-gray:   #7e889b;  /* comment / meta */
+  /* brand role colors — chain-link logo + agent dots */
+  --role-gold:   #f5b301; /* orchestrator */
+  --role-blue:   #3a86ff; /* reviewer */
+  --role-green:  #3fb27f; /* worker */
+  --role-silver: #cdd6e6; /* the pact (neutral) */
   --radius:    14px;
   --radius-sm: 9px;
   --radius-pill: 20px;
-  --shadow-card: 0 2px 14px rgba(63, 178, 127, .16);
+  --shadow-card: 0 2px 14px rgba(84, 211, 152, .16);
   --shadow-composer: 0 6px 24px rgba(0, 0, 0, .26);
   --shadow-palette: 0 24px 70px rgba(0, 0, 0, .6);
   --font-sans: 'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -39,24 +53,24 @@
 /* Alternate accent themes: emerald (default), azure, amber, violet.
    Set <html data-accent="azure"> (or :root) to override the four accent vars. */
 :root[data-accent="azure"] {
-  --accent: #4a9eed;
-  --accent-2: #1c2733;
-  --accent-ink: #06121f;
-  --accent-line: #2f5f8c;
-  --user-bubble: linear-gradient(135deg, #4a9eed 0%, #2f7fd1 100%);
+  --accent: #5b9eff;
+  --accent-2: #101f33;
+  --accent-ink: #04101f;
+  --accent-line: #2c5891;
+  --user-bubble: linear-gradient(135deg, #5b9eff 0%, #2f7fd1 100%);
 }
 :root[data-accent="amber"] {
-  --accent: #e0a341;
-  --accent-2: #2e2716;
-  --accent-ink: #1f1606;
-  --accent-line: #8c6e2f;
-  --user-bubble: linear-gradient(135deg, #e6b256 0%, #c98a2c 100%);
+  --accent: #ffc34d;
+  --accent-2: #2a2110;
+  --accent-ink: #1f1503;
+  --accent-line: #8a6a26;
+  --user-bubble: linear-gradient(135deg, #ffc34d 0%, #d99a2c 100%);
 }
 :root[data-accent="violet"] {
-  --accent: #a98cf0;
-  --accent-2: #221f33;
-  --accent-ink: #0f0a1f;
-  --accent-line: #5e4f8c;
+  --accent: #b48cf0;
+  --accent-2: #1d1733;
+  --accent-ink: #0f0820;
+  --accent-line: #5a4790;
   --user-bubble: linear-gradient(135deg, #b48cf0 0%, #8d6bd8 100%);
 }
 
@@ -86,11 +100,11 @@ body {
    accents so user bubbles, execution shimmer, streaming caret, bullets, and
    approval/copy accents stay emerald regardless of the active agent's chrome theme. */
 .conversation-emerald {
-  --accent: #3fb27f;
-  --accent-2: #243029;
-  --accent-ink: #06140d;
-  --accent-line: #2e6e52;
-  --user-bubble: linear-gradient(135deg, #3fb27f 0%, #2e9468 100%);
+  --accent: var(--cv);
+  --accent-2: var(--cv-2);
+  --accent-ink: var(--cv-ink);
+  --accent-line: var(--cv-line);
+  --user-bubble: var(--cv-bubble);
 }
 
 /* syntax highlighting — scoped to .md via MarkdownView */
@@ -124,7 +138,7 @@ body {
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
 *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
-*::-webkit-scrollbar-thumb:hover { background: #4a463f; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: #2f3a4d; background-clip: content-box; }
 
 /* Status & motion keyframes */
 @keyframes ocrc-pulse {

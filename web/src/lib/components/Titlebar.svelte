@@ -27,13 +27,15 @@
   <button class="iconbtn" class:active={drawerLeft} on:click={onToggleLeft} aria-label="Sessions">☰</button>
 
   <!-- Brand mark + wordmark -->
-  <div class="brand" title="opencode remote control">
-    <div class="brand-mark" aria-hidden="true">
-      <span class="brand-ring"></span>
-      <span class="brand-ring" style="animation-delay: 1.1s"></span>
-      <span class="brand-dot"></span>
-    </div>
-    <span class="wordmark">OCRC</span>
+  <div class="brand" title="Pactify Linx">
+    <svg class="brand-mark" viewBox="0 0 64 64" fill="none" stroke-width="7" stroke-linecap="round" aria-hidden="true">
+      <path d="M24 18 A14 14 0 0 1 36.1 39" stroke="var(--role-blue)"/>
+      <path d="M11.9 39 A14 14 0 0 1 24 18" stroke="var(--role-green)"/>
+      <rect x="31" y="20" width="24" height="24" rx="8" stroke="var(--role-silver)"/>
+      <path d="M36.1 39 A14 14 0 0 1 11.9 39" stroke="var(--role-gold)"/>
+      <path d="M34.4 41 A14 14 0 0 1 27.4 45.5" stroke="var(--role-gold)"/>
+    </svg>
+    <span class="wordmark"><b>pactify</b> <span class="linx">linx</span></span>
   </div>
 
   <!-- New actions menu -->
@@ -95,39 +97,20 @@
     flex-shrink: 0;
   }
   .brand-mark {
-    position: relative;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: var(--accent-2);
-    border: 1px solid var(--accent-line);
-    display: grid;
-    place-items: center;
+    width: 27px;
+    height: 27px;
     flex-shrink: 0;
   }
-  .brand-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-  .brand-ring {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 1.5px solid var(--accent);
-    opacity: 0;
-    animation: ocrc-ring 2.2s ease-out infinite;
-    pointer-events: none;
-  }
   .wordmark {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    letter-spacing: .14em;
-    color: var(--text);
-    font-size: 13px;
+    font-family: var(--font-sans);
+    font-size: 14.5px;
+    letter-spacing: .005em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
   }
+  .wordmark b { font-weight: 700; color: var(--text); }
+  .wordmark .linx { font-weight: 500; color: var(--text-3); }
 
   .new-session {
     display: inline-flex;
