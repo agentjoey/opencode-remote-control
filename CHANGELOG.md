@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.8.0 — 2026-06-22
+
+Headline: **OCRC becomes Pactify Linx** — a full console redesign around an
+**agent-as-top-axis** information architecture, plus the Pactify brand (cool-slate
+palette, chain-link mark). Built multi-agent: backend/contract by the orchestrator,
+the UI by real **kimi-code** sessions driven headlessly.
+
+### Rebrand — Pactify Linx
+- Cool-slate theme (`#0a0e14` base) replacing warm charcoal; chain-link brand mark
+  (role-colored arcs + silver "pact" square) and a `pactify linx` wordmark; refined
+  per-agent accent themes, a fixed conversation palette (`--cv`), brand role colors,
+  and regenerated app icons. App/manifest renamed to Pactify Linx.
+
+### Console redesign (desktop + mobile)
+- **Agent axis** — agents (backends) are the top-level axis: a left-panel agent
+  dropdown + picker, sessions scoped to the active agent, and a per-agent chrome theme
+  (the conversation stays emerald). `/api/backends` now reports name/host/status.
+- **Chat** — session switcher in the sub-header; signature **EXECUTION** panel; reasoning
+  toggle; code/list blocks; meta + copy/retry; in-place approval flow.
+- **Inspector** — Tasks (scrolling middle) + pinned Working dir / **Usage** (tokens-first)
+  / Context.
+- **New session** modal (agent + working dir + recents + branch) and a `+ New` menu.
+- **Command palette** — Agents (switch) + sessions across all agents + commands.
+- **Mobile** — dual-screen Sessions↔Chat flow, bottom-sheet inspector, horizontal agent
+  switcher row, and a FAB speed-dial.
+
+### Also
+- Telegram command-menu self-heal now confirmed active in the plugin hub.
+
 ## v0.7.3 — 2026-06-21
 
 Headline: **the full ACP enhancement backlog (#1–9) ships** — kimi sessions reach
