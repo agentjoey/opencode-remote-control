@@ -9,13 +9,15 @@
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId, applyAgentTheme } from '$lib/stores/capabilities.js'
   import { paletteOpen } from '$lib/stores/palette.js'
-  import { leftPanelOpen } from '$lib/stores/ui.js'
+  import { leftPanelOpen, plusMenuOpen, newSessionOpen } from '$lib/stores/ui.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import Titlebar from '$lib/components/Titlebar.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
   import AgentPanel from '$lib/components/AgentPanel.svelte'
   import Inspector from '$lib/components/Inspector.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
+  import NewSessionModal from '$lib/components/NewSessionModal.svelte'
+  import PlusMenu from '$lib/components/PlusMenu.svelte'
   import PairGate from '$lib/components/PairGate.svelte'
   // No token (e.g. a fresh iOS home-screen PWA) → pair inside the app.
   let needsPairing = false
@@ -25,13 +27,18 @@
   let drawerRight = false
   let isMobile = false
   let appEl: HTMLElement // the 100vh app shell — its height is the full-screen reference for --kb
+  let newButtonAnchor: HTMLElement | null = null
   function closeDrawers() { drawerLeft = false; drawerRight = false }
   // ☰ / ⓘ toggle their drawer (tap again to close) and close the other.
   function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
   function toggleRight() { drawerRight = !drawerRight; drawerLeft = false }
   function onGlobalKey(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen.set(true) }
-    if (e.key === 'Escape') closeDrawers()
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen.set(true); return }
+    if (e.key === 'Escape') {
+      if (get(plusMenuOpen)) { plusMenuOpen.set(false); return }
+      if (get(newSessionOpen)) { newSessionOpen.set(false); return }
+      closeDrawers()
+    }
   }
 
   let email = ''
@@ -201,6 +208,7 @@
     {drawerRight}
     onToggleLeft={toggleLeft}
     onToggleRight={toggleRight}
+    bind:newButtonAnchor
   />
   <OfflineBanner />
   <div class="body">
@@ -217,6 +225,8 @@
   </div>
 </div>
 <CommandPalette open={$paletteOpen} on:close={() => paletteOpen.set(false)} />
+<PlusMenu anchor={newButtonAnchor} />
+<NewSessionModal />
 {#if needsPairing}<PairGate />{/if}
 
 <style>

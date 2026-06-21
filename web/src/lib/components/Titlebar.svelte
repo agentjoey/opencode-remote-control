@@ -1,9 +1,6 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { sessionList } from '$lib/stores/sessions.js'
-  import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
   import { connection, latency } from '$lib/stores/connection.js'
-  import { api } from '$lib/api/client.js'
+  import { plusMenuOpen } from '$lib/stores/ui.js'
 
   export let email = ''
   export let onPalette: () => void
@@ -13,26 +10,10 @@
   export let drawerRight = false
   export let onToggleLeft: () => void = () => {}
   export let onToggleRight: () => void = () => {}
+  export let newButtonAnchor: HTMLElement | null = null
 
   $: userLabel = email || 'you@local'
   $: userInitial = userLabel.charAt(0).toUpperCase()
-
-  let creating = false
-  async function newSession() {
-    if (creating) return
-    const directory = ($activeWorkspace as string | null) || $workspaces[0]?.directory || ''
-    creating = true
-    try {
-      const res = await api.createSession({ directory })
-      sessionList.set(await api.sessions())
-      workspaces.set(await api.workspaces())
-      goto(`/${res.id}/`)
-    } catch (e) {
-      alert(`创建会话失败：${(e as Error).message}`)
-    } finally {
-      creating = false
-    }
-  }
 
   function statusText(status: string): string {
     if (status === 'connected') return 'live'
@@ -55,10 +36,11 @@
     <span class="wordmark">OCRC</span>
   </div>
 
-  <!-- New session button -->
-  <button class="new-session" on:click={newSession} disabled={creating} title="Create a new session">
+  <!-- New actions menu -->
+  <button class="new-session" bind:this={newButtonAnchor} on:click={() => plusMenuOpen.update((v) => !v)} title="New session, command palette…">
     <span class="new-icon" aria-hidden="true">+</span>
     <span class="new-label">New</span>
+    <span class="new-caret" aria-hidden="true">▾</span>
   </button>
 
   <!-- Command palette trigger -->
@@ -166,6 +148,7 @@
   .new-session:disabled { opacity: .5; cursor: default; }
   .new-icon { font-size: 14px; line-height: 1; }
   .new-label { white-space: nowrap; }
+  .new-caret { font-size: 9px; line-height: 1; margin-left: 2px; opacity: .85; }
 
   .palette-trigger {
     display: flex;
