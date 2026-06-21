@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte'
   import { api } from '../api/client.js'
   import { connection } from '../stores/connection.js'
   import { upsertCard } from '../stores/sessions.js'
@@ -15,6 +16,11 @@
   let textarea: HTMLTextAreaElement
   let fileInput: HTMLInputElement
   let pendingImages: Array<{ data: string; mimeType: string; preview: string }> = []
+
+  let mentionResults: string[] = []
+  let mentionActive = 0
+  let mentionStart = 0
+  let mentionTimer: ReturnType<typeof setTimeout> | undefined
 
   function newClientId(): string {
     return `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
@@ -55,6 +61,50 @@
     pendingImages = pendingImages.filter((_, i) => i !== index)
   }
 
+  function detectMention(): { token: string; start: number } | null {
+    if (!textarea) return null
+    const pos = textarea.selectionStart
+    const before = text.slice(0, pos)
+    const m = before.match(/(^|[\s])@([^\s]*)$/)
+    if (!m) return null
+    return { token: m[2], start: pos - m[2].length - 1 }
+  }
+
+  function updateMention() {
+    const found = detectMention()
+    if (!found) {
+      mentionResults = []
+      clearTimeout(mentionTimer)
+      return
+    }
+    mentionStart = found.start
+    mentionActive = 0
+    clearTimeout(mentionTimer)
+    const q = found.token
+    mentionTimer = setTimeout(async () => {
+      try {
+        mentionResults = await api.files(sessionId, q)
+      } catch {
+        mentionResults = []
+      }
+    }, 150)
+  }
+
+  function selectMention(path: string) {
+    const caretEnd = textarea.selectionStart
+    const before = text.slice(0, mentionStart)
+    const after = text.slice(caretEnd)
+    const insert = `@${path} `
+    text = before + insert + after
+    mentionResults = []
+    tick().then(() => {
+      const pos = before.length + insert.length
+      textarea.selectionStart = textarea.selectionEnd = pos
+      textarea.focus()
+      autoGrow()
+    })
+  }
+
   async function send() {
     const body = text.trim()
     if ((!body && pendingImages.length === 0) || sending) return
@@ -81,6 +131,12 @@
   }
 
   function onKeydown(e: KeyboardEvent) {
+    if (mentionResults.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mentionActive = Math.min(mentionActive + 1, mentionResults.length - 1); return }
+      if (e.key === 'ArrowUp') { e.preventDefault(); mentionActive = Math.max(mentionActive - 1, 0); return }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); selectMention(mentionResults[mentionActive]); return }
+      if (e.key === 'Escape') { e.preventDefault(); mentionResults = []; return }
+    }
     if (e.key !== 'Enter' || e.shiftKey) return
     if (e.isComposing || e.keyCode === 229) return
     e.preventDefault()
@@ -100,6 +156,19 @@
       <div class="error" role="alert">{error}</div>
     {/if}
     <div class="box" class:focused>
+      {#if mentionResults.length > 0}
+        <div class="mention-dropdown" role="listbox">
+          {#each mentionResults as path, i}
+            <button
+              class="mention-row"
+              class:active={i === mentionActive}
+              role="option"
+              aria-selected={i === mentionActive}
+              on:mousedown|preventDefault={() => selectMention(path)}
+            >{path}</button>
+          {/each}
+        </div>
+      {/if}
       {#if pendingImages.length > 0}
         <div class="thumbnails">
           {#each pendingImages as img, i}
@@ -114,10 +183,11 @@
         bind:this={textarea}
         bind:value={text}
         on:keydown={onKeydown}
-        on:input={autoGrow}
+        on:input={() => { autoGrow(); updateMention() }}
         on:paste={onPaste}
         on:focus={() => (focused = true)}
         on:blur={() => (focused = false)}
+        on:click={updateMention}
         placeholder={$connection === 'connected' ? `Message ${$backendName}…  (Enter 发送, Shift+Enter 换行)` : 'Disconnected…'}
         rows={1}
       ></textarea>
@@ -172,6 +242,7 @@
   }
   /* one rounded surface holding the input + its controls (claude.ai style) */
   .box {
+    position: relative;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -280,5 +351,39 @@
   .attach:hover {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text);
+  }
+  .mention-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    max-height: 180px;
+    overflow-y: auto;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    z-index: 10;
+  }
+  .mention-row {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mention-row.active, .mention-row:hover {
+    background: var(--accent-2);
   }
 </style>

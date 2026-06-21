@@ -71,4 +71,6 @@ export const api = {
     jsonPost<{ ok: boolean }>(`/api/session/${id}/mode`, { modeId }),
   setModel: (id: string, modelId: string) =>
     jsonPost<{ ok: boolean }>(`/api/session/${id}/model`, { modelId }),
+  files: (id: string, q: string) =>
+    jsonGet<string[]>(`/api/session/${id}/files?q=${encodeURIComponent(q)}`),
 }
