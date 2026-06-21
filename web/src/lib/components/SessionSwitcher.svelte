@@ -2,7 +2,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { sessionList } from '$lib/stores/sessions.js'
-  import { backends, agentAccent, setActiveBackend, type CapabilitiesSnapshot } from '$lib/stores/capabilities.js'
+  import { backends, agentAccent, setActiveBackend, ACCENT_HEX, ACCENT_BG, ACCENT_LINE, type CapabilitiesSnapshot } from '$lib/stores/capabilities.js'
   import { api } from '$lib/api/client.js'
   import { workspaces, activeWorkspace } from '$lib/stores/workspaces.js'
 
@@ -11,24 +11,6 @@
   let open = false
   let creating = false
 
-  const ACCENT_HEX: Record<string, string> = {
-    emerald: '#3fb27f',
-    azure: '#4a9eed',
-    amber: '#e0a341',
-    violet: '#a98cf0',
-  }
-  const ACCENT_BG: Record<string, string> = {
-    emerald: '#243029',
-    azure: '#1c2733',
-    amber: '#2e2716',
-    violet: '#221f33',
-  }
-  const ACCENT_LINE: Record<string, string> = {
-    emerald: '#2e6e52',
-    azure: '#2f5f8c',
-    amber: '#8c6e2f',
-    violet: '#5e4f8c',
-  }
 
   $: activeBackendId = $backends?.activeId ?? $backends?.backends[0]?.id ?? 'opencode'
   $: activeAgent = $backends?.backends.find((b) => b.id === activeBackendId)

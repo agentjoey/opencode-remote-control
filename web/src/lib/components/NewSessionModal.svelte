@@ -1,29 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { api } from '$lib/api/client.js'
-  import { backends, setActiveBackend, agentAccent, ACCENTS, type Accent, type CapabilitiesSnapshot } from '$lib/stores/capabilities.js'
+  import { backends, setActiveBackend, agentAccent, ACCENTS, ACCENT_HEX, ACCENT_BG, ACCENT_LINE, type Accent, type CapabilitiesSnapshot } from '$lib/stores/capabilities.js'
   import { workspaces } from '$lib/stores/workspaces.js'
   import { sessionList } from '$lib/stores/sessions.js'
   import { newSessionOpen } from '$lib/stores/ui.js'
 
-  const ACCENT_HEX: Record<Accent, string> = {
-    emerald: '#3fb27f',
-    azure: '#4a9eed',
-    amber: '#e0a341',
-    violet: '#a98cf0',
-  }
-  const ACCENT_BG: Record<Accent, string> = {
-    emerald: '#243029',
-    azure: '#1c2733',
-    amber: '#2e2716',
-    violet: '#221f33',
-  }
-  const ACCENT_LINE: Record<Accent, string> = {
-    emerald: '#2e6e52',
-    azure: '#2f5f8c',
-    amber: '#8c6e2f',
-    violet: '#5e4f8c',
-  }
 
   $: agents = $backends?.backends ?? []
   $: defaultAgentId = $backends?.activeId ?? agents[0]?.id ?? 'opencode'

@@ -7,6 +7,9 @@
     ACCENTS,
     agentAccent,
     accentOverrides,
+    ACCENT_HEX,
+    ACCENT_BG,
+    ACCENT_LINE,
     setAgentAccent,
     defaultAccentForAgent,
     type Accent,
@@ -22,24 +25,6 @@
 
   let pickerOpen = false
 
-  const ACCENT_HEX: Record<Accent, string> = {
-    emerald: '#54d398',
-    azure: '#5b9eff',
-    amber: '#ffc34d',
-    violet: '#b48cf0',
-  }
-  const ACCENT_BG: Record<Accent, string> = {
-    emerald: '#0f261b',
-    azure: '#101f33',
-    amber: '#2a2110',
-    violet: '#1d1733',
-  }
-  const ACCENT_LINE: Record<Accent, string> = {
-    emerald: '#236b49',
-    azure: '#2c5891',
-    amber: '#8a6a26',
-    violet: '#5a4790',
-  }
 
   $: activeBackendId = $backends?.activeId ?? $backends?.backends[0]?.id ?? 'opencode'
   $: activeAgent = $backends?.backends.find((b) => b.id === activeBackendId)

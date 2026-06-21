@@ -191,16 +191,17 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    border: 1.5px solid var(--accent);
+    border: 1.5px solid var(--ok);
     opacity: 0;
     animation: ocrc-ring 1.6s ease-out infinite;
     pointer-events: none;
   }
-  .connection-pill.connected .dot { background: var(--accent); box-shadow: 0 0 7px var(--accent); }
+  /* 'live' pill stays semantic green (connection health), NOT themed — by request. */
+  .connection-pill.connected .dot { background: var(--ok); box-shadow: 0 0 7px var(--ok); }
   .connection-pill.reconnecting .dot { background: var(--warn); animation: ocrc-pulse 1.2s ease-in-out infinite; }
   .connection-pill.offline .dot { background: transparent; border: 1.5px solid var(--text-4); }
   .connection-state { font-weight: 600; color: var(--text-3); }
-  .connection-pill.connected .connection-state { color: var(--accent); }
+  .connection-pill.connected .connection-state { color: var(--ok); }
   .connection-pill.reconnecting .connection-state { color: var(--warn); }
   .connection-pill.offline .connection-state { color: var(--err); }
   .connection-latency { color: var(--text-3); font-size: 10.5px; }

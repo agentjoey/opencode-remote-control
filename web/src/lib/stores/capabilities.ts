@@ -89,6 +89,18 @@ export const backendName = derived(currentBackendId, ($id) => {
 export const ACCENTS = ['emerald', 'azure', 'amber', 'violet'] as const
 export type Accent = (typeof ACCENTS)[number]
 
+// Single source of truth for the per-accent swatch colors (must match theme.css /
+// [data-accent]). Components import these so glyph tiles never drift across the app.
+export const ACCENT_HEX: Record<Accent, string> = {
+  emerald: '#54d398', azure: '#5b9eff', amber: '#ffc34d', violet: '#b48cf0',
+}
+export const ACCENT_BG: Record<Accent, string> = {
+  emerald: '#0f261b', azure: '#101f33', amber: '#2a2110', violet: '#1d1733',
+}
+export const ACCENT_LINE: Record<Accent, string> = {
+  emerald: '#236b49', azure: '#2c5891', amber: '#8a6a26', violet: '#5a4790',
+}
+
 const AGENT_ACCENT_KEY = 'ocrc.agentAccents'
 const DEFAULT_AGENT_ACCENT: Record<string, Accent> = {
   opencode: 'emerald',
