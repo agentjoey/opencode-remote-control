@@ -133,8 +133,8 @@
                   >
                     {glyph(a)}
                   </span>
+                  <span class="chip-status {statusClass(a.status)}" style="--dot:{ACCENT_HEX[theme]}"></span>
                   <span class="chip-name">{a.name ?? a.id}</span>
-                  <span class="chip-status {statusClass(a.status)}"></span>
                 </button>
               {/each}
             </div>
@@ -334,7 +334,7 @@
     flex-shrink: 0;
     box-sizing: border-box;
   }
-  .chip-status.online { background: var(--accent); border-color: var(--accent); }
+  .chip-status.online { background: var(--dot, var(--ok)); border-color: var(--dot, var(--ok)); }
   .chip-status.connecting { background: var(--warn); border-color: var(--warn); animation: ocrc-pulse 1.2s ease-in-out infinite; }
   .chip-status.offline { background: transparent; border: 1.5px solid var(--text-4); }
 
@@ -361,7 +361,8 @@
     background: transparent;
     border: none;
     color: var(--text);
-    font-size: 12.5px;
+    /* 16px: stop iOS Safari auto-zooming the page on focus (which left the modal oversized). */
+    font-size: 16px;
     padding: 8px 10px;
     outline: none;
   }
@@ -437,7 +438,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     color: var(--text);
-    font-size: 12.5px;
+    font-size: 16px;
     padding: 8px 10px;
     outline: none;
     transition: border-color .15s ease;

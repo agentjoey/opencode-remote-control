@@ -58,7 +58,7 @@
       open = false
       goto(`/${res.id}/`)
     } catch (e) {
-      alert(`创建会话失败：${(e as Error).message}`)
+      alert(`Create session failed: ${(e as Error).message}`)
     } finally {
       creating = false
     }

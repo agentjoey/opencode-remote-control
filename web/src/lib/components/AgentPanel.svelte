@@ -178,7 +178,7 @@
           {@const theme = agentThemes[a.id] ?? agentAccent(a.id)}
           <button class="switch-pill" class:active={a.id === activeBackendId} on:click={() => switchAgentOnly(a.id)}>
             <span class="switch-tile" style="background:{ACCENT_BG[theme]}; color:{ACCENT_HEX[theme]}; border-color:{ACCENT_LINE[theme]}">{glyph(a)}</span>
-            <span class="status-dot {statusClass(a.status)}"></span>
+            <span class="status-dot {statusClass(a.status)}" style="--dot:{ACCENT_HEX[theme]}"></span>
             <span class="switch-name mono">{a.name ?? a.id}</span>
             <span class="switch-count mono">{(sessionCounts[a.id] ?? 0)}</span>
           </button>

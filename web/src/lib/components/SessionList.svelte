@@ -105,7 +105,7 @@
       await api.renameSession(id, title)
       sessionList.set(await api.sessions())
     } catch (err) {
-      alert(`重命名失败：${(err as Error).message}`)
+      alert(`Rename failed: ${(err as Error).message}`)
     } finally {
       renaming = null
       editing = null
@@ -128,14 +128,14 @@
     e.preventDefault()
     e.stopPropagation()
     if (deleting) return
-    if (!confirm('删除该会话？此操作不可逆。')) return
+    if (!confirm('Delete this session? This cannot be undone.')) return
     deleting = id
     try {
       await api.deleteSession(id)
       sessionList.set(await api.sessions())
       if (activeId === id) goto('/')
     } catch (err) {
-      alert(`删除失败：${(err as Error).message}`)
+      alert(`Delete failed: ${(err as Error).message}`)
     } finally {
       deleting = null
     }
@@ -191,7 +191,7 @@
               <span class="actions">
                 <button
                   class="act rename"
-                  title="重命名会话"
+                  title="Rename session"
                   aria-label="Rename session"
                   on:click={(e) => startRename(e, s)}
                 >
@@ -208,7 +208,7 @@
                 </button>
                 <button
                   class="act trash"
-                  title="删除会话"
+                  title="Delete session"
                   aria-label="Delete session"
                   disabled={deleting === s.id}
                   on:click={(e) => deleteSession(e, s.id)}
@@ -347,7 +347,8 @@
   .rename-input {
     flex: 1;
     min-width: 0;
-    font-size: 13px;
+    /* 16px so renaming inline doesn't trigger iOS auto-zoom. */
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
     background: var(--bg-panel);

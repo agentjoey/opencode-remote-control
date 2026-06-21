@@ -323,7 +323,8 @@
     border: none;
     color: var(--text);
     font-family: var(--font-sans);
-    font-size: 15px;
+    /* 16px so focusing the palette search doesn't trigger iOS auto-zoom. */
+    font-size: 16px;
     outline: none;
     padding: 0;
   }
