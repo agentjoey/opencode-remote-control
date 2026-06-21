@@ -18,7 +18,7 @@ describe('WorkingDirPanel', () => {
   })
 
   it('lists changed file paths with addition/deletion counts', async () => {
-    vi.mocked(api.context).mockResolvedValue({ directory: '/project' })
+    vi.mocked(api.context).mockResolvedValue({ sessionId: 's1', directory: '/project' })
     vi.mocked(api.diff).mockResolvedValue([
       { path: 'src/foo.ts', additions: 2, deletions: 1, lines: [] },
       { path: 'src/bar.ts', additions: 0, deletions: 4, lines: [] },
@@ -33,7 +33,7 @@ describe('WorkingDirPanel', () => {
   })
 
   it('expands a file on click to show red/green diff lines', async () => {
-    vi.mocked(api.context).mockResolvedValue({ directory: '/project' })
+    vi.mocked(api.context).mockResolvedValue({ sessionId: 's1', directory: '/project' })
     vi.mocked(api.diff).mockResolvedValue([
       {
         path: 'src/a.ts',
@@ -64,7 +64,7 @@ describe('WorkingDirPanel', () => {
   })
 
   it('collapses an expanded file on second click', async () => {
-    vi.mocked(api.context).mockResolvedValue({ directory: '/project' })
+    vi.mocked(api.context).mockResolvedValue({ sessionId: 's1', directory: '/project' })
     vi.mocked(api.diff).mockResolvedValue([
       {
         path: 'src/a.ts',
@@ -85,7 +85,7 @@ describe('WorkingDirPanel', () => {
   })
 
   it('does not render a diff body for entries with empty lines', async () => {
-    vi.mocked(api.context).mockResolvedValue({ directory: '/project' })
+    vi.mocked(api.context).mockResolvedValue({ sessionId: 's1', directory: '/project' })
     vi.mocked(api.diff).mockResolvedValue([
       { path: 'src/empty.ts', additions: 5, deletions: 5, lines: [] },
     ])
