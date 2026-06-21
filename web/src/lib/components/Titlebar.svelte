@@ -256,7 +256,9 @@
   .iconbtn.active { color: var(--accent); background: var(--accent-2); }
 
   @media (max-width: 820px) {
-    .palette-trigger, .user-email { display: none; }
+    /* Mobile header = brand + live + ☰/ⓘ. New-session lives on the FAB (Sessions
+       screen) / the chat composer, not the header — keeps the bar from overflowing. */
+    .palette-trigger, .user-email, .new-session { display: none; }
     .new-label { display: none; }
     .iconbtn {
       display: inline-flex;

@@ -89,4 +89,17 @@
   .divider {
     border-top: 1px solid var(--border-2);
   }
+
+  /* Mobile bottom sheet: the whole inspector scrolls as one column (vs the desktop
+     Tasks-scroll / pinned-bottom split) so nothing is clipped or unreachable. */
+  @media (max-width: 820px) {
+    .inspector {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .pinned { border-top: none; }
+  }
 </style>

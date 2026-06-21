@@ -1,6 +1,5 @@
 <!-- src/lib/components/AgentPanel.svelte -->
 <script lang="ts">
-  import { goto } from '$app/navigation'
   import SessionList from './SessionList.svelte'
   import {
     backends,
@@ -61,17 +60,20 @@
     return 'online'
   }
 
-  function sessionCount(id: string): number {
-    return $sessionList.filter((s) => s.backendId === id || (!s.backendId && id === 'opencode')).length
-  }
+  // Reactive so the per-agent count refreshes when sessions load/change (a plain
+  // function reading $sessionList in the template is NOT tracked by Svelte).
+  $: sessionCounts = Object.fromEntries(
+    ($backends?.backends ?? []).map((a) => [
+      a.id,
+      $sessionList.filter((s) => s.backendId === a.id || (!s.backendId && a.id === 'opencode')).length,
+    ]),
+  ) as Record<string, number>
 
   async function selectAgent(id: string) {
-    await setActiveBackend(id)
     pickerOpen = false
-    const list = $sessionList
-      .filter((s) => s.backendId === id || (!s.backendId && id === 'opencode'))
-      .sort((a, b) => b.lastActiveAt - a.lastActiveAt)
-    if (list[0]) goto(`/${list[0].id}/`)
+    await setActiveBackend(id)
+    // Stay on the Sessions view showing this agent's sessions (pick agent → pick
+    // session → chat); don't auto-jump into a session.
   }
 
   function togglePicker() {
@@ -145,7 +147,7 @@
                 </span>
                 <span class="row-info">
                   <span class="row-name mono">{a.name ?? a.id}</span>
-                  <span class="row-host mono">{a.host ?? 'local'} · {sessionCount(a.id)} ses</span>
+                  <span class="row-host mono">{a.host ?? 'local'} · {(sessionCounts[a.id] ?? 0)} ses</span>
                 </span>
                 <span class="status-dot {statusClass(a.status)}"></span>
                 {#if selected}<span class="check">✓</span>{/if}
@@ -184,7 +186,7 @@
             <span class="switch-tile" style="background:{ACCENT_BG[theme]}; color:{ACCENT_HEX[theme]}; border-color:{ACCENT_LINE[theme]}">{glyph(a)}</span>
             <span class="status-dot {statusClass(a.status)}"></span>
             <span class="switch-name mono">{a.name ?? a.id}</span>
-            <span class="switch-count mono">{sessionCount(a.id)}</span>
+            <span class="switch-count mono">{(sessionCounts[a.id] ?? 0)}</span>
           </button>
         {/each}
       </div>
