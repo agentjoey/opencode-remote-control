@@ -1,8 +1,9 @@
 <script lang="ts">
   import { page } from '$app/stores'
+  import { goto } from '$app/navigation'
   import { tick, onMount, onDestroy } from 'svelte'
   import { feeds, cardsOf, sessionList } from '$lib/stores/sessions.js'
-  import { leftPanelOpen } from '$lib/stores/ui.js'
+  import { leftPanelOpen, inspectorOpen } from '$lib/stores/ui.js'
   import { api } from '$lib/api/client.js'
   import Card from '$lib/components/Card.svelte'
   import Composer from '$lib/components/Composer.svelte'
@@ -99,6 +100,10 @@
 <div class="chat" bind:this={scrollEl} on:scroll={onChatScroll}>
   <div class="sub-header">
     <div class="left">
+      <!-- Mobile: back to the Sessions screen (dual-screen nav). -->
+      <button class="back" on:click={() => goto('/')} aria-label="Back to sessions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
       {#if !$leftPanelOpen}
         <button class="expand" title="Expand left panel" aria-label="Expand left panel" on:click={() => leftPanelOpen.set(true)}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -117,6 +122,10 @@
       {:else}
         <span class="idle mono">idle</span>
       {/if}
+      <!-- Mobile: open the inspector bottom sheet. -->
+      <button class="inspect" on:click={() => inspectorOpen.update((v) => !v)} aria-label="Inspector">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+      </button>
     </div>
   </div>
   <div class="stream conversation-emerald">
@@ -184,8 +193,17 @@
     transition: color .12s ease, border-color .12s ease, background .12s ease;
   }
   .expand:hover { color: var(--text); border-color: var(--accent); background: var(--accent-2); }
+  /* Back + inspector buttons are mobile-only (the chat screen's own header). */
+  .back, .inspect { display: none; }
   @media (max-width: 820px) {
     .expand { display: none; }
+    .back, .inspect {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text-2); cursor: pointer;
+    }
+    .back:active, .inspect:active { background: var(--bg-elev2); }
   }
   .sub-header .branch {
     flex-shrink: 0;
@@ -270,6 +288,8 @@
     /* Reserve the floating composer's height + keyboard inset so the latest
        message clears it (otherwise it's hidden behind the box / keyboard). */
     .stream { padding: 14px 12px calc(var(--composer-h, 120px) + var(--kb, 0px) + 8px); }
-    .sub-header { padding: 11px 12px; }
+    /* The titlebar is hidden on the mobile chat screen, so this header is now the top
+       bar — clear the status bar / notch via the top safe-area inset. */
+    .sub-header { padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
   }
 </style>

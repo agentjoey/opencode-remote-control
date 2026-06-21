@@ -259,17 +259,9 @@
   .iconbtn.active { color: var(--accent); background: var(--accent-2); }
 
   @media (max-width: 820px) {
-    /* Mobile header = brand + live + ☰/ⓘ. New-session lives on the FAB (Sessions
-       screen) / the chat composer, not the header — keeps the bar from overflowing. */
-    .palette-trigger, .user-email, .new-session { display: none; }
-    .new-label { display: none; }
-    .iconbtn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      min-height: 40px;
-      font-size: 20px;
-    }
+    /* The titlebar only renders on the mobile Sessions screen now (the chat screen has
+       its own header), so it's just brand + live — drawer toggles, new, palette, and the
+       user avatar all move to the FAB / chat header / sessions panel. */
+    .palette-trigger, .user-email, .new-session, .new-label, .iconbtn, .user { display: none; }
   }
 </style>

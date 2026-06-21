@@ -9,7 +9,7 @@
   import { sessionList, feeds, upsertCard, setHistory } from '$lib/stores/sessions.js'
   import { capabilities, loadCapabilities, backends, loadBackends, viewedSessionId, applyAgentTheme } from '$lib/stores/capabilities.js'
   import { paletteOpen } from '$lib/stores/palette.js'
-  import { leftPanelOpen, plusMenuOpen, newSessionOpen } from '$lib/stores/ui.js'
+  import { leftPanelOpen, plusMenuOpen, newSessionOpen, inspectorOpen } from '$lib/stores/ui.js'
   import { captureToken, getToken } from '$lib/auth-token.js'
   import Titlebar from '$lib/components/Titlebar.svelte'
   import OfflineBanner from '$lib/components/OfflineBanner.svelte'
@@ -25,14 +25,13 @@
   // Mobile off-canvas drawers (≤820px): ☰ opens sessions (left), ⓘ opens the
   // inspector (right). No effect on the desktop 3-pane layout.
   let drawerLeft = false
-  let drawerRight = false
   let isMobile = false
   let appEl: HTMLElement // the 100vh app shell — its height is the full-screen reference for --kb
   let newButtonAnchor: HTMLElement | null = null
-  function closeDrawers() { drawerLeft = false; drawerRight = false }
-  // ☰ / ⓘ toggle their drawer (tap again to close) and close the other.
-  function toggleLeft() { drawerLeft = !drawerLeft; drawerRight = false }
-  function toggleRight() { drawerRight = !drawerRight; drawerLeft = false }
+  function closeDrawers() { drawerLeft = false; inspectorOpen.set(false) }
+  // The left rail drawer and the inspector sheet are mutually exclusive on mobile.
+  function toggleLeft() { drawerLeft = !drawerLeft; inspectorOpen.set(false) }
+  function toggleRight() { inspectorOpen.update((v) => !v); drawerLeft = false }
   function onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen.set(true); return }
     if (e.key === 'Escape') {
@@ -204,27 +203,31 @@
 <svelte:window on:keydown={onGlobalKey} />
 
 <div class="app" bind:this={appEl}>
-  <Titlebar
-    {email}
-    onPalette={() => paletteOpen.set(true)}
-    {installEvent}
-    onInstall={install}
-    {drawerLeft}
-    {drawerRight}
-    onToggleLeft={toggleLeft}
-    onToggleRight={toggleRight}
-    bind:newButtonAnchor
-  />
+  <!-- On mobile the chat screen has its own header (back + agent + title + inspector),
+       so the global titlebar only shows on desktop and on the mobile Sessions screen. -->
+  {#if !(isMobile && hasSession)}
+    <Titlebar
+      {email}
+      onPalette={() => paletteOpen.set(true)}
+      {installEvent}
+      onInstall={install}
+      {drawerLeft}
+      drawerRight={$inspectorOpen}
+      onToggleLeft={toggleLeft}
+      onToggleRight={toggleRight}
+      bind:newButtonAnchor
+    />
+  {/if}
   <OfflineBanner />
   <div class="body">
-    {#if drawerLeft || drawerRight}
+    {#if drawerLeft || $inspectorOpen}
       <button class="backdrop" aria-label="Close" on:click={closeDrawers}></button>
     {/if}
     <div class="rail-wrap" class:collapsed={!$leftPanelOpen && !isMobile} class:open={drawerLeft || (isMobile && !hasSession)}>
       <AgentPanel activeId={$page.params.sessionId} drawer={isMobile} />
     </div>
     <main><slot /></main>
-    <div class="inspector-wrap" class:open={drawerRight}>
+    <div class="inspector-wrap" class:open={$inspectorOpen}>
       <Inspector sessionId={$page.params.sessionId} />
     </div>
   </div>

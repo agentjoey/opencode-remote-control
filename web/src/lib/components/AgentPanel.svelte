@@ -1,6 +1,7 @@
 <!-- src/lib/components/AgentPanel.svelte -->
 <script lang="ts">
   import SessionList from './SessionList.svelte'
+  import { paletteOpen } from '$lib/stores/palette.js'
   import {
     backends,
     setActiveBackend,
@@ -183,6 +184,12 @@
           </button>
         {/each}
       </div>
+    {/if}
+    {#if drawer}
+      <button class="mobile-search" on:click={() => paletteOpen.set(true)}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span>Search sessions &amp; commands</span>
+      </button>
     {/if}
     <div class="list">
       <SessionList {activeId} agentId={activeBackendId} agentName={activeAgent?.name ?? activeAgent?.id} />
@@ -436,6 +443,15 @@
     text-transform: uppercase; letter-spacing: .14em;
     color: var(--text-3);
   }
+  .mobile-search {
+    display: flex; align-items: center; gap: 8px;
+    margin: 6px 12px 8px; padding: 10px 12px;
+    width: calc(100% - 24px);
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text-3); cursor: pointer;
+    font-size: 13px; font-family: var(--font-sans); text-align: left;
+  }
+  .mobile-search:hover { border-color: var(--text-4); }
   .switcher-row {
     display: flex; gap: 7px;
     padding: 10px 12px; overflow-x: auto;

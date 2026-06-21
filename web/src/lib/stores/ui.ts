@@ -8,3 +8,6 @@ export const plusMenuOpen = writable(false)
 
 /** New-session modal open state. */
 export const newSessionOpen = writable(false)
+
+/** Mobile inspector bottom-sheet open state (toggled from the chat header). */
+export const inspectorOpen = writable(false)
