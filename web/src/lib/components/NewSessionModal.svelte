@@ -44,29 +44,21 @@
     showRecents = false
   }
 
-  async function browse() {
-    try {
-      if ('showDirectoryPicker' in window) {
-        const handle = await (window as any).showDirectoryPicker()
-        directory = handle.name
-      } else {
-        const input = document.getElementById('new-session-browse') as HTMLInputElement | null
-        input?.click()
-      }
-    } catch {
-      // user cancelled
+  // Per-agent recents: the distinct working directories of the SELECTED agent's own
+  // sessions, most-recent first. (Browsing the phone's local folders is meaningless —
+  // sessions run on the remote host, not the device.)
+  $: selectedAgentName = $backends?.backends.find((b) => b.id === selectedAgentId)?.name ?? selectedAgentId
+  $: agentRecents = (() => {
+    const seen = new Set<string>()
+    const out: { directory: string; name: string }[] = []
+    for (const s of [...$sessionList].sort((a, b) => b.lastActiveAt - a.lastActiveAt)) {
+      const mine = s.backendId === selectedAgentId || (!s.backendId && selectedAgentId === 'opencode')
+      if (!mine || !s.directory || seen.has(s.directory)) continue
+      seen.add(s.directory)
+      out.push({ directory: s.directory, name: s.directory.replace(/\/+$/, '').split('/').pop() || s.directory })
     }
-  }
-
-  function onBrowseFiles(e: Event) {
-    const files = (e.target as HTMLInputElement).files
-    if (files && files.length > 0) {
-      // webkitdirectory gives relative paths; derive the root directory name.
-      const path = files[0].webkitRelativePath || files[0].name
-      const parts = path.split('/')
-      directory = parts.length > 1 ? parts[0] : path
-    }
-  }
+    return out
+  })()
 
   async function submit() {
     const dir = directory.trim()
@@ -153,14 +145,13 @@
               bind:value={directory}
               on:focus={() => { showRecents = true }}
             />
-            <button class="browse" type="button" on:click={browse} title="Browse directory">Browse</button>
-            <input id="new-session-browse" type="file" webkitdirectory style="display:none" on:change={onBrowseFiles} />
+            <button class="browse" type="button" on:click={() => (showRecents = !showRecents)} title="Recent directories for this agent">Recent</button>
           </div>
-          {#if $workspaces.length > 0}
+          {#if agentRecents.length > 0}
             <div class="recents" class:open={showRecents}>
-              <span class="recents-label mono">recent</span>
+              <span class="recents-label mono">recent · {selectedAgentName}</span>
               <div class="recents-list">
-                {#each $workspaces as w (w.directory)}
+                {#each agentRecents as w (w.directory)}
                   <button class="recent" type="button" on:click={() => pickRecent(w.directory)} title={w.directory}>
                     <span class="recent-name">{w.name}</span>
                     <span class="recent-dir mono">{w.directory}</span>
