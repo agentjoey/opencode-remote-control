@@ -72,8 +72,27 @@ export function buildServer(opts: BuildServerOpts): Hono {
     const active = reg.get(reg.activeId())!
     return c.json({ id: active.id, capabilities: active.capabilities })
   })
-  // Multi-backend: the full backend set + which one new sessions go to.
-  app.get('/api/backends', (c) => c.json({ backends: reg.list(), activeId: reg.activeId() }))
+  // Multi-backend ("agents"): the full set + display name + connection status + which
+  // one new sessions go to. status comes from a bounded ping per backend.
+  app.get('/api/backends', async (c) => {
+    const backends = await Promise.all(reg.all().map(async ({ id, backend }) => {
+      let online = false
+      try {
+        online = await Promise.race([
+          backend.ping(),
+          new Promise<boolean>((r) => setTimeout(() => r(false), 1500)),
+        ])
+      } catch { online = false }
+      return {
+        id,
+        name: id.startsWith('acp:') ? id.slice(4) : id,
+        host: 'local',
+        status: online ? 'online' : 'offline',
+        capabilities: backend.capabilities,
+      }
+    }))
+    return c.json({ backends, activeId: reg.activeId() })
+  })
   app.post('/api/backends/active', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { backendId?: string }
     if (!body.backendId || !reg.has(body.backendId)) return c.json({ error: 'unknown backendId' }, 400)
