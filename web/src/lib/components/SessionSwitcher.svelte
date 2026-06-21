@@ -188,7 +188,7 @@
     flex-shrink: 0;
     box-sizing: border-box;
   }
-  .status-dot.online { background: var(--ok); border-color: var(--ok); }
+  .status-dot.online { background: var(--accent); border-color: var(--accent); }
   .status-dot.connecting { background: var(--warn); border-color: var(--warn); animation: ocrc-pulse 1.2s ease-in-out infinite; }
   .status-dot.offline { background: transparent; border: 1.5px solid var(--text-4); }
   .title {

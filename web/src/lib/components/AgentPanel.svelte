@@ -6,6 +6,7 @@
     setActiveBackend,
     ACCENTS,
     agentAccent,
+    accentOverrides,
     setAgentAccent,
     defaultAccentForAgent,
     type Accent,
@@ -106,7 +107,13 @@
       (s.additions || s.deletions),
   ).length
 
-  $: activeTheme = agentAccent(activeBackendId)
+  // _overrides is taken purely to create a reactive dependency on $accentOverrides,
+  // so a swatch change re-themes glyphs/dots instantly (agentAccent reads the store).
+  function themeFor(_overrides: Record<string, Accent>, id: string): Accent {
+    return agentAccent(id)
+  }
+  $: activeTheme = themeFor($accentOverrides, activeBackendId)
+  $: agentThemes = Object.fromEntries(agents.map((a) => [a.id, themeFor($accentOverrides, a.id)])) as Record<string, Accent>
 </script>
 
 <svelte:window on:keydown={onKey} />
@@ -121,7 +128,7 @@
         >
           {glyph(activeAgent)}
         </span>
-        <span class="status-dot {statusClass(activeAgent?.status)}"></span>
+        <span class="status-dot {statusClass(activeAgent?.status)}" style="--dot:{ACCENT_HEX[activeTheme]}"></span>
         <span class="name mono">{activeAgent?.name ?? activeAgent?.id ?? 'Agent'}</span>
         {#if activeAgent?.host}<span class="host mono">{activeAgent.host}</span>{/if}
         <span class="caret" aria-hidden="true">▾</span>
@@ -136,7 +143,7 @@
         <div class="picker" role="dialog" aria-label="Agent picker">
           <div class="picker-list">
             {#each agents as a (a.id)}
-              {@const theme = agentAccent(a.id)}
+              {@const theme = agentThemes[a.id] ?? agentAccent(a.id)}
               {@const selected = a.id === activeBackendId}
               <button class="agent-row" class:selected on:click={() => selectAgent(a.id)}>
                 <span
@@ -149,7 +156,7 @@
                   <span class="row-name mono">{a.name ?? a.id}</span>
                   <span class="row-host mono">{a.host ?? 'local'} · {(sessionCounts[a.id] ?? 0)} ses</span>
                 </span>
-                <span class="status-dot {statusClass(a.status)}"></span>
+                <span class="status-dot {statusClass(a.status)}" style="--dot:{ACCENT_HEX[theme]}"></span>
                 {#if selected}<span class="check">✓</span>{/if}
               </button>
             {/each}
@@ -169,7 +176,7 @@
                 {/each}
                 <button
                   class="auto"
-                  class:active={agentAccent(activeBackendId) === defaultAccentForAgent(activeBackendId)}
+                  class:active={activeTheme === defaultAccentForAgent(activeBackendId)}
                   on:click={() => setAgentAccent(activeBackendId, null)}
                 >auto</button>
               </div>
@@ -181,7 +188,7 @@
     {#if drawer && agents.length > 1}
       <div class="switcher-row">
         {#each agents as a (a.id)}
-          {@const theme = agentAccent(a.id)}
+          {@const theme = agentThemes[a.id] ?? agentAccent(a.id)}
           <button class="switch-pill" class:active={a.id === activeBackendId} on:click={() => switchAgentOnly(a.id)}>
             <span class="switch-tile" style="background:{ACCENT_BG[theme]}; color:{ACCENT_HEX[theme]}; border-color:{ACCENT_LINE[theme]}">{glyph(a)}</span>
             <span class="status-dot {statusClass(a.status)}"></span>
@@ -262,9 +269,11 @@
     flex-shrink: 0;
     box-sizing: border-box;
   }
+  /* Online/idle dot follows the agent's own theme color (--dot, set inline per agent),
+     falling back to --ok. connecting/offline keep their semantic colors. */
   .status-dot.online {
-    background: var(--ok);
-    border-color: var(--ok);
+    background: var(--dot, var(--ok));
+    border-color: var(--dot, var(--ok));
   }
   .status-dot.connecting {
     background: var(--warn);

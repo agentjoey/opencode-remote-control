@@ -352,7 +352,7 @@
     flex-shrink: 0;
     box-sizing: border-box;
   }
-  .chip-status.online { background: var(--ok); border-color: var(--ok); }
+  .chip-status.online { background: var(--accent); border-color: var(--accent); }
   .chip-status.connecting { background: var(--warn); border-color: var(--warn); animation: ocrc-pulse 1.2s ease-in-out infinite; }
   .chip-status.offline { background: transparent; border: 1.5px solid var(--text-4); }
 

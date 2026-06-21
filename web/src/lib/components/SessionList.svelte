@@ -316,9 +316,10 @@
     background: var(--warn);
     border-color: var(--warn);
   }
+  /* idle dot follows the active agent's theme (sessions belong to it). */
   .dot.idle {
-    background: var(--ok);
-    border-color: var(--ok);
+    background: var(--accent);
+    border-color: var(--accent);
   }
   .dot.offline {
     background: transparent;

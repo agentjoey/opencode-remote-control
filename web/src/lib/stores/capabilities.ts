@@ -129,20 +129,26 @@ function persistAgentAccentOverrides(map: Record<string, Accent>): void {
   }
 }
 
+/** Reactive source of truth for per-agent accent overrides. Components subscribe to
+ *  this so glyph tiles / status dots re-theme the instant a swatch is clicked (reading
+ *  localStorage directly is NOT reactive — that's what left the UI half-themed). */
+export const accentOverrides = writable<Record<string, Accent>>(loadAgentAccentOverrides())
+
 /** Resolved theme accent for a given agent (override or default). */
 export function agentAccent(id: string): Accent {
-  const overrides = loadAgentAccentOverrides()
+  const overrides = get(accentOverrides)
   return ACCENTS.includes(overrides[id] as Accent) ? overrides[id] as Accent : defaultAccentForAgent(id)
 }
 
 /** Override (or revert to default via `null`) an agent's chrome accent. */
 export function setAgentAccent(agentId: string, accent: Accent | null): void {
-  const overrides = loadAgentAccentOverrides()
+  const overrides = { ...get(accentOverrides) }
   if (accent && ACCENTS.includes(accent)) {
     overrides[agentId] = accent
   } else {
     delete overrides[agentId]
   }
+  accentOverrides.set(overrides) // reactive → all theme consumers recompute
   persistAgentAccentOverrides(overrides)
   if (get(backends)?.activeId === agentId) {
     applyAgentTheme(agentId)
