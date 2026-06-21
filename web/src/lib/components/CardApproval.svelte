@@ -7,66 +7,108 @@
   async function decide(decision: 'once' | 'always' | 'reject') {
     try { await api.approve(card.sessionId, card.requestId, decision); done = decision } catch { done = 'error' }
   }
-  // A resolved approval lands at the feed end (it occurred mid-turn). Collapse it
-  // to a compact, clearly-resolved line so it reads as a handled record rather
-  // than a stale pending prompt.
   const LABEL: Record<string, string> = {
-    once: 'Allowed (once)', always: 'Always allowed', reject: 'Rejected', error: 'Failed',
+    once: 'Approved — patch applied',
+    always: 'Auto-allow set',
+    reject: 'Rejected — patch discarded',
+    error: 'Failed',
   }
   $: resolved = !!done
+  $: isReject = done === 'reject' || done === 'error'
+  $: diffText = typeof card.args === 'string' ? card.args : JSON.stringify(card.args, null, 2)
 </script>
+
 {#if resolved}
-  <div class="appr resolved" class:rej={done === 'reject' || done === 'error'}>
-    <span class="mark" aria-hidden="true">{done === 'reject' || done === 'error' ? '✗' : '✓'}</span>
+  <div class="appr resolved" class:rej={isReject}>
+    <span class="mark" aria-hidden="true">{isReject ? '✕' : '✓'}</span>
     <span class="rlabel">{LABEL[done] ?? done}</span>
     <span class="rttl">{card.title}</span>
   </div>
 {:else}
-  <div class="appr">
-    <div class="ttl"><span class="ico" aria-hidden="true">⚠</span> {card.title}</div>
-    <pre class="args mono">{JSON.stringify(card.args, null, 2)}</pre>
+  <div class="appr pending">
+    <div class="header">
+      <span class="warn-dot" aria-hidden="true"></span>
+      <span class="label">APPROVAL REQUIRED</span>
+      <span class="rule" aria-hidden="true"></span>
+      <span class="tool mono">{card.title}</span>
+    </div>
+    <pre class="diff mono">{diffText}</pre>
     <div class="acts">
-      <button class="a allow" on:click={() => decide('once')}>Allow</button>
-      <button class="a always" on:click={() => decide('always')}>Always</button>
+      <button class="a allow" on:click={() => decide('once')}>Approve</button>
+      <button class="a always" on:click={() => decide('always')}>Always allow</button>
+      <span class="spacer"></span>
       <button class="a rej" on:click={() => decide('reject')}>Reject</button>
     </div>
   </div>
 {/if}
+
 <style>
   .appr {
-    align-self: flex-start;
-    max-width: 80%;
+    align-self: stretch;
+    width: 100%;
+    margin: 6px 0 14px;
+    border-radius: 11px;
     background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    margin: 4px 0;
+    border: 1px solid var(--border-2);
   }
-  .ttl {
+  .appr.pending {
+    border-color: var(--warn);
+  }
+  .header {
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: var(--text);
-    font-weight: 600;
-    font-size: 12px;
-    margin-bottom: 6px;
+    gap: 8px;
+    padding: 9px 12px;
+    background: rgba(224, 179, 65, .08);
+    border-bottom: 1px solid var(--border-2);
+    border-radius: 11px 11px 0 0;
   }
-  .ico { color: var(--warn); }
-  .args {
-    background: var(--bg);
-    border: 1px solid var(--border-2);
-    border-radius: var(--radius-sm);
-    padding: 6px 8px;
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--text-2);
-    overflow-x: auto;
-    margin: 0 0 8px;
+  .warn-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--warn);
+    flex-shrink: 0;
   }
-  .acts { display: flex; gap: 6px; }
-  .a {
+  .label {
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: .08em;
+    color: var(--warn);
+  }
+  .rule {
     flex: 1;
-    padding: 5px 8px;
+    height: 1px;
+    background: var(--border-2);
+    opacity: .7;
+  }
+  .tool {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .diff {
+    margin: 10px 12px;
+    padding: 8px 10px;
+    background: #151412;
+    border: 1px solid var(--border-2);
+    border-radius: 8px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+  }
+  .acts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+  .spacer { flex: 1; }
+  .a {
+    padding: 6px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--bg-input);
@@ -76,36 +118,36 @@
     font-weight: 500;
     transition: background .15s ease, border-color .15s ease, color .15s ease;
   }
-  .a:hover { border-color: var(--text-3); color: var(--text); }
   .a.allow {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--accent-ink);
   }
+  .a.allow:hover { opacity: .9; }
   .a.always {
-    background: var(--hl-purple);
-    border-color: var(--hl-purple);
-    color: var(--bg);
+    background: transparent;
+    border-color: var(--accent-line);
+    color: var(--accent);
   }
+  .a.always:hover { background: var(--accent-2); }
   .a.rej {
-    background: var(--err);
-    border-color: var(--err);
-    color: var(--bg);
+    background: transparent;
+    border-color: var(--border-2);
+    color: var(--text-3);
   }
-  .a.allow:hover, .a.always:hover, .a.rej:hover { opacity: .88; }
-  /* Compact, de-emphasized record once the approval has been answered. */
+  .a.rej:hover { color: var(--err); border-color: var(--err); }
+
   .appr.resolved {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 6px 12px;
     background: transparent;
     border: none;
-    margin: 2px 0;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-3);
   }
-  .appr.resolved .mark { color: var(--ok); font-weight: 700; }
+  .appr.resolved .mark { color: var(--accent); font-weight: 700; }
   .appr.resolved.rej .mark { color: var(--err); }
   .appr.resolved .rlabel { color: var(--text-2); font-weight: 600; }
   .appr.resolved .rttl { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

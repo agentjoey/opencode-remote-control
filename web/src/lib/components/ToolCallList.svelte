@@ -2,137 +2,246 @@
   import type { ToolCall } from '../api/types.js'
   import { ansiToHtml } from '../ansi.js'
 
+  interface ToolCallExtra extends ToolCall {
+    adds?: number
+    dels?: number
+    dur?: number
+    detail?: string
+    output?: string
+  }
+
   export let tools: ToolCall[]
   const LIMIT = 12
-  const LINE_CAP = 20
   let expanded = false
-  let expandedOutputs: Record<number, boolean> = {}
+  let expandedDetails: Record<number, boolean> = {}
 
-  $: shown = expanded ? tools : tools.slice(0, LIMIT)
-  $: lastRunning = shown.reduce((acc, t, i) => (t.status === 'running' ? i : acc), -1)
+  $: typed = tools as ToolCallExtra[]
+  $: shown = expanded ? typed : typed.slice(0, LIMIT)
+  $: total = typed.length
+  $: done = typed.filter((t) => t.status === 'done').length
 
-  function glyph(status: string): string {
-    if (status === 'done') return '✓'
-    if (status === 'error') return '✗'
-    return '●'
+  function detailOf(t: ToolCallExtra): string | undefined {
+    return t.detail || t.output || undefined
   }
 
-  function splitLines(s: string): string[] {
-    return s.split('\n')
+  function hasDetail(t: ToolCallExtra): boolean {
+    return !!detailOf(t)
   }
 
-  function renderArgs(args: string, idx: number): { html: string; total: number; capped: boolean } {
-    const lines = splitLines(args)
-    const total = lines.length
-    const capped = total > LINE_CAP && !expandedOutputs[idx]
-    const visible = capped ? lines.slice(0, LINE_CAP).join('\n') : args
-    return { html: ansiToHtml(visible), total, capped }
+  function fmtDur(s?: number): string {
+    if (s == null) return ''
+    if (s < 1) return `${(s * 1000).toFixed(0)}ms`
+    return `${s.toFixed(1)}s`
   }
 
-  function toggleOutput(idx: number) {
-    expandedOutputs[idx] = !expandedOutputs[idx]
-    expandedOutputs = expandedOutputs
+  function toggleDetail(i: number) {
+    expandedDetails[i] = !expandedDetails[i]
+    expandedDetails = expandedDetails
   }
 </script>
 
 {#if tools.length > 0}
-  <div class="tools">
-    {#each shown as t, i}
-      {@const r = t.args ? renderArgs(t.args, i) : null}
-      <div class="term {t.status}" class:live={i === lastRunning}>
-        <div class="term-header">
-          <span class="glyph">{glyph(t.status)}</span>
-          <span class="tool-name">{t.tool}</span>
-        </div>
-        {#if r}
-          <div class="term-body">{@html r.html}</div>
-          {#if r.capped}
-            <button class="toggle" on:click={() => toggleOutput(i)}>
-              ▼ show all {r.total} lines
-            </button>
-          {:else if r.total > LINE_CAP && expandedOutputs[i]}
-            <button class="toggle" on:click={() => toggleOutput(i)}>
-              ▲ collapse
-            </button>
+  <div class="execution">
+    <div class="header">
+      <span class="label mono">EXECUTION</span>
+      <span class="rule" aria-hidden="true"></span>
+      <span class="count mono">{done}/{total} steps</span>
+    </div>
+    <div class="rows">
+      {#each shown as t, i}
+        {@const detail = detailOf(t)}
+        <div class="row {t.status}">
+          <button class="row-main" class:expandable={hasDetail(t)} on:click={() => hasDetail(t) && toggleDetail(i)}>
+            <span class="status" aria-hidden="true"></span>
+            <span class="name mono">{t.tool}</span>
+            <span class="arg mono">{t.args}</span>
+            {#if t.adds || t.dels}
+              <span class="diff mono">
+                {#if t.adds}<span class="add">+{t.adds}</span>{/if}
+                {#if t.dels}<span class="del">−{t.dels}</span>{/if}
+              </span>
+            {/if}
+            {#if t.status === 'running'}
+              <span class="shimmer" aria-hidden="true"></span>
+            {:else if t.dur != null}
+              <span class="dur mono">{fmtDur(t.dur)}</span>
+            {/if}
+            {#if hasDetail(t)}
+              <span class="caret" class:open={expandedDetails[i]} aria-hidden="true">▸</span>
+            {/if}
+          </button>
+          {#if detail && expandedDetails[i]}
+            <div class="detail mono">
+              {@html ansiToHtml(detail)}
+            </div>
           {/if}
-        {/if}
-      </div>
-    {/each}
-    {#if tools.length > LIMIT && !expanded}
-      <button class="more" on:click={() => (expanded = true)}>… {tools.length - LIMIT} more</button>
-    {/if}
+        </div>
+      {/each}
+      {#if typed.length > LIMIT && !expanded}
+        <button class="more mono" on:click={() => (expanded = true)}>
+          … {typed.length - LIMIT} more
+        </button>
+      {/if}
+    </div>
   </div>
 {/if}
 
 <style>
-  .tools {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    margin: 2px 0 6px;
+  .execution {
+    background: var(--bg-elev);
+    border: 1px solid var(--border-2);
+    border-radius: 11px;
+    padding: 10px 12px 12px;
+    margin: 0 0 12px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .label {
+    font-size: 9px;
+    color: var(--text-4);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border-2);
+  }
+  .count {
+    font-size: 10px;
+    color: var(--text-3);
+  }
+  .rows {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
-  .term {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
-  .term-header {
+  .row-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: inherit;
+    text-align: left;
+    cursor: default;
+    transition: background .12s ease;
+  }
+  .row-main.expandable { cursor: pointer; }
+  .row-main.expandable:hover { background: rgba(255,255,255,.03); }
+
+  .status {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .row.running .status {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 7px var(--accent);
+    animation: ocrc-blink 1s step-end infinite;
+  }
+  .row.done .status { background: var(--ok); border-color: var(--ok); }
+  .row.error .status { background: var(--err); border-color: var(--err); }
+  .row:not(.running):not(.done):not(.error) .status {
+    background: transparent;
+    border: 1.5px solid var(--text-4);
+  }
+
+  .name {
+    flex-shrink: 0;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .row.done .name { color: var(--text-2); }
+  .row.running .name { color: var(--text); }
+  .row.error .name { color: var(--err); }
+  .row:not(.running):not(.done):not(.error) .name { color: var(--text-2); }
+
+  .arg {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    color: var(--hl-green);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .diff {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    background: var(--bg-input);
-    border-bottom: 1px solid var(--border);
+    font-size: 11.5px;
+  }
+  .diff .add { color: var(--ok); }
+  .diff .del { color: var(--err); }
+
+  .shimmer {
+    flex-shrink: 0;
+    width: 42px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--text) 50%, var(--accent) 100%);
+    background-size: 200% 100%;
+    animation: ocrc-shimmer 1.4s linear infinite;
+  }
+  .dur {
+    flex-shrink: 0;
     font-size: 11px;
+    color: var(--text-4);
   }
-  .glyph { flex-shrink: 0; }
-  .tool-name { flex-shrink: 0; color: var(--text-2); }
 
-  .term.done .glyph { color: var(--ok); }
-  .term.done .tool-name { color: var(--text-3); }
-  .term.running .glyph { color: var(--accent); }
-  .term.running .tool-name { color: var(--text-2); }
-  .term.running.live .glyph { animation: blink 1s ease-in-out infinite; }
-  .term.running.live .tool-name { color: var(--text); }
-  .term.error .glyph { color: var(--err); }
-  .term.error .tool-name { color: var(--err); }
-
-  .term-body {
-    padding: 8px 10px;
-    white-space: pre-wrap;
-    word-break: break-all;
-    overflow-x: auto;
-    color: var(--text);
-    font-size: 12px;
-    line-height: 1.5;
-    max-height: 600px;
-    overflow-y: auto;
-  }
-  .toggle {
-    display: block;
-    width: 100%;
-    background: var(--bg-input);
-    border: none;
-    border-top: 1px solid var(--border);
+  .caret {
+    flex-shrink: 0;
+    font-size: 11px;
     color: var(--text-3);
-    font: inherit;
-    font-size: 11px;
-    padding: 3px 10px;
-    cursor: pointer;
-    text-align: left;
+    transition: transform .2s ease;
   }
-  .toggle:hover { color: var(--text-2); }
+  .caret.open { transform: rotate(90deg); }
 
-  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  .detail {
+    margin: 4px 0 2px 23px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border-2);
+    border-radius: 8px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .detail :global(pre) {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   .more {
+    align-self: flex-start;
     background: transparent;
     border: none;
     color: var(--text-3);
+    font-size: 11.5px;
+    padding: 4px 8px;
     cursor: pointer;
-    font: inherit;
-    padding: 2px 0;
   }
+  .more:hover { color: var(--text); }
 </style>

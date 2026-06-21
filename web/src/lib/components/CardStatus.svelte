@@ -5,42 +5,21 @@
 
   $: title = card.fields.title ?? 'Status'
   $: fields = Object.entries(card.fields).filter(([k]) => k !== 'title')
+  $: extra = fields.map(([k, v]) => `${k}: ${v}`).join(' · ')
+  $: text = [title, extra].filter(Boolean).join(' · ')
 </script>
 
-<div class="status" class:rich={fields.length > 0}>
-  <span class="dot" aria-hidden="true"></span>
-  <span class="ttl">{title}</span>
-  {#each fields as [key, value]}
-    <span class="field"><span class="key">{key}</span> {value}</span>
-  {/each}
-</div>
+<div class="note mono">{text}</div>
 
 <style>
-  .status {
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
+  .note {
+    align-self: center;
     max-width: 80%;
-    margin: 4px 0;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--bg-elev);
-    color: var(--text-2);
-    font-size: 12px;
-    line-height: 1.4;
+    margin: 6px 0;
+    padding: 6px 12px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--text-3);
+    line-height: 1.5;
   }
-  .status.rich { border-radius: var(--radius-sm); }
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    flex: none;
-  }
-  .ttl { font-weight: 600; color: var(--text); }
-  .field { color: var(--text-3); }
-  .key { color: var(--text-2); }
 </style>

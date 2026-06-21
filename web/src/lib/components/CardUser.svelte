@@ -8,15 +8,15 @@
 <style>
   .card {
     align-self: flex-end;
-    max-width: 80%;
+    max-width: 82%;
     padding: 11px 16px;
     border-radius: 18px 18px 4px 18px;
     margin: 14px 0 6px;
     line-height: 1.55;
-    font-size: 14.5px;
+    font-size: 14px;
     background: var(--user-bubble);
     color: var(--user-ink);
-    box-shadow: 0 2px 12px rgba(63, 178, 127, .18);
+    box-shadow: var(--shadow-card);
     white-space: pre-wrap;
     word-break: break-word;
   }
