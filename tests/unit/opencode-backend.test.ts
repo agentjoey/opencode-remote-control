@@ -111,7 +111,8 @@ describe('OpencodeBackend', () => {
       get: vi.fn().mockResolvedValue({ data: { agent: { name: 'plan' }, model: 'prov/x', tokens: { input: 1 }, cost: 0.1, directory: '/d' } }),
     } })
     const ctx = await createOpencodeBackend({ client }).getContext('s')
-    expect(ctx).toEqual({ agent: 'plan', model: 'prov/x', tokens: { input: 1 }, cost: 0.1, directory: '/d' })
+    // used = current context window (here input 1 + output 0); max omitted (model limit unknown).
+    expect(ctx).toEqual({ agent: 'plan', model: 'prov/x', tokens: { input: 1, used: 1 }, cost: 0.1, directory: '/d' })
   })
 
   it('getMessageBlocks maps text + tool parts with status normalization', async () => {

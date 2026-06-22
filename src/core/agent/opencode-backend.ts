@@ -202,10 +202,16 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
       } catch { /* best-effort */ }
     }
 
+    // Only surface used/max when known — never leak undefined keys (consumers
+    // read tokens.used / tokens.max and treat absence as "unknown").
+    const tokens: Record<string, number> = { ...(s.tokens ?? {}) }
+    if (typeof used === 'number') tokens.used = used
+    if (typeof max === 'number') tokens.max = max
+
     return {
       agent: s.agent?.name,
       model: modelId,
-      tokens: { ...(s.tokens ?? {}), max, used },
+      tokens,
       cost: typeof s.cost === 'number' ? s.cost : undefined, // caller falls back to state
       directory: typeof s.directory === 'string' ? s.directory : undefined,
     }
