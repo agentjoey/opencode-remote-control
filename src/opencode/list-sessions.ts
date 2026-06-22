@@ -20,21 +20,39 @@ function opencodeDbPath(): string {
  * is "/". Querying "/" matches zero sessions, so those directories are
  * otherwise undiscoverable — the only place that knows them is the db itself.
  *
- * Best-effort and bun-only (opencode runs on Bun): returns [] if `bun:sqlite`
- * or the db is unavailable, so callers degrade to project-worktree listing.
+ * Best-effort and cross-runtime: prefers Bun's `bun:sqlite` (opencode's own
+ * runtime / the plugin hub) and falls back to Node's built-in `node:sqlite`
+ * (the standalone host runs under Node ≥22.5). Returns [] only if neither sqlite
+ * binding nor the db is available, so callers degrade to project-worktree listing.
  */
+const DB_DIRS_SQL = 'SELECT DISTINCT directory FROM session WHERE directory IS NOT NULL'
+
 export async function directoriesFromDb(): Promise<string[]> {
   const dbPath = opencodeDbPath()
   if (!existsSync(dbPath)) return []
+
+  // 1) Bun's sqlite (db.query(sql).all(); { readonly }).
   try {
-    // Variable specifier keeps tsc/node from resolving this Bun builtin.
-    const specifier = 'bun:sqlite'
+    const specifier = 'bun:sqlite' // variable specifier hides this Bun builtin from tsc/node
     const { Database } = (await import(specifier)) as any
     const db = new Database(dbPath, { readonly: true })
     try {
-      const rows = db
-        .query('SELECT DISTINCT directory FROM session WHERE directory IS NOT NULL')
-        .all() as Array<{ directory: string }>
+      const rows = db.query(DB_DIRS_SQL).all() as Array<{ directory: string }>
+      return rows.map((r) => r.directory).filter(Boolean)
+    } finally {
+      db.close()
+    }
+  } catch {
+    /* not running under Bun — fall through to node:sqlite */
+  }
+
+  // 2) Node's built-in sqlite (db.prepare(sql).all(); { readOnly }).
+  try {
+    const specifier = 'node:sqlite'
+    const { DatabaseSync } = (await import(specifier)) as any
+    const db = new DatabaseSync(dbPath, { readOnly: true })
+    try {
+      const rows = db.prepare(DB_DIRS_SQL).all() as Array<{ directory: string }>
       return rows.map((r) => r.directory).filter(Boolean)
     } finally {
       db.close()
