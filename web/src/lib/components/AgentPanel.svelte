@@ -483,7 +483,8 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 10px 14px 12px;
+    /* Clear the home indicator when the panel is full-screen on mobile. */
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom, 0px));
     font-size: 10px;
     color: var(--text-4);
     border-top: 1px solid var(--border-2);
