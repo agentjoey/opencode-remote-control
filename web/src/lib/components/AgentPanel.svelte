@@ -483,8 +483,9 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    /* Clear the home indicator when the panel is full-screen on mobile. */
-    padding: 10px 14px max(12px, env(safe-area-inset-bottom, 0px));
+    /* Full-screen on mobile: keep the text out of the rounded screen corners +
+       home indicator — wider side padding and a taller bottom inset. */
+    padding: 10px max(20px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
     font-size: 10px;
     color: var(--text-4);
     border-top: 1px solid var(--border-2);
