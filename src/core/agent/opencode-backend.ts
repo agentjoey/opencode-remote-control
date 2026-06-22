@@ -156,10 +156,41 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
 
   async function getContext(id: string): Promise<SessionContext> {
     const s = ((await client.session.get({ path: { id } })).data ?? {}) as any
+    // opencode stores the model as { id, providerID } (object) or a string in older builds.
+    const modelObj = s.model && typeof s.model === 'object' ? s.model : undefined
+    const modelId: string | undefined = modelObj?.id ?? (typeof s.model === 'string' ? s.model : undefined)
+    const providerId: string | undefined = modelObj?.providerID
+
+    // max = the model's context window, from the providers catalog (model.limit.context).
+    let max: number | undefined
+    try {
+      const providers = (((await client.config.providers()).data as any)?.providers ?? []) as any[]
+      const m =
+        providers.find((p) => p.id === providerId)?.models?.[modelId ?? ''] ??
+        providers.map((p) => p?.models?.[modelId ?? '']).find(Boolean)
+      const lim = (m as any)?.limit?.context
+      if (typeof lim === 'number' && lim > 0) max = lim
+    } catch { /* best-effort */ }
+
+    // used = the LAST assistant message's token footprint (what's actually in the
+    // context window now: prompt + cache + output), NOT the session's cumulative totals.
+    let used: number | undefined
+    try {
+      const msgs = ((await client.session.messages({ path: { id } })).data ?? []) as any[]
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const info = (msgs[i]?.info ?? msgs[i]) as any
+        const t = info?.tokens
+        if (info?.role !== 'assistant' || !t) continue
+        used = (t.input ?? 0) + (t.output ?? 0) + (t.reasoning ?? 0) + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
+        break
+      }
+    } catch { /* best-effort */ }
+    if (used == null && s.tokens) used = (s.tokens.input ?? 0) + (s.tokens.output ?? 0)
+
     return {
       agent: s.agent?.name,
-      model: typeof s.model === 'string' ? s.model : undefined,
-      tokens: s.tokens,
+      model: modelId,
+      tokens: { ...(s.tokens ?? {}), max, used },
       cost: typeof s.cost === 'number' ? s.cost : undefined, // caller falls back to state
       directory: typeof s.directory === 'string' ? s.directory : undefined,
     }

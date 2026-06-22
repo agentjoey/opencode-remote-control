@@ -23,7 +23,11 @@
 
   $: tin = typeof ctx?.tokens?.input === 'number' ? (ctx.tokens.input as number) : undefined
   $: tout = typeof ctx?.tokens?.output === 'number' ? (ctx.tokens.output as number) : undefined
-  $: used = tin != null || tout != null ? (tin ?? 0) + (tout ?? 0) : undefined
+  // Prefer the backend's context-window size (last turn's prompt + cache + output);
+  // fall back to input+output if absent.
+  $: used = typeof ctx?.tokens?.used === 'number'
+    ? (ctx.tokens.used as number)
+    : (tin != null || tout != null ? (tin ?? 0) + (tout ?? 0) : undefined)
   $: max = typeof ctx?.tokens?.max === 'number' ? (ctx.tokens.max as number) : undefined
   $: pct = used != null && max != null ? Math.min(100, Math.round((used / max) * 100)) : undefined
   $: model = ctx?.model ? String(ctx.model).split('/').pop() : undefined
