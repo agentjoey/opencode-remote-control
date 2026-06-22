@@ -23,6 +23,12 @@ const log = createLogger('opencode-backend')
 const STALE_MS = 14 * 24 * 60 * 60 * 1000
 const EMPTY_GRACE_MS = 60 * 60 * 1000
 
+// Context-window overrides for models whose opencode/models.dev catalog entry is
+// stale. Keyed by modelID; takes precedence over the catalog's limit.context.
+const MODEL_CONTEXT_OVERRIDES: Record<string, number> = {
+  'MiniMax-M3': 1_000_000, // catalog says 512k; real window is 1M
+}
+
 function isEmptySession(s: any): boolean {
   const created = s.time?.created ?? 0
   const updated = s.time?.updated ?? created
@@ -156,36 +162,45 @@ export function createOpencodeBackend(deps: OpencodeBackendDeps): AgentBackend {
 
   async function getContext(id: string): Promise<SessionContext> {
     const s = ((await client.session.get({ path: { id } })).data ?? {}) as any
-    // opencode stores the model as { id, providerID } (object) or a string in older builds.
-    const modelObj = s.model && typeof s.model === 'object' ? s.model : undefined
-    const modelId: string | undefined = modelObj?.id ?? (typeof s.model === 'string' ? s.model : undefined)
-    const providerId: string | undefined = modelObj?.providerID
 
-    // max = the model's context window, from the providers catalog (model.limit.context).
-    let max: number | undefined
-    try {
-      const providers = (((await client.config.providers()).data as any)?.providers ?? []) as any[]
-      const m =
-        providers.find((p) => p.id === providerId)?.models?.[modelId ?? ''] ??
-        providers.map((p) => p?.models?.[modelId ?? '']).find(Boolean)
-      const lim = (m as any)?.limit?.context
-      if (typeof lim === 'number' && lim > 0) max = lim
-    } catch { /* best-effort */ }
-
-    // used = the LAST assistant message's token footprint (what's actually in the
-    // context window now: prompt + cache + output), NOT the session's cumulative totals.
+    // A session can switch models mid-way, and the live context window belongs to
+    // whichever model produced the LATEST turn — so resolve BOTH the model and the
+    // current usage from the last assistant message (keeping used + max same-model).
+    let providerId: string | undefined
+    let modelId: string | undefined
     let used: number | undefined
     try {
       const msgs = ((await client.session.messages({ path: { id } })).data ?? []) as any[]
       for (let i = msgs.length - 1; i >= 0; i--) {
         const info = (msgs[i]?.info ?? msgs[i]) as any
+        if (info?.role !== 'assistant') continue
         const t = info?.tokens
-        if (info?.role !== 'assistant' || !t) continue
-        used = (t.input ?? 0) + (t.output ?? 0) + (t.reasoning ?? 0) + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
-        break
+        if (t && used == null) {
+          used = (t.input ?? 0) + (t.output ?? 0) + (t.reasoning ?? 0) + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
+        }
+        if (info?.modelID) { modelId = info.modelID; providerId = info.providerID; break }
       }
     } catch { /* best-effort */ }
+
+    // Fall back to the session's configured model (opencode stores { id, providerID }).
+    const modelObj = s.model && typeof s.model === 'object' ? s.model : undefined
+    if (!modelId) modelId = modelObj?.id ?? (typeof s.model === 'string' ? s.model : undefined)
+    if (!providerId) providerId = modelObj?.providerID
     if (used == null && s.tokens) used = (s.tokens.input ?? 0) + (s.tokens.output ?? 0)
+
+    // max = the active model's context window. Prefer the providers catalog (models.dev),
+    // but override models whose catalog entry is known-stale (verified real limits).
+    let max: number | undefined = modelId ? MODEL_CONTEXT_OVERRIDES[modelId] : undefined
+    if (max == null) {
+      try {
+        const providers = (((await client.config.providers()).data as any)?.providers ?? []) as any[]
+        const m =
+          providers.find((p) => p.id === providerId)?.models?.[modelId ?? ''] ??
+          providers.map((p) => p?.models?.[modelId ?? '']).find(Boolean)
+        const lim = (m as any)?.limit?.context
+        if (typeof lim === 'number' && lim > 0) max = lim
+      } catch { /* best-effort */ }
+    }
 
     return {
       agent: s.agent?.name,
